@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+    <title>Go源码解读之sync.Cond :: Hindung Blogs</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Go源码探究系列，基于golang 1.16.x版本" />
+<meta name="keywords" content="" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="http://hindung.cn/posts/19/" />
+
+
+
+
+<link rel="stylesheet" href="http://hindung.cn/assets/style.css">
+
+  <link rel="stylesheet" href="http://hindung.cn/assets/green.css">
+
+
+
+
+
+
+<link rel="apple-touch-icon" href="http://hindung.cn/img/apple-touch-icon-192x192.png">
+
+  <link rel="shortcut icon" href="http://hindung.cn/img/favicon/green.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Go源码解读之sync.Cond">
+<meta property="og:description" content="Go源码探究系列，基于golang 1.16.x版本" />
+<meta property="og:url" content="http://hindung.cn/posts/19/" />
+<meta property="og:site_name" content="Hindung Blogs" />
+
+  
+    <meta property="og:image" content="http://hindung.cn/img/favicon/green.png">
+  
+
+<meta property="og:image:width" content="2048">
+<meta property="og:image:height" content="1024">
+
+
+  <meta property="article:published_time" content="2021-05-16 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body class="green">
+
+
+<div class="container center headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    Hindung
+  </div>
+</a>
+
+    </div>
+    
+      <div class="menu-trigger">menu</div>
+    
+  </div>
+  
+    <nav class="menu">
+  <ul class="menu__inner menu__inner--desktop">
+    
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+        
+          <li><a href="/posts">Post</a></li>
+        
+      
+      
+    
+
+    
+  </ul>
+
+  <ul class="menu__inner menu__inner--mobile">
+    
+      
+        <li><a href="/about">About</a></li>
+      
+    
+      
+        <li><a href="/posts">Post</a></li>
+      
+    
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<div class="post">
+  <h1 class="post-title">
+    <a href="http://hindung.cn/posts/19/">Go源码解读之sync.Cond</a></h1>
+  <div class="post-meta">
+    
+      <span class="post-date">
+        2021-05-16
+        
+      </span>
+    
+    
+    
+      <span class="post-reading-time">:: 5 min read (1061 words)</span>
+    
+  </div>
+
+  
+  <span class="post-tags">
+    
+    #<a href="http://hindung.cn/tags/go/">Go</a>&nbsp;
+    
+  </span>
+  
+  
+
+
+  
+    <div class="table-of-contents">
+      <h2>
+        Table of Contents
+      </h2>
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#源码解析">源码解析</a></li>
+    <li><a href="#使用例子">使用例子</a></li>
+    <li><a href="#其他代码中的应用">其他代码中的应用</a></li>
+  </ul>
+</nav>
+    </div>
+  
+
+  <div class="post-content"><div>
+        <h2 id="前言">前言<a href="#前言" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p><a href="">前面🔗</a>说过，Cond实现了一个条件变量，是等待或宣布一个事件发生的goroutines的汇合点。</p>
+<p>就是说，使用sync.Cond可以做到多个协程等待某个协程通知的场景。</p>
+<p>使用channel可以实现一读一写的场景，而Cond则实现多读一写的场景。</p>
+<h2 id="源码解析">源码解析<a href="#源码解析" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>简化版方法签名：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Cond结构体
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Cond</span> <span style="color:#66d9ef">struct</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewCond 返回带Locker的Cond，这个Locker可以是
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// *Mutex 或 *RWMutex
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewCond</span>(<span style="color:#a6e22e">l</span> <span style="color:#a6e22e">Locker</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">Cond</span> {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 等待L的解锁并挂起goroutine
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Cond</span>) <span style="color:#a6e22e">Wait</span>() {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 唤醒1个因c阻塞的goroutine，
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 如果在Signal之后才Wait会导致all goroutines are asleep - deadlock
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Cond</span>) <span style="color:#a6e22e">Signal</span>() {}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 唤醒所有因c阻塞的goroutine
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 如果在Broadcast之后才Wait会导致all goroutines are asleep - deadlock
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Cond</span>) <span style="color:#a6e22e">Broadcast</span>() {}
+</span></span></code></pre></div><p>因此，在Signal或者Broadcast前要先保证目标的协程已经进入了Wait状态，否则会导致死锁。因为Signal或者Broadcast只唤醒当前正在被Wait阻塞的协程。</p>
+<p><a href="https://go.googlesource.com/go/+/go1.16.4/src/sync/cond.go#21">Cond的定义</a>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Copyright 2011 The Go Authors. All rights reserved.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Use of this source code is governed by a BSD-style
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// license that can be found in the LICENSE file.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#f92672">package</span> <span style="color:#a6e22e">sync</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;sync/atomic&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;unsafe&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Cond implements a condition variable, a rendezvous point
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// for goroutines waiting for or announcing the occurrence
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// of an event.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Cond实现了一个条件变量，它是goroutines等待或宣布事件发生的集合点。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Each Cond has an associated Locker L (often a *Mutex or *RWMutex),
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// which must be held when changing the condition and
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// when calling the Wait method.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 每个Cond都有一个相关的Locker L（通常是一个*Mutex或*RWMutex），
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 在改变条件和调用Wait方法时，必须持有这个L。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// A Cond must not be copied after first use.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Cond</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">noCopy</span> <span style="color:#a6e22e">noCopy</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// L is held while observing or changing the condition
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">L</span> <span style="color:#a6e22e">Locker</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// notifyList是用于实现sync.Cond的基于票证的通知列表
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// 参考：
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// https://go.googlesource.com/go/+/go1.16.4/src/runtime/sema.go#446
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">notify</span>  <span style="color:#a6e22e">notifyList</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">checker</span> <span style="color:#a6e22e">copyChecker</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// NewCond returns a new Cond with Locker l.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewCond</span>(<span style="color:#a6e22e">l</span> <span style="color:#a6e22e">Locker</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">Cond</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">Cond</span>{<span style="color:#a6e22e">L</span>: <span style="color:#a6e22e">l</span>}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Wait atomically unlocks c.L and suspends execution
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// of the calling goroutine. After later resuming execution,
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Wait locks c.L before returning. Unlike in other systems,
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Wait cannot return unless awoken by Broadcast or Signal.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Because c.L is not locked when Wait first resumes, the caller
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// typically cannot assume that the condition is true when
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Wait returns. Instead, the caller should Wait in a loop:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    c.L.Lock()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    for !condition() {
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//        c.Wait()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    }
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    ... make use of condition ...
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    c.L.Unlock()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Wait会先把加入到待唤醒队列，再释放锁，然后执行等待，
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 当其他goroutine调用Broadcast或者Signal来通知其恢复执行后，
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 会重新上锁
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Cond</span>) <span style="color:#a6e22e">Wait</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">checker</span>.<span style="color:#a6e22e">check</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// notifyListAdd将调用者添加到通知列表中，以便它可以接收通知。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// 调用者必须最终调用notifyListWait来等待这样的通知，并显式传参。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// 参考：
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// https://go.googlesource.com/go/+/go1.16.4/src/sync/runtime.go#31
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// https://go.googlesource.com/go/+/go1.16.4/src/runtime/sema.go#475
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">t</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">runtime_notifyListAdd</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">notify</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">L</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// notifyListWait等待通知。如果自那以后已发送，
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// 调用notifyListAdd，它立即返回。否则，它将阻塞。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// 参考：
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// https://go.googlesource.com/go/+/go1.16.4/src/sync/runtime.go#34
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#75715e">// https://go.googlesource.com/go/+/go1.16.4/src/runtime/sema.go#485
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">runtime_notifyListWait</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">notify</span>, <span style="color:#a6e22e">t</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">L</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Signal wakes one goroutine waiting on c, if there is any.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// It is allowed but not required for the caller to hold c.L
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// during the call.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Cond</span>) <span style="color:#a6e22e">Signal</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">checker</span>.<span style="color:#a6e22e">check</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">runtime_notifyListNotifyOne</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">notify</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Broadcast wakes all goroutines waiting on c.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// It is allowed but not required for the caller to hold c.L
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// during the call.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">Cond</span>) <span style="color:#a6e22e">Broadcast</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">checker</span>.<span style="color:#a6e22e">check</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">runtime_notifyListNotifyAll</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">c</span>.<span style="color:#a6e22e">notify</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// copyChecker holds back pointer to itself to detect object copying.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">copyChecker</span> <span style="color:#66d9ef">uintptr</span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">c</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">copyChecker</span>) <span style="color:#a6e22e">check</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> uintptr(<span style="color:#f92672">*</span><span style="color:#a6e22e">c</span>) <span style="color:#f92672">!=</span> uintptr(<span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(<span style="color:#a6e22e">c</span>)) <span style="color:#f92672">&amp;&amp;</span>
+</span></span><span style="display:flex;"><span>		!<span style="color:#a6e22e">atomic</span>.<span style="color:#a6e22e">CompareAndSwapUintptr</span>((<span style="color:#f92672">*</span><span style="color:#66d9ef">uintptr</span>)(<span style="color:#a6e22e">c</span>), <span style="color:#ae81ff">0</span>, uintptr(<span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(<span style="color:#a6e22e">c</span>))) <span style="color:#f92672">&amp;&amp;</span>
+</span></span><span style="display:flex;"><span>		uintptr(<span style="color:#f92672">*</span><span style="color:#a6e22e">c</span>) <span style="color:#f92672">!=</span> uintptr(<span style="color:#a6e22e">unsafe</span>.<span style="color:#a6e22e">Pointer</span>(<span style="color:#a6e22e">c</span>)) {
+</span></span><span style="display:flex;"><span>		panic(<span style="color:#e6db74">&#34;sync.Cond is copied&#34;</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// noCopy may be embedded into structs which must not be copied
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// after the first use.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// See https://golang.org/issues/8005#issuecomment-190753527
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// for details.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">noCopy</span> <span style="color:#66d9ef">struct</span>{}
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Lock is a no-op used by -copylocks checker from `go vet`.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#f92672">*</span><span style="color:#a6e22e">noCopy</span>) <span style="color:#a6e22e">Lock</span>()   {}
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#f92672">*</span><span style="color:#a6e22e">noCopy</span>) <span style="color:#a6e22e">Unlock</span>() {}
+</span></span></code></pre></div><h2 id="使用例子">使用例子<a href="#使用例子" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>可以按照官方给的使用例子：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">//    c.L.Lock()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    某个条件满足才进行Wait，否则可能会导致Wait发生在
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    唤醒之后，从而导致死锁
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    for !condition() {  
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//        c.Wait()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    }
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    ... make use of condition ...
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    c.L.Unlock()
+</span></span></span></code></pre></div><p>如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;sync&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">locker</span> = new(<span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Mutex</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">cond</span> = <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">NewCond</span>(<span style="color:#a6e22e">locker</span>)
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">condition</span> = <span style="color:#66d9ef">false</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">var</span> <span style="color:#a6e22e">wg</span> <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">WaitGroup</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Add</span>(<span style="color:#ae81ff">10</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span> &lt; <span style="color:#ae81ff">10</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">go</span> <span style="color:#66d9ef">func</span>(<span style="color:#a6e22e">x</span> <span style="color:#66d9ef">int</span>) {
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">L</span>.<span style="color:#a6e22e">Lock</span>()         <span style="color:#75715e">//获取锁
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>            <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">L</span>.<span style="color:#a6e22e">Unlock</span>() <span style="color:#75715e">//释放锁
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#66d9ef">for</span> !<span style="color:#a6e22e">condition</span> {
+</span></span><span style="display:flex;"><span>				<span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">Wait</span>()
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>            <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">x</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Done</span>()
+</span></span><span style="display:flex;"><span>        }(<span style="color:#a6e22e">i</span>)
+</span></span><span style="display:flex;"><span>    }   
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Sleep</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Second</span> <span style="color:#f92672">*</span> <span style="color:#ae81ff">3</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">L</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">condition</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">Broadcast</span>()  
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">L</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">wg</span>.<span style="color:#a6e22e">Wait</span>()         
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>注意：sync.Cond需要开发人员把握锁以及condition()的条件，比较容易发生死锁。</p>
+<h2 id="其他代码中的应用">其他代码中的应用<a href="#其他代码中的应用" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>k8s中的client-go代码中的<a href="https://github.com/kubernetes/client-go/blob/v0.21.0/tools/cache/delta_fifo.go#L98">DeltaFIFO队列</a>实现就是用了sync.Cond来实现：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">DeltaFIFO</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// lock/cond protects access to &#39;items&#39; and &#39;queue&#39;.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">lock</span> <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">RWMutex</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">cond</span> <span style="color:#a6e22e">sync</span>.<span style="color:#a6e22e">Cond</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// 其他字段省略
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span></code></pre></div><p><a href="https://github.com/kubernetes/client-go/blob/v0.21.0/tools/cache/delta_fifo.go#L207">初始化</a>：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewDeltaFIFO</span>(<span style="color:#a6e22e">keyFunc</span> <span style="color:#a6e22e">KeyFunc</span>, <span style="color:#a6e22e">knownObjects</span> <span style="color:#a6e22e">KeyListerGetter</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">DeltaFIFO</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">NewDeltaFIFOWithOptions</span>(<span style="color:#a6e22e">DeltaFIFOOptions</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">KeyFunction</span>:  <span style="color:#a6e22e">keyFunc</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">KnownObjects</span>: <span style="color:#a6e22e">knownObjects</span>,
+</span></span><span style="display:flex;"><span>	})
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">NewDeltaFIFOWithOptions</span>(<span style="color:#a6e22e">opts</span> <span style="color:#a6e22e">DeltaFIFOOptions</span>) <span style="color:#f92672">*</span><span style="color:#a6e22e">DeltaFIFO</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">KeyFunction</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">KeyFunction</span> = <span style="color:#a6e22e">MetaNamespaceKeyFunc</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">f</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">DeltaFIFO</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">items</span>:        <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#a6e22e">Deltas</span>{},
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">queue</span>:        []<span style="color:#66d9ef">string</span>{},
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">keyFunc</span>:      <span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">KeyFunction</span>,
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">knownObjects</span>: <span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">KnownObjects</span>,
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">emitDeltaTypeReplaced</span>: <span style="color:#a6e22e">opts</span>.<span style="color:#a6e22e">EmitDeltaTypeReplaced</span>,
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// f.lock 与 f.cond 结合使用
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">L</span> = <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">lock</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">f</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>再来看看<a href="https://github.com/kubernetes/client-go/blob/v0.21.0/tools/cache/delta_fifo.go#L518">Pop方法</a>，何时调用Wait：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Pop阻塞，直到队列中有一些项目，然后返回一个。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 如果多个项目准备就绪，它们将按照它们被添加/更新的顺序返回。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">DeltaFIFO</span>) <span style="color:#a6e22e">Pop</span>(<span style="color:#a6e22e">process</span> <span style="color:#a6e22e">PopProcessFunc</span>) (<span style="color:#66d9ef">interface</span>{}, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">lock</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">lock</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// 有数据就不用Wait
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">for</span> len(<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">queue</span>) <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#75715e">// When the queue is empty, invocation of Pop() is blocked until new item is enqueued.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#75715e">// 当队列为空时，将阻止Pop（）的调用，直到新项目入队。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#75715e">// When Close() is called, the f.closed is set and the condition is broadcasted.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#75715e">// 当Close()被调用时，f.closed被设置，条件被广播。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#75715e">// Which causes this loop to continue and return from the Pop().
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">closed</span> {
+</span></span><span style="display:flex;"><span>				<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">ErrFIFOClosed</span>
+</span></span><span style="display:flex;"><span>			}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>			<span style="color:#75715e">// 阻塞直到被广播（说明有数据）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">Wait</span>()
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">id</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">queue</span>[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">queue</span> = <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">queue</span>[<span style="color:#ae81ff">1</span>:]
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">initialPopulationCount</span> &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">initialPopulationCount</span><span style="color:#f92672">--</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">item</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">items</span>[<span style="color:#a6e22e">id</span>]
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#75715e">// This should never happen
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#a6e22e">klog</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Inconceivable! %q was in f.queue but not f.items; ignoring.&#34;</span>, <span style="color:#a6e22e">id</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">continue</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		delete(<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">items</span>, <span style="color:#a6e22e">id</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">process</span>(<span style="color:#a6e22e">item</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">e</span>, <span style="color:#a6e22e">ok</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">err</span>.(<span style="color:#a6e22e">ErrRequeue</span>); <span style="color:#a6e22e">ok</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">addIfNotPresent</span>(<span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">item</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">e</span>.<span style="color:#a6e22e">Err</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// Don&#39;t need to copyDeltas here, because we&#39;re transferring
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// ownership to the caller.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">item</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>何时调用Broadcast：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// Close the queue.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">DeltaFIFO</span>) <span style="color:#a6e22e">Close</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">lock</span>.<span style="color:#a6e22e">Lock</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">lock</span>.<span style="color:#a6e22e">Unlock</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">closed</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">Broadcast</span>()
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// addIfNotPresent inserts deltas under id if it does not exist, and assumes the caller
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// already holds the fifo lock.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">DeltaFIFO</span>) <span style="color:#a6e22e">addIfNotPresent</span>(<span style="color:#a6e22e">id</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">deltas</span> <span style="color:#a6e22e">Deltas</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">populated</span> = <span style="color:#66d9ef">true</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">items</span>[<span style="color:#a6e22e">id</span>]; <span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">queue</span> = append(<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">queue</span>, <span style="color:#a6e22e">id</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">items</span>[<span style="color:#a6e22e">id</span>] = <span style="color:#a6e22e">deltas</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// 有数据，则广播
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">Broadcast</span>()
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// queueActionLocked appends to the delta list for the object.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// queueActionLocked追加到该对象的delta列表。
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Caller must lock first.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">f</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">DeltaFIFO</span>) <span style="color:#a6e22e">queueActionLocked</span>(<span style="color:#a6e22e">actionType</span> <span style="color:#a6e22e">DeltaType</span>, <span style="color:#a6e22e">obj</span> <span style="color:#66d9ef">interface</span>{}) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">KeyOf</span>(<span style="color:#a6e22e">obj</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">KeyError</span>{<span style="color:#a6e22e">obj</span>, <span style="color:#a6e22e">err</span>}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">oldDeltas</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">items</span>[<span style="color:#a6e22e">id</span>]
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">newDeltas</span> <span style="color:#f92672">:=</span> append(<span style="color:#a6e22e">oldDeltas</span>, <span style="color:#a6e22e">Delta</span>{<span style="color:#a6e22e">actionType</span>, <span style="color:#a6e22e">obj</span>})
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">newDeltas</span> = <span style="color:#a6e22e">dedupDeltas</span>(<span style="color:#a6e22e">newDeltas</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> len(<span style="color:#a6e22e">newDeltas</span>) &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">_</span>, <span style="color:#a6e22e">exists</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">items</span>[<span style="color:#a6e22e">id</span>]; !<span style="color:#a6e22e">exists</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">queue</span> = append(<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">queue</span>, <span style="color:#a6e22e">id</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">items</span>[<span style="color:#a6e22e">id</span>] = <span style="color:#a6e22e">newDeltas</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">cond</span>.<span style="color:#a6e22e">Broadcast</span>()
+</span></span><span style="display:flex;"><span>	} <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#75715e">// This never happens, because dedupDeltas never returns an empty list
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// when given a non-empty list (as it is here).
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#75715e">// If somehow it happens anyway, deal with it but complain.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">oldDeltas</span> <span style="color:#f92672">==</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">klog</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Impossible dedupDeltas for id=%q: oldDeltas=%#+v, obj=%#+v; ignoring&#34;</span>, <span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">oldDeltas</span>, <span style="color:#a6e22e">obj</span>)
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">klog</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Impossible dedupDeltas for id=%q: oldDeltas=%#+v, obj=%#+v; breaking invariant by storing empty Deltas&#34;</span>, <span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">oldDeltas</span>, <span style="color:#a6e22e">obj</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">f</span>.<span style="color:#a6e22e">items</span>[<span style="color:#a6e22e">id</span>] = <span style="color:#a6e22e">newDeltas</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;Impossible dedupDeltas for id=%q: oldDeltas=%#+v, obj=%#+v; broke DeltaFIFO invariant by storing empty Deltas&#34;</span>, <span style="color:#a6e22e">id</span>, <span style="color:#a6e22e">oldDeltas</span>, <span style="color:#a6e22e">obj</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p><em>更新于 2021/05/16 23:53</em></p>
+
+      </div></div>
+
+  
+  
+<div class="pagination">
+    <div class="pagination__title">
+        <span class="pagination__title-h">Read other posts</span>
+        <hr />
+    </div>
+    <div class="pagination__buttons">
+        
+        <span class="button previous">
+            <a href="http://hindung.cn/posts/23/">
+                <span class="button__icon">←</span>
+                <span class="button__text">容器运行时</span>
+            </a>
+        </span>
+        
+        
+        <span class="button next">
+            <a href="http://hindung.cn/posts/18/">
+                <span class="button__text">Go源码解读之sync中的基本类型和使用场景</span>
+                <span class="button__icon">→</span>
+            </a>
+        </span>
+        
+    </div>
+</div>
+
+  
+
+  
+  
+
+  
+</div>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2022 Powered by <a href="http://gohugo.io">Hugo</a></span>
+    
+        <span>:: Theme made by <a href="https://twitter.com/panr">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+<script src="http://hindung.cn/assets/main.js"></script>
+<script src="http://hindung.cn/assets/prism.js"></script>
+
+
+  <script src="http://hindung.cn/assets/languageSelector.js"></script>
+
+
+
+
+
+
+  
+</div>
+
+</body>
+</html>

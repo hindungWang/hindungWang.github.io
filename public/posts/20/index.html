@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+    <title>容器技术之我见 :: Hindung Blogs</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="参考大佬文章，理解理解Docker" />
+<meta name="keywords" content="" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="http://hindung.cn/posts/20/" />
+
+
+
+
+<link rel="stylesheet" href="http://hindung.cn/assets/style.css">
+
+  <link rel="stylesheet" href="http://hindung.cn/assets/green.css">
+
+
+
+
+
+
+<link rel="apple-touch-icon" href="http://hindung.cn/img/apple-touch-icon-192x192.png">
+
+  <link rel="shortcut icon" href="http://hindung.cn/img/favicon/green.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="容器技术之我见">
+<meta property="og:description" content="参考大佬文章，理解理解Docker" />
+<meta property="og:url" content="http://hindung.cn/posts/20/" />
+<meta property="og:site_name" content="Hindung Blogs" />
+
+  
+    <meta property="og:image" content="http://hindung.cn/img/favicon/green.png">
+  
+
+<meta property="og:image:width" content="2048">
+<meta property="og:image:height" content="1024">
+
+
+  <meta property="article:published_time" content="2021-07-23 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body class="green">
+
+
+<div class="container center headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    Hindung
+  </div>
+</a>
+
+    </div>
+    
+      <div class="menu-trigger">menu</div>
+    
+  </div>
+  
+    <nav class="menu">
+  <ul class="menu__inner menu__inner--desktop">
+    
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+        
+          <li><a href="/posts">Post</a></li>
+        
+      
+      
+    
+
+    
+  </ul>
+
+  <ul class="menu__inner menu__inner--mobile">
+    
+      
+        <li><a href="/about">About</a></li>
+      
+    
+      
+        <li><a href="/posts">Post</a></li>
+      
+    
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<div class="post">
+  <h1 class="post-title">
+    <a href="http://hindung.cn/posts/20/">容器技术之我见</a></h1>
+  <div class="post-meta">
+    
+      <span class="post-date">
+        2021-07-23
+        
+      </span>
+    
+    
+    
+      <span class="post-reading-time">:: 1 min read (133 words)</span>
+    
+  </div>
+
+  
+  <span class="post-tags">
+    
+    #<a href="http://hindung.cn/tags/docker/">Docker</a>&nbsp;
+    
+  </span>
+  
+  
+
+
+  
+    <div class="table-of-contents">
+      <h2>
+        Table of Contents
+      </h2>
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#容器技术">容器技术</a>
+      <ul>
+        <li><a href="#namespace">Namespace</a></li>
+        <li><a href="#规划中的命名空间">规划中的命名空间</a></li>
+        <li><a href="#cgroup">CGroup</a></li>
+      </ul>
+    </li>
+    <li><a href="#容器镜像">容器镜像</a></li>
+    <li><a href="#什么是docker">什么是Docker</a>
+      <ul>
+        <li><a href="#与虚拟机的区别">与虚拟机的区别</a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+  
+
+  <div class="post-content"><div>
+        <h2 id="容器技术">容器技术<a href="#容器技术" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>什么是容器呢？</p>
+<p>印象中第一次接触“容器”这个词，是在化学课上，不就是一装东西的瓶子嘛有啥特别的。</p>
+<p>仔细想想，“装”东西即在某种程度上与其他物体隔离开来了。所以称这个「装东西的东西」为容器。</p>
+<p>是吧！那现在所说的“容器”到底是啥概念，他能装什么东西，又把什么东西在某种程度上隔离开？</p>
+<p>我的理解就是：「把资源隔离开的东西」。</p>
+<p>资源泛指OS上的资源，如CPU、内存、设备、文件系统等等。如何进行隔离呢？Linux内核提供了某种机制能让上诉所说的“资源”隔离开来，即Namespace和CGroups。</p>
+<p>容器技术就是基于这两个内核特性进行设计和开发。</p>
+<h3 id="namespace">Namespace<a href="#namespace" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>命名空间在<a href="https://en.wikipedia.org/wiki/Namespace">维基百科</a>上的广义解释是：</p>
+<p>“在计算机中，命名空间是一组用于标识和引用各种对象的符号（名称）。命名空间可确保所有给定的对象集都具有唯一的名称，以便可以轻松识别它们。”</p>
+<p>根据这个定义，Linux内核提供的命名空间定义为：</p>
+<p>“命名空间是Linux内核的一项功能，该功能对内核资源进行分区，以使一组进程看到一组资源，而另一组进程看到另一组资源。该功能通过为一组资源和进程具有相同的名称空间而起作用，但是这些名称空间引用了不同的资源。资源可能存在于多个空间中。这样的资源有进程ID、主机名、用户ID、文件名以及一些与网络访问和进程间通信相关。”</p>
+<p>从内核版本5.6开始，存在8种名称空间。命名空间功能在所有类型上都是相同的：每个进程都与一个命名空间相关联并且只能查看或使用与该命名空间以及后代命名空间相关联的资源。
+这样，每个进程（或其进程组）可以在资源上拥有唯一的视图。隔离哪个资源取决于已为给定进程组创建的名称空间的类型。</p>
+<h4 id="mount-mnt">Mount (mnt)<a href="#mount-mnt" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>挂载命名空间控制隔离挂载点。即隔离文件系统目录结构。</p>
+<p>比如你在每个容器里都有/usr目录，你们都可以访问这个目录，但他们是不一样的。</p>
+<h4 id="process-id-pid">Process ID (pid)<a href="#process-id-pid" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>PID命名空间为进程提供了一套独立于其他命名空间的进程ID（PID）。</p>
+<p>PID命名空间是嵌套的，这意味着当一个新的进程被创建时，它将有一个从其当前命名空间到初始PID命名空间的每个命名空间的PID。因此，初始PID命名空间能够看到所有进程，尽管其PID与其他命名空间看到的进程不同。</p>
+<p>比如用于创建容器的Runc Daemon进程。</p>
+<h4 id="network-net">Network (net)<a href="#network-net" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>网络名称空间可虚拟化网络堆栈。由于每个容器有不同的网络接口，每个地址信息，包括IP地址，都可以分开。</p>
+<h4 id="interprocess-communication-ipc">Interprocess Communication (ipc)<a href="#interprocess-communication-ipc" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>IPC命名空间将进程与SysV风格的进程间通信隔离。</p>
+<h4 id="uts">UTS<a href="#uts" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>UTS（UNIX时间共享）命名空间允许一个系统在不同的进程中出现不同的主机名和域名。</p>
+<h4 id="user-id-user">User ID (user)<a href="#user-id-user" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>用户命名空间是一个提供权限隔离和用户识别隔离的功能，跨越多组进程，从内核3.8开始可用。</p>
+<p>在管理员的协助下，有可能建立一个看起来有管理权限的容器，而实际上没有给用户进程提升权限。像PID命名空间一样，用户命名空间是嵌套的，每个新的用户命名空间都被认为是创建它的用户命名空间的子空间。</p>
+<h4 id="control-group-cgroup-namespace">Control group (cgroup) Namespace<a href="#control-group-cgroup-namespace" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>控制组命名空间，隐藏了进程作为成员的控制组的身份。</p>
+<p>在这样的命名空间中的进程，在检查任何进程属于哪个控制组时，会看到一个实际上是相对于创建时设置的控制组的路径，隐藏其真实的控制组位置和身份。</p>
+<h4 id="time-namespace">Time Namespace<a href="#time-namespace" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h4>
+<p>时间命名空间允许进程以类似于UTS命名空间的方式看到不同的系统时间。
+它在2018年被提出，并在2020年3月发布的Linux 5.6上登陆。</p>
+<h3 id="规划中的命名空间">规划中的命名空间<a href="#规划中的命名空间" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>syslog namespace、Syscalls、Destruction，具体信息请参阅<a href="https://en.wikipedia.org/wiki/Linux_namespaces">维基百科</a></p>
+<h3 id="cgroup">CGroup<a href="#cgroup" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>控制组cgroups是Linux内核提供的一个功能，用于从硬件和相关方面限制一组特定的分组进程。</p>
+<p>如隔离CPU、内存、设备、磁盘io、网络io等。</p>
+<p>有两个版本的cgroup。Cgroups最初由Paul Menage和Rohit Seth编写，并于2007年进入Linux内核主线。此后称为cgroups版本1。</p>
+<p>然后由Tejun Heo接管了cgroup的开发和维护。Tejun Heo重新设计并重写了cgroup。这种重写现在称为版本2，cgroups-v2的文档首次出现在2016年3月14日发布的Linux内核4.5中。</p>
+<p>与v1不同，cgroup v2仅具有单个进程层次结构，并且在进程之间进行区分，而不对线程进行区分。</p>
+<p>控制组的核心功能：</p>
+<ul>
+<li>资源限制：可以将组设置为不超过配置的内存限制，该限制还包括文件系统缓存</li>
+<li>优先级：一些组可能会在CPU利用率或磁盘I / O吞吐量中获得更大份额</li>
+<li>可统计：衡量组的资源使用情况</li>
+<li>可控制：冻结/复活进程组</li>
+</ul>
+<p>控制组具有分层概念，这意味着每个组都从其父组继承限制。内核通过cgroup接口提供对多个控制器（也称为子系统）的访问。例如，“内存”控制器限制内存使用，“ cpuacct”账户CPU使用率等。</p>
+<p>使用控制组的方式：</p>
+<ul>
+<li>通过手动访问cgroup虚拟文件系统。</li>
+<li>通过使用cgcreate，cgexec和cgclassify（来自libcgroup）之类的工具动态创建和管理组。</li>
+<li>通过“引擎守护程序规则”，可以按照配置中的指定自动将某些用户，组或命令的进程移至cgroup。</li>
+<li>间接通过其它软件使用的cgroup，如docker</li>
+</ul>
+<p>systemd-cgtop命令可用于按资源使用情况显示顶级控制组。</p>
+<p>可以通过命令 <code>$ ll /sys/fs/cgroup/</code> 查看控制组中有哪些资源被控制。</p>
+<p>Linux Kernel 4.19（2018年10月）引入了cgroup对OOMKiller实现的认识，该功能增加了将cgroup作为单个单元杀死的能力，从而保证了工作负载的完整性。</p>
+<h2 id="容器镜像">容器镜像<a href="#容器镜像" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>容器镜像是就是容器的快照。</p>
+<p>对于docker 镜像来说，他可以通过Dockerfile构建。</p>
+<p>镜像的实现原理是UnionFs（联合文件系统）：</p>
+<p>“Union文件系统（UnionFs）是一种分层、轻量级并且高性能的文件系统，他支持对文件系统的修改作为一次提交来一层层的叠加，同时可以将不同目录挂载到同一个虚拟文件系统下（ unite several directories into a single virtual filesystem”</p>
+<p>UnionFS采用写时复制（COW）的方法，层层叠加到文件系统。</p>
+<p>可以同时加载多个文件系统，但是联合加载会把他们文件系统叠加起来，合并复制被定向到一个特定的实际文件系统。这样可以使文件系统看起来可写，但实际上不允许写操作更改文件系统，这样最终的文件系统会包含所有底层的文件和目录。</p>
+<p>Docker在镜像层叠上也采用了COW技术。容器与镜像的区别就是：容器=镜像+可写层。</p>
+<h2 id="什么是docker">什么是Docker<a href="#什么是docker" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>Docker是容器技术的一种实现。</p>
+<p>Docker分为客户端和Daemon进程，Docker客户端是命令行工具，用于跟Daemon程序沟通并发送指令。</p>
+<p>Docker Daemon进程会与Containerd进程通讯并创建容器。</p>
+<p>而Containerd核心是通过runc进行创建容器。该部分属于容器运行时接口的内容。</p>
+<h3 id="与虚拟机的区别">与虚拟机的区别<a href="#与虚拟机的区别" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>传统虚拟机实现虚拟化的方法是，在裸金属上安装虚拟机管理程序，并且在各个虚拟机上需要安装操作系统，因此在虚拟上存在大量资源开销。</p>
+<p>而容器则像是操作系统的一个个进程，他们通过容器进行隔离。</p>
+<p>容器技术就像是一个「对在Linux上运行的相关进程进行分组，让每个进程都在独立的用户空间中运行」的技术。</p>
+<p>原则上，从安全性的角度来看，容器方法对执行环境的控制比虚拟服务器更容易受到攻击。</p>
+<p>除非操作系统或虚拟机监控程序中存在某些漏洞，否则虚拟服务器不太可能影响其他虚拟环境，但是由于容器之间的关系只是一个进程，因此它将影响其他容器（进程）。环境。</p>
+<p>参考文章：</p>
+<p><a href="https://qiita.com/tajima_taso/items/28938415846dcc2e83ff">原理原則で理解するDocker</a></p>
+<p><a href="https://www.infoq.com/articles/build-a-container-golang/">Build Your Own Container Using Less than 100 Lines of Go</a></p>
+<p><a href="https://en.wikipedia.org/wiki/Cgroups">cgroups</a></p>
+<p><a href="https://en.wikipedia.org/wiki/Linux_namespaces">Linux_namespaces</a></p>
+<p><a href="https://en.wikipedia.org/wiki/UnionFS">UnionFS</a></p>
+
+      </div></div>
+
+  
+  
+<div class="pagination">
+    <div class="pagination__title">
+        <span class="pagination__title-h">Read other posts</span>
+        <hr />
+    </div>
+    <div class="pagination__buttons">
+        
+        <span class="button previous">
+            <a href="http://hindung.cn/posts/post/">
+                <span class="button__icon">←</span>
+                <span class="button__text">Hello World</span>
+            </a>
+        </span>
+        
+        
+        <span class="button next">
+            <a href="http://hindung.cn/posts/22/">
+                <span class="button__text">Iptable规则初探</span>
+                <span class="button__icon">→</span>
+            </a>
+        </span>
+        
+    </div>
+</div>
+
+  
+
+  
+  
+
+  
+</div>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2022 Powered by <a href="http://gohugo.io">Hugo</a></span>
+    
+        <span>:: Theme made by <a href="https://twitter.com/panr">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+<script src="http://hindung.cn/assets/main.js"></script>
+<script src="http://hindung.cn/assets/prism.js"></script>
+
+
+  <script src="http://hindung.cn/assets/languageSelector.js"></script>
+
+
+
+
+
+
+  
+</div>
+
+</body>
+</html>

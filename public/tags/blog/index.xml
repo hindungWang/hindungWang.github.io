@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Blog on Hindung Blogs</title>
+    <link>http://hindung.cn/tags/blog/</link>
+    <description>Recent content in Blog on Hindung Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 18 Jul 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://hindung.cn/tags/blog/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Hello World</title>
+      <link>http://hindung.cn/posts/post/</link>
+      <pubDate>Mon, 18 Jul 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/post/</guid>
+      <description>欢迎来到hindung的部落格 Copy from @ 马克飞象 @(示例笔记本)[飞驰|人生|Markdown]
+马克飞象是一款专为印象笔记（Evernote）打造的Markdown编辑器，通过精心的设计与技术实现，配合印象笔记强大的存储和同步功能，带来前所未有的书写体验。特点概述：
+ 功能丰富 ：支持高亮代码块、LaTeX 公式、流程图，本地图片以及附件上传，甚至截图粘贴，工作学习好帮手； 得心应手 ：简洁高效的编辑器，提供桌面客户端以及离线Chrome App，支持移动端 Web； 深度整合 ：支持选择笔记本和添加标签，支持从印象笔记跳转编辑，轻松管理。   [TOC]
+Markdown简介  Markdown 是一种轻量级标记语言，它允许人们使用易读易写的纯文本格式编写文档，然后转换成格式丰富的HTML页面。 —— 维基百科
+ 正如您在阅读的这份文档，它使用简单的符号标识不同的标题，将某些文字标记为粗体或者斜体，创建一个链接或一个脚注1。下面列举了几个高级功能，更多语法请按Ctrl + /查看帮助。
+代码块 @requires_authorization def somefunc(param1=&amp;#39;&amp;#39;, param2=0):  &amp;#39;&amp;#39;&amp;#39;A docstring&amp;#39;&amp;#39;&amp;#39;  if param1 &amp;gt; param2: # interesting  print &amp;#39;Greater&amp;#39;  return (param2 - param1 + 1) or None class SomeClass:  pass &amp;gt;&amp;gt;&amp;gt; message = &amp;#39;&amp;#39;&amp;#39;interpreter ... prompt&amp;#39;&amp;#39;&amp;#39; LaTeX 公式 可以创建行内公式，例如 $\Gamma(n) = (n-1)!</description>
+      <content>&lt;h1 id=&#34;欢迎来到hindung的部落格-copy-from--马克飞象&#34;&gt;欢迎来到hindung的部落格 Copy from @ 马克飞象&lt;/h1&gt;
+&lt;p&gt;@(示例笔记本)[飞驰|人生|Markdown]&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;马克飞象&lt;/strong&gt;是一款专为印象笔记（Evernote）打造的Markdown编辑器，通过精心的设计与技术实现，配合印象笔记强大的存储和同步功能，带来前所未有的书写体验。特点概述：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;功能丰富&lt;/strong&gt; ：支持高亮代码块、&lt;em&gt;LaTeX&lt;/em&gt; 公式、流程图，本地图片以及附件上传，甚至截图粘贴，工作学习好帮手；&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;得心应手&lt;/strong&gt; ：简洁高效的编辑器，提供&lt;a href=&#34;http://maxiang.info/client_zh&#34;&gt;桌面客户端&lt;/a&gt;以及&lt;a href=&#34;https://chrome.google.com/webstore/detail/kidnkfckhbdkfgbicccmdggmpgogehop&#34;&gt;离线Chrome App&lt;/a&gt;，支持移动端 Web；&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;深度整合&lt;/strong&gt; ：支持选择笔记本和添加标签，支持从印象笔记跳转编辑，轻松管理。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;p&gt;[TOC]&lt;/p&gt;
+&lt;h2 id=&#34;markdown简介&#34;&gt;Markdown简介&lt;/h2&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Markdown 是一种轻量级标记语言，它允许人们使用易读易写的纯文本格式编写文档，然后转换成格式丰富的HTML页面。    —— &lt;a href=&#34;https://zh.wikipedia.org/wiki/Markdown&#34;&gt;维基百科&lt;/a&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;正如您在阅读的这份文档，它使用简单的符号标识不同的标题，将某些文字标记为&lt;strong&gt;粗体&lt;/strong&gt;或者&lt;em&gt;斜体&lt;/em&gt;，创建一个&lt;a href=&#34;http://www.example.com&#34;&gt;链接&lt;/a&gt;或一个脚注&lt;sup id=&#34;fnref:1&#34;&gt;&lt;a href=&#34;#fn:1&#34; class=&#34;footnote-ref&#34; role=&#34;doc-noteref&#34;&gt;1&lt;/a&gt;&lt;/sup&gt;。下面列举了几个高级功能，更多语法请按&lt;code&gt;Ctrl + /&lt;/code&gt;查看帮助。&lt;/p&gt;
+&lt;h3 id=&#34;代码块&#34;&gt;代码块&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;@requires_authorization&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;somefunc&lt;/span&gt;(param1&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#39;&lt;/span&gt;, param2&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;):
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#39;&amp;#39;A docstring&amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; param1 &lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&lt;/span&gt; param2: &lt;span style=&#34;color:#75715e&#34;&gt;# interesting&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        print &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Greater&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; (param2 &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt; param1 &lt;span style=&#34;color:#f92672&#34;&gt;+&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;) &lt;span style=&#34;color:#f92672&#34;&gt;or&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;SomeClass&lt;/span&gt;:
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#66d9ef&#34;&gt;pass&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;&amp;gt;&amp;gt;&amp;gt;&lt;/span&gt; message &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#39;&amp;#39;interpreter
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;... prompt&amp;#39;&amp;#39;&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;latex-公式&#34;&gt;LaTeX 公式&lt;/h3&gt;
+&lt;p&gt;可以创建行内公式，例如 $\Gamma(n) = (n-1)!\quad\forall n\in\mathbb N$。或者块级公式：&lt;/p&gt;
+&lt;p&gt;$$	x = \dfrac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$&lt;/p&gt;
+&lt;h3 id=&#34;表格&#34;&gt;表格&lt;/h3&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;Item&lt;/th&gt;
+&lt;th style=&#34;text-align:right&#34;&gt;Value&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;Qty&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Computer&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;1600 USD&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;5&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Phone&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;12 USD&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;12&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;Pipe&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;1 USD&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;234&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h3 id=&#34;流程图&#34;&gt;流程图&lt;/h3&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-flow&#34; data-lang=&#34;flow&#34;&gt;st=&amp;gt;start: Start
+e=&amp;gt;end
+op=&amp;gt;operation: My Operation
+cond=&amp;gt;condition: Yes or No?
+
+st-&amp;gt;op-&amp;gt;cond
+cond(yes)-&amp;gt;e
+cond(no)-&amp;gt;op
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;以及时序图:&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code class=&#34;language-sequence&#34; data-lang=&#34;sequence&#34;&gt;Alice-&amp;gt;Bob: Hello Bob, how are you?
+Note right of Bob: Bob thinks
+Bob--&amp;gt;Alice: I am good thanks!
+&lt;/code&gt;&lt;/pre&gt;&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;提示：&lt;strong&gt;想了解更多，请查看&lt;/strong&gt;流程图&lt;/strong&gt;&lt;a href=&#34;http://adrai.github.io/flowchart.js/&#34;&gt;语法&lt;/a&gt;以及&lt;strong&gt;时序图&lt;/strong&gt;&lt;a href=&#34;http://bramp.github.io/js-sequence-diagrams/&#34;&gt;语法&lt;/a&gt;。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3 id=&#34;复选框&#34;&gt;复选框&lt;/h3&gt;
+&lt;p&gt;使用 &lt;code&gt;- [ ]&lt;/code&gt; 和 &lt;code&gt;- [x]&lt;/code&gt; 语法可以创建复选框，实现 todo-list 等功能。例如：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;input checked=&#34;&#34; disabled=&#34;&#34; type=&#34;checkbox&#34;&gt; 已完成事项&lt;/li&gt;
+&lt;li&gt;&lt;input disabled=&#34;&#34; type=&#34;checkbox&#34;&gt; 待办事项1&lt;/li&gt;
+&lt;li&gt;&lt;input disabled=&#34;&#34; type=&#34;checkbox&#34;&gt; 待办事项2&lt;/li&gt;
+&lt;/ul&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;注意：&lt;strong&gt;目前支持尚不完全，在印象笔记中勾选复选框是无效、不能同步的，所以必须在&lt;/strong&gt;马克飞象&lt;/strong&gt;中修改 Markdown 原文才可生效。下个版本将会全面支持。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;印象笔记相关&#34;&gt;印象笔记相关&lt;/h2&gt;
+&lt;h3 id=&#34;笔记本和标签&#34;&gt;笔记本和标签&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;马克飞象&lt;/strong&gt;增加了&lt;code&gt;@(笔记本)[标签A|标签B]&lt;/code&gt;语法, 以选择笔记本和添加标签。 &lt;strong&gt;绑定账号后&lt;/strong&gt;， 输入&lt;code&gt;(&lt;/code&gt;自动会出现笔记本列表，请从中选择。&lt;/p&gt;
+&lt;h3 id=&#34;笔记标题&#34;&gt;笔记标题&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;马克飞象&lt;/strong&gt;会自动使用文档内出现的第一个标题作为笔记标题。例如本文，就是第一行的 &lt;code&gt;欢迎使用马克飞象&lt;/code&gt;。&lt;/p&gt;
+&lt;h3 id=&#34;快捷编辑&#34;&gt;快捷编辑&lt;/h3&gt;
+&lt;p&gt;保存在印象笔记中的笔记，右上角会有一个红色的编辑按钮，点击后会回到&lt;strong&gt;马克飞象&lt;/strong&gt;中打开并编辑该笔记。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;**注意：**目前用户在印象笔记中单方面做的任何修改，马克飞象是无法自动感知和更新的。所以请务必回到马克飞象编辑。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3 id=&#34;数据同步&#34;&gt;数据同步&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;马克飞象&lt;/strong&gt;通过&lt;strong&gt;将Markdown原文以隐藏内容保存在笔记中&lt;/strong&gt;的精妙设计，实现了对Markdown的存储和再次编辑。既解决了其他产品只是单向导出HTML的单薄，又规避了服务端存储Markdown带来的隐私安全问题。这样，服务端仅作为对印象笔记 API调用和数据转换之用。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;&lt;strong&gt;隐私声明：用户所有的笔记数据，均保存在印象笔记中。马克飞象不存储用户的任何笔记数据。&lt;/strong&gt;&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h3 id=&#34;离线存储&#34;&gt;离线存储&lt;/h3&gt;
+&lt;p&gt;&lt;strong&gt;马克飞象&lt;/strong&gt;使用浏览器离线存储将内容实时保存在本地，不必担心网络断掉或浏览器崩溃。为了节省空间和避免冲突，已同步至印象笔记并且不再修改的笔记将删除部分本地缓存，不过依然可以随时通过&lt;code&gt;文档管理&lt;/code&gt;打开。&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;**注意：**虽然浏览器存储大部分时候都比较可靠，但印象笔记作为专业云存储，更值得信赖。以防万一，&lt;strong&gt;请务必经常及时同步到印象笔记&lt;/strong&gt;。&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;h2 id=&#34;编辑器相关&#34;&gt;编辑器相关&lt;/h2&gt;
+&lt;h3 id=&#34;设置&#34;&gt;设置&lt;/h3&gt;
+&lt;p&gt;右侧系统菜单（快捷键&lt;code&gt;Ctrl + M&lt;/code&gt;）的&lt;code&gt;设置&lt;/code&gt;中，提供了界面字体、字号、自定义CSS、vim/emacs 键盘模式等高级选项。&lt;/p&gt;
+&lt;h3 id=&#34;快捷键&#34;&gt;快捷键&lt;/h3&gt;
+&lt;p&gt;帮助    &lt;code&gt;Ctrl + /&lt;/code&gt;
+同步文档    &lt;code&gt;Ctrl + S&lt;/code&gt;
+创建文档    &lt;code&gt;Ctrl + Alt + N&lt;/code&gt;
+最大化编辑器    &lt;code&gt;Ctrl + Enter&lt;/code&gt;
+预览文档 &lt;code&gt;Ctrl + Alt + Enter&lt;/code&gt;
+文档管理    &lt;code&gt;Ctrl + O&lt;/code&gt;
+系统菜单    &lt;code&gt;Ctrl + M&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;加粗    &lt;code&gt;Ctrl + B&lt;/code&gt;
+插入图片    &lt;code&gt;Ctrl + G&lt;/code&gt;
+插入链接    &lt;code&gt;Ctrl + L&lt;/code&gt;
+提升标题    &lt;code&gt;Ctrl + H&lt;/code&gt;&lt;/p&gt;
+&lt;h2 id=&#34;关于收费&#34;&gt;关于收费&lt;/h2&gt;
+&lt;p&gt;&lt;strong&gt;马克飞象&lt;/strong&gt;为新用户提供 10 天的试用期，试用期过后需要&lt;a href=&#34;maxiang.info/vip.html&#34;&gt;续费&lt;/a&gt;才能继续使用。未购买或者未及时续费，将不能同步新的笔记。之前保存过的笔记依然可以编辑。&lt;/p&gt;
+&lt;h2 id=&#34;反馈与建议&#34;&gt;反馈与建议&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;微博：&lt;a href=&#34;http://weibo.com/u/2788354117&#34;&gt;@马克飞象&lt;/a&gt;，&lt;a href=&#34;http://weibo.com/ggock&#34; title=&#34;开发者个人账号&#34;&gt;@GGock&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;邮箱：&lt;a href=&#34;mailto:hustgock@gmail.com&#34;&gt;hustgock@gmail.com&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;hr&gt;
+&lt;p&gt;感谢阅读这份帮助文档。请点击右上角，绑定印象笔记账号，开启全新的记录与分享体验吧。&lt;/p&gt;
+&lt;section class=&#34;footnotes&#34; role=&#34;doc-endnotes&#34;&gt;
+&lt;hr&gt;
+&lt;ol&gt;
+&lt;li id=&#34;fn:1&#34; role=&#34;doc-endnote&#34;&gt;
+&lt;p&gt;这是一个示例脚注。请查阅 &lt;a href=&#34;https://github.com/fletcher/MultiMarkdown/wiki/MultiMarkdown-Syntax-Guide#footnotes&#34;&gt;MultiMarkdown 文档&lt;/a&gt; 关于脚注的说明。 &lt;strong&gt;限制：&lt;/strong&gt; 印象笔记的笔记内容使用 &lt;a href=&#34;https://dev.yinxiang.com/doc/articles/enml.php&#34;&gt;ENML&lt;/a&gt; 格式，基于 HTML，但是不支持某些标签和属性，例如id，这就导致&lt;code&gt;脚注&lt;/code&gt;和&lt;code&gt;TOC&lt;/code&gt;无法正常点击。&amp;#160;&lt;a href=&#34;#fnref:1&#34; class=&#34;footnote-backref&#34; role=&#34;doc-backlink&#34;&gt;&amp;#x21a9;&amp;#xfe0e;&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/section&gt;
+</content>
+    </item>
+    
+    <item>
+      <title>部落格修改记录</title>
+      <link>http://hindung.cn/posts/0/</link>
+      <pubDate>Mon, 20 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/0/</guid>
+      <description>TODO List  部落格-侧边栏 下拉固定 已完成👌 2020.08.22 📅 🎉 大海 增加搜索功能 修改后端读取Markdown格式 已完成👌 2020.08.16 📅 🎉 修复前端点击回退时Panic的bug 已完成👌 2020.08.15📅 😁🎉 添加文章TOC功能 已完成 2020.09.20📅 使用GithubFlows实现CICD 已完成 2020.10.02📅 🎉 使用对象存储，实现媒体内容分离，提升网站加载速度 🚮🚮废弃，由于文章目前很少采用图片的形式，后续假如有需求如“添加照片墙”或添加个性页面，类Tumblr等再重启该需求。 深入了解Go内存模块，输出博客 深入了解Goroutine，输出博客 了解常用的Go内置包，总结输出博客 深入了解Go的context，并区分channel的使用场景，输出博客 深入了解锁，并发等，输出博客 深入了解golang runtime机制 深入了解部分K8s组件源码，了解informer机制，watch sync设计哲学，输出博客 备考CKA，总结输出博客 计划5月22号前考试完成 已获得CKA证书🎉🎉 2021.04.09📅 备考软考高级，总结输出博客 暂时放弃🚮 复习网络知识，输出博客 保持刷题，有必要输出题解以及形成类似于答题模板的代码片段，记录博客 💪💪持续进行。。。 文章TOC功能优化，类似掘金平台一样的效果 已完成👌 2021.04.09📅🎉 Kube Source Code Plan （docker和k8s源代码阅读计划） 文章数据持久化，例如文章阅读量、点赞量、有用统计等等，初步方案是gorm+sqlite3实现 eBPF相关知识的研究 。。。。  Change List 2020.07.20  框架形成 发布第一篇Blog  2020.07.23  修改了一些前端样式 增加博文  2020.</description>
+      <content>&lt;hr&gt;
+&lt;h2 id=&#34;todo-list&#34;&gt;TODO List&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;del&gt;部落格-侧边栏 下拉固定&lt;/del&gt;   已完成👌  2020.08.22 📅  🎉&lt;/li&gt;
+&lt;li&gt;大海 增加搜索功能&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;修改后端读取&lt;code&gt;Markdown&lt;/code&gt;格式&lt;/del&gt; 已完成👌  2020.08.16 📅  🎉&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;修复前端点击回退时&lt;code&gt;Panic&lt;/code&gt;的bug&lt;/del&gt; 已完成👌 2020.08.15📅 😁🎉&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;添加文章&lt;code&gt;TOC&lt;/code&gt;功能&lt;/del&gt;   已完成 2020.09.20📅&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;使用&lt;code&gt;GithubFlows&lt;/code&gt;实现CICD&lt;/del&gt;  已完成 2020.10.02📅 🎉&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;使用对象存储，实现媒体内容分离，提升网站加载速度&lt;/del&gt;  🚮🚮废弃，由于文章目前很少采用图片的形式，后续假如有需求如“添加照片墙”或添加个性页面，类&lt;code&gt;Tumblr&lt;/code&gt;等再重启该需求。&lt;/li&gt;
+&lt;li&gt;深入了解&lt;code&gt;Go&lt;/code&gt;内存模块，输出博客&lt;/li&gt;
+&lt;li&gt;深入了解&lt;code&gt;Goroutine&lt;/code&gt;，输出博客&lt;/li&gt;
+&lt;li&gt;了解常用的&lt;code&gt;Go&lt;/code&gt;内置包，总结输出博客&lt;/li&gt;
+&lt;li&gt;深入了解&lt;code&gt;Go&lt;/code&gt;的&lt;code&gt;context&lt;/code&gt;，并区分&lt;code&gt;channel&lt;/code&gt;的使用场景，输出博客&lt;/li&gt;
+&lt;li&gt;深入了解锁，并发等，输出博客&lt;/li&gt;
+&lt;li&gt;深入了解&lt;code&gt;golang runtime&lt;/code&gt;机制&lt;/li&gt;
+&lt;li&gt;深入了解部分&lt;code&gt;K8s&lt;/code&gt;组件源码，了解&lt;code&gt;informer&lt;/code&gt;机制，&lt;code&gt;watch sync&lt;/code&gt;设计哲学，输出博客&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;备考&lt;code&gt;CKA&lt;/code&gt;，总结输出博客 计划5月22号前考试完成&lt;/del&gt; 已获得&lt;code&gt;CKA&lt;/code&gt;证书🎉🎉 2021.04.09📅&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;备考软考高级，总结输出博客&lt;/del&gt; 暂时放弃🚮&lt;/li&gt;
+&lt;li&gt;复习网络知识，输出博客&lt;/li&gt;
+&lt;li&gt;保持刷题，有必要输出题解以及形成类似于答题模板的代码片段，记录博客  💪💪持续进行。。。&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;文章&lt;code&gt;TOC&lt;/code&gt;功能优化，类似掘金平台一样的效果&lt;/del&gt; 已完成👌 2021.04.09📅🎉&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Kube Source Code Plan&lt;/code&gt; （docker和k8s源代码阅读计划）&lt;/li&gt;
+&lt;li&gt;文章数据持久化，例如文章阅读量、点赞量、有用统计等等，初步方案是&lt;code&gt;gorm+sqlite3&lt;/code&gt;实现&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;eBPF&lt;/code&gt;相关知识的研究&lt;/li&gt;
+&lt;li&gt;。。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;change-list&#34;&gt;Change List&lt;/h2&gt;
+&lt;h3 id=&#34;20200720&#34;&gt;2020.07.20&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;框架形成&lt;/li&gt;
+&lt;li&gt;发布第一篇Blog&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200723&#34;&gt;2020.07.23&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;修改了一些前端样式&lt;/li&gt;
+&lt;li&gt;增加博文&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200807&#34;&gt;2020.08.07&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;添加SSL证书，启用https&lt;/li&gt;
+&lt;li&gt;部署方式改成dockers-compose&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200808&#34;&gt;2020.08.08&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;启用hindung.cn域名&lt;/li&gt;
+&lt;li&gt;修改前端样式&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200815&#34;&gt;2020.08.15&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;修改前端退回Panic&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200816&#34;&gt;2020.08.16&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;使用viper包读取markdown自定义配置&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200819&#34;&gt;2020.08.19&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;修改代码显示的格式，嘻嘻更好看了呢😄&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200822&#34;&gt;2020.08.22&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;左侧标签栏下拉时固定&lt;/li&gt;
+&lt;li&gt;添加两篇博文&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200920&#34;&gt;2020.09.20&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;文章TOC简单实现&lt;/li&gt;
+&lt;li&gt;添加若干篇博文&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20201002&#34;&gt;2020.10.02&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;GithubFlows实现CICD功能&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    </item>
+    
+  </channel>
+</rss>

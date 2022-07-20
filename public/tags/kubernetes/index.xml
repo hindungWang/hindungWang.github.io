@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Kubernetes on Hindung Blogs</title>
+    <link>http://hindung.cn/tags/kubernetes/</link>
+    <description>Recent content in Kubernetes on Hindung Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Tue, 19 Jul 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://hindung.cn/tags/kubernetes/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>K8s client-go初始化的几种方法</title>
+      <link>http://hindung.cn/posts/26/</link>
+      <pubDate>Tue, 19 Jul 2022 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/26/</guid>
+      <description>简介 client-go是k8s的一个基础组件库，是用于与API-Server交互的http客户端。K8s中大部分组件都使用了这个库实现与API-Server的通信功能。除了能够对资源对象的增删改查，还可Watch一个对象、升级成websocket链接等等功能。
+client-go支持四种客户端：RESTClient、ClientSet、DynamicClient、DiscoveryClient。这几个client可以相互转换。
+RESTClient RESTClient是最基础的客户端，相当于最底层的基础结构，可以直接通过RESTClient提供的RESTful方法如Get()、Put()、Post()、Delete()进行交互。
+一般而言，为了更为优雅的处理，需要进一步封装，通过Clientset封装RESTClient，然后再对外提供接口和服务。
+可以通过ClientSet客户端获得：
+client := cli.CoreV1().RESTClient().(*rest.RESTClient) ClientSet Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要制定Group、Version，然后根据Resource获取。
+clientset,err := kubernetes.NewForConfig(config) sa, err := clientset.CoreV1().ServiceAccounts(&amp;#34;kube-system&amp;#34;).Get(&amp;#34;kube-shell-admin&amp;#34;, metav1.GetOptions{}) DynamicClient Dynamic client是一种动态的client，它能处理kubernetes所有的资源。不同于clientset，dynamic client返回的对象是一个map[string]interface{}。
+dynamicClient,err := dynamic.NewForConfig(config) gvr := schema.GroupVersionResource{Version: &amp;#34;v1&amp;#34;,Resource: &amp;#34;pods&amp;#34;} unstructObjList,err := dynamicClient.Resource(gvr).Namespace(&amp;#34;dev&amp;#34;).List(context.TODO(),metav1.ListOptions{Limit: 100}) DiscoveryClient DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用户本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DisconversyClient实现的。
+discoveryClient,err := discovery.NewDiscoveryClientForConfig(config) APIGroup,APIResourceListSlice,err := discoveryClient.ServerGroupsAndResources() 这几种客户端的初始化都涉及到了入参config，即*rest.Config，这个是用于初始化客户端的所有配置信息。
+rest.Config初始化 创建client前，需要先从初始化*rest.Config，这个*rest.Config可以从集群外的kubeconfig文件或者集群内部的 tokenFile 和 CAFile初始化（通过ServiceAcount自动挂载）。有以下几种方式：
+集群外通过kubeconfig初始化 BuildConfigFromFlags方法从给定的url或者kubeconfig文件的文件夹路径去初始化config，如果不成功则会使用集群内部方法初始化config，如果不成功则返回一个默认的config。
+// &amp;#34;k8s.io/client-go/tools/clientcmd&amp;#34; config, err := clientcmd.BuildConfigFromFlags(&amp;#34;&amp;#34;, *kubeconfig) if err != nil {  panic(err.</description>
+      <content>&lt;h2 id=&#34;简介&#34;&gt;简介&lt;/h2&gt;
+&lt;p&gt;client-go是k8s的一个基础组件库，是用于与API-Server交互的http客户端。K8s中大部分组件都使用了这个库实现与API-Server的通信功能。除了能够对资源对象的增删改查，还可Watch一个对象、升级成websocket链接等等功能。&lt;/p&gt;
+&lt;p&gt;client-go支持四种客户端：&lt;code&gt;RESTClient&lt;/code&gt;、&lt;code&gt;ClientSet&lt;/code&gt;、&lt;code&gt;DynamicClient&lt;/code&gt;、&lt;code&gt;DiscoveryClient&lt;/code&gt;。这几个client可以相互转换。&lt;/p&gt;
+&lt;h3 id=&#34;restclient&#34;&gt;RESTClient&lt;/h3&gt;
+&lt;p&gt;RESTClient是最基础的客户端，相当于最底层的基础结构，可以直接通过RESTClient提供的RESTful方法如Get()、Put()、Post()、Delete()进行交互。&lt;/p&gt;
+&lt;p&gt;一般而言，为了更为优雅的处理，需要进一步封装，通过Clientset封装RESTClient，然后再对外提供接口和服务。&lt;/p&gt;
+&lt;p&gt;可以通过ClientSet客户端获得：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;client&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;cli&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;CoreV1&lt;/span&gt;().&lt;span style=&#34;color:#a6e22e&#34;&gt;RESTClient&lt;/span&gt;().(&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;rest&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;RESTClient&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;clientset&#34;&gt;ClientSet&lt;/h3&gt;
+&lt;p&gt;Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要制定Group、Version，然后根据Resource获取。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;clientset&lt;/span&gt;,&lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;kubernetes&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;NewForConfig&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;config&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;sa&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;clientset&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;CoreV1&lt;/span&gt;().&lt;span style=&#34;color:#a6e22e&#34;&gt;ServiceAccounts&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kube-system&amp;#34;&lt;/span&gt;).&lt;span style=&#34;color:#a6e22e&#34;&gt;Get&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kube-shell-admin&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;metav1&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;GetOptions&lt;/span&gt;{})
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;dynamicclient&#34;&gt;DynamicClient&lt;/h3&gt;
+&lt;p&gt;Dynamic client是一种动态的client，它能处理kubernetes所有的资源。不同于clientset，dynamic client返回的对象是一个&lt;code&gt;map[string]interface{}&lt;/code&gt;。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;dynamicClient&lt;/span&gt;,&lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;dynamic&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;NewForConfig&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;config&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;gvr&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;schema&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;GroupVersionResource&lt;/span&gt;{&lt;span style=&#34;color:#a6e22e&#34;&gt;Version&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;v1&amp;#34;&lt;/span&gt;,&lt;span style=&#34;color:#a6e22e&#34;&gt;Resource&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;pods&amp;#34;&lt;/span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;unstructObjList&lt;/span&gt;,&lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;dynamicClient&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Resource&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;gvr&lt;/span&gt;).&lt;span style=&#34;color:#a6e22e&#34;&gt;Namespace&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;dev&amp;#34;&lt;/span&gt;).&lt;span style=&#34;color:#a6e22e&#34;&gt;List&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;context&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;TODO&lt;/span&gt;(),&lt;span style=&#34;color:#a6e22e&#34;&gt;metav1&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ListOptions&lt;/span&gt;{&lt;span style=&#34;color:#a6e22e&#34;&gt;Limit&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;100&lt;/span&gt;})
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;discoveryclient&#34;&gt;DiscoveryClient&lt;/h3&gt;
+&lt;p&gt;DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用户本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DisconversyClient实现的。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;discoveryClient&lt;/span&gt;,&lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;discovery&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;NewDiscoveryClientForConfig&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;config&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;APIGroup&lt;/span&gt;,&lt;span style=&#34;color:#a6e22e&#34;&gt;APIResourceListSlice&lt;/span&gt;,&lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;discoveryClient&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ServerGroupsAndResources&lt;/span&gt;()
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;这几种客户端的初始化都涉及到了入参config，即&lt;code&gt;*rest.Config&lt;/code&gt;，这个是用于初始化客户端的所有配置信息。&lt;/p&gt;
+&lt;h2 id=&#34;restconfig初始化&#34;&gt;rest.Config初始化&lt;/h2&gt;
+&lt;p&gt;创建client前，需要先从初始化&lt;code&gt;*rest.Config&lt;/code&gt;，这个&lt;code&gt;*rest.Config&lt;/code&gt;可以从集群外的kubeconfig文件或者集群内部的 tokenFile 和 CAFile初始化（通过ServiceAcount自动挂载）。有以下几种方式：&lt;/p&gt;
+&lt;h3 id=&#34;集群外通过kubeconfig初始化&#34;&gt;集群外通过kubeconfig初始化&lt;/h3&gt;
+&lt;p&gt;BuildConfigFromFlags方法从给定的url或者kubeconfig文件的文件夹路径去初始化config，如果不成功则会使用集群内部方法初始化config，如果不成功则返回一个默认的config。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// &amp;#34;k8s.io/client-go/tools/clientcmd&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;config&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;clientcmd&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;BuildConfigFromFlags&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;, &lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;kubeconfig&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nil&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;   panic(&lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Error&lt;/span&gt;())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;内存中通过kubeconfig字符串或者byte数组初始化&#34;&gt;内存中通过kubeconfig字符串或者byte数组初始化&lt;/h3&gt;
+&lt;p&gt;通过读取kubeconfig文件内容进行初始化一个config：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;config&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;clientcmd&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;NewClientConfigFromBytes&lt;/span&gt;([]byte(string(&lt;span style=&#34;color:#a6e22e&#34;&gt;Data&lt;/span&gt;[&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;kubeConfig&amp;#34;&lt;/span&gt;])))
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nil&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;   &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nil&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;restConfig&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;config&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;ClientConfig&lt;/span&gt;()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nil&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;   &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nil&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;集群中通过serviceacount初始化&#34;&gt;集群中通过ServiceAcount初始化&lt;/h3&gt;
+&lt;p&gt;通过集群内部配置创建 k8s 配置信息，通过 KUBERNETES_SERVICE_HOST 和 KUBERNETES_SERVICE_PORT 环境变量方式获取。&lt;/p&gt;
+&lt;p&gt;若集群使用 TLS 认证方式，则默认读取集群内部 tokenFile 和 CAFile：&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;tokenFile = &amp;quot;/var/run/secrets/kubernetes.io/serviceaccount/token&amp;quot;&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;rootCAFile = &amp;quot;/var/run/secrets/kubernetes.io/serviceaccount/ca.crt&amp;quot;&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// &amp;#34;k8s.io/client-go/rest&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;config&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;rest&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;InClusterConfig&lt;/span&gt;()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nil&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;   panic(&lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Error&lt;/span&gt;())
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;operator-sdk中初始化config&#34;&gt;operator-sdk中初始化config&lt;/h3&gt;
+&lt;p&gt;一般来说，我们使用operator-sdk开发CRDs都会用到在本地调试或者在集群中调试的方法，在低版本operator-sdk中可以使用以下方法：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;// &amp;#34;sigs.k8s.io/controller-runtime/pkg/client/config&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;cfg&lt;/span&gt;, &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;:=&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;config&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;GetConfig&lt;/span&gt;()
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt; &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;nil&lt;/span&gt; {
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;log&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Error&lt;/span&gt;(&lt;span style=&#34;color:#a6e22e&#34;&gt;err&lt;/span&gt;, &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;#34;&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;   &lt;span style=&#34;color:#a6e22e&#34;&gt;os&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;Exit&lt;/span&gt;(&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt;)
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;}
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;该方法初始化kubeconfig的顺序是&amp;ndash;kubeconfig标签，KUBECONFIG环境变量，In-cluster集群内SA，$HOME/.kube/config文件。&lt;/p&gt;
+&lt;p&gt;在初始化的config的同时，设置了请求的QPS，默认20 QPS, 30 burst。&lt;/p&gt;
+&lt;p&gt;在某些高版本sdk中，可以用以下方法初始化：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-go&#34; data-lang=&#34;go&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;//ctrl &amp;#34;sigs.k8s.io/controller-runtime&amp;#34;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;ctrl&lt;/span&gt;.&lt;span style=&#34;color:#a6e22e&#34;&gt;GetConfigOrDie&lt;/span&gt;()
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;原理同上。&lt;/p&gt;
+</content>
+    </item>
+    
+    <item>
+      <title>Iptable规则初探</title>
+      <link>http://hindung.cn/posts/22/</link>
+      <pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/22/</guid>
+      <description>iptable是啥 参考维基百科：iptables是运行在用户空间的应用软件，通过控制Linux内核netfilter模块，来管理网络数据包的处理和转发。
+iptables规则 iptables主要有raw、mangle、filter、nat这几个表，对应几个规则：PREROUTING 、INPUT 、FORWARD 、OUTPUT、POSTROUTING 。
+NAT 包括 SNAT （源地址转换）和 DNAT （目的地址转换）。两者的区别在于做地址转换是在路由前还是路由后，SNAT和DNAT总是成对出现的。
+对应的含义可以简单理解为：
+   表名 用途 包含的规则     表名 用途 包含的规则   raw 关闭nat表上启用的连接追踪机制 PREROUTING，OUTPUT   mangle 拆解报文，做出修改，并重新封装的功能 PREROUTING，INPUT，FORWARD，OUTPUT，POSTROUTING   nat 网络地址转换功能 PREROUTING，OUTPUT，POSTROUTING（centos7中还有INPUT，centos6中没有）   filter 负责过滤功能，防火墙 INPUT，FORWARD，OUTPUT    规则的意义：
+   规则 意义     PREROUTING 报文刚刚到达主机，还没经过路由   INPUT 报文已经经过路由，判断是发送给本机的报文   FORWARD 报文已经经过路由，判断不是本机的报文，如果内核开启转发功能则转发出去，否则丢弃   OUTPUT 报文从应用发出报文已经经过路由   POSTROUTING 报文从应用发出已经经过路由，准备从网卡发出    数据从网络到达主机，再从主机到达应用的过程，以集群中traefik部署的Ingress为例，可以理解为： iptable相关命令 查看iptables规则：</description>
+      <content>&lt;h2 id=&#34;iptable是啥&#34;&gt;iptable是啥&lt;/h2&gt;
+&lt;p&gt;参考&lt;a href=&#34;https://zh.wikipedia.org/wiki/Iptables&#34;&gt;维基百科&lt;/a&gt;：iptables是运行在用户空间的应用软件，通过控制Linux内核netfilter模块，来管理网络数据包的处理和转发。&lt;/p&gt;
+&lt;h2 id=&#34;iptables规则&#34;&gt;iptables规则&lt;/h2&gt;
+&lt;p&gt;iptables主要有raw、mangle、filter、nat这几个表，对应几个规则：PREROUTING 、INPUT 、FORWARD 、OUTPUT、POSTROUTING 。&lt;/p&gt;
+&lt;p&gt;NAT 包括 SNAT （源地址转换）和 DNAT （目的地址转换）。两者的区别在于做地址转换是在路由前还是路由后，SNAT和DNAT总是成对出现的。&lt;/p&gt;
+&lt;p&gt;对应的含义可以简单理解为：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;表名&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;用途&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;包含的规则&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;表名&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;用途&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;包含的规则&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;raw&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;关闭nat表上启用的连接追踪机制&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;PREROUTING，OUTPUT&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;mangle&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;拆解报文，做出修改，并重新封装的功能&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;PREROUTING，INPUT，FORWARD，OUTPUT，POSTROUTING&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;nat&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;网络地址转换功能&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;PREROUTING，OUTPUT，POSTROUTING（centos7中还有INPUT，centos6中没有）&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;filter&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;负责过滤功能，防火墙&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;INPUT，FORWARD，OUTPUT&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;规则的意义：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;规则&lt;/th&gt;
+&lt;th style=&#34;text-align:left&#34;&gt;意义&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;PREROUTING&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;报文刚刚到达主机，还没经过路由&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;INPUT&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;报文已经经过路由，判断是发送给本机的报文&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;FORWARD&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;报文已经经过路由，判断不是本机的报文，如果内核开启转发功能则转发出去，否则丢弃&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;OUTPUT&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;报文从应用发出报文已经经过路由&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;POSTROUTING&lt;/td&gt;
+&lt;td style=&#34;text-align:left&#34;&gt;报文从应用发出已经经过路由，准备从网卡发出&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;数据从网络到达主机，再从主机到达应用的过程，以集群中traefik部署的Ingress为例，可以理解为：
+&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/002T8chSgy1gr2r3bnr1bj60dd0b5my602.jpg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;h2 id=&#34;iptable相关命令&#34;&gt;iptable相关命令&lt;/h2&gt;
+&lt;p&gt;查看iptables规则：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;iptables -L, --list &lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;chain&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt; 列出链 chain 上面的所有规则，如果没有指定链，列出表上所有链的所有规则
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;参考&lt;a href=&#34;https://wangchujiang.com/linux-command/c/iptables.html&#34;&gt;https://wangchujiang.com/linux-command/c/iptables.html&lt;/a&gt;&lt;/p&gt;
+</content>
+    </item>
+    
+    <item>
+      <title>K8s之calico网络插件东西南北流量</title>
+      <link>http://hindung.cn/posts/25/</link>
+      <pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/25/</guid>
+      <description>前言 环境采用了calico＋ebgp/ibgp＋交换机组成了一个扁平化网络，使用calico宣告POD IP，做到了POD与其他虚拟机和开发网落处在同一个平面的效果。
+具体组网信息可以参考calico网站。
+东西流量 Pod到Service流量 一般的应用大多数是以Pod到Service的形式去请求服务，从而出现东西方向的流量，目前集群的网络采用Calico作为网络插件，POD的IP由Calico进行统一分配，Service IP由集群K8s分配，并且配合Kube-proxy操作Iptable创建对应的规则。
+首先，创建一个POD时，calico会同时在POD对应的主机生成对应的calico网桥calixxx，并且分配IP，并且通过calico组件路由宣告出去：
+发送到calixxx的流量会转发至POD的eth0网卡，而从POD发出来的报文则是通过ARP 代理的方式转发至calixxx网桥。
+而当一个Service创建之后，会根据选择器与POD标签配对，对应上POD IP并且被Kube-Proxy监控到，K8s会随即生成对应的DNS记录service.namespace.local.cluster:serviceclusterIP，然后在Iptables添加相应的规则记录，如(10.88.145.173为ServiceIP，10.90.1.127为POD IP)：
+一般的，在集群中从POD访问Service，再从Service到达对应的POD流程为（正向请求用①表示，回复报文用(1)表示）：
+下面梳理一下请求的主要过程：
+ ①POD向domian发送请求 ②由于没有IP，POD先向CoreDNS查询域名对应的IP地址 ③CoreDNS返回对应的Service IP ④POD拿到IP之后，向该IP发送数据，对应的报文从calixxx网桥出来 ⑤从calixxx网桥出来后，进入Host Iptables链，进入IP tables之后，进入对应的链路如上图规则，最后得到Service对应的POD IP，并转发到此IP，此时会经过路由，分为两种情况，目标IP在同一节点上（路由表有记录）或者不在同一节点上（路由表无记录） ⑥如果在同一节点上，根据路由表则会路由到目标IP对应的calixxx网桥 ⑦如果不在同一节点上，则根据路由表规则，会从bond1口出去 ⑧到达交换机，交换机有对应的路由条目，则会走到（3）和（4）过程进入Host，并且走到Iptables，通过路由，转到⑥过程 ⑨到达calixxx网桥之后会转发至POD eth0网卡，到达POD  应答过程：
+ (1)POD以传过来的源POD IP作为目的IP从eth0发出，通过ARP代理转发到calixxx网桥 (2)达到calixxx网桥之后会经过POD所在的节点的Host路由表，同样分为两种情况 (3)如果不在同一节点上，则会走bond1到交换机 (4)再从交换机到达对应的节点，之后便到达过程（5） (5)经过路由表，到达目的IP 对应calixxx网桥 (6)再从网桥到达POD eth0  Pod到Pod流量 由于网络平面化，POD IP可以直通，所以会存在POD相互访问的场景，如隐私号应用等：
+主要过程：
+ ①POD以目标POD的IP作为目的IP，从eth0发出，到达calixxx ②到达calixxx网桥之后会进入Host内核Iptables链到达PREROUTING（路由前） ③之后进入路由模块进行路由，路由判断该报文是否是发给本机的，如果是则往上收将进入INPUT链，此过程不在讨论范围，由于报文目的地址是POD IP，所以会转发出去 ④到达FORWARD链后进入POSTROUTING（路由后） ⑤进入POSTROUTING会进行一些地址转换等操作后发往对应网卡或者网桥，如果路由结果表明该报文要通过网卡Bond1出去则会走到⑧过程，否则会走到⑥ ⑥表明目的IP在本机网桥上（即POD在同一节点上），则进入目的地址对应的calixxx网桥 ⑦再转发至POD eth0网卡到达目的地 ⑧报文从内核出来进入网卡，准备向外发出 ⑨到达交换机，由于交换机有所有POD的路由信息，所以他能正确处理经过的报文 ⑩经过路由后到达POD所在节点的入口网卡Bond1 11.到达网卡之后会进入内核Linux协议栈进行Iptables规则链匹配（可能的路径为到③-&amp;gt;④-&amp;gt;⑤-&amp;gt;⑥-&amp;gt;⑦到达对应的POD）  回复过程：
+ (1)到达目的POD之后，应用根据源IP进行回应，转发至calixxx网桥 (2)到达网桥之后进入Linux协议栈，其过程会从③-&amp;gt;④-&amp;gt;⑤-&amp;gt;（3）到达源POD (3)到达源POD对应的网桥 (4)从网桥转发至POD eth0网卡，此时会经过Linux协议栈，最终报文从内核到用户空间送到应用。  南北流量 外部流量从Ingress(越过service)到Pod client客户端请求POD应用，首先要创建对应的Service，并且创建Ingress路由。集群中采用Traefik作为Ingres Controller，以DeamonSet的方式部署，并且开启hostNetwork模式，与主机公用网络协议栈。并且接管所有到达主机的80端口、8080端口的报文。Traefik的原理主要是通过监控APIserver来监控Service、POD的变化，并维护路由，而且接管80端口的流量，转发到对应路由的POD IP上。</description>
+      <content>&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
+&lt;p&gt;环境采用了calico＋ebgp/ibgp＋交换机组成了一个扁平化网络，使用calico宣告POD IP，做到了POD与其他虚拟机和开发网落处在同一个平面的效果。&lt;/p&gt;
+&lt;p&gt;具体组网信息可以参考calico网站。&lt;/p&gt;
+&lt;h1 id=&#34;东西流量&#34;&gt;东西流量&lt;/h1&gt;
+&lt;h2 id=&#34;pod到service流量&#34;&gt;Pod到Service流量&lt;/h2&gt;
+&lt;p&gt;一般的应用大多数是以Pod到Service的形式去请求服务，从而出现东西方向的流量，目前集群的网络采用Calico作为网络插件，POD的IP由Calico进行统一分配，Service IP由集群K8s分配，并且配合Kube-proxy操作Iptable创建对应的规则。&lt;/p&gt;
+&lt;p&gt;首先，创建一个POD时，calico会同时在POD对应的主机生成对应的calico网桥calixxx，并且分配IP，并且通过calico组件路由宣告出去：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/image2020-6-3_19-46-50.png&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/image2020-6-3_19-46-5.png&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;发送到calixxx的流量会转发至POD的eth0网卡，而从POD发出来的报文则是通过ARP 代理的方式转发至calixxx网桥。&lt;/p&gt;
+&lt;p&gt;而当一个Service创建之后，会根据选择器与POD标签配对，对应上POD IP并且被Kube-Proxy监控到，K8s会随即生成对应的DNS记录service.namespace.local.cluster:serviceclusterIP，然后在Iptables添加相应的规则记录，如(10.88.145.173为ServiceIP，10.90.1.127为POD IP)：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/image2020-6-3_19-55-42.png&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;一般的，在集群中从POD访问Service，再从Service到达对应的POD流程为（正向请求用①表示，回复报文用(1)表示）：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/%E4%B8%9C%E8%A5%BF-%E5%8D%97%E5%8C%97%E6%B5%81%E9%87%8F-%E7%AC%AC%203%20%E9%A1%B5.jpg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;下面梳理一下请求的主要过程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;①POD向domian发送请求&lt;/li&gt;
+&lt;li&gt;②由于没有IP，POD先向CoreDNS查询域名对应的IP地址&lt;/li&gt;
+&lt;li&gt;③CoreDNS返回对应的Service IP&lt;/li&gt;
+&lt;li&gt;④POD拿到IP之后，向该IP发送数据，对应的报文从calixxx网桥出来&lt;/li&gt;
+&lt;li&gt;⑤从calixxx网桥出来后，进入Host Iptables链，进入IP tables之后，进入对应的链路如上图规则，最后得到Service对应的POD IP，并转发到此IP，此时会经过路由，分为两种情况，目标IP在同一节点上（路由表有记录）或者不在同一节点上（路由表无记录）&lt;/li&gt;
+&lt;li&gt;⑥如果在同一节点上，根据路由表则会路由到目标IP对应的calixxx网桥&lt;/li&gt;
+&lt;li&gt;⑦如果不在同一节点上，则根据路由表规则，会从bond1口出去&lt;/li&gt;
+&lt;li&gt;⑧到达交换机，交换机有对应的路由条目，则会走到（3）和（4）过程进入Host，并且走到Iptables，通过路由，转到⑥过程&lt;/li&gt;
+&lt;li&gt;⑨到达calixxx网桥之后会转发至POD eth0网卡，到达POD&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;应答过程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;(1)POD以传过来的源POD IP作为目的IP从eth0发出，通过ARP代理转发到calixxx网桥&lt;/li&gt;
+&lt;li&gt;(2)达到calixxx网桥之后会经过POD所在的节点的Host路由表，同样分为两种情况&lt;/li&gt;
+&lt;li&gt;(3)如果不在同一节点上，则会走bond1到交换机&lt;/li&gt;
+&lt;li&gt;(4)再从交换机到达对应的节点，之后便到达过程（5）&lt;/li&gt;
+&lt;li&gt;(5)经过路由表，到达目的IP 对应calixxx网桥&lt;/li&gt;
+&lt;li&gt;(6)再从网桥到达POD eth0&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;pod到pod流量&#34;&gt;Pod到Pod流量&lt;/h2&gt;
+&lt;p&gt;由于网络平面化，POD IP可以直通，所以会存在POD相互访问的场景，如隐私号应用等：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/%E4%B8%9C%E8%A5%BF-%E5%8D%97%E5%8C%97%E6%B5%81%E9%87%8F-%E7%AC%AC%206%20%E9%A1%B5.jpg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;主要过程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;①POD以目标POD的IP作为目的IP，从eth0发出，到达calixxx&lt;/li&gt;
+&lt;li&gt;②到达calixxx网桥之后会进入Host内核Iptables链到达PREROUTING（路由前）&lt;/li&gt;
+&lt;li&gt;③之后进入路由模块进行路由，路由判断该报文是否是发给本机的，如果是则往上收将进入INPUT链，此过程不在讨论范围，由于报文目的地址是POD IP，所以会转发出去&lt;/li&gt;
+&lt;li&gt;④到达FORWARD链后进入POSTROUTING（路由后）&lt;/li&gt;
+&lt;li&gt;⑤进入POSTROUTING会进行一些地址转换等操作后发往对应网卡或者网桥，如果路由结果表明该报文要通过网卡Bond1出去则会走到⑧过程，否则会走到⑥&lt;/li&gt;
+&lt;li&gt;⑥表明目的IP在本机网桥上（即POD在同一节点上），则进入目的地址对应的calixxx网桥&lt;/li&gt;
+&lt;li&gt;⑦再转发至POD eth0网卡到达目的地&lt;/li&gt;
+&lt;li&gt;⑧报文从内核出来进入网卡，准备向外发出&lt;/li&gt;
+&lt;li&gt;⑨到达交换机，由于交换机有所有POD的路由信息，所以他能正确处理经过的报文&lt;/li&gt;
+&lt;li&gt;⑩经过路由后到达POD所在节点的入口网卡Bond1&lt;/li&gt;
+&lt;li&gt;11.到达网卡之后会进入内核Linux协议栈进行Iptables规则链匹配（可能的路径为到③-&amp;gt;④-&amp;gt;⑤-&amp;gt;⑥-&amp;gt;⑦到达对应的POD）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;回复过程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;(1)到达目的POD之后，应用根据源IP进行回应，转发至calixxx网桥&lt;/li&gt;
+&lt;li&gt;(2)到达网桥之后进入Linux协议栈，其过程会从③-&amp;gt;④-&amp;gt;⑤-&amp;gt;（3）到达源POD&lt;/li&gt;
+&lt;li&gt;(3)到达源POD对应的网桥&lt;/li&gt;
+&lt;li&gt;(4)从网桥转发至POD eth0网卡，此时会经过Linux协议栈，最终报文从内核到用户空间送到应用。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;南北流量&#34;&gt;南北流量&lt;/h1&gt;
+&lt;h2 id=&#34;外部流量从ingress越过service到pod&#34;&gt;外部流量从Ingress(越过service)到Pod&lt;/h2&gt;
+&lt;p&gt;client客户端请求POD应用，首先要创建对应的Service，并且创建Ingress路由。集群中采用Traefik作为Ingres Controller，以DeamonSet的方式部署，并且开启hostNetwork模式，与主机公用网络协议栈。并且接管所有到达主机的80端口、8080端口的报文。Traefik的原理主要是通过监控APIserver来监控Service、POD的变化，并维护路由，而且接管80端口的流量，转发到对应路由的POD IP上。&lt;/p&gt;
+&lt;p&gt;具体过程为：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/%E4%B8%9C%E8%A5%BF-%E5%8D%97%E5%8C%97%E6%B5%81%E9%87%8F-%E7%AC%AC%204%20%E9%A1%B5%20.jpg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;简单解释一下过程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;①（客户端首先向DNS服务器获取域名对应的IP）向目标IP发送请求，到达交换机&lt;/li&gt;
+&lt;li&gt;②经过路由之后定向到目标IP所在的主机，由于设置了HA-proxy，请求会先到VIP对应的网卡bond1:1&lt;/li&gt;
+&lt;li&gt;③从外联口进来之后进入内核程序处理&lt;/li&gt;
+&lt;li&gt;④到达路由模块，判断报文是发送给本机的，则往上收&lt;/li&gt;
+&lt;li&gt;⑤到达INPUT链，之后会根据端口号，发至对应的应用程序，由于是HA-proxy提供的代理，从而进入HA程序，程序代理到Hots3 IP上，所以从POSTROUTING出来之后会到达(15)过程，在到达⑤，往上到达Traefik程序&lt;/li&gt;
+&lt;li&gt;⑥Traefik接管80端口的流量，进行路由匹配之后（拿到请求对应的POD IP），代理至POD IP&lt;/li&gt;
+&lt;li&gt;⑦进入路由&lt;/li&gt;
+&lt;li&gt;⑧进入OUTPUT链&lt;/li&gt;
+&lt;li&gt;⑨进入POSTROUTING，通过路由之后，如果目的IP地址位于同一节点，则会路由到calixxx网桥，否则会走到(12)过程，到达交换机路由之后达到对应主机上(12-&amp;gt;13-&amp;gt;14-&amp;gt;15-&amp;gt;④-&amp;gt;FORWARD-&amp;gt;⑨-&amp;gt;⑩)&lt;/li&gt;
+&lt;li&gt;⑩到达calixxx网桥，然后到达POD eth0网卡&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;回复过程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;(1)到达calixxx网桥&lt;/li&gt;
+&lt;li&gt;(2)进入主机网络栈，返回Traefik代理：&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/image2020-6-5_12-31-50.png&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;之后从Traefik即主机网络栈出来到达外联口&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;(3)从外联口出来（SNAT），到达交换机&lt;/li&gt;
+&lt;li&gt;(4)到达客户端（DNAT）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;外部流量直接到pod&#34;&gt;外部流量直接到Pod&lt;/h2&gt;
+&lt;p&gt;由于POD IP直接通过calico BGP路由宣告出去，因此POD网段与虚机、本地电脑处在同一平面，请求POD IP与请求虚拟机情况一致：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/%E4%B8%9C%E8%A5%BF-%E5%8D%97%E5%8C%97%E6%B5%81%E9%87%8F-%E7%AC%AC%205%20%E9%A1%B5.jpg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;具体流程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;①客户端请求到达交换机&lt;/li&gt;
+&lt;li&gt;②交换机路由到目的地址对应的主机上&lt;/li&gt;
+&lt;li&gt;③进入主机网络栈进行路由（简画）&lt;/li&gt;
+&lt;li&gt;④可能会经过此过程（就是目标POD不在该节点上）&lt;/li&gt;
+&lt;li&gt;⑤重新到达交换机&lt;/li&gt;
+&lt;li&gt;⑥再次路由到达目标节点&lt;/li&gt;
+&lt;li&gt;⑦进入主机网络栈&lt;/li&gt;
+&lt;li&gt;⑧路由到calixxx网桥&lt;/li&gt;
+&lt;li&gt;⑨到达POD eth0网卡&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;回复过程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;(1)发送至calixxx网桥&lt;/li&gt;
+&lt;li&gt;(2)进入到主机网络栈，进行路由&lt;/li&gt;
+&lt;li&gt;(3)发送至外联口bond1&lt;/li&gt;
+&lt;li&gt;(4)到达交换机，路由&lt;/li&gt;
+&lt;li&gt;(5)到达客户端（可能会经过NAT）&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;外部流量直接访问serviceip特性&#34;&gt;外部流量直接访问ServiceIP（特性）&lt;/h2&gt;
+&lt;p&gt;将Service IP通过calico BGP协议路由宣告出去，从而实现了Service IP可以直通的场景：&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/%E4%B8%9C%E8%A5%BF-%E5%8D%97%E5%8C%97%E6%B5%81%E9%87%8F-%E7%AC%AC%207%20%E9%A1%B5.jpg&#34; alt=&#34;&#34;&gt;&lt;/p&gt;
+&lt;p&gt;具体流程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;①被路由宣告的ServiceIP会出现在交换机路由表条目上，请求到达交换机&lt;/li&gt;
+&lt;li&gt;②交换机进行路由，到达目的IP所在的对应节点（进群内任何一个节点）&lt;/li&gt;
+&lt;li&gt;③从网卡接收报文，经过网络栈路由到达calixxx网桥（与访问service过程一至）&lt;/li&gt;
+&lt;li&gt;④进入calixxx网桥&lt;/li&gt;
+&lt;li&gt;⑤进入eth0&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;回复过程：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;(1)从应用发出到达calixxx&lt;/li&gt;
+&lt;li&gt;(2)到达主机网络栈&lt;/li&gt;
+&lt;li&gt;(3)到达外联口网卡&lt;/li&gt;
+&lt;li&gt;(4)到达交换机&lt;/li&gt;
+&lt;li&gt;(5)到达客户端&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id=&#34;总结&#34;&gt;总结&lt;/h1&gt;
+&lt;p&gt;集群目前采用Iptables部署方式，依赖Iptables规则。如果集群Service过多会导致经常对Iptables频繁操作，并且如果表变得很大，更新表就会变得困难。&lt;/p&gt;
+&lt;p&gt;因此Iptables这块将来可能会遇到瓶颈。&lt;/p&gt;
+&lt;p&gt;calico网桥与容器网桥这段映射的具体实现是怎样，包括性能如何等还没有深入了解。&lt;/p&gt;
+&lt;p&gt;参考：&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://docs.projectcalico.org/reference/architecture/design/l2-interconnect-fabric&#34;&gt;l2-interconnect-fabric&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://qiankunli.github.io/2018/02/04/calico.html&#34;&gt;calico学习&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.lijiaocn.com/%E9%A1%B9%E7%9B%AE/2017/04/11/calico-usage.html#calico&#34;&gt;Calico网络的原理、组网方式与使用&lt;/a&gt;&lt;/p&gt;
+</content>
+    </item>
+    
+    <item>
+      <title>Kubectl命令行</title>
+      <link>http://hindung.cn/posts/24/</link>
+      <pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/24/</guid>
+      <description>注：基于Kubenetes 版本：Server v1.17.2、Client v1.17.9
+kubectl命令行全景图 kubectl🔗
+有趣的kubectl命令 获取正在Running的Pod kubectl get pods -A --field-selector=status.phase==Running NAMESPACE NAME READY STATUS RESTARTS AGE kelu cka2-75dbf7c54-gm4r4 1/1 Running 0 23h kube-system calico-kube-controllers-ccf66db4-cpvqp 1/1 Running 0 3d20h kube-system calico-node-8d4th 1/1 Running 0 3d2h kube-system calico-node-szmzb 1/1 Running 0 3d20h 查看节点内存容量 kubectl get no -o json | jq -r &amp;#39;.items | sort_by(.status.capacity.memory)[]|[.metadata.name,.status.capacity.memory]| @tsv&amp;#39; rq-bjptest01 3848040Ki rqinterntest2 7986060Ki 查看各个节点上的Pod数量 kubectl get po -o json --all-namespaces | jq &amp;#39;.items | group_by(.</description>
+      <content>&lt;p&gt;&lt;em&gt;注：基于Kubenetes 版本：Server v1.17.2、Client v1.17.9&lt;/em&gt;&lt;/p&gt;
+&lt;h2 id=&#34;kubectl命令行全景图&#34;&gt;kubectl命令行全景图&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://hindung.oss-cn-beijing.aliyuncs.com/img/kubectl.png&#34;&gt;kubectl🔗&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;有趣的kubectl命令&#34;&gt;有趣的kubectl命令&lt;/h2&gt;
+&lt;h3 id=&#34;获取正在running的pod&#34;&gt;获取正在Running的Pod&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get pods -A --field-selector&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;status.phase&lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt;Running
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;NAMESPACE     NAME                                     READY   STATUS    RESTARTS   AGE
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kelu          cka2-75dbf7c54-gm4r4                     1/1     Running   &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;          23h
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system   calico-kube-controllers-ccf66db4-cpvqp   1/1     Running   &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;          3d20h
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system   calico-node-8d4th                        1/1     Running   &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;          3d2h
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system   calico-node-szmzb                        1/1     Running   &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;          3d20h
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;查看节点内存容量&#34;&gt;查看节点内存容量&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get no -o json |    jq -r &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;.items | sort_by(.status.capacity.memory)[]|[.metadata.name,.status.capacity.memory]| @tsv&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;rq-bjptest01    3848040Ki
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;rqinterntest2   7986060Ki
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;查看各个节点上的pod数量&#34;&gt;查看各个节点上的Pod数量&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get po -o json --all-namespaces |  jq &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;.items | group_by(.spec.nodeName) | map({&amp;#34;nodeName&amp;#34;: .[0].spec.nodeName, &amp;#34;count&amp;#34;: length}) | sort_by(.count)&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;nodeName&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;rq-bjptest01&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;count&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;nodeName&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;rqinterntest2&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;count&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#ae81ff&#34;&gt;8&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get pods --all-namespaces -o json | jq &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;.items[] | .spec.nodeName&amp;#39;&lt;/span&gt; -r | sort | uniq -c
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;     &lt;span style=&#34;color:#ae81ff&#34;&gt;17&lt;/span&gt; rqkubedev03
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;     &lt;span style=&#34;color:#ae81ff&#34;&gt;30&lt;/span&gt; rqkubedev04
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;     &lt;span style=&#34;color:#ae81ff&#34;&gt;23&lt;/span&gt; rqkubedev05
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;查看pod以及镜像&#34;&gt;查看POD以及镜像&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get pods -o custom-columns&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;NAME:metadata.name,IMAGES:spec.containers[*].image&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;NAME                              IMAGES
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;details-v1-5974b67c8-gqz94        docker.io/istio/examples-bookinfo-details-v1:1.16.2,docker.io/istio/proxyv2:1.7.2
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;gitea-5bb577b964-w64gg            harbor.caih.local/gitea/gitea:1.10.1
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;productpage-v1-64794f5db4-hw2fl   docker.io/istio/examples-bookinfo-productpage-v1:1.16.2,docker.io/istio/proxyv2:1.7.2
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;查看各个节点上的pod&#34;&gt;查看各个节点上的POD&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get pods --all-namespaces -o json | jq &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;.items | map({podName: .metadata.name, nodeName: .spec.nodeName}) | group_by(.nodeName) | map({nodeName: .[0].nodeName, pods: map(.podName)})&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;  &lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;nodeName&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;rqkubedev03&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;pods&amp;#34;&lt;/span&gt;: &lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;123-84654b5d8f-sm2dt&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;reviews-v2-6cb6ccd848-ndsqq&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;fleet-agent-6cc4bd5c67-b877w&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;jaeger-es-index-cleaner-1602806100-5ngzz&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;jaeger-es-index-cleaner-1602806100-b47gk&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;jaeger-es-index-cleaner-1602806100-kkx2z&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;jaeger-es-index-cleaner-1602806100-rg6z8&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;jaeger-es-index-cleaner-1602806100-s47n4&amp;#34;&lt;/span&gt;,
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;查看pod占用的内存和cpu并按内存或者cpu排序&#34;&gt;查看Pod占用的内存和CPU并按内存或者CPU排序&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# 内存&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl top pods -A | sort --reverse --key &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt; --numeric
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloud              jenkinsm-6fc5d7fc46-2tl6q                            29m          1995Mi
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;istio-system           prometheus-788c945c9c-mdrjf                          97m          1424Mi
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            kube-apiserver-rqkubedev04                           149m         957Mi
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            kube-apiserver-rqkubedev03                           69m          476Mi
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloud              jenkinsslaveswarm-6c6f5d8d9b-8ns5w                   2m           464Mi
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# CPU&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl top pods -A | sort --reverse --key &lt;span style=&#34;color:#ae81ff&#34;&gt;3&lt;/span&gt; --numeric
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            kube-apiserver-rqkubedev04                           150m         964Mi
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;istio-system           prometheus-788c945c9c-mdrjf                          89m          1426Mi
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            kube-apiserver-rqkubedev03                           42m          532Mi
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            calico-node-6n65m                                    42m          46Mi
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            calico-node-fg6tk                                    34m          49Mi
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;获取重启次数降序排序的pod&#34;&gt;获取重启次数降序排序的Pod&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get pods -A --sort-by&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;.status.containerStatuses&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;0&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;.restartCount | tac
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            kube-scheduler-rqkubedev03                           0/1     CrashLoopBackOff   &lt;span style=&#34;color:#ae81ff&#34;&gt;593&lt;/span&gt;        2d2h
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;traefik-v2             traefik-gfnw5                                        1/1     Running            &lt;span style=&#34;color:#ae81ff&#34;&gt;27&lt;/span&gt;         23d
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            kube-controller-manager-rqkubedev03                  1/1     Running            &lt;span style=&#34;color:#ae81ff&#34;&gt;24&lt;/span&gt;         23d
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            kube-controller-manager-rqkubedev04                  1/1     Running            &lt;span style=&#34;color:#ae81ff&#34;&gt;22&lt;/span&gt;         23d
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kube-system            kube-apiserver-rqkubedev03                           1/1     Running            &lt;span style=&#34;color:#ae81ff&#34;&gt;21&lt;/span&gt;         23d
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;NAMESPACE              NAME                                                 READY   STATUS             RESTARTS   AGE
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;获得所有pod的request和limits&#34;&gt;获得所有POD的request和limits&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get pods -A  -o custom-columns&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;NAME:metadata.name,MEM_REQUEST:spec.containers[*].resources.requests.memory,MEM_LIMIT:spec.containers[*].resources.limits.memory,CPU_REQUEST:spec.containers[*].resources.requests.cpu,CPU_LIMIT:spec.containers[*].resources.limits.cpu&amp;#39;&lt;/span&gt;       
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;NAME                                                 MEM_REQUEST   MEM_LIMIT     CPU_REQUEST   CPU_LIMIT
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;123-84654b5d8f-sm2dt                                 &amp;lt;none&amp;gt;        &amp;lt;none&amp;gt;        &amp;lt;none&amp;gt;        &amp;lt;none&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;backend-c56f64647-grql6                              10Mi          1Gi           10m           &amp;lt;none&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloud-67ffdf9fc9-wzmts                           10Mi          1Gi           10m           &amp;lt;none&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloud-ui-9fbb954dc-trtn7                         10Mi          1Gi           10m           &amp;lt;none&amp;gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloudm-caihcloudm-api-5cfffcc96-mz6pt            10Mi          1Gi           10m           200m
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloudm-caihcloudm-api-5cfffcc96-xdwsb            10Mi          1Gi           10m           200m
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;获取节点的ip&#34;&gt;获取节点的IP&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get nodes -o jsonpath&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;{range .items[*]}{.metadata.name} {.status.addresses[?(@.type==&amp;#34;InternalIP&amp;#34;)].address}{&amp;#34;\n&amp;#34;}{end}&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;rqkubedev03 10.19.0.57
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;rqkubedev04 10.19.0.58
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;rqkubedev05 10.19.0.59
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;获取service的nodeport信息&#34;&gt;获取Service的Nodeport信息&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get -A svc -o json | jq -r &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;.items[] | [.metadata.name,([.spec.ports[].nodePort | tostring ] | join(&amp;#34;|&amp;#34;))]| @tsv&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;backend 23168|&lt;span style=&#34;color:#ae81ff&#34;&gt;20675&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloud       &lt;span style=&#34;color:#ae81ff&#34;&gt;37386&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloud-ui    &lt;span style=&#34;color:#ae81ff&#34;&gt;26105&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloudm-caihcloudm-api       &lt;span style=&#34;color:#ae81ff&#34;&gt;36236&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;caihcloudm-caihcloudm-prerender &lt;span style=&#34;color:#ae81ff&#34;&gt;31964&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;获取pod网段&#34;&gt;获取POD网段&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl get nodes -o jsonpath&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;{.items[*].spec.podCIDR}&amp;#39;&lt;/span&gt; | tr &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34; &amp;#34;&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;\n&amp;#34;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;10.193.0.0/24
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;10.193.1.0/24
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;10.193.2.0/24
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;输出一个pod中所有的容器的日志&#34;&gt;输出一个POD中所有的容器的日志&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl logs caihcloudm-caihcloudm-api-5cfffcc96-mz6pt -n caihcloud —all-containers
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;按标签输出pod的日志&#34;&gt;按标签输出POD的日志&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl -n caihcloud logs -f -l app&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;caihcloudm-caihcloudm-api
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;获取前一个容器的日志容器异常挂掉的场景&#34;&gt;获取前一个容器的日志（容器异常挂掉的场景）&lt;/h3&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;kubectl logs caihcloud-67ffdf9fc9-wzmts -n caihcloud --previous
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</content>
+    </item>
+    
+    <item>
+      <title>Kubernetes组件</title>
+      <link>http://hindung.cn/posts/21/</link>
+      <pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/21/</guid>
+      <description>总体架构 Kubernetes系统采用C/S架构，分为Master和Node两个部分，Master作为Server端，Node作为Client端。
+多Master的方式可以实现集群的高可用。
+Master也叫做主控节点，它主要负责：
+ 管理所有的节点 调度POD 控制集群运行过程中的所有状态 包含了以下几个组件： API-Server：集群的HTTP REST接口，统一入口 Controller-Manager：所有资源的自动化控制中心 Scheduler：POD调度  Node也叫做工作节点，主要负责：
+ 管理所有容器 监控、上报所有POD的运行状态 包含了以下几个组件： Kubelet：管理节点上容器的生命，与Master节点通信 Kube-Proxy：服务通信、负载均衡 CRI容器运行时：接收kubelet的容器相关的指令并执行  Master节点也拥有Node相关的组件，即该Master也可以作为工作节点进行计算。
+除此之外，k8s内部的存储采用ETCD作为唯一存储，一般采用集群高可用的方式部署。
+Etcd集群是分布式K/V存储集群，提供了可靠的强一致性服务发现。Etcd集群存储Kubernetes系统的集群状态和元数据，其中包括所有Kubernetes资源对象信息、资源对象状态、集群节点信息等。Kubernetes将所有数据存储至Etcd集群前缀为/registry的目录下。
+各个组件的功能 在k8s集群中主要有以下几种组件：
+kubectl kubectl是K8s官方提供的命令行工具，它主要与API-Server交互，通信协议采用HTTP/Json。
+client-go 除了有命令行工具对K8s进行管理之外，还提供了编程方式。client-go用golang进行开发，它最初是K8s的部分代码，现在抽成了独立的仓库。
+K8s任何组件与API-Server通信都是基于client-go。
+API-Server 负责将K8s “资源组/资源版本/资源” 以RESTful形式对外提供服务。API-Server是集群中唯一与ETCD交互的组件。并且实现了集群的安全访问机制以及认证、授权、准入控制等。
+Controller-Manager 管理控制器负责管理、维护集群内的状态，如维护POD的副本个数为期望的状态值等。
+包含了多个控制器：
+ DeploymentControllers控制器 StatefulSet控制器 Namespace控制器 PersistentVolume控制器 等等 每个控制器通过kube-apiserver组件提供的接口实时监控整个集群每个资源对象的当前状态，当因发生各种故障而导致系统状态出现变化时，会尝试将系统状态修复到“期望状态”。  Scheduler 负责调度POD在某个节点上运行。Kubelet上报节点信息，Scheduler通过监控这些信息，当有新的POD需要调度时，会根据这些节点信息进行调度算法计算最有节点。
+调度算法分为两种，分别为预选调度算法和优选调度算法。除调度策略外，Kubernetes还支持优先级调度、抢占机制及亲和性调度等功能。
+kube-scheduler组件支持高可用性（即多实例同时运行），即基于Etcd集群上的分布式锁实现领导者选举机制，多实例同时运行，通过kube-apiserver提供的资源锁进行选举竞争。抢先获取锁的实例被称为Leader节点（即领导者节点），并运行kube-scheduler组件的主逻辑；而未获取锁的实例被称为Candidate节点（即候选节点），运行时处于阻塞状态。在Leader节点因某些原因退出后，Candidate节点则通过领导者选举机制参与竞选，成为Leader节点后接替kube-scheduler的工作。
+Kubelet kubelet组件用来接收、处理、上报kube-apiserver组件下发的任务。kubelet进程启动时会向kube-apiserver注册节点自身信息。它主要负责所在节点（Node）上的Pod资源对象的管理，例如Pod资源对象的创建、修改、监控、删除、驱逐及Pod生命周期管理等。
+kubelet组件实现了3种开放接口：
+  Container Runtime Interface：简称CRI（容器运行时接口），提供容器运行时通用插件接口服务。CRI定义了容器和镜像服务的接口。CRI将kubelet组件与容器运行时进行解耦，将原来完全面向Pod级别的内部接口拆分成面向Sandbox和Container的gRPC接口，并将镜像管理和容器管理分离给不同的服务。
+  Container Network Interface：简称CNI（容器网络接口），提供网络通用插件接口服务。CNI定义了Kubernetes网络插件的基础，容器创建时通过CNI插件配置网络。
+  Container Storage Interface：简称CSI（容器存储接口），提供存储通用插件接口服务。CSI定义了容器存储卷标准规范，容器创建时通过CSI插件配置存储卷。</description>
+      <content>&lt;h1 id=&#34;总体架构&#34;&gt;总体架构&lt;/h1&gt;
+&lt;p&gt;Kubernetes系统采用C/S架构，分为Master和Node两个部分，Master作为Server端，Node作为Client端。&lt;/p&gt;
+&lt;p&gt;多Master的方式可以实现集群的高可用。&lt;/p&gt;
+&lt;p&gt;Master也叫做主控节点，它主要负责：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;管理所有的节点&lt;/li&gt;
+&lt;li&gt;调度POD&lt;/li&gt;
+&lt;li&gt;控制集群运行过程中的所有状态
+包含了以下几个组件：&lt;/li&gt;
+&lt;li&gt;API-Server：集群的HTTP REST接口，统一入口&lt;/li&gt;
+&lt;li&gt;Controller-Manager：所有资源的自动化控制中心&lt;/li&gt;
+&lt;li&gt;Scheduler：POD调度&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Node也叫做工作节点，主要负责：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;管理所有容器&lt;/li&gt;
+&lt;li&gt;监控、上报所有POD的运行状态
+包含了以下几个组件：&lt;/li&gt;
+&lt;li&gt;Kubelet：管理节点上容器的生命，与Master节点通信&lt;/li&gt;
+&lt;li&gt;Kube-Proxy：服务通信、负载均衡&lt;/li&gt;
+&lt;li&gt;CRI容器运行时：接收kubelet的容器相关的指令并执行&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Master节点也拥有Node相关的组件，即该Master也可以作为工作节点进行计算。&lt;/p&gt;
+&lt;p&gt;除此之外，k8s内部的存储采用ETCD作为唯一存储，一般采用集群高可用的方式部署。&lt;/p&gt;
+&lt;p&gt;Etcd集群是分布式K/V存储集群，提供了可靠的强一致性服务发现。Etcd集群存储Kubernetes系统的集群状态和元数据，其中包括所有Kubernetes资源对象信息、资源对象状态、集群节点信息等。Kubernetes将所有数据存储至Etcd集群前缀为/registry的目录下。&lt;/p&gt;
+&lt;h1 id=&#34;各个组件的功能&#34;&gt;各个组件的功能&lt;/h1&gt;
+&lt;p&gt;在k8s集群中主要有以下几种组件：&lt;/p&gt;
+&lt;h2 id=&#34;kubectl&#34;&gt;kubectl&lt;/h2&gt;
+&lt;p&gt;kubectl是K8s官方提供的命令行工具，它主要与API-Server交互，通信协议采用HTTP/Json。&lt;/p&gt;
+&lt;h2 id=&#34;client-go&#34;&gt;client-go&lt;/h2&gt;
+&lt;p&gt;除了有命令行工具对K8s进行管理之外，还提供了编程方式。client-go用golang进行开发，它最初是K8s的部分代码，现在抽成了独立的仓库。&lt;/p&gt;
+&lt;p&gt;K8s任何组件与API-Server通信都是基于client-go。&lt;/p&gt;
+&lt;h2 id=&#34;api-server&#34;&gt;API-Server&lt;/h2&gt;
+&lt;p&gt;负责将K8s “资源组/资源版本/资源” 以RESTful形式对外提供服务。API-Server是集群中唯一与ETCD交互的组件。并且实现了集群的安全访问机制以及认证、授权、准入控制等。&lt;/p&gt;
+&lt;h2 id=&#34;controller-manager&#34;&gt;Controller-Manager&lt;/h2&gt;
+&lt;p&gt;管理控制器负责管理、维护集群内的状态，如维护POD的副本个数为期望的状态值等。&lt;/p&gt;
+&lt;p&gt;包含了多个控制器：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;DeploymentControllers控制器&lt;/li&gt;
+&lt;li&gt;StatefulSet控制器&lt;/li&gt;
+&lt;li&gt;Namespace控制器&lt;/li&gt;
+&lt;li&gt;PersistentVolume控制器&lt;/li&gt;
+&lt;li&gt;等等
+每个控制器通过kube-apiserver组件提供的接口实时监控整个集群每个资源对象的当前状态，当因发生各种故障而导致系统状态出现变化时，会尝试将系统状态修复到“期望状态”。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;scheduler&#34;&gt;Scheduler&lt;/h2&gt;
+&lt;p&gt;负责调度POD在某个节点上运行。Kubelet上报节点信息，Scheduler通过监控这些信息，当有新的POD需要调度时，会根据这些节点信息进行调度算法计算最有节点。&lt;/p&gt;
+&lt;p&gt;调度算法分为两种，分别为预选调度算法和优选调度算法。除调度策略外，Kubernetes还支持优先级调度、抢占机制及亲和性调度等功能。&lt;/p&gt;
+&lt;p&gt;kube-scheduler组件支持高可用性（即多实例同时运行），即基于Etcd集群上的分布式锁实现领导者选举机制，多实例同时运行，通过kube-apiserver提供的资源锁进行选举竞争。抢先获取锁的实例被称为Leader节点（即领导者节点），并运行kube-scheduler组件的主逻辑；而未获取锁的实例被称为Candidate节点（即候选节点），运行时处于阻塞状态。在Leader节点因某些原因退出后，Candidate节点则通过领导者选举机制参与竞选，成为Leader节点后接替kube-scheduler的工作。&lt;/p&gt;
+&lt;h2 id=&#34;kubelet&#34;&gt;Kubelet&lt;/h2&gt;
+&lt;p&gt;kubelet组件用来接收、处理、上报kube-apiserver组件下发的任务。kubelet进程启动时会向kube-apiserver注册节点自身信息。它主要负责所在节点（Node）上的Pod资源对象的管理，例如Pod资源对象的创建、修改、监控、删除、驱逐及Pod生命周期管理等。&lt;/p&gt;
+&lt;p&gt;kubelet组件实现了3种开放接口：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;Container Runtime Interface：简称CRI（容器运行时接口），提供容器运行时通用插件接口服务。CRI定义了容器和镜像服务的接口。CRI将kubelet组件与容器运行时进行解耦，将原来完全面向Pod级别的内部接口拆分成面向Sandbox和Container的gRPC接口，并将镜像管理和容器管理分离给不同的服务。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Container Network Interface：简称CNI（容器网络接口），提供网络通用插件接口服务。CNI定义了Kubernetes网络插件的基础，容器创建时通过CNI插件配置网络。&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Container Storage Interface：简称CSI（容器存储接口），提供存储通用插件接口服务。CSI定义了容器存储卷标准规范，容器创建时通过CSI插件配置存储卷。&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;kube-proxy&#34;&gt;Kube-Proxy&lt;/h2&gt;
+&lt;p&gt;kube-proxy组件，作为节点上的网络代理，运行在每个Kubernetes节点上。它监控kube-apiserver的服务和端点资源变化，并通过iptables/ipvs等配置负载均衡器，为一组Pod提供统一的TCP/UDP流量转发和负载均衡功能。&lt;/p&gt;
+&lt;p&gt;Kube-Proxy有几个工作模式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;userspace&lt;/li&gt;
+&lt;li&gt;iptables 模式&lt;/li&gt;
+&lt;li&gt;ipvs 模式&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;具体可以参考：&lt;a href=&#34;https://kubernetes.io/zh/docs/concepts/services-networking/service/&#34;&gt;services-networking&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id=&#34;cri容器运行时组件&#34;&gt;CRI容器运行时组件&lt;/h2&gt;
+&lt;p&gt;CRI 在 Kubernetes 1.5 中引入，充当kubelet和容器运行时之间的桥梁。&lt;/p&gt;
+&lt;p&gt;即kubelet需要跟Contaner Runtime交互去管理容器的生命周期。&lt;/p&gt;
+</content>
+    </item>
+    
+  </channel>
+</rss>

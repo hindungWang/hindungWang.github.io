@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Markdown on Hindung Blogs</title>
+    <link>http://hindung.cn/tags/markdown/</link>
+    <description>Recent content in Markdown on Hindung Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 20 Jul 2020 00:00:00 +0000</lastBuildDate><atom:link href="http://hindung.cn/tags/markdown/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>部落格修改记录</title>
+      <link>http://hindung.cn/posts/0/</link>
+      <pubDate>Mon, 20 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/0/</guid>
+      <description>TODO List  部落格-侧边栏 下拉固定 已完成👌 2020.08.22 📅 🎉 大海 增加搜索功能 修改后端读取Markdown格式 已完成👌 2020.08.16 📅 🎉 修复前端点击回退时Panic的bug 已完成👌 2020.08.15📅 😁🎉 添加文章TOC功能 已完成 2020.09.20📅 使用GithubFlows实现CICD 已完成 2020.10.02📅 🎉 使用对象存储，实现媒体内容分离，提升网站加载速度 🚮🚮废弃，由于文章目前很少采用图片的形式，后续假如有需求如“添加照片墙”或添加个性页面，类Tumblr等再重启该需求。 深入了解Go内存模块，输出博客 深入了解Goroutine，输出博客 了解常用的Go内置包，总结输出博客 深入了解Go的context，并区分channel的使用场景，输出博客 深入了解锁，并发等，输出博客 深入了解golang runtime机制 深入了解部分K8s组件源码，了解informer机制，watch sync设计哲学，输出博客 备考CKA，总结输出博客 计划5月22号前考试完成 已获得CKA证书🎉🎉 2021.04.09📅 备考软考高级，总结输出博客 暂时放弃🚮 复习网络知识，输出博客 保持刷题，有必要输出题解以及形成类似于答题模板的代码片段，记录博客 💪💪持续进行。。。 文章TOC功能优化，类似掘金平台一样的效果 已完成👌 2021.04.09📅🎉 Kube Source Code Plan （docker和k8s源代码阅读计划） 文章数据持久化，例如文章阅读量、点赞量、有用统计等等，初步方案是gorm+sqlite3实现 eBPF相关知识的研究 。。。。  Change List 2020.07.20  框架形成 发布第一篇Blog  2020.07.23  修改了一些前端样式 增加博文  2020.</description>
+      <content>&lt;hr&gt;
+&lt;h2 id=&#34;todo-list&#34;&gt;TODO List&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;del&gt;部落格-侧边栏 下拉固定&lt;/del&gt;   已完成👌  2020.08.22 📅  🎉&lt;/li&gt;
+&lt;li&gt;大海 增加搜索功能&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;修改后端读取&lt;code&gt;Markdown&lt;/code&gt;格式&lt;/del&gt; 已完成👌  2020.08.16 📅  🎉&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;修复前端点击回退时&lt;code&gt;Panic&lt;/code&gt;的bug&lt;/del&gt; 已完成👌 2020.08.15📅 😁🎉&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;添加文章&lt;code&gt;TOC&lt;/code&gt;功能&lt;/del&gt;   已完成 2020.09.20📅&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;使用&lt;code&gt;GithubFlows&lt;/code&gt;实现CICD&lt;/del&gt;  已完成 2020.10.02📅 🎉&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;使用对象存储，实现媒体内容分离，提升网站加载速度&lt;/del&gt;  🚮🚮废弃，由于文章目前很少采用图片的形式，后续假如有需求如“添加照片墙”或添加个性页面，类&lt;code&gt;Tumblr&lt;/code&gt;等再重启该需求。&lt;/li&gt;
+&lt;li&gt;深入了解&lt;code&gt;Go&lt;/code&gt;内存模块，输出博客&lt;/li&gt;
+&lt;li&gt;深入了解&lt;code&gt;Goroutine&lt;/code&gt;，输出博客&lt;/li&gt;
+&lt;li&gt;了解常用的&lt;code&gt;Go&lt;/code&gt;内置包，总结输出博客&lt;/li&gt;
+&lt;li&gt;深入了解&lt;code&gt;Go&lt;/code&gt;的&lt;code&gt;context&lt;/code&gt;，并区分&lt;code&gt;channel&lt;/code&gt;的使用场景，输出博客&lt;/li&gt;
+&lt;li&gt;深入了解锁，并发等，输出博客&lt;/li&gt;
+&lt;li&gt;深入了解&lt;code&gt;golang runtime&lt;/code&gt;机制&lt;/li&gt;
+&lt;li&gt;深入了解部分&lt;code&gt;K8s&lt;/code&gt;组件源码，了解&lt;code&gt;informer&lt;/code&gt;机制，&lt;code&gt;watch sync&lt;/code&gt;设计哲学，输出博客&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;备考&lt;code&gt;CKA&lt;/code&gt;，总结输出博客 计划5月22号前考试完成&lt;/del&gt; 已获得&lt;code&gt;CKA&lt;/code&gt;证书🎉🎉 2021.04.09📅&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;备考软考高级，总结输出博客&lt;/del&gt; 暂时放弃🚮&lt;/li&gt;
+&lt;li&gt;复习网络知识，输出博客&lt;/li&gt;
+&lt;li&gt;保持刷题，有必要输出题解以及形成类似于答题模板的代码片段，记录博客  💪💪持续进行。。。&lt;/li&gt;
+&lt;li&gt;&lt;del&gt;文章&lt;code&gt;TOC&lt;/code&gt;功能优化，类似掘金平台一样的效果&lt;/del&gt; 已完成👌 2021.04.09📅🎉&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;Kube Source Code Plan&lt;/code&gt; （docker和k8s源代码阅读计划）&lt;/li&gt;
+&lt;li&gt;文章数据持久化，例如文章阅读量、点赞量、有用统计等等，初步方案是&lt;code&gt;gorm+sqlite3&lt;/code&gt;实现&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;eBPF&lt;/code&gt;相关知识的研究&lt;/li&gt;
+&lt;li&gt;。。。。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id=&#34;change-list&#34;&gt;Change List&lt;/h2&gt;
+&lt;h3 id=&#34;20200720&#34;&gt;2020.07.20&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;框架形成&lt;/li&gt;
+&lt;li&gt;发布第一篇Blog&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200723&#34;&gt;2020.07.23&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;修改了一些前端样式&lt;/li&gt;
+&lt;li&gt;增加博文&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200807&#34;&gt;2020.08.07&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;添加SSL证书，启用https&lt;/li&gt;
+&lt;li&gt;部署方式改成dockers-compose&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200808&#34;&gt;2020.08.08&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;启用hindung.cn域名&lt;/li&gt;
+&lt;li&gt;修改前端样式&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200815&#34;&gt;2020.08.15&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;修改前端退回Panic&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200816&#34;&gt;2020.08.16&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;使用viper包读取markdown自定义配置&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200819&#34;&gt;2020.08.19&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;修改代码显示的格式，嘻嘻更好看了呢😄&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200822&#34;&gt;2020.08.22&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;左侧标签栏下拉时固定&lt;/li&gt;
+&lt;li&gt;添加两篇博文&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20200920&#34;&gt;2020.09.20&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;文章TOC简单实现&lt;/li&gt;
+&lt;li&gt;添加若干篇博文&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id=&#34;20201002&#34;&gt;2020.10.02&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;GithubFlows实现CICD功能&lt;/li&gt;
+&lt;/ul&gt;
+</content>
+    </item>
+    
+  </channel>
+</rss>

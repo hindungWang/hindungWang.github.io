@@ -1,0 +1,651 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Docker on Hindung Blogs</title>
+    <link>http://hindung.cn/tags/docker/</link>
+    <description>Recent content in Docker on Hindung Blogs</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Fri, 23 Jul 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://hindung.cn/tags/docker/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>容器技术之我见</title>
+      <link>http://hindung.cn/posts/20/</link>
+      <pubDate>Fri, 23 Jul 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/20/</guid>
+      <description>容器技术 什么是容器呢？
+印象中第一次接触“容器”这个词，是在化学课上，不就是一装东西的瓶子嘛有啥特别的。
+仔细想想，“装”东西即在某种程度上与其他物体隔离开来了。所以称这个「装东西的东西」为容器。
+是吧！那现在所说的“容器”到底是啥概念，他能装什么东西，又把什么东西在某种程度上隔离开？
+我的理解就是：「把资源隔离开的东西」。
+资源泛指OS上的资源，如CPU、内存、设备、文件系统等等。如何进行隔离呢？Linux内核提供了某种机制能让上诉所说的“资源”隔离开来，即Namespace和CGroups。
+容器技术就是基于这两个内核特性进行设计和开发。
+Namespace 命名空间在维基百科上的广义解释是：
+“在计算机中，命名空间是一组用于标识和引用各种对象的符号（名称）。命名空间可确保所有给定的对象集都具有唯一的名称，以便可以轻松识别它们。”
+根据这个定义，Linux内核提供的命名空间定义为：
+“命名空间是Linux内核的一项功能，该功能对内核资源进行分区，以使一组进程看到一组资源，而另一组进程看到另一组资源。该功能通过为一组资源和进程具有相同的名称空间而起作用，但是这些名称空间引用了不同的资源。资源可能存在于多个空间中。这样的资源有进程ID、主机名、用户ID、文件名以及一些与网络访问和进程间通信相关。”
+从内核版本5.6开始，存在8种名称空间。命名空间功能在所有类型上都是相同的：每个进程都与一个命名空间相关联并且只能查看或使用与该命名空间以及后代命名空间相关联的资源。 这样，每个进程（或其进程组）可以在资源上拥有唯一的视图。隔离哪个资源取决于已为给定进程组创建的名称空间的类型。
+Mount (mnt) 挂载命名空间控制隔离挂载点。即隔离文件系统目录结构。
+比如你在每个容器里都有/usr目录，你们都可以访问这个目录，但他们是不一样的。
+Process ID (pid) PID命名空间为进程提供了一套独立于其他命名空间的进程ID（PID）。
+PID命名空间是嵌套的，这意味着当一个新的进程被创建时，它将有一个从其当前命名空间到初始PID命名空间的每个命名空间的PID。因此，初始PID命名空间能够看到所有进程，尽管其PID与其他命名空间看到的进程不同。
+比如用于创建容器的Runc Daemon进程。
+Network (net) 网络名称空间可虚拟化网络堆栈。由于每个容器有不同的网络接口，每个地址信息，包括IP地址，都可以分开。
+Interprocess Communication (ipc) IPC命名空间将进程与SysV风格的进程间通信隔离。
+UTS UTS（UNIX时间共享）命名空间允许一个系统在不同的进程中出现不同的主机名和域名。
+User ID (user) 用户命名空间是一个提供权限隔离和用户识别隔离的功能，跨越多组进程，从内核3.8开始可用。
+在管理员的协助下，有可能建立一个看起来有管理权限的容器，而实际上没有给用户进程提升权限。像PID命名空间一样，用户命名空间是嵌套的，每个新的用户命名空间都被认为是创建它的用户命名空间的子空间。
+Control group (cgroup) Namespace 控制组命名空间，隐藏了进程作为成员的控制组的身份。
+在这样的命名空间中的进程，在检查任何进程属于哪个控制组时，会看到一个实际上是相对于创建时设置的控制组的路径，隐藏其真实的控制组位置和身份。
+Time Namespace 时间命名空间允许进程以类似于UTS命名空间的方式看到不同的系统时间。 它在2018年被提出，并在2020年3月发布的Linux 5.6上登陆。
+规划中的命名空间 syslog namespace、Syscalls、Destruction，具体信息请参阅维基百科
+CGroup 控制组cgroups是Linux内核提供的一个功能，用于从硬件和相关方面限制一组特定的分组进程。
+如隔离CPU、内存、设备、磁盘io、网络io等。
+有两个版本的cgroup。Cgroups最初由Paul Menage和Rohit Seth编写，并于2007年进入Linux内核主线。此后称为cgroups版本1。
+然后由Tejun Heo接管了cgroup的开发和维护。Tejun Heo重新设计并重写了cgroup。这种重写现在称为版本2，cgroups-v2的文档首次出现在2016年3月14日发布的Linux内核4.5中。
+与v1不同，cgroup v2仅具有单个进程层次结构，并且在进程之间进行区分，而不对线程进行区分。
+控制组的核心功能：
+ 资源限制：可以将组设置为不超过配置的内存限制，该限制还包括文件系统缓存 优先级：一些组可能会在CPU利用率或磁盘I / O吞吐量中获得更大份额 可统计：衡量组的资源使用情况 可控制：冻结/复活进程组  控制组具有分层概念，这意味着每个组都从其父组继承限制。内核通过cgroup接口提供对多个控制器（也称为子系统）的访问。例如，“内存”控制器限制内存使用，“ cpuacct”账户CPU使用率等。</description>
+      <content>&lt;h2 id=&#34;容器技术&#34;&gt;容器技术&lt;/h2&gt;
+&lt;p&gt;什么是容器呢？&lt;/p&gt;
+&lt;p&gt;印象中第一次接触“容器”这个词，是在化学课上，不就是一装东西的瓶子嘛有啥特别的。&lt;/p&gt;
+&lt;p&gt;仔细想想，“装”东西即在某种程度上与其他物体隔离开来了。所以称这个「装东西的东西」为容器。&lt;/p&gt;
+&lt;p&gt;是吧！那现在所说的“容器”到底是啥概念，他能装什么东西，又把什么东西在某种程度上隔离开？&lt;/p&gt;
+&lt;p&gt;我的理解就是：「把资源隔离开的东西」。&lt;/p&gt;
+&lt;p&gt;资源泛指OS上的资源，如CPU、内存、设备、文件系统等等。如何进行隔离呢？Linux内核提供了某种机制能让上诉所说的“资源”隔离开来，即Namespace和CGroups。&lt;/p&gt;
+&lt;p&gt;容器技术就是基于这两个内核特性进行设计和开发。&lt;/p&gt;
+&lt;h3 id=&#34;namespace&#34;&gt;Namespace&lt;/h3&gt;
+&lt;p&gt;命名空间在&lt;a href=&#34;https://en.wikipedia.org/wiki/Namespace&#34;&gt;维基百科&lt;/a&gt;上的广义解释是：&lt;/p&gt;
+&lt;p&gt;“在计算机中，命名空间是一组用于标识和引用各种对象的符号（名称）。命名空间可确保所有给定的对象集都具有唯一的名称，以便可以轻松识别它们。”&lt;/p&gt;
+&lt;p&gt;根据这个定义，Linux内核提供的命名空间定义为：&lt;/p&gt;
+&lt;p&gt;“命名空间是Linux内核的一项功能，该功能对内核资源进行分区，以使一组进程看到一组资源，而另一组进程看到另一组资源。该功能通过为一组资源和进程具有相同的名称空间而起作用，但是这些名称空间引用了不同的资源。资源可能存在于多个空间中。这样的资源有进程ID、主机名、用户ID、文件名以及一些与网络访问和进程间通信相关。”&lt;/p&gt;
+&lt;p&gt;从内核版本5.6开始，存在8种名称空间。命名空间功能在所有类型上都是相同的：每个进程都与一个命名空间相关联并且只能查看或使用与该命名空间以及后代命名空间相关联的资源。
+这样，每个进程（或其进程组）可以在资源上拥有唯一的视图。隔离哪个资源取决于已为给定进程组创建的名称空间的类型。&lt;/p&gt;
+&lt;h4 id=&#34;mount-mnt&#34;&gt;Mount (mnt)&lt;/h4&gt;
+&lt;p&gt;挂载命名空间控制隔离挂载点。即隔离文件系统目录结构。&lt;/p&gt;
+&lt;p&gt;比如你在每个容器里都有/usr目录，你们都可以访问这个目录，但他们是不一样的。&lt;/p&gt;
+&lt;h4 id=&#34;process-id-pid&#34;&gt;Process ID (pid)&lt;/h4&gt;
+&lt;p&gt;PID命名空间为进程提供了一套独立于其他命名空间的进程ID（PID）。&lt;/p&gt;
+&lt;p&gt;PID命名空间是嵌套的，这意味着当一个新的进程被创建时，它将有一个从其当前命名空间到初始PID命名空间的每个命名空间的PID。因此，初始PID命名空间能够看到所有进程，尽管其PID与其他命名空间看到的进程不同。&lt;/p&gt;
+&lt;p&gt;比如用于创建容器的Runc Daemon进程。&lt;/p&gt;
+&lt;h4 id=&#34;network-net&#34;&gt;Network (net)&lt;/h4&gt;
+&lt;p&gt;网络名称空间可虚拟化网络堆栈。由于每个容器有不同的网络接口，每个地址信息，包括IP地址，都可以分开。&lt;/p&gt;
+&lt;h4 id=&#34;interprocess-communication-ipc&#34;&gt;Interprocess Communication (ipc)&lt;/h4&gt;
+&lt;p&gt;IPC命名空间将进程与SysV风格的进程间通信隔离。&lt;/p&gt;
+&lt;h4 id=&#34;uts&#34;&gt;UTS&lt;/h4&gt;
+&lt;p&gt;UTS（UNIX时间共享）命名空间允许一个系统在不同的进程中出现不同的主机名和域名。&lt;/p&gt;
+&lt;h4 id=&#34;user-id-user&#34;&gt;User ID (user)&lt;/h4&gt;
+&lt;p&gt;用户命名空间是一个提供权限隔离和用户识别隔离的功能，跨越多组进程，从内核3.8开始可用。&lt;/p&gt;
+&lt;p&gt;在管理员的协助下，有可能建立一个看起来有管理权限的容器，而实际上没有给用户进程提升权限。像PID命名空间一样，用户命名空间是嵌套的，每个新的用户命名空间都被认为是创建它的用户命名空间的子空间。&lt;/p&gt;
+&lt;h4 id=&#34;control-group-cgroup-namespace&#34;&gt;Control group (cgroup) Namespace&lt;/h4&gt;
+&lt;p&gt;控制组命名空间，隐藏了进程作为成员的控制组的身份。&lt;/p&gt;
+&lt;p&gt;在这样的命名空间中的进程，在检查任何进程属于哪个控制组时，会看到一个实际上是相对于创建时设置的控制组的路径，隐藏其真实的控制组位置和身份。&lt;/p&gt;
+&lt;h4 id=&#34;time-namespace&#34;&gt;Time Namespace&lt;/h4&gt;
+&lt;p&gt;时间命名空间允许进程以类似于UTS命名空间的方式看到不同的系统时间。
+它在2018年被提出，并在2020年3月发布的Linux 5.6上登陆。&lt;/p&gt;
+&lt;h3 id=&#34;规划中的命名空间&#34;&gt;规划中的命名空间&lt;/h3&gt;
+&lt;p&gt;syslog namespace、Syscalls、Destruction，具体信息请参阅&lt;a href=&#34;https://en.wikipedia.org/wiki/Linux_namespaces&#34;&gt;维基百科&lt;/a&gt;&lt;/p&gt;
+&lt;h3 id=&#34;cgroup&#34;&gt;CGroup&lt;/h3&gt;
+&lt;p&gt;控制组cgroups是Linux内核提供的一个功能，用于从硬件和相关方面限制一组特定的分组进程。&lt;/p&gt;
+&lt;p&gt;如隔离CPU、内存、设备、磁盘io、网络io等。&lt;/p&gt;
+&lt;p&gt;有两个版本的cgroup。Cgroups最初由Paul Menage和Rohit Seth编写，并于2007年进入Linux内核主线。此后称为cgroups版本1。&lt;/p&gt;
+&lt;p&gt;然后由Tejun Heo接管了cgroup的开发和维护。Tejun Heo重新设计并重写了cgroup。这种重写现在称为版本2，cgroups-v2的文档首次出现在2016年3月14日发布的Linux内核4.5中。&lt;/p&gt;
+&lt;p&gt;与v1不同，cgroup v2仅具有单个进程层次结构，并且在进程之间进行区分，而不对线程进行区分。&lt;/p&gt;
+&lt;p&gt;控制组的核心功能：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;资源限制：可以将组设置为不超过配置的内存限制，该限制还包括文件系统缓存&lt;/li&gt;
+&lt;li&gt;优先级：一些组可能会在CPU利用率或磁盘I / O吞吐量中获得更大份额&lt;/li&gt;
+&lt;li&gt;可统计：衡量组的资源使用情况&lt;/li&gt;
+&lt;li&gt;可控制：冻结/复活进程组&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;控制组具有分层概念，这意味着每个组都从其父组继承限制。内核通过cgroup接口提供对多个控制器（也称为子系统）的访问。例如，“内存”控制器限制内存使用，“ cpuacct”账户CPU使用率等。&lt;/p&gt;
+&lt;p&gt;使用控制组的方式：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;通过手动访问cgroup虚拟文件系统。&lt;/li&gt;
+&lt;li&gt;通过使用cgcreate，cgexec和cgclassify（来自libcgroup）之类的工具动态创建和管理组。&lt;/li&gt;
+&lt;li&gt;通过“引擎守护程序规则”，可以按照配置中的指定自动将某些用户，组或命令的进程移至cgroup。&lt;/li&gt;
+&lt;li&gt;间接通过其它软件使用的cgroup，如docker&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;systemd-cgtop命令可用于按资源使用情况显示顶级控制组。&lt;/p&gt;
+&lt;p&gt;可以通过命令 &lt;code&gt;$ ll /sys/fs/cgroup/&lt;/code&gt; 查看控制组中有哪些资源被控制。&lt;/p&gt;
+&lt;p&gt;Linux Kernel 4.19（2018年10月）引入了cgroup对OOMKiller实现的认识，该功能增加了将cgroup作为单个单元杀死的能力，从而保证了工作负载的完整性。&lt;/p&gt;
+&lt;h2 id=&#34;容器镜像&#34;&gt;容器镜像&lt;/h2&gt;
+&lt;p&gt;容器镜像是就是容器的快照。&lt;/p&gt;
+&lt;p&gt;对于docker 镜像来说，他可以通过Dockerfile构建。&lt;/p&gt;
+&lt;p&gt;镜像的实现原理是UnionFs（联合文件系统）：&lt;/p&gt;
+&lt;p&gt;“Union文件系统（UnionFs）是一种分层、轻量级并且高性能的文件系统，他支持对文件系统的修改作为一次提交来一层层的叠加，同时可以将不同目录挂载到同一个虚拟文件系统下（ unite several directories into a single virtual filesystem”&lt;/p&gt;
+&lt;p&gt;UnionFS采用写时复制（COW）的方法，层层叠加到文件系统。&lt;/p&gt;
+&lt;p&gt;可以同时加载多个文件系统，但是联合加载会把他们文件系统叠加起来，合并复制被定向到一个特定的实际文件系统。这样可以使文件系统看起来可写，但实际上不允许写操作更改文件系统，这样最终的文件系统会包含所有底层的文件和目录。&lt;/p&gt;
+&lt;p&gt;Docker在镜像层叠上也采用了COW技术。容器与镜像的区别就是：容器=镜像+可写层。&lt;/p&gt;
+&lt;h2 id=&#34;什么是docker&#34;&gt;什么是Docker&lt;/h2&gt;
+&lt;p&gt;Docker是容器技术的一种实现。&lt;/p&gt;
+&lt;p&gt;Docker分为客户端和Daemon进程，Docker客户端是命令行工具，用于跟Daemon程序沟通并发送指令。&lt;/p&gt;
+&lt;p&gt;Docker Daemon进程会与Containerd进程通讯并创建容器。&lt;/p&gt;
+&lt;p&gt;而Containerd核心是通过runc进行创建容器。该部分属于容器运行时接口的内容。&lt;/p&gt;
+&lt;h3 id=&#34;与虚拟机的区别&#34;&gt;与虚拟机的区别&lt;/h3&gt;
+&lt;p&gt;传统虚拟机实现虚拟化的方法是，在裸金属上安装虚拟机管理程序，并且在各个虚拟机上需要安装操作系统，因此在虚拟上存在大量资源开销。&lt;/p&gt;
+&lt;p&gt;而容器则像是操作系统的一个个进程，他们通过容器进行隔离。&lt;/p&gt;
+&lt;p&gt;容器技术就像是一个「对在Linux上运行的相关进程进行分组，让每个进程都在独立的用户空间中运行」的技术。&lt;/p&gt;
+&lt;p&gt;原则上，从安全性的角度来看，容器方法对执行环境的控制比虚拟服务器更容易受到攻击。&lt;/p&gt;
+&lt;p&gt;除非操作系统或虚拟机监控程序中存在某些漏洞，否则虚拟服务器不太可能影响其他虚拟环境，但是由于容器之间的关系只是一个进程，因此它将影响其他容器（进程）。环境。&lt;/p&gt;
+&lt;p&gt;参考文章：&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://qiita.com/tajima_taso/items/28938415846dcc2e83ff&#34;&gt;原理原則で理解するDocker&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.infoq.com/articles/build-a-container-golang/&#34;&gt;Build Your Own Container Using Less than 100 Lines of Go&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/Cgroups&#34;&gt;cgroups&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/Linux_namespaces&#34;&gt;Linux_namespaces&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://en.wikipedia.org/wiki/UnionFS&#34;&gt;UnionFS&lt;/a&gt;&lt;/p&gt;
+</content>
+    </item>
+    
+    <item>
+      <title>容器运行时</title>
+      <link>http://hindung.cn/posts/23/</link>
+      <pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/23/</guid>
+      <description>OCI &amp;amp;&amp;amp; CRI 使用容器经常会听到容器运行时的概念、OCI以及CRI等，这些有什么区别和联系呢？
+ CR，即Container Runtime，容器运行时 CRI，即Container Runtime Interface，容器运行时接口，实现该系列接口以实现容器功能 OCI，即Open Container Initiative：开口容器倡议，是建立围绕容器格式和运行时的开放式行业标准的明确目的的开放式的治理结构。  OCI 目前包含两个规范：运行时规范（runtime-spec）和镜像规范（image-spec）。运行时规范概述了如何运行在磁盘上解压缩的“文件系统包”。
+现在清楚了，OCI定义了一种规范，即怎么做如何做。而CR是这个规范的实践并定义了一系列接口CRI，只要实现了该接口就能使用这个CR。
+比如CR有很多种，如runc、lxc等，但他们都提供了统一的CRI，其他实现了这个CRI的组件如kubelet在runc和lxc间切换是无感的。
+低级（low-level）容器运行时 我理解的low-level是一系列操作容器的行为在很底层，比如通过Linux内核接口创建各个Namespace以及生成Cgroup等操作。把这些行为打包就是一个低级的运行时的内容。或者说低级容器运行时干了啥。
+高级（high-level）容器运行时 高级容器运行时又干了啥事情呢？镜像管理、镜像传输、镜像解压缩等技术都可以归为高级的容器运行时。
+比如docker提供的镜像构建、拉取等。docker可以分为以下几层：
++----------+ | | | docker | | | +-----+----+  | socket/API  | +-----v----+ | | | dockerd | | | +-----+----+  | socket/API  | +-----v----+ | | |contanerd | | | +-----+----+  |  | OCI +-----v----+ | | | runc | +----------+ K8s 与 CRI k8s 1.</description>
+      <content>&lt;h2 id=&#34;oci--cri&#34;&gt;OCI &amp;amp;&amp;amp; CRI&lt;/h2&gt;
+&lt;p&gt;使用容器经常会听到容器运行时的概念、OCI以及CRI等，这些有什么区别和联系呢？&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;CR，即Container Runtime，容器运行时&lt;/li&gt;
+&lt;li&gt;CRI，即Container Runtime Interface，容器运行时接口，实现该系列接口以实现容器功能&lt;/li&gt;
+&lt;li&gt;OCI，即Open Container Initiative：开口容器倡议，是建立围绕容器格式和运行时的开放式行业标准的明确目的的开放式的治理结构。&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;OCI 目前包含两个规范：运行时规范（runtime-spec）和镜像规范（image-spec）。运行时规范概述了如何运行在磁盘上解压缩的“文件系统包”。&lt;/p&gt;
+&lt;p&gt;现在清楚了，OCI定义了一种规范，即怎么做如何做。而CR是这个规范的实践并定义了一系列接口CRI，只要实现了该接口就能使用这个CR。&lt;/p&gt;
+&lt;p&gt;比如CR有很多种，如runc、lxc等，但他们都提供了统一的CRI，其他实现了这个CRI的组件如kubelet在runc和lxc间切换是无感的。&lt;/p&gt;
+&lt;h2 id=&#34;低级low-level容器运行时&#34;&gt;低级（low-level）容器运行时&lt;/h2&gt;
+&lt;p&gt;我理解的low-level是一系列操作容器的行为在很底层，比如通过Linux内核接口创建各个Namespace以及生成Cgroup等操作。把这些行为打包就是一个低级的运行时的内容。或者说低级容器运行时干了啥。&lt;/p&gt;
+&lt;h2 id=&#34;高级high-level容器运行时&#34;&gt;高级（high-level）容器运行时&lt;/h2&gt;
+&lt;p&gt;高级容器运行时又干了啥事情呢？镜像管理、镜像传输、镜像解压缩等技术都可以归为高级的容器运行时。&lt;/p&gt;
+&lt;p&gt;比如docker提供的镜像构建、拉取等。docker可以分为以下几层：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;+----------+
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|          |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|  docker  |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|          |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;+-----+----+
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      | socket/API
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;+-----v----+
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|          |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|  dockerd |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|          |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;+-----+----+
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      |  socket/API
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;+-----v----+
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|          |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|contanerd |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|          |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;+-----+----+
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;      | OCI
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;+-----v----+
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|          |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;|  runc    |
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;+----------+
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;k8s-与-cri&#34;&gt;K8s 与 CRI&lt;/h2&gt;
+&lt;p&gt;k8s 1.5 中自己实现了 docker CRI shim，通过这个组件与docker交互。管理容器的过程还是通过docker那套，在containerd 1.1版本中containerd直接实现了CRI，kubelet可以直接通过这个CRI实现与containerd的交互，从而绕过了docker。&lt;/p&gt;
+&lt;p&gt;CRI 定义了几种远程过程调用 (RPC) 和消息类型。RPC 用于：&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;拉取镜像 ImageService.PullImage&lt;/li&gt;
+&lt;li&gt;创建pod RuntimeService.RunPodSandbox&lt;/li&gt;
+&lt;li&gt;创建容器RuntimeService.CreateContainer&lt;/li&gt;
+&lt;li&gt;启动容器RuntimeService.StartContainer&lt;/li&gt;
+&lt;li&gt;停止容器RuntimeService.StopContainer&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;等操作。&lt;/p&gt;
+&lt;h2 id=&#34;实现一个容器运行时&#34;&gt;实现一个容器运行时&lt;/h2&gt;
+&lt;h2 id=&#34;参考链接&#34;&gt;参考链接&lt;/h2&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.ianlewis.org/en/container-runtimes-part-1-introduction-container-r&#34;&gt;Container Runtimes Part 1: An Introduction to Container Runtimes&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://opencontainers.org/&#34;&gt;opencontainers.org&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://github.com/opencontainers/runtime-spec&#34;&gt;runtime-spec&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;a href=&#34;https://www.youtube.com/watch?v=Utf-A4rODH8&#34;&gt;Building a container from scratch in Go - Liz Rice (Microscaling Systems)
+&lt;/a&gt;&lt;/p&gt;
+</content>
+    </item>
+    
+    <item>
+      <title>Docker镜像优化</title>
+      <link>http://hindung.cn/posts/2/</link>
+      <pubDate>Thu, 23 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>http://hindung.cn/posts/2/</guid>
+      <description>注：本文章基于docker-ce版本：Client 19.03.8，Server 19.03.8
+Dockerfile简介 Dockerfile主要有这几个指令，每个指令都会添加新的层，但是镜像大小不一定增长：
+   指令 用途 用法 简单示例     FROM 指定基础镜像 FROM &amp;lt;image&amp;gt; 或 FROM &amp;lt;image&amp;gt;:&amp;lt;tag&amp;gt; FROM ubuntu:16.04   MAINTAINER 维护者信息 MAINTAINER &amp;lt;name&amp;gt; MAINTAINER HuangXianDong   ADD 复制指定的文件到容器中包括tar，URL等 ADD &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt; ADD conf/jail.local /etc/fail2ban/jail.local   COPY 复制host上下文环境的文件或者前一阶段镜像的文件到容器 COPY &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt;有两个标志 –from= –chown= COPY /usr/local/app /usr/local/app   USER 指定用户 USER &amp;lt;username&amp;gt; USER root   WORKDIR 指定工作目录 WORKDIR /path/to/workdir WORKDIR /root   RUN 终端执行sh或者可执行程序 RUN &amp;lt;command&amp;gt; 或 RUN [“executable”, “param1”, “param2”] RUN apt-get update   ENV 指定一个环境变量 ENV &amp;lt;key&amp;gt; &amp;lt;value&amp;gt;或ENV &amp;lt;key&amp;gt;=&amp;lt;value&amp;gt; ENV TZ=Asia/Shanghai   ONBUILD 配置当所创建的镜像作为其它新创建镜像的基础镜像时，所执行的操作指令 ONBUILD [INSTRUCTION] ONBUILD ADD .</description>
+      <content>&lt;p&gt;&lt;em&gt;&lt;strong&gt;注：本文章基于docker-ce版本：Client 19.03.8，Server 19.03.8&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;h2 id=&#34;dockerfile简介&#34;&gt;Dockerfile简介&lt;/h2&gt;
+&lt;p&gt;&lt;code&gt;Dockerfile&lt;/code&gt;主要有这几个指令，每个指令都会添加新的层，但是镜像大小不一定增长：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;指令&lt;/th&gt;
+&lt;th style=&#34;text-align:right&#34;&gt;用途&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;用法&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;简单示例&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;FROM&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;指定基础镜像&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;FROM &amp;lt;image&amp;gt;&lt;/code&gt; 或 &lt;code&gt;FROM &amp;lt;image&amp;gt;:&amp;lt;tag&amp;gt;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;FROM ubuntu:16.04&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;MAINTAINER&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;维护者信息&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;MAINTAINER &amp;lt;name&amp;gt;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;MAINTAINER HuangXianDong&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ADD&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;复制指定的文件到容器中包括tar，URL等&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;ADD &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;ADD conf/jail.local /etc/fail2ban/jail.local&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;COPY&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;复制host上下文环境的文件或者前一阶段镜像的文件到容器&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;COPY &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt;&lt;/code&gt;有两个标志 &lt;code&gt;–from= –chown=&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;COPY /usr/local/app /usr/local/app&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;USER&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;指定用户&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;USER &amp;lt;username&amp;gt;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;USER root&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;WORKDIR&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;指定工作目录&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;WORKDIR /path/to/workdir&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;WORKDIR /root&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;RUN&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;终端执行sh或者可执行程序&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;RUN &amp;lt;command&amp;gt;&lt;/code&gt; 或 &lt;code&gt;RUN [“executable”, “param1”, “param2”]&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;RUN apt-get update&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ENV&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;指定一个环境变量&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;ENV &amp;lt;key&amp;gt; &amp;lt;value&amp;gt;&lt;/code&gt;或&lt;code&gt;ENV &amp;lt;key&amp;gt;=&amp;lt;value&amp;gt;&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;ENV TZ=Asia/Shanghai&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ONBUILD&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;配置当所创建的镜像作为其它新创建镜像的基础镜像时，所执行的操作指令&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;ONBUILD [INSTRUCTION]&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;ONBUILD ADD . /app/src&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;VOLUME&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;创建一个挂载点&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;VOLUME [“/data”] &lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;VOLUME [“/data”]&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;EXPOSE&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;打算暴露的端口号&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;EXPOSE &amp;lt;port&amp;gt; [&amp;lt;port&amp;gt;…]&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;EXPOSE 5060/tcp 5060/udp&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;ENTRYPOINT&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;容器入口点，不可被&lt;code&gt;docker run&lt;/code&gt;覆盖&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;ENTRYPOIN&lt;/code&gt;T [“executable”, “param1”, “param2”]或&lt;code&gt;ENTRYPOINT command param1 param2&lt;/code&gt;&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;ENTRYPOINT entrypoint.sh&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;CMD&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;指定启动容器时执行的命令，可以被&lt;code&gt;docker run&lt;/code&gt;覆盖&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;CMD [“executable”,”param1″,”param2″]&lt;/code&gt;或&lt;code&gt;CMD command param1 param2&lt;/code&gt;或&lt;code&gt;CMD [“param1″,”param2”]&lt;/code&gt;提供给 &lt;code&gt;ENTRYPOINT&lt;/code&gt; 的默认参数&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;&lt;code&gt;CMD python /app/app.py&lt;/code&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id=&#34;常用镜像缩小方法&#34;&gt;常用镜像缩小方法&lt;/h2&gt;
+&lt;h3 id=&#34;在哪层引入就在哪层清理&#34;&gt;在哪层引入，就在哪层清理&lt;/h3&gt;
+&lt;p&gt;众所周知，&lt;code&gt;Dockerfile&lt;/code&gt;每个指令都会叠加新的一层文件系统，由于&lt;code&gt;docker&lt;/code&gt;镜像这种叠加的文件系统，也就是说在构建镜像时，前面一层的文件对于本层来说是只读的，从而不能够在本层文件系统去清理上一层引入的文件，虽然可以删除掉对应的文件或文件夹，但是镜像体积并没有减少：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-Dockerfile&#34; data-lang=&#34;Dockerfile&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;WORKDIR&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; /usr/src&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; git clone http://xxx.git &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; cd ./xxx &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; ./bootstrap.sh &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; ./configure --enable-core-pgsql-support &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; make &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; make install      &lt;span style=&#34;color:#75715e&#34;&gt;#这一层引入文件&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; rm -rf /usr/src/*      &lt;span style=&#34;color:#75715e&#34;&gt;#在这一层清理，达不到体积减小的目的，反而增加层数&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;应该这样：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-Dockerfile&#34; data-lang=&#34;Dockerfile&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;WORKDIR&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; /usr/src&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; git clone http://xxx.git &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; cd ./xxx &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; ./bootstrap.sh &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; ./configure --enable-core-pgsql-support &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; make &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; make install &lt;span style=&#34;color:#ae81ff&#34;&gt;\ &lt;/span&gt;     &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; rm -rf /usr/src/*      &lt;span style=&#34;color:#75715e&#34;&gt;# 在哪层引入，就在哪层清理&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;此外，如果在&lt;code&gt;ADD&lt;/code&gt;，&lt;code&gt;COPY&lt;/code&gt;指令中添加了多余的文件，此后在其他层删除掉改文件或文件夹虽然文件删除了，但是镜像大小是不变或增加的：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-Dockerfile&#34; data-lang=&#34;Dockerfile&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;FROM&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; busybox&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;ADD&lt;/span&gt; . /root        &lt;span style=&#34;color:#75715e&#34;&gt;# busytest0 157MB&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; rm -rf /root   &lt;span style=&#34;color:#75715e&#34;&gt;# busytest1 157MB&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;另外，在使用包管理工具的时候经常要安装各种工具，安装时应该将所有要安装的工具写在一起并且加以清理，甚至可以卸载掉：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-Dockerfile&#34; data-lang=&#34;Dockerfile&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; apt-get update &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get install -y autoconf automake bison &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    build-essential fail2ban gawk git-core groff groff-base &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get autoclean &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; rm -rf /var/lib/apt/lists/*&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;合并run中的命令&#34;&gt;合并RUN中的命令&lt;/h3&gt;
+&lt;p&gt;多个&lt;code&gt;RUN&lt;/code&gt;指令会增加很多层镜像，应该尽量把能合在一起写的&lt;code&gt;shell&lt;/code&gt;写在同一个&lt;code&gt;RUN&lt;/code&gt;指令里：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-Dockerfile&#34; data-lang=&#34;Dockerfile&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; apt-get update &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; ln -snf /usr/share/zoneinfo/$TZ /etc/localtime &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; echo $TZ &amp;gt; /etc/timezone &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get install tzdata &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get clean &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get autoclean &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;而不是：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-Dockerfile&#34; data-lang=&#34;Dockerfile&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; apt-get update &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; ln -snf /usr/share/zoneinfo/$TZ /etc/localtime &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; echo $TZ &amp;gt; /etc/timezone &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; apt-get install tzdata &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; apt-get clean &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; apt-get autoclean&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;分阶段构建&#34;&gt;分阶段构建&lt;/h3&gt;
+&lt;p&gt;有些应用，如&lt;code&gt;go&lt;/code&gt;构建的可执行文件，可以不需要依赖构建他的系统而运行的程序，就适合进行分步构建，也就是一个阶段编译，一个阶段用于执行程序。分步构建很大程度上能减少镜像的体积。&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-Dockerfile&#34; data-lang=&#34;Dockerfile&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;FROM&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; golang&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;COPY&lt;/span&gt; hello.go .&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; go build hello.go&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;FROM&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; scratch&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;COPY&lt;/span&gt; --from&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; /go/hello .&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;CMD&lt;/span&gt; [&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;./hello&amp;#34;&lt;/span&gt;]&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;分阶段构建有时候对一些&lt;code&gt;C&lt;/code&gt;程序和大型的&lt;code&gt;Go&lt;/code&gt;程序来说，凡是有依赖动态运行库的程序进行分阶段构建就很头疼，因为复制过来的可执行文件可能需要某个动态库的支持。&lt;/p&gt;
+&lt;p&gt;与之相对的解决办法是：静态编译或者复制动态库。&lt;/p&gt;
+&lt;p&gt;静态编译是一个不错的方法，但是如果某种原因不适合静态编译，比如分阶段编译等等，这就需要拷贝库文件了。&lt;/p&gt;
+&lt;p&gt;就像某些程序，编译出来的可执行文件只有十几&lt;code&gt;kb&lt;/code&gt;，其他的都是以动态库的形势存在，那么怎么寻找应用对应的依赖库呢？&lt;/p&gt;
+&lt;p&gt;使用&lt;code&gt;ldd&lt;/code&gt;命令，该命令可以查询对应的库文件：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# ldd /usr/local/freeswitch/bin/freeswitch&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        linux-vdso.so.1 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&amp;gt;  &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;0x00007ffd0bb61000&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        libfreeswitch.so.1 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&amp;gt; /usr/local/freeswitch/lib/libfreeswitch.so.1 &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;0x00007f0fa2a1d000&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        libpthread.so.0 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&amp;gt; /lib/x86_64-linux-gnu/libpthread.so.0 &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;0x00007f0fa27f3000&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        libc.so.6 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&amp;gt; /lib/x86_64-linux-gnu/libc.so.6 &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;0x00007f0fa2429000&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        libuuid.so.1 &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&amp;gt; /lib/x86_64-linux-gnu/libuuid.so.1 &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;0x00007f0fa2223000&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;        ...
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;将这些对应的库文件复制到镜像之后需要执行&lt;code&gt;ldconfig&lt;/code&gt;命令，任何改动库文件的操作都应该执行该命令。&lt;/p&gt;
+&lt;p&gt;复制动态库文件可能会导致后续维护变得困难，并且可能存在未知的隐患。&lt;/p&gt;
+&lt;h3 id=&#34;制作基础镜像包&#34;&gt;制作基础镜像包&lt;/h3&gt;
+&lt;p&gt;构建镜像时有些主要是下载依赖包导致的时间变长，可以考虑专门做一个环境编译的基础镜像，后续编译就可以基于该镜像编译，大大减少构建时间。&lt;/p&gt;
+&lt;h3 id=&#34;一些容易增大镜像体积的操作&#34;&gt;一些容易增大镜像体积的操作&lt;/h3&gt;
+&lt;p&gt;慎用&lt;code&gt;chown&lt;/code&gt;命令：&lt;code&gt;chown&lt;/code&gt;命令在有些文件系统在实现多层联合文件系统的原理不同，可能会导致无端增加文件夹的体积。&lt;/p&gt;
+&lt;p&gt;原因是在&lt;code&gt;docker&lt;/code&gt;实现的某些文件系统如&lt;code&gt;overlayfs2&lt;/code&gt;，&lt;code&gt;chown&lt;/code&gt; 只更改 &lt;code&gt;metadata&lt;/code&gt; 数据, 而 &lt;code&gt;metadata&lt;/code&gt; 是作用在 &lt;code&gt;inode&lt;/code&gt; 节点上的, 一个硬链接文件的属性被修改, 同步的, 所有指向这个 &lt;code&gt;inode&lt;/code&gt;节点的文件的属性都会变化，而&lt;code&gt;overlayfs2&lt;/code&gt;每层都是独立的，即使文件属性的变化，也会导致整个文件被拷贝, 所以在 &lt;code&gt;overlayfs2&lt;/code&gt; 下, 会产生多余的空间浪费。&lt;/p&gt;
+&lt;h2 id=&#34;常用的工具&#34;&gt;常用的工具&lt;/h2&gt;
+&lt;h3 id=&#34;docker-history命令&#34;&gt;docker history命令&lt;/h3&gt;
+&lt;p&gt;&lt;code&gt;docker&lt;/code&gt;自带了简单的镜像分析命令，直接执行&lt;code&gt;docker history &amp;lt;IMAGE ID&amp;gt;&lt;/code&gt; 或者 &lt;code&gt;docker history REPOSITORY:TAG&lt;/code&gt;就行：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;root@RqInternTest3 freeswitch-container&lt;span style=&#34;color:#f92672&#34;&gt;]&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# docker history dda43e8b9e21&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;dda43e8b9e21        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop)  CMD [&amp;#34;/usr/local/freeswit…   0B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;76f11898568d        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop)  EXPOSE 64535-65535/udp       0B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;124e52a5fdb8        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop)  EXPOSE 8021/tcp              0B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;d05fa7854fa3        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop)  EXPOSE 5066/tcp 7443/tcp     0B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;fae9a2737d1b        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop)  EXPOSE 5060/tcp 5060/udp …   0B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;d817769a9e83        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c ldconfig                             81.5kB
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;e4347f4a3f7f        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop) ADD file:305fb1821e6c9f4f7…   19.5kB&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;7fa9aac435b0        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop) ADD file:ef5aa87255557ffc9…   340B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;2872fc32f715        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop) ADD file:aa24cd419ee5ea6ca…   249B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;681ea1a83b9b        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c chmod +x /etc/init.d/freeswitch  …   7.28kB
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;b3af584e7595        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop) ADD file:e450d50f8d60a1861…   5.76kB&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;8c2e2a5f2de4        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop) COPY dir:8ecfbdecc9f674459…   417MB&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;9a2938106462        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop) COPY dir:1ddadc455338c149f…   112MB&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;d03606f65563        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop) COPY dir:cd305b7f15031b530…   20.4MB&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;3e21911eea87        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop) COPY --chown=freeswitch:da…   410MB&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;6ce315566979        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c useradd -r -g daemon freeswitch      329kB
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;b7c170867677        &lt;span style=&#34;color:#ae81ff&#34;&gt;9&lt;/span&gt; hours ago         /bin/sh -c apt-get update     &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; ln -snf /us…   2.76MB
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;9a800e72f239        &lt;span style=&#34;color:#ae81ff&#34;&gt;10&lt;/span&gt; hours ago        /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop)  ENV TZ=Asia/Shanghai         0B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;77be327e4b63        &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt; weeks ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop)  CMD [&amp;#34;/bin/bash&amp;#34;]            0B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&amp;lt;missing&amp;gt;           &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt; weeks ago         /bin/sh -c mkdir -p /run/systemd &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;do…   7B
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;lt;missing&amp;gt;           4 weeks ago         /bin/sh -c set -xe   &amp;amp;&amp;amp; echo &amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#!/bin/sh&amp;#39; &amp;gt; /…   745B&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&amp;lt;missing&amp;gt;           &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt; weeks ago         /bin/sh -c rm -rf /var/lib/apt/lists/*          0B
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&amp;lt;missing&amp;gt;           &lt;span style=&#34;color:#ae81ff&#34;&gt;4&lt;/span&gt; weeks ago         /bin/sh -c &lt;span style=&#34;color:#75715e&#34;&gt;#(nop) ADD file:1f70668251e2e58ce…   124MB&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;dive分析镜像工具&#34;&gt;dive分析镜像工具&lt;/h3&gt;
+&lt;p&gt;可以看出每一层所添加的大小，并针对大的层进行优化。&lt;/p&gt;
+&lt;p&gt;分析镜像还有一个很有用的工具&lt;code&gt;dive&lt;/code&gt;：&lt;/p&gt;
+&lt;p&gt;下载安装&lt;code&gt;dive&lt;/code&gt;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# wget https://github.com/wagoodman/dive/releases/download/v0.9.2/dive_0.9.2_linux_amd64.tar.gz&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# tar -zvxf dive_0.9.2_linux_amd64.tar.gz&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# cp dive /usr/bin&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;使用：&lt;code&gt;dive &amp;lt;IMAGE ID&amp;gt;&lt;/code&gt; 或者 &lt;code&gt;dive REPOSITORY:TAG&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;┃ ● Layers ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │ Current Layer Contents ├──────────────────────────────────
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Cmp   Size  Command                                          Permission     UID:GID       Size  Filetree
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;    5.2 MB  FROM d970df9dd8bab4b                             drwxr-xr-x         0:0     1.0 MB  ├── bin
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0     1.0 MB  │   ├── &lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;│ Layer Details ├─────────────────────────────────────────── -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── &lt;span style=&#34;color:#f92672&#34;&gt;[[&lt;/span&gt; → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── acpid → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Tags:   &lt;span style=&#34;color:#f92672&#34;&gt;(&lt;/span&gt;unavailable&lt;span style=&#34;color:#f92672&#34;&gt;)&lt;/span&gt;                                        -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── add-shell → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Id:     d970df9dd8bab4b7a604d73763aee9e732d107cf3b02000ca193 -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── addgroup → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;712fe48a460f                                                 -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── adduser → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Digest: sha256:8a9aa5c55905476e9412fcf0e18942123b239333aafc4 -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── adjtimex → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;d7b3656faf67b980b41                                          -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── ar → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Command:                                                     -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── arch → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;#(nop) ADD file:d5fc1686f667af49c2cb01970701b62eeb9c818d2d4e -rwxr-xr-x         0:0        0 B  │   ├── arp → bin/[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;8f967993dab1de737f28 in /                                    -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── arping → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── ash → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;│ Image Details ├─────────────────────────────────────────── -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── awk → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── base64 → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── basename → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Total Image size: 5.2 MB                                     -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── bc → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Potential wasted space: &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B                                  -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── beep → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Image efficiency score: &lt;span style=&#34;color:#ae81ff&#34;&gt;100&lt;/span&gt; %                                -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── blkdiscard → bin/
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── blkid → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;Count   Total Space  Path                                    -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── blockdev → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── bootchartd → bin/
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── brctl → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── bunzip2 → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── busybox → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── bzcat → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── bzip2 → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;                                                             -rwxr-xr-x         0:0        &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt; B  │   ├── cal → bin/&lt;span style=&#34;color:#f92672&#34;&gt;[&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;可以非常清晰的看到每一层添加的镜像大小以及文件的变化，通过右边的&lt;code&gt;Content&lt;/code&gt;可以观察到文件夹的变化。&lt;/p&gt;
+&lt;h2 id=&#34;各种基础镜像的构建&#34;&gt;各种基础镜像的构建&lt;/h2&gt;
+&lt;h3 id=&#34;各类基础镜像分析&#34;&gt;各类基础镜像分析&lt;/h3&gt;
+&lt;p&gt;常用的基础镜像&lt;code&gt;CentOS，Debian，Fedora，Ubuntu，Alpine&lt;/code&gt;镜像：&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;类别&lt;/th&gt;
+&lt;th style=&#34;text-align:right&#34;&gt;版本&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;镜像大小(MB)&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;描述&lt;/th&gt;
+&lt;th style=&#34;text-align:center&#34;&gt;包管理&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;CentOS&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;latest&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;69.84&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;适用于正式的生产环境镜像制作，但是构建出来的镜像大小会很大，可以来考虑分步构建&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;yum，rpm&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;centos8&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;69.84&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;centos7&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;72.15&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;centos6&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;66.83&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Debian&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;buster-slim&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;26.46&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;当前稳定版本的体积更小版本（slim）&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;apt-get, dpkg&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;stretch&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;43.69&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;旧的稳定版&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;jessie&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;52.08&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;测试版本&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;stable&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;48.78&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;稳定版本&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;sid&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;50.54&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;不稳定版本&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;wheezy&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;38.66&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;Debian 7,被淘汰的稳定版&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Fedora&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;33&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;67.21&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;稳定版本&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;dpkg/apt，pacman&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;rawhide&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;67.21&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;永远不会被冻结, 也永远不会被正式发布. 对稳定性没有任何保证. 主要用于最新代码的初步测试&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Ubuntu&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;latest&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;25.9&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;适用于正式的生产环境镜像制作，但是构建出来的镜像大小会很大，可以来考虑分步构建&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;apt-get&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;18.04&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;25.9&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;16.04&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;42.13&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Alpine&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;latest&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;2.68&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;面向安全的、轻量级的Linux系统，基于musl libc和busybox，使用glibc库的大型c语言可能会遇到很多坑&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;apk, lbu&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;busybox&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;latest&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;1&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;包含了基本的linux命令&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;apk&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;-&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;glibc&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;5&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;GNU C library版本&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;-&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;scratch&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;latest&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;0&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;空白镜像，sh工具也没有&lt;/td&gt;
+&lt;td style=&#34;text-align:center&#34;&gt;无&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;也可以使用编程语言对应的基础镜像，适合分步构建完成之后在其上运行或者在对应的基础镜像中编译。&lt;/p&gt;
+&lt;h3 id=&#34;各个基础镜像换源&#34;&gt;各个基础镜像换源&lt;/h3&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;CentOS yum源&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-6.repo
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;em&gt;&lt;strong&gt;Ubuntu apt源&lt;/strong&gt;&lt;/em&gt;
+清华源：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s http://.*.ubuntu.com http://mirrors.tuna.tsinghua.edu.cn g&amp;#39;&lt;/span&gt; /etc/apt/sources.list
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;阿里云源：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s http://.*.ubuntu.com http://mirrors.aliyun.com g&amp;#39;&lt;/span&gt; /etc/apt/sources.list
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;em&gt;&lt;strong&gt;Debian apt源&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s http://.*.debian.org http://mirrors.aliyun.com g&amp;#39;&lt;/span&gt; /etc/apt/sources.list
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;em&gt;&lt;strong&gt;Alphine apk源&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;阿里源：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g&amp;#39;&lt;/span&gt; /etc/apk/repositories
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;科大源：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g&amp;#39;&lt;/span&gt; /etc/apk/repositories
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;各个基础镜像设置时区方法&#34;&gt;各个基础镜像设置时区方法&lt;/h3&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;Ubuntu&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-Dockerfile&#34; data-lang=&#34;Dockerfile&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;FROM&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; ubuntu:16.04&lt;/span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;ENV&lt;/span&gt; TZ&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;Asia/Shanghai&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;RUN&lt;/span&gt; apt-get update &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; ln -snf /usr/share/zoneinfo/$TZ /etc/localtime &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; echo $TZ &amp;gt; /etc/timezone &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get install tzdata &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get clean &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apt-get autoclean &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*&lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;em&gt;&lt;strong&gt;CentOS&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ENV TimeZone&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;Asia/Shanghai   
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;RUN ln -snf /usr/share/zoneinfo/$TimeZone /etc/localtime &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; echo $TimeZone &amp;gt; /etc/timezone
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;em&gt;&lt;strong&gt;Debian&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ENV TZ&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;Asia/Shanghai
+&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; echo $TZ &amp;gt; /etc/timezone
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;em&gt;&lt;strong&gt;Alphine&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;RUN apk add tzdata &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; echo &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;Asia/Shanghai&amp;#34;&lt;/span&gt; &amp;gt; /etc/timezone &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; apk del tzdata
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h3 id=&#34;把日志文件输出到标准输出流&#34;&gt;把日志文件输出到标准输出流&lt;/h3&gt;
+&lt;p&gt;有时候我们写的程序不是以标准输出到控制台的方式来打印日志，而是存在某个日志文件，这就造成容器跑起来之后&lt;code&gt;docker logs&lt;/code&gt;命令查看不到日志，这是因为&lt;code&gt;docker&lt;/code&gt;容器只接管标准输出流和标准错误流，因此还需要重定向到&lt;code&gt;stdout&lt;/code&gt;和&lt;code&gt;stderr&lt;/code&gt;：&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;RUN ln -sf /dev/stdout /var/log/nginx/access.log &lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;    &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; ln -sf /dev/stderr /var/log/nginx/error.log
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</content>
+    </item>
+    
+  </channel>
+</rss>

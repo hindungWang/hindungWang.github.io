@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  
+    <title>Golang实现优先队列 :: Hindung Blogs</title>
+  
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="经常会使用到队列以及优先队列等数据结构，分别使用多种方法实现go的queue和priority_queue。" />
+<meta name="keywords" content="" />
+<meta name="robots" content="noodp" />
+<link rel="canonical" href="http://hindung.cn/posts/11/" />
+
+
+
+
+<link rel="stylesheet" href="http://hindung.cn/assets/style.css">
+
+  <link rel="stylesheet" href="http://hindung.cn/assets/green.css">
+
+
+
+
+
+
+<link rel="apple-touch-icon" href="http://hindung.cn/img/apple-touch-icon-192x192.png">
+
+  <link rel="shortcut icon" href="http://hindung.cn/img/favicon/green.png">
+
+
+
+<meta name="twitter:card" content="summary" />
+
+
+
+<meta property="og:locale" content="en" />
+<meta property="og:type" content="article" />
+<meta property="og:title" content="Golang实现优先队列">
+<meta property="og:description" content="经常会使用到队列以及优先队列等数据结构，分别使用多种方法实现go的queue和priority_queue。" />
+<meta property="og:url" content="http://hindung.cn/posts/11/" />
+<meta property="og:site_name" content="Hindung Blogs" />
+
+  
+    <meta property="og:image" content="http://hindung.cn/img/favicon/green.png">
+  
+
+<meta property="og:image:width" content="2048">
+<meta property="og:image:height" content="1024">
+
+
+  <meta property="article:published_time" content="2020-09-23 00:00:00 &#43;0000 UTC" />
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+<body class="green">
+
+
+<div class="container center headings--one-size">
+
+  <header class="header">
+  <div class="header__inner">
+    <div class="header__logo">
+      <a href="/">
+  <div class="logo">
+    Hindung
+  </div>
+</a>
+
+    </div>
+    
+      <div class="menu-trigger">menu</div>
+    
+  </div>
+  
+    <nav class="menu">
+  <ul class="menu__inner menu__inner--desktop">
+    
+      
+        
+          <li><a href="/about">About</a></li>
+        
+      
+        
+          <li><a href="/posts">Post</a></li>
+        
+      
+      
+    
+
+    
+  </ul>
+
+  <ul class="menu__inner menu__inner--mobile">
+    
+      
+        <li><a href="/about">About</a></li>
+      
+    
+      
+        <li><a href="/posts">Post</a></li>
+      
+    
+    
+  </ul>
+</nav>
+
+  
+</header>
+
+
+  <div class="content">
+    
+<div class="post">
+  <h1 class="post-title">
+    <a href="http://hindung.cn/posts/11/">Golang实现优先队列</a></h1>
+  <div class="post-meta">
+    
+      <span class="post-date">
+        2020-09-23
+        
+      </span>
+    
+    
+    
+      <span class="post-reading-time">:: 6 min read (1197 words)</span>
+    
+  </div>
+
+  
+  <span class="post-tags">
+    
+    #<a href="http://hindung.cn/tags/queue/">queue</a>&nbsp;
+    
+    #<a href="http://hindung.cn/tags/heap/">heap</a>&nbsp;
+    
+    #<a href="http://hindung.cn/tags/go/">Go</a>&nbsp;
+    
+    #<a href="http://hindung.cn/tags/algorithm/">Algorithm</a>&nbsp;
+    
+  </span>
+  
+  
+
+
+  
+    <div class="table-of-contents">
+      <h2>
+        Table of Contents
+      </h2>
+      <nav id="TableOfContents">
+  <ul>
+    <li><a href="#前言">前言</a></li>
+    <li><a href="#heap原理">heap原理</a></li>
+    <li><a href="#containerheap源码">container/heap源码</a>
+      <ul>
+        <li><a href="#简单使用">简单使用</a></li>
+      </ul>
+    </li>
+    <li><a href="#其他方法实现heap">其他方法实现heap</a></li>
+  </ul>
+</nav>
+    </div>
+  
+
+  <div class="post-content"><div>
+        <h2 id="前言">前言<a href="#前言" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>由于刷题时偶尔会用到队列以及优先队列等数据结构，其他语言都有现成的实现，如C++的priority_queue等，使用非常方便，但是由于个人比较喜欢使用golang语言进行答题，但是go对队列以及优先队列的实现只提供了一个接口，即container/heap包中的heap数据结构，故实现还是要自己去码，这里做一个笔记。实现了heap接口来实现priority_queue，并且提供了其他方法的实现。</p>
+<h2 id="heap原理">heap原理<a href="#heap原理" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>go的container/heap包实现的是数据结构是数组构成的二叉树（完全二叉树），如下所示：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// 树中某个节点的值总是不大于或不小于其孩子节点的值；
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 树中每个节点的子树都是堆树
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// index  0  1  2  3  4   5  6   7   8  9
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// index  1  2  3  4   5  6   7   8  9  10
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// a[] = {4, 1, 3, 2, 16, 9, 10, 14, 8, 7}
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//                  4
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//                /  \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//               1    3
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//              / \  / \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//             2  16 9  10
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//            /\  /
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//           14 8 7
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 若取a[1]为堆顶最大或最小，a[i]的左子节点为a[2i],右子节点为a[2i+1],父节点为a[i/2]:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//          a[i]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//          /  \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//      a[2i]  a[2i+1]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 若取a[0]为堆顶最大或最小，a[i]的左子节点为a[2i+1],右子节点为a[2i+2],父节点为a[(i-1)/2]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//          a[i]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//          /  \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//    a[2i+1]  a[2i+2]
+</span></span></span></code></pre></div><p>而container/heap包采用的是a[0]作为对顶，故左子、右子节点以及父节点表示为a[2i+1]、a[2i+2]、a[(i-1)/2]。</p>
+<h2 id="containerheap源码">container/heap源码<a href="#containerheap源码" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<p>container/heap包是Go内置的接口，如下所示：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// The Interface type describes the requirements
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// for a type using the routines in this package.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Any type that implements it may be used as a
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// min-heap with the following invariants (established after
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Init has been called or if the data is empty or sorted):
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//	!h.Less(j, i) for 0 &lt;= i &lt; h.Len() and 2*i+1 &lt;= j &lt;= 2*i+2 and j &lt; h.Len()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Note that Push and Pop in this interface are for package heap&#39;s
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// implementation to call. To add and remove things from the heap,
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// use heap.Push and heap.Pop.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Interface</span> <span style="color:#66d9ef">interface</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">sort</span>.<span style="color:#a6e22e">Interface</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Push</span>(<span style="color:#a6e22e">x</span> <span style="color:#66d9ef">interface</span>{}) <span style="color:#75715e">// add x as element Len()
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">Pop</span>() <span style="color:#66d9ef">interface</span>{}   <span style="color:#75715e">// remove and return element Len() - 1.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Init establishes the heap invariants required by the other routines in this package.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Init is idempotent with respect to the heap invariants
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// and may be called whenever the heap invariants may have been invalidated.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// The complexity is O(n) where n = h.Len().
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Init</span>(<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Interface</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// heapify
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">n</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Len</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">n</span><span style="color:#f92672">/</span><span style="color:#ae81ff">2</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">i</span> <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span>; <span style="color:#a6e22e">i</span><span style="color:#f92672">--</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">down</span>(<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">n</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Push pushes the element x onto the heap.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// The complexity is O(log n) where n = h.Len().
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Push</span>(<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Interface</span>, <span style="color:#a6e22e">x</span> <span style="color:#66d9ef">interface</span>{}) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Push</span>(<span style="color:#a6e22e">x</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">up</span>(<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Len</span>()<span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Pop removes and returns the minimum element (according to Less) from the heap.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// The complexity is O(log n) where n = h.Len().
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Pop is equivalent to Remove(h, 0).
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Pop</span>(<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Interface</span>) <span style="color:#66d9ef">interface</span>{} {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">n</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Len</span>() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Swap</span>(<span style="color:#ae81ff">0</span>, <span style="color:#a6e22e">n</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">down</span>(<span style="color:#a6e22e">h</span>, <span style="color:#ae81ff">0</span>, <span style="color:#a6e22e">n</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Pop</span>()
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Remove removes and returns the element at index i from the heap.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// The complexity is O(log n) where n = h.Len().
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Remove</span>(<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Interface</span>, <span style="color:#a6e22e">i</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">interface</span>{} {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">n</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Len</span>() <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">i</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Swap</span>(<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">n</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">down</span>(<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">n</span>) {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">up</span>(<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">i</span>)
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Pop</span>()
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// Fix re-establishes the heap ordering after the element at index i has changed its value.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// Changing the value of the element at index i and then calling Fix is equivalent to,
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// but less expensive than, calling Remove(h, i) followed by a Push of the new value.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// The complexity is O(log n) where n = h.Len().
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">Fix</span>(<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Interface</span>, <span style="color:#a6e22e">i</span> <span style="color:#66d9ef">int</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">down</span>(<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Len</span>()) {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">up</span>(<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">i</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">up</span>(<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Interface</span>, <span style="color:#a6e22e">j</span> <span style="color:#66d9ef">int</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> (<span style="color:#a6e22e">j</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>) <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span> <span style="color:#75715e">// parent
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">i</span> <span style="color:#f92672">==</span> <span style="color:#a6e22e">j</span> <span style="color:#f92672">||</span> !<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Less</span>(<span style="color:#a6e22e">j</span>, <span style="color:#a6e22e">i</span>) {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Swap</span>(<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">j</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">j</span> = <span style="color:#a6e22e">i</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">down</span>(<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">Interface</span>, <span style="color:#a6e22e">i0</span>, <span style="color:#a6e22e">n</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">bool</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">i</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">i0</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">j1</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">2</span><span style="color:#f92672">*</span><span style="color:#a6e22e">i</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">j1</span> <span style="color:#f92672">&gt;=</span> <span style="color:#a6e22e">n</span> <span style="color:#f92672">||</span> <span style="color:#a6e22e">j1</span> &lt; <span style="color:#ae81ff">0</span> { <span style="color:#75715e">// j1 &lt; 0 after int overflow
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">j</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">j1</span> <span style="color:#75715e">// left child
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">j2</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">j1</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>; <span style="color:#a6e22e">j2</span> &lt; <span style="color:#a6e22e">n</span> <span style="color:#f92672">&amp;&amp;</span> <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Less</span>(<span style="color:#a6e22e">j2</span>, <span style="color:#a6e22e">j1</span>) {
+</span></span><span style="display:flex;"><span>			<span style="color:#a6e22e">j</span> = <span style="color:#a6e22e">j2</span> <span style="color:#75715e">// = 2*i + 2  // right child
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> !<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Less</span>(<span style="color:#a6e22e">j</span>, <span style="color:#a6e22e">i</span>) {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Swap</span>(<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">j</span>)
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">i</span> = <span style="color:#a6e22e">j</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">i</span> &gt; <span style="color:#a6e22e">i0</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="简单使用">简单使用<a href="#简单使用" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
+<p>由以上源码可知，要实现一个heap数据结构，需要实现Len()、Less()（根据这里控制大顶堆还是小顶堆）、Swap()、Push()、Pop()、Fix()(或Update())方法，其中Fix方法是可选的。Fix方法主要是传入元素和元素所在数组的index，并且下沉该元素。</p>
+<p>下面实现一个简单的[]int数组构成的heap。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">heap</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">IntHeap</span> []<span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">IntHeap</span>) <span style="color:#a6e22e">Len</span>() <span style="color:#66d9ef">int</span>           { <span style="color:#66d9ef">return</span> len(<span style="color:#a6e22e">h</span>) }
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">IntHeap</span>) <span style="color:#a6e22e">Less</span>(<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">j</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">bool</span> { <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">i</span>] &lt; <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">j</span>] }
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">IntHeap</span>) <span style="color:#a6e22e">Swap</span>(<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">j</span> <span style="color:#66d9ef">int</span>)      { <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">i</span>], <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">j</span>] = <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">j</span>], <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">i</span>] }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">IntHeap</span>) <span style="color:#a6e22e">Push</span>(<span style="color:#a6e22e">x</span> <span style="color:#66d9ef">interface</span>{}) {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span><span style="color:#a6e22e">h</span> = append(<span style="color:#f92672">*</span><span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">x</span>.(<span style="color:#66d9ef">int</span>))
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">IntHeap</span>) <span style="color:#a6e22e">Pop</span>() <span style="color:#66d9ef">interface</span>{} {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">old</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">h</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">n</span> <span style="color:#f92672">:=</span> len(<span style="color:#a6e22e">old</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">old</span>[<span style="color:#a6e22e">n</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span><span style="color:#a6e22e">h</span> = <span style="color:#a6e22e">old</span>[<span style="color:#ae81ff">0</span> : <span style="color:#a6e22e">n</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">x</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">*  test file
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">**/</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">heap</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;container/heap&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;testing&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestHeap</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">h</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">IntHeap</span>{<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">5</span>,<span style="color:#ae81ff">6</span>}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">heap</span>.<span style="color:#a6e22e">Init</span>(<span style="color:#a6e22e">h</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">heap</span>.<span style="color:#a6e22e">Push</span>(<span style="color:#a6e22e">h</span>, <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Len</span>() &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">heap</span>.<span style="color:#a6e22e">Pop</span>(<span style="color:#a6e22e">h</span>))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">*  output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">**/</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">==</span>= <span style="color:#a6e22e">RUN</span>   <span style="color:#a6e22e">TestHeap</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> <span style="color:#ae81ff">4</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> <span style="color:#ae81ff">5</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> <span style="color:#ae81ff">6</span>
+</span></span></code></pre></div><p>这样就可以实现int数组的小顶堆，如果需要实现更加复杂的数据结构的heap，可以参考[]int的方法来实现，如：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">heap</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Data</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">key</span> <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">value</span> <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">wight</span> <span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">DataHeap</span> []<span style="color:#a6e22e">Data</span>
+</span></span><span style="display:flex;"><span> 
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">DataHeap</span>) <span style="color:#a6e22e">Len</span>() <span style="color:#66d9ef">int</span>           { <span style="color:#66d9ef">return</span> len(<span style="color:#a6e22e">h</span>) }
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">DataHeap</span>) <span style="color:#a6e22e">Less</span>(<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">j</span> <span style="color:#66d9ef">int</span>) <span style="color:#66d9ef">bool</span> { <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">i</span>].<span style="color:#a6e22e">wight</span> &lt; <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">j</span>].<span style="color:#a6e22e">wight</span> }
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#a6e22e">DataHeap</span>) <span style="color:#a6e22e">Swap</span>(<span style="color:#a6e22e">i</span>, <span style="color:#a6e22e">j</span> <span style="color:#66d9ef">int</span>)      { <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">i</span>], <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">j</span>] = <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">j</span>], <span style="color:#a6e22e">h</span>[<span style="color:#a6e22e">i</span>] }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">DataHeap</span>) <span style="color:#a6e22e">Push</span>(<span style="color:#a6e22e">x</span> <span style="color:#66d9ef">interface</span>{}) {
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span><span style="color:#a6e22e">h</span> = append(<span style="color:#f92672">*</span><span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">x</span>.(<span style="color:#a6e22e">Data</span>))
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">h</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">DataHeap</span>) <span style="color:#a6e22e">Pop</span>() <span style="color:#66d9ef">interface</span>{} {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">old</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">h</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">n</span> <span style="color:#f92672">:=</span> len(<span style="color:#a6e22e">old</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">x</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">old</span>[<span style="color:#a6e22e">n</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">*</span><span style="color:#a6e22e">h</span> = <span style="color:#a6e22e">old</span>[<span style="color:#ae81ff">0</span> : <span style="color:#a6e22e">n</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">x</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">*  test file
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">**/</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">heap</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;container/heap&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;testing&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">TestDataHeap</span>(<span style="color:#a6e22e">t</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">testing</span>.<span style="color:#a6e22e">T</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">h</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">DataHeap</span>{<span style="color:#a6e22e">Data</span>{<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">2</span>,<span style="color:#ae81ff">3</span>},<span style="color:#a6e22e">Data</span>{<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">5</span>},
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">Data</span>{<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">0</span>},<span style="color:#a6e22e">Data</span>{<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">2</span>}}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">heap</span>.<span style="color:#a6e22e">Init</span>(<span style="color:#a6e22e">h</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">heap</span>.<span style="color:#a6e22e">Push</span>(<span style="color:#a6e22e">h</span>, <span style="color:#a6e22e">Data</span>{<span style="color:#ae81ff">1</span>,<span style="color:#ae81ff">4</span>,<span style="color:#f92672">-</span><span style="color:#ae81ff">340</span>})
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">h</span>.<span style="color:#a6e22e">Len</span>() &gt; <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">heap</span>.<span style="color:#a6e22e">Pop</span>(<span style="color:#a6e22e">h</span>))
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/**
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">*  output
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">**/</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">==</span>= <span style="color:#a6e22e">RUN</span>   <span style="color:#a6e22e">TestDataHeap</span>
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> {<span style="color:#ae81ff">1</span> <span style="color:#ae81ff">4</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">340</span>}
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> {<span style="color:#ae81ff">1</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">0</span>}
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> {<span style="color:#ae81ff">1</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">2</span>}
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> {<span style="color:#ae81ff">1</span> <span style="color:#ae81ff">2</span> <span style="color:#ae81ff">3</span>}
+</span></span><span style="display:flex;"><span><span style="color:#ae81ff">2020</span><span style="color:#f92672">/</span><span style="color:#ae81ff">09</span><span style="color:#f92672">/</span><span style="color:#ae81ff">24</span> <span style="color:#ae81ff">21</span>:<span style="color:#ae81ff">59</span>:<span style="color:#ae81ff">59</span> {<span style="color:#ae81ff">1</span> <span style="color:#ae81ff">4</span> <span style="color:#ae81ff">5</span>}
+</span></span></code></pre></div><h2 id="其他方法实现heap">其他方法实现heap<a href="#其他方法实现heap" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;math/rand&#34;</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#75715e">// 堆实现最小优先队列，即最小堆
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 数据结构是数组构成的二叉树（完全二叉树）
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 树中某个节点的值总是不大于或不小于其孩子节点的值；
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 树中每个节点的子树都是堆树
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//        1  2  3  4   5  6   7   8  9  10
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// a[] = {4, 1, 3, 2, 16, 9, 10, 14, 8, 7}
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//                  4
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//                /  \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//               1    3
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//              / \  / \
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//             2  16 9  10
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//            /\  /
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">//           14 8 7
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 若取a[1]为堆顶最大或最小，a[i]的左子节点为a[2i],右子节点为a[2i+1],父节点为a[i/2]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">// 若取a[0]为堆顶最大或最小，a[i]的左子节点为a[2i+1],右子节点为a[2i+2],父节点为a[(i-1)/2]
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">PriorityHeap</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">arr</span> []<span style="color:#66d9ef">int</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">PriorityHeap</span>) <span style="color:#a6e22e">push</span>(<span style="color:#a6e22e">pri</span> <span style="color:#66d9ef">int</span>) {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span> = append(<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>, <span style="color:#a6e22e">pri</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">/*if len(p.arr) == 0 {
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">		return
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	}*/</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// fixup 比父节点小的就上浮
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">end</span> <span style="color:#f92672">:=</span> len(<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>) <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">father</span> <span style="color:#f92672">:=</span> (<span style="color:#a6e22e">end</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span> ) <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">father</span> <span style="color:#f92672">&gt;=</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">father</span>] <span style="color:#f92672">&lt;=</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">end</span>] {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">father</span>], <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">end</span>] = <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">end</span>], <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">father</span>]
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">end</span> = <span style="color:#a6e22e">father</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">father</span> = (<span style="color:#a6e22e">end</span> <span style="color:#f92672">-</span> <span style="color:#ae81ff">1</span> ) <span style="color:#f92672">/</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> (<span style="color:#a6e22e">p</span> <span style="color:#f92672">*</span><span style="color:#a6e22e">PriorityHeap</span>) <span style="color:#a6e22e">pop</span>() <span style="color:#66d9ef">int</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">length</span> <span style="color:#f92672">:=</span> len(<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">length</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">0</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">res</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#ae81ff">0</span>]
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">length</span> <span style="color:#f92672">==</span> <span style="color:#ae81ff">1</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span> = []<span style="color:#66d9ef">int</span>{}
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#ae81ff">0</span>] = <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">length</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span> = <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[:<span style="color:#a6e22e">length</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1</span>]
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">length</span> = len(<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>)
+</span></span><span style="display:flex;"><span>	<span style="color:#75715e">// fix down 比左、右节点小的越小越往哪边下沉
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>	<span style="color:#a6e22e">farther</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">0</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">min</span> <span style="color:#f92672">:=</span> <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">farther</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">min</span> &lt; <span style="color:#a6e22e">length</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">min</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span> &lt; <span style="color:#a6e22e">length</span> { <span style="color:#75715e">// 右节点存在？
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">min</span>] &gt; <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">min</span><span style="color:#f92672">+</span><span style="color:#ae81ff">1</span>] { <span style="color:#75715e">// 左节点比右节点大？
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>				<span style="color:#a6e22e">min</span><span style="color:#f92672">++</span> <span style="color:#75715e">// 那就用右节点，否则往左子节点下沉
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>			}
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#66d9ef">if</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">farther</span>] <span style="color:#f92672">&lt;=</span> <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">min</span>] {
+</span></span><span style="display:flex;"><span>			<span style="color:#66d9ef">break</span>
+</span></span><span style="display:flex;"><span>		}
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">farther</span>], <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">min</span>] = <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">min</span>], <span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">arr</span>[<span style="color:#a6e22e">farther</span>]
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">farther</span> = <span style="color:#a6e22e">min</span>
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">min</span> = <span style="color:#ae81ff">2</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">farther</span> <span style="color:#f92672">+</span> <span style="color:#ae81ff">1</span>
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">res</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">initHeap</span>() <span style="color:#f92672">*</span><span style="color:#a6e22e">PriorityHeap</span> {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">p</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">PriorityHeap</span>{
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">arr</span>: []<span style="color:#66d9ef">int</span>{},
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">return</span> <span style="color:#a6e22e">p</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">p</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">initHeap</span>()
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">Seed</span>(<span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Now</span>().<span style="color:#a6e22e">Unix</span>())
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span><span style="color:#f92672">:=</span><span style="color:#ae81ff">0</span>;<span style="color:#a6e22e">i</span>&lt;<span style="color:#ae81ff">10</span>;<span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">push</span>(<span style="color:#a6e22e">rand</span>.<span style="color:#a6e22e">Int</span>() <span style="color:#f92672">%</span> <span style="color:#ae81ff">100</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#66d9ef">for</span> <span style="color:#a6e22e">i</span><span style="color:#f92672">:=</span><span style="color:#ae81ff">0</span>;<span style="color:#a6e22e">i</span>&lt;<span style="color:#ae81ff">10</span>;<span style="color:#a6e22e">i</span><span style="color:#f92672">++</span> {
+</span></span><span style="display:flex;"><span>		<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">pop</span>(), <span style="color:#a6e22e">i</span>)
+</span></span><span style="display:flex;"><span>	}
+</span></span><span style="display:flex;"><span>	<span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">p</span>.<span style="color:#a6e22e">pop</span>())
+</span></span><span style="display:flex;"><span><span style="color:#75715e">/*  output:
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">    17 0
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	47 1
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	49 2
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	52 3
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	55 4
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	55 5
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	71 6
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	74 7
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	93 8
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	98 9
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e">	-1*/</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div>
+      </div></div>
+
+  
+  
+<div class="pagination">
+    <div class="pagination__title">
+        <span class="pagination__title-h">Read other posts</span>
+        <hr />
+    </div>
+    <div class="pagination__buttons">
+        
+        <span class="button previous">
+            <a href="http://hindung.cn/posts/12/">
+                <span class="button__icon">←</span>
+                <span class="button__text">构建属于你自己的核心力量</span>
+            </a>
+        </span>
+        
+        
+        <span class="button next">
+            <a href="http://hindung.cn/posts/6/">
+                <span class="button__text">雪花算法</span>
+                <span class="button__icon">→</span>
+            </a>
+        </span>
+        
+    </div>
+</div>
+
+  
+
+  
+  
+
+  
+</div>
+
+  </div>
+
+  
+    <footer class="footer">
+  <div class="footer__inner">
+    
+      <div class="copyright">
+        <span>© 2022 Powered by <a href="http://gohugo.io">Hugo</a></span>
+    
+        <span>:: Theme made by <a href="https://twitter.com/panr">panr</a></span>
+      </div>
+  </div>
+</footer>
+
+<script src="http://hindung.cn/assets/main.js"></script>
+<script src="http://hindung.cn/assets/prism.js"></script>
+
+
+  <script src="http://hindung.cn/assets/languageSelector.js"></script>
+
+
+
+
+
+
+  
+</div>
+
+</body>
+</html>
