@@ -1,293 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  
-    <title>容器运行时 :: Hindung Blogs</title>
-  
-  <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="参考大佬文章，加深理解容器" />
-<meta name="keywords" content="" />
-<meta name="robots" content="noodp" />
-<link rel="canonical" href="http://hindung.cn/posts/23/" />
-
-
-
-
-<link rel="stylesheet" href="http://hindung.cn/assets/style.css">
-
-  <link rel="stylesheet" href="http://hindung.cn/assets/green.css">
-
-
-
-
-
-
-<link rel="apple-touch-icon" href="http://hindung.cn/img/apple-touch-icon-192x192.png">
-
-  <link rel="shortcut icon" href="http://hindung.cn/img/favicon/green.png">
-
-
-
-<meta name="twitter:card" content="summary" />
-
-
-
-<meta property="og:locale" content="en" />
-<meta property="og:type" content="article" />
-<meta property="og:title" content="容器运行时">
-<meta property="og:description" content="参考大佬文章，加深理解容器" />
-<meta property="og:url" content="http://hindung.cn/posts/23/" />
-<meta property="og:site_name" content="Hindung Blogs" />
-
-  
-    <meta property="og:image" content="http://hindung.cn/img/favicon/green.png">
-  
-
-<meta property="og:image:width" content="2048">
-<meta property="og:image:height" content="1024">
-
-
-  <meta property="article:published_time" content="2021-06-01 00:00:00 &#43;0000 UTC" />
-
-
-
-
-
-
-
-
-
-
-
-
-</head>
-<body class="green">
-
-
-<div class="container center headings--one-size">
-
-  <header class="header">
-  <div class="header__inner">
-    <div class="header__logo">
-      <a href="/">
-  <div class="logo">
-    Hindung
-  </div>
-</a>
-
-    </div>
-    
-      <div class="menu-trigger">menu</div>
-    
-  </div>
-  
-    <nav class="menu">
-  <ul class="menu__inner menu__inner--desktop">
-    
-      
-        
-          <li><a href="/about">About</a></li>
-        
-      
-        
-          <li><a href="/posts">Post</a></li>
-        
-      
-      
-    
-
-    
-  </ul>
-
-  <ul class="menu__inner menu__inner--mobile">
-    
-      
-        <li><a href="/about">About</a></li>
-      
-    
-      
-        <li><a href="/posts">Post</a></li>
-      
-    
-    
-  </ul>
-</nav>
-
-  
-</header>
-
-
-  <div class="content">
-    
-<div class="post">
-  <h1 class="post-title">
-    <a href="http://hindung.cn/posts/23/">容器运行时</a></h1>
-  <div class="post-meta">
-    
-      <span class="post-date">
-        2021-06-01
-        
-      </span>
-    
-    
-    
-      <span class="post-reading-time">:: 1 min read (111 words)</span>
-    
-  </div>
-
-  
-  <span class="post-tags">
-    
-    #<a href="http://hindung.cn/tags/docker/">Docker</a>&nbsp;
-    
-  </span>
-  
-  
-
-
-  
-    <div class="table-of-contents">
-      <h2>
-        Table of Contents
-      </h2>
-      <nav id="TableOfContents">
-  <ul>
-    <li><a href="#oci--cri">OCI &amp;&amp; CRI</a></li>
-    <li><a href="#低级low-level容器运行时">低级（low-level）容器运行时</a></li>
-    <li><a href="#高级high-level容器运行时">高级（high-level）容器运行时</a></li>
-    <li><a href="#k8s-与-cri">K8s 与 CRI</a></li>
-    <li><a href="#实现一个容器运行时">实现一个容器运行时</a></li>
-    <li><a href="#参考链接">参考链接</a></li>
-  </ul>
-</nav>
-    </div>
-  
-
-  <div class="post-content"><div>
-        <h2 id="oci--cri">OCI &amp;&amp; CRI<a href="#oci--cri" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>使用容器经常会听到容器运行时的概念、OCI以及CRI等，这些有什么区别和联系呢？</p>
-<ul>
-<li>CR，即Container Runtime，容器运行时</li>
-<li>CRI，即Container Runtime Interface，容器运行时接口，实现该系列接口以实现容器功能</li>
-<li>OCI，即Open Container Initiative：开口容器倡议，是建立围绕容器格式和运行时的开放式行业标准的明确目的的开放式的治理结构。</li>
-</ul>
-<p>OCI 目前包含两个规范：运行时规范（runtime-spec）和镜像规范（image-spec）。运行时规范概述了如何运行在磁盘上解压缩的“文件系统包”。</p>
-<p>现在清楚了，OCI定义了一种规范，即怎么做如何做。而CR是这个规范的实践并定义了一系列接口CRI，只要实现了该接口就能使用这个CR。</p>
-<p>比如CR有很多种，如runc、lxc等，但他们都提供了统一的CRI，其他实现了这个CRI的组件如kubelet在runc和lxc间切换是无感的。</p>
-<h2 id="低级low-level容器运行时">低级（low-level）容器运行时<a href="#低级low-level容器运行时" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>我理解的low-level是一系列操作容器的行为在很底层，比如通过Linux内核接口创建各个Namespace以及生成Cgroup等操作。把这些行为打包就是一个低级的运行时的内容。或者说低级容器运行时干了啥。</p>
-<h2 id="高级high-level容器运行时">高级（high-level）容器运行时<a href="#高级high-level容器运行时" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>高级容器运行时又干了啥事情呢？镜像管理、镜像传输、镜像解压缩等技术都可以归为高级的容器运行时。</p>
-<p>比如docker提供的镜像构建、拉取等。docker可以分为以下几层：</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>+----------+
-</span></span><span style="display:flex;"><span>|          |
-</span></span><span style="display:flex;"><span>|  docker  |
-</span></span><span style="display:flex;"><span>|          |
-</span></span><span style="display:flex;"><span>+-----+----+
-</span></span><span style="display:flex;"><span>      | socket/API
-</span></span><span style="display:flex;"><span>      |
-</span></span><span style="display:flex;"><span>+-----v----+
-</span></span><span style="display:flex;"><span>|          |
-</span></span><span style="display:flex;"><span>|  dockerd |
-</span></span><span style="display:flex;"><span>|          |
-</span></span><span style="display:flex;"><span>+-----+----+
-</span></span><span style="display:flex;"><span>      |  socket/API
-</span></span><span style="display:flex;"><span>      |
-</span></span><span style="display:flex;"><span>+-----v----+
-</span></span><span style="display:flex;"><span>|          |
-</span></span><span style="display:flex;"><span>|contanerd |
-</span></span><span style="display:flex;"><span>|          |
-</span></span><span style="display:flex;"><span>+-----+----+
-</span></span><span style="display:flex;"><span>      |
-</span></span><span style="display:flex;"><span>      | OCI
-</span></span><span style="display:flex;"><span>+-----v----+
-</span></span><span style="display:flex;"><span>|          |
-</span></span><span style="display:flex;"><span>|  runc    |
-</span></span><span style="display:flex;"><span>+----------+
-</span></span></code></pre></div><h2 id="k8s-与-cri">K8s 与 CRI<a href="#k8s-与-cri" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>k8s 1.5 中自己实现了 docker CRI shim，通过这个组件与docker交互。管理容器的过程还是通过docker那套，在containerd 1.1版本中containerd直接实现了CRI，kubelet可以直接通过这个CRI实现与containerd的交互，从而绕过了docker。</p>
-<p>CRI 定义了几种远程过程调用 (RPC) 和消息类型。RPC 用于：</p>
-<ul>
-<li>拉取镜像 ImageService.PullImage</li>
-<li>创建pod RuntimeService.RunPodSandbox</li>
-<li>创建容器RuntimeService.CreateContainer</li>
-<li>启动容器RuntimeService.StartContainer</li>
-<li>停止容器RuntimeService.StopContainer</li>
-</ul>
-<p>等操作。</p>
-<h2 id="实现一个容器运行时">实现一个容器运行时<a href="#实现一个容器运行时" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<h2 id="参考链接">参考链接<a href="#参考链接" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p><a href="https://www.ianlewis.org/en/container-runtimes-part-1-introduction-container-r">Container Runtimes Part 1: An Introduction to Container Runtimes</a></p>
-<p><a href="https://opencontainers.org/">opencontainers.org</a></p>
-<p><a href="https://github.com/opencontainers/runtime-spec">runtime-spec</a></p>
-<p><a href="https://www.youtube.com/watch?v=Utf-A4rODH8">Building a container from scratch in Go - Liz Rice (Microscaling Systems)
-</a></p>
-
-      </div></div>
-
-  
-  
-<div class="pagination">
-    <div class="pagination__title">
-        <span class="pagination__title-h">Read other posts</span>
-        <hr />
-    </div>
-    <div class="pagination__buttons">
-        
-        <span class="button previous">
-            <a href="http://hindung.cn/posts/21/">
-                <span class="button__icon">←</span>
-                <span class="button__text">Kubernetes组件</span>
-            </a>
-        </span>
-        
-        
-        <span class="button next">
-            <a href="http://hindung.cn/posts/19/">
-                <span class="button__text">Go源码解读之sync.Cond</span>
-                <span class="button__icon">→</span>
-            </a>
-        </span>
-        
-    </div>
-</div>
-
-  
-
-  
-  
-
-  
-</div>
-
-  </div>
-
-  
-    <footer class="footer">
-  <div class="footer__inner">
-    
-      <div class="copyright">
-        <span>© 2022 Powered by <a href="http://gohugo.io">Hugo</a></span>
-    
-        <span>:: Theme made by <a href="https://twitter.com/panr">panr</a></span>
-      </div>
-  </div>
-</footer>
-
-<script src="http://hindung.cn/assets/main.js"></script>
-<script src="http://hindung.cn/assets/prism.js"></script>
-
-
-  <script src="http://hindung.cn/assets/languageSelector.js"></script>
-
-
-
-
-
-
-  
-</div>
-
-</body>
-</html>
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="参考大佬文章，加深理解容器"><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:title" content="容器运行时"><meta property="og:description" content="参考大佬文章，加深理解容器"><meta property="og:type" content="article"><meta property="og:url" content="http://hindung.cn/posts/23/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2021-06-01T00:00:00+00:00"><meta property="article:modified_time" content="2021-06-01T00:00:00+00:00"><title>容器运行时 | Hindung Blogs</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.scss integrity crossorigin=anonymous><script defer src=/flexsearch.min.js></script>
+<script defer src=/en.search.min.babd2f636c40f8c2a90eb07eec05db5d5b170c6461306029c9a468cc2daf879d.js integrity="sha256-ur0vY2xA+MKpDrB+7AXbXVsXDGRhMGApyaRozC2vh50=" crossorigin=anonymous></script></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
+<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Hindung Blogs</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu></label>
+<strong>容器运行时</strong>
+<label for=toc-control><img src=/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav id=TableOfContents><ul><li><a href=#oci--cri>OCI && CRI</a></li><li><a href=#低级low-level容器运行时>低级（low-level）容器运行时</a></li><li><a href=#高级high-level容器运行时>高级（high-level）容器运行时</a></li><li><a href=#k8s-与-cri>K8s 与 CRI</a></li><li><a href=#实现一个容器运行时>实现一个容器运行时</a></li><li><a href=#参考链接>参考链接</a></li></ul></nav></aside></header><article class=markdown><h1><a href=/posts/23/>容器运行时</a></h1><h5>June 1, 2021</h5><div><a href=/tags/docker/>Docker</a></div><h2 id=oci--cri>OCI && CRI
+<a class=anchor href=#oci--cri>#</a></h2><p>使用容器经常会听到容器运行时的概念、OCI以及CRI等，这些有什么区别和联系呢？</p><ul><li>CR，即Container Runtime，容器运行时</li><li>CRI，即Container Runtime Interface，容器运行时接口，实现该系列接口以实现容器功能</li><li>OCI，即Open Container Initiative：开口容器倡议，是建立围绕容器格式和运行时的开放式行业标准的明确目的的开放式的治理结构。</li></ul><p>OCI 目前包含两个规范：运行时规范（runtime-spec）和镜像规范（image-spec）。运行时规范概述了如何运行在磁盘上解压缩的“文件系统包”。</p><p>现在清楚了，OCI定义了一种规范，即怎么做如何做。而CR是这个规范的实践并定义了一系列接口CRI，只要实现了该接口就能使用这个CR。</p><p>比如CR有很多种，如runc、lxc等，但他们都提供了统一的CRI，其他实现了这个CRI的组件如kubelet在runc和lxc间切换是无感的。</p><h2 id=低级low-level容器运行时>低级（low-level）容器运行时
+<a class=anchor href=#%e4%bd%8e%e7%ba%a7low-level%e5%ae%b9%e5%99%a8%e8%bf%90%e8%a1%8c%e6%97%b6>#</a></h2><p>我理解的low-level是一系列操作容器的行为在很底层，比如通过Linux内核接口创建各个Namespace以及生成Cgroup等操作。把这些行为打包就是一个低级的运行时的内容。或者说低级容器运行时干了啥。</p><h2 id=高级high-level容器运行时>高级（high-level）容器运行时
+<a class=anchor href=#%e9%ab%98%e7%ba%a7high-level%e5%ae%b9%e5%99%a8%e8%bf%90%e8%a1%8c%e6%97%b6>#</a></h2><p>高级容器运行时又干了啥事情呢？镜像管理、镜像传输、镜像解压缩等技术都可以归为高级的容器运行时。</p><p>比如docker提供的镜像构建、拉取等。docker可以分为以下几层：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span>+----------+
+</span></span><span style=display:flex><span>|          |
+</span></span><span style=display:flex><span>|  docker  |
+</span></span><span style=display:flex><span>|          |
+</span></span><span style=display:flex><span>+-----+----+
+</span></span><span style=display:flex><span>      | socket/API
+</span></span><span style=display:flex><span>      |
+</span></span><span style=display:flex><span>+-----v----+
+</span></span><span style=display:flex><span>|          |
+</span></span><span style=display:flex><span>|  dockerd |
+</span></span><span style=display:flex><span>|          |
+</span></span><span style=display:flex><span>+-----+----+
+</span></span><span style=display:flex><span>      |  socket/API
+</span></span><span style=display:flex><span>      |
+</span></span><span style=display:flex><span>+-----v----+
+</span></span><span style=display:flex><span>|          |
+</span></span><span style=display:flex><span>|contanerd |
+</span></span><span style=display:flex><span>|          |
+</span></span><span style=display:flex><span>+-----+----+
+</span></span><span style=display:flex><span>      |
+</span></span><span style=display:flex><span>      | OCI
+</span></span><span style=display:flex><span>+-----v----+
+</span></span><span style=display:flex><span>|          |
+</span></span><span style=display:flex><span>|  runc    |
+</span></span><span style=display:flex><span>+----------+
+</span></span></code></pre></div><h2 id=k8s-与-cri>K8s 与 CRI
+<a class=anchor href=#k8s-%e4%b8%8e-cri>#</a></h2><p>k8s 1.5 中自己实现了 docker CRI shim，通过这个组件与docker交互。管理容器的过程还是通过docker那套，在containerd 1.1版本中containerd直接实现了CRI，kubelet可以直接通过这个CRI实现与containerd的交互，从而绕过了docker。</p><p>CRI 定义了几种远程过程调用 (RPC) 和消息类型。RPC 用于：</p><ul><li>拉取镜像 ImageService.PullImage</li><li>创建pod RuntimeService.RunPodSandbox</li><li>创建容器RuntimeService.CreateContainer</li><li>启动容器RuntimeService.StartContainer</li><li>停止容器RuntimeService.StopContainer</li></ul><p>等操作。</p><h2 id=实现一个容器运行时>实现一个容器运行时
+<a class=anchor href=#%e5%ae%9e%e7%8e%b0%e4%b8%80%e4%b8%aa%e5%ae%b9%e5%99%a8%e8%bf%90%e8%a1%8c%e6%97%b6>#</a></h2><h2 id=参考链接>参考链接
+<a class=anchor href=#%e5%8f%82%e8%80%83%e9%93%be%e6%8e%a5>#</a></h2><p><a href=https://www.ianlewis.org/en/container-runtimes-part-1-introduction-container-r>Container Runtimes Part 1: An Introduction to Container Runtimes</a></p><p><a href=https://opencontainers.org/>opencontainers.org</a></p><p><a href=https://github.com/opencontainers/runtime-spec>runtime-spec</a></p><p><a href="https://www.youtube.com/watch?v=Utf-A4rODH8">Building a container from scratch in Go - Liz Rice (Microscaling Systems)</a></p></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script>(function(){function e(e){const t=window.getSelection(),n=document.createRange();n.selectNodeContents(e),t.removeAllRanges(),t.addRange(n)}document.querySelectorAll("pre code").forEach(t=>{t.addEventListener("click",function(){if(window.getSelection().toString())return;e(t.parentElement),navigator.clipboard&&navigator.clipboard.writeText(t.parentElement.textContent)})})})()</script></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents><ul><li><a href=#oci--cri>OCI && CRI</a></li><li><a href=#低级low-level容器运行时>低级（low-level）容器运行时</a></li><li><a href=#高级high-level容器运行时>高级（high-level）容器运行时</a></li><li><a href=#k8s-与-cri>K8s 与 CRI</a></li><li><a href=#实现一个容器运行时>实现一个容器运行时</a></li><li><a href=#参考链接>参考链接</a></li></ul></nav></div></aside></main></body></html>

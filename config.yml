@@ -1,6 +1,6 @@
 baseUrl: http://hindung.cn/
 languageCode: en-us
-theme: terminal
+theme: hugo-book
 paginate: 5
 
 params:

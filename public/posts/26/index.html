@@ -1,305 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  
-    <title>K8s client-go初始化的几种方法 :: Hindung Blogs</title>
-  
-  <meta http-equiv="content-type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="经常用到的集中k8s client的初始化方法，这里总结备忘📝一下" />
-<meta name="keywords" content="" />
-<meta name="robots" content="noodp" />
-<link rel="canonical" href="http://hindung.cn/posts/26/" />
-
-
-
-
-<link rel="stylesheet" href="http://hindung.cn/assets/style.css">
-
-  <link rel="stylesheet" href="http://hindung.cn/assets/green.css">
-
-
-
-
-
-
-<link rel="apple-touch-icon" href="http://hindung.cn/img/apple-touch-icon-192x192.png">
-
-  <link rel="shortcut icon" href="http://hindung.cn/img/favicon/green.png">
-
-
-
-<meta name="twitter:card" content="summary" />
-
-
-
-<meta property="og:locale" content="en" />
-<meta property="og:type" content="article" />
-<meta property="og:title" content="K8s client-go初始化的几种方法">
-<meta property="og:description" content="经常用到的集中k8s client的初始化方法，这里总结备忘📝一下" />
-<meta property="og:url" content="http://hindung.cn/posts/26/" />
-<meta property="og:site_name" content="Hindung Blogs" />
-
-  
-    <meta property="og:image" content="http://hindung.cn/img/favicon/green.png">
-  
-
-<meta property="og:image:width" content="2048">
-<meta property="og:image:height" content="1024">
-
-
-  <meta property="article:published_time" content="2022-07-19 00:00:00 &#43;0000 UTC" />
-
-
-
-
-
-
-
-
-
-
-
-
-</head>
-<body class="green">
-
-
-<div class="container center headings--one-size">
-
-  <header class="header">
-  <div class="header__inner">
-    <div class="header__logo">
-      <a href="/">
-  <div class="logo">
-    Hindung
-  </div>
-</a>
-
-    </div>
-    
-      <div class="menu-trigger">menu</div>
-    
-  </div>
-  
-    <nav class="menu">
-  <ul class="menu__inner menu__inner--desktop">
-    
-      
-        
-          <li><a href="/about">About</a></li>
-        
-      
-        
-          <li><a href="/posts">Post</a></li>
-        
-      
-      
-    
-
-    
-  </ul>
-
-  <ul class="menu__inner menu__inner--mobile">
-    
-      
-        <li><a href="/about">About</a></li>
-      
-    
-      
-        <li><a href="/posts">Post</a></li>
-      
-    
-    
-  </ul>
-</nav>
-
-  
-</header>
-
-
-  <div class="content">
-    
-<div class="post">
-  <h1 class="post-title">
-    <a href="http://hindung.cn/posts/26/">K8s client-go初始化的几种方法</a></h1>
-  <div class="post-meta">
-    
-      <span class="post-date">
-        2022-07-19
-        
-      </span>
-    
-    
-    
-      <span class="post-reading-time">:: 1 min read (159 words)</span>
-    
-  </div>
-
-  
-  <span class="post-tags">
-    
-    #<a href="http://hindung.cn/tags/kubernetes/">Kubernetes</a>&nbsp;
-    
-    #<a href="http://hindung.cn/tags/go/">Go</a>&nbsp;
-    
-  </span>
-  
-  
-
-
-  
-    <div class="table-of-contents">
-      <h2>
-        Table of Contents
-      </h2>
-      <nav id="TableOfContents">
-  <ul>
-    <li><a href="#简介">简介</a>
-      <ul>
-        <li><a href="#restclient">RESTClient</a></li>
-        <li><a href="#clientset">ClientSet</a></li>
-        <li><a href="#dynamicclient">DynamicClient</a></li>
-        <li><a href="#discoveryclient">DiscoveryClient</a></li>
-      </ul>
-    </li>
-    <li><a href="#restconfig初始化">rest.Config初始化</a>
-      <ul>
-        <li><a href="#集群外通过kubeconfig初始化">集群外通过kubeconfig初始化</a></li>
-        <li><a href="#内存中通过kubeconfig字符串或者byte数组初始化">内存中通过kubeconfig字符串或者byte数组初始化</a></li>
-        <li><a href="#集群中通过serviceacount初始化">集群中通过ServiceAcount初始化</a></li>
-        <li><a href="#operator-sdk中初始化config">operator-sdk中初始化config</a></li>
-      </ul>
-    </li>
-  </ul>
-</nav>
-    </div>
-  
-
-  <div class="post-content"><div>
-        <h2 id="简介">简介<a href="#简介" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>client-go是k8s的一个基础组件库，是用于与API-Server交互的http客户端。K8s中大部分组件都使用了这个库实现与API-Server的通信功能。除了能够对资源对象的增删改查，还可Watch一个对象、升级成websocket链接等等功能。</p>
-<p>client-go支持四种客户端：<code>RESTClient</code>、<code>ClientSet</code>、<code>DynamicClient</code>、<code>DiscoveryClient</code>。这几个client可以相互转换。</p>
-<h3 id="restclient">RESTClient<a href="#restclient" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
-<p>RESTClient是最基础的客户端，相当于最底层的基础结构，可以直接通过RESTClient提供的RESTful方法如Get()、Put()、Post()、Delete()进行交互。</p>
-<p>一般而言，为了更为优雅的处理，需要进一步封装，通过Clientset封装RESTClient，然后再对外提供接口和服务。</p>
-<p>可以通过ClientSet客户端获得：</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">cli</span>.<span style="color:#a6e22e">CoreV1</span>().<span style="color:#a6e22e">RESTClient</span>().(<span style="color:#f92672">*</span><span style="color:#a6e22e">rest</span>.<span style="color:#a6e22e">RESTClient</span>)
-</span></span></code></pre></div><h3 id="clientset">ClientSet<a href="#clientset" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
-<p>Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要制定Group、Version，然后根据Resource获取。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">clientset</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">kubernetes</span>.<span style="color:#a6e22e">NewForConfig</span>(<span style="color:#a6e22e">config</span>)
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">sa</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">clientset</span>.<span style="color:#a6e22e">CoreV1</span>().<span style="color:#a6e22e">ServiceAccounts</span>(<span style="color:#e6db74">&#34;kube-system&#34;</span>).<span style="color:#a6e22e">Get</span>(<span style="color:#e6db74">&#34;kube-shell-admin&#34;</span>, <span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">GetOptions</span>{})
-</span></span></code></pre></div><h3 id="dynamicclient">DynamicClient<a href="#dynamicclient" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
-<p>Dynamic client是一种动态的client，它能处理kubernetes所有的资源。不同于clientset，dynamic client返回的对象是一个<code>map[string]interface{}</code>。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">dynamicClient</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">dynamic</span>.<span style="color:#a6e22e">NewForConfig</span>(<span style="color:#a6e22e">config</span>)
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">gvr</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">schema</span>.<span style="color:#a6e22e">GroupVersionResource</span>{<span style="color:#a6e22e">Version</span>: <span style="color:#e6db74">&#34;v1&#34;</span>,<span style="color:#a6e22e">Resource</span>: <span style="color:#e6db74">&#34;pods&#34;</span>}
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">unstructObjList</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">dynamicClient</span>.<span style="color:#a6e22e">Resource</span>(<span style="color:#a6e22e">gvr</span>).<span style="color:#a6e22e">Namespace</span>(<span style="color:#e6db74">&#34;dev&#34;</span>).<span style="color:#a6e22e">List</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">TODO</span>(),<span style="color:#a6e22e">metav1</span>.<span style="color:#a6e22e">ListOptions</span>{<span style="color:#a6e22e">Limit</span>: <span style="color:#ae81ff">100</span>})
-</span></span></code></pre></div><h3 id="discoveryclient">DiscoveryClient<a href="#discoveryclient" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
-<p>DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用户本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DisconversyClient实现的。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">discoveryClient</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">discovery</span>.<span style="color:#a6e22e">NewDiscoveryClientForConfig</span>(<span style="color:#a6e22e">config</span>)
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">APIGroup</span>,<span style="color:#a6e22e">APIResourceListSlice</span>,<span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">discoveryClient</span>.<span style="color:#a6e22e">ServerGroupsAndResources</span>()
-</span></span></code></pre></div><p>这几种客户端的初始化都涉及到了入参config，即<code>*rest.Config</code>，这个是用于初始化客户端的所有配置信息。</p>
-<h2 id="restconfig初始化">rest.Config初始化<a href="#restconfig初始化" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h2>
-<p>创建client前，需要先从初始化<code>*rest.Config</code>，这个<code>*rest.Config</code>可以从集群外的kubeconfig文件或者集群内部的 tokenFile 和 CAFile初始化（通过ServiceAcount自动挂载）。有以下几种方式：</p>
-<h3 id="集群外通过kubeconfig初始化">集群外通过kubeconfig初始化<a href="#集群外通过kubeconfig初始化" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
-<p>BuildConfigFromFlags方法从给定的url或者kubeconfig文件的文件夹路径去初始化config，如果不成功则会使用集群内部方法初始化config，如果不成功则返回一个默认的config。</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// &#34;k8s.io/client-go/tools/clientcmd&#34;
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">clientcmd</span>.<span style="color:#a6e22e">BuildConfigFromFlags</span>(<span style="color:#e6db74">&#34;&#34;</span>, <span style="color:#f92672">*</span><span style="color:#a6e22e">kubeconfig</span>)
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span>   panic(<span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>())
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><h3 id="内存中通过kubeconfig字符串或者byte数组初始化">内存中通过kubeconfig字符串或者byte数组初始化<a href="#内存中通过kubeconfig字符串或者byte数组初始化" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
-<p>通过读取kubeconfig文件内容进行初始化一个config：</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">clientcmd</span>.<span style="color:#a6e22e">NewClientConfigFromBytes</span>([]byte(string(<span style="color:#a6e22e">Data</span>[<span style="color:#e6db74">&#34;kubeConfig&#34;</span>])))
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
-</span></span><span style="display:flex;"><span>}
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">restConfig</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">ClientConfig</span>()
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span>   <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>, <span style="color:#a6e22e">err</span>
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><h3 id="集群中通过serviceacount初始化">集群中通过ServiceAcount初始化<a href="#集群中通过serviceacount初始化" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
-<p>通过集群内部配置创建 k8s 配置信息，通过 KUBERNETES_SERVICE_HOST 和 KUBERNETES_SERVICE_PORT 环境变量方式获取。</p>
-<p>若集群使用 TLS 认证方式，则默认读取集群内部 tokenFile 和 CAFile：</p>
-<p><code>tokenFile = &quot;/var/run/secrets/kubernetes.io/serviceaccount/token&quot;</code></p>
-<p><code>rootCAFile = &quot;/var/run/secrets/kubernetes.io/serviceaccount/ca.crt&quot;</code></p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// &#34;k8s.io/client-go/rest&#34;
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">config</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rest</span>.<span style="color:#a6e22e">InClusterConfig</span>()
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span>   panic(<span style="color:#a6e22e">err</span>.<span style="color:#a6e22e">Error</span>())
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><h3 id="operator-sdk中初始化config">operator-sdk中初始化config<a href="#operator-sdk中初始化config" class="hanchor" ariaLabel="Anchor">&#8983;</a> </h3>
-<p>一般来说，我们使用operator-sdk开发CRDs都会用到在本地调试或者在集群中调试的方法，在低版本operator-sdk中可以使用以下方法：</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">// &#34;sigs.k8s.io/controller-runtime/pkg/client/config&#34;
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">cfg</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">config</span>.<span style="color:#a6e22e">GetConfig</span>()
-</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
-</span></span><span style="display:flex;"><span><span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Error</span>(<span style="color:#a6e22e">err</span>, <span style="color:#e6db74">&#34;&#34;</span>)
-</span></span><span style="display:flex;"><span>   <span style="color:#a6e22e">os</span>.<span style="color:#a6e22e">Exit</span>(<span style="color:#ae81ff">1</span>)
-</span></span><span style="display:flex;"><span>}
-</span></span></code></pre></div><p>该方法初始化kubeconfig的顺序是&ndash;kubeconfig标签，KUBECONFIG环境变量，In-cluster集群内SA，$HOME/.kube/config文件。</p>
-<p>在初始化的config的同时，设置了请求的QPS，默认20 QPS, 30 burst。</p>
-<p>在某些高版本sdk中，可以用以下方法初始化：</p>
-<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#75715e">//ctrl &#34;sigs.k8s.io/controller-runtime&#34;
-</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#a6e22e">ctrl</span>.<span style="color:#a6e22e">GetConfigOrDie</span>()
-</span></span></code></pre></div><p>原理同上。</p>
-
-      </div></div>
-
-  
-  
-<div class="pagination">
-    <div class="pagination__title">
-        <span class="pagination__title-h">Read other posts</span>
-        <hr />
-    </div>
-    <div class="pagination__buttons">
-        
-        
-        <span class="button next">
-            <a href="http://hindung.cn/posts/post/">
-                <span class="button__text">Hello World</span>
-                <span class="button__icon">→</span>
-            </a>
-        </span>
-        
-    </div>
-</div>
-
-  
-
-  
-  
-
-  
-</div>
-
-  </div>
-
-  
-    <footer class="footer">
-  <div class="footer__inner">
-    
-      <div class="copyright">
-        <span>© 2022 Powered by <a href="http://gohugo.io">Hugo</a></span>
-    
-        <span>:: Theme made by <a href="https://twitter.com/panr">panr</a></span>
-      </div>
-  </div>
-</footer>
-
-<script src="http://hindung.cn/assets/main.js"></script>
-<script src="http://hindung.cn/assets/prism.js"></script>
-
-
-  <script src="http://hindung.cn/assets/languageSelector.js"></script>
-
-
-
-
-
-
-  
-</div>
-
-</body>
-</html>
+<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="经常用到的集中k8s client的初始化方法，这里总结备忘📝一下"><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:title" content="K8s client-go初始化的几种方法"><meta property="og:description" content="经常用到的集中k8s client的初始化方法，这里总结备忘📝一下"><meta property="og:type" content="article"><meta property="og:url" content="http://hindung.cn/posts/26/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2022-07-19T00:00:00+00:00"><meta property="article:modified_time" content="2022-07-19T00:00:00+00:00"><title>K8s client-go初始化的几种方法 | Hindung Blogs</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.scss integrity crossorigin=anonymous><script defer src=/flexsearch.min.js></script>
+<script defer src=/en.search.min.babd2f636c40f8c2a90eb07eec05db5d5b170c6461306029c9a468cc2daf879d.js integrity="sha256-ur0vY2xA+MKpDrB+7AXbXVsXDGRhMGApyaRozC2vh50=" crossorigin=anonymous></script></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
+<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Hindung Blogs</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu></label>
+<strong>K8s client-go初始化的几种方法</strong>
+<label for=toc-control><img src=/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav id=TableOfContents><ul><li><a href=#简介>简介</a><ul><li><a href=#restclient>RESTClient</a></li><li><a href=#clientset>ClientSet</a></li><li><a href=#dynamicclient>DynamicClient</a></li><li><a href=#discoveryclient>DiscoveryClient</a></li></ul></li><li><a href=#restconfig初始化>rest.Config初始化</a><ul><li><a href=#集群外通过kubeconfig初始化>集群外通过kubeconfig初始化</a></li><li><a href=#内存中通过kubeconfig字符串或者byte数组初始化>内存中通过kubeconfig字符串或者byte数组初始化</a></li><li><a href=#集群中通过serviceacount初始化>集群中通过ServiceAcount初始化</a></li><li><a href=#operator-sdk中初始化config>operator-sdk中初始化config</a></li></ul></li></ul></nav></aside></header><article class=markdown><h1><a href=/posts/26/>K8s client-go初始化的几种方法</a></h1><h5>July 19, 2022</h5><div><a href=/tags/kubernetes/>Kubernetes</a>,
+<a href=/tags/go/>Go</a></div><h2 id=简介>简介
+<a class=anchor href=#%e7%ae%80%e4%bb%8b>#</a></h2><p>client-go是k8s的一个基础组件库，是用于与API-Server交互的http客户端。K8s中大部分组件都使用了这个库实现与API-Server的通信功能。除了能够对资源对象的增删改查，还可Watch一个对象、升级成websocket链接等等功能。</p><p>client-go支持四种客户端：<code>RESTClient</code>、<code>ClientSet</code>、<code>DynamicClient</code>、<code>DiscoveryClient</code>。这几个client可以相互转换。</p><h3 id=restclient>RESTClient
+<a class=anchor href=#restclient>#</a></h3><p>RESTClient是最基础的客户端，相当于最底层的基础结构，可以直接通过RESTClient提供的RESTful方法如Get()、Put()、Post()、Delete()进行交互。</p><p>一般而言，为了更为优雅的处理，需要进一步封装，通过Clientset封装RESTClient，然后再对外提供接口和服务。</p><p>可以通过ClientSet客户端获得：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#a6e22e>client</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>cli</span>.<span style=color:#a6e22e>CoreV1</span>().<span style=color:#a6e22e>RESTClient</span>().(<span style=color:#f92672>*</span><span style=color:#a6e22e>rest</span>.<span style=color:#a6e22e>RESTClient</span>)
+</span></span></code></pre></div><h3 id=clientset>ClientSet
+<a class=anchor href=#clientset>#</a></h3><p>Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要制定Group、Version，然后根据Resource获取。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#a6e22e>clientset</span>,<span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>kubernetes</span>.<span style=color:#a6e22e>NewForConfig</span>(<span style=color:#a6e22e>config</span>)
+</span></span><span style=display:flex><span><span style=color:#a6e22e>sa</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>clientset</span>.<span style=color:#a6e22e>CoreV1</span>().<span style=color:#a6e22e>ServiceAccounts</span>(<span style=color:#e6db74>&#34;kube-system&#34;</span>).<span style=color:#a6e22e>Get</span>(<span style=color:#e6db74>&#34;kube-shell-admin&#34;</span>, <span style=color:#a6e22e>metav1</span>.<span style=color:#a6e22e>GetOptions</span>{})
+</span></span></code></pre></div><h3 id=dynamicclient>DynamicClient
+<a class=anchor href=#dynamicclient>#</a></h3><p>Dynamic client是一种动态的client，它能处理kubernetes所有的资源。不同于clientset，dynamic client返回的对象是一个<code>map[string]interface{}</code>。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#a6e22e>dynamicClient</span>,<span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>dynamic</span>.<span style=color:#a6e22e>NewForConfig</span>(<span style=color:#a6e22e>config</span>)
+</span></span><span style=display:flex><span><span style=color:#a6e22e>gvr</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>schema</span>.<span style=color:#a6e22e>GroupVersionResource</span>{<span style=color:#a6e22e>Version</span>: <span style=color:#e6db74>&#34;v1&#34;</span>,<span style=color:#a6e22e>Resource</span>: <span style=color:#e6db74>&#34;pods&#34;</span>}
+</span></span><span style=display:flex><span><span style=color:#a6e22e>unstructObjList</span>,<span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>dynamicClient</span>.<span style=color:#a6e22e>Resource</span>(<span style=color:#a6e22e>gvr</span>).<span style=color:#a6e22e>Namespace</span>(<span style=color:#e6db74>&#34;dev&#34;</span>).<span style=color:#a6e22e>List</span>(<span style=color:#a6e22e>context</span>.<span style=color:#a6e22e>TODO</span>(),<span style=color:#a6e22e>metav1</span>.<span style=color:#a6e22e>ListOptions</span>{<span style=color:#a6e22e>Limit</span>: <span style=color:#ae81ff>100</span>})
+</span></span></code></pre></div><h3 id=discoveryclient>DiscoveryClient
+<a class=anchor href=#discoveryclient>#</a></h3><p>DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用户本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DisconversyClient实现的。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#a6e22e>discoveryClient</span>,<span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>discovery</span>.<span style=color:#a6e22e>NewDiscoveryClientForConfig</span>(<span style=color:#a6e22e>config</span>)
+</span></span><span style=display:flex><span><span style=color:#a6e22e>APIGroup</span>,<span style=color:#a6e22e>APIResourceListSlice</span>,<span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>discoveryClient</span>.<span style=color:#a6e22e>ServerGroupsAndResources</span>()
+</span></span></code></pre></div><p>这几种客户端的初始化都涉及到了入参config，即<code>*rest.Config</code>，这个是用于初始化客户端的所有配置信息。</p><h2 id=restconfig初始化>rest.Config初始化
+<a class=anchor href=#restconfig%e5%88%9d%e5%a7%8b%e5%8c%96>#</a></h2><p>创建client前，需要先从初始化<code>*rest.Config</code>，这个<code>*rest.Config</code>可以从集群外的kubeconfig文件或者集群内部的 tokenFile 和 CAFile初始化（通过ServiceAcount自动挂载）。有以下几种方式：</p><h3 id=集群外通过kubeconfig初始化>集群外通过kubeconfig初始化
+<a class=anchor href=#%e9%9b%86%e7%be%a4%e5%a4%96%e9%80%9a%e8%bf%87kubeconfig%e5%88%9d%e5%a7%8b%e5%8c%96>#</a></h3><p>BuildConfigFromFlags方法从给定的url或者kubeconfig文件的文件夹路径去初始化config，如果不成功则会使用集群内部方法初始化config，如果不成功则返回一个默认的config。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#75715e>// &#34;k8s.io/client-go/tools/clientcmd&#34;
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#a6e22e>config</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>clientcmd</span>.<span style=color:#a6e22e>BuildConfigFromFlags</span>(<span style=color:#e6db74>&#34;&#34;</span>, <span style=color:#f92672>*</span><span style=color:#a6e22e>kubeconfig</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+</span></span><span style=display:flex><span>   panic(<span style=color:#a6e22e>err</span>.<span style=color:#a6e22e>Error</span>())
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=内存中通过kubeconfig字符串或者byte数组初始化>内存中通过kubeconfig字符串或者byte数组初始化
+<a class=anchor href=#%e5%86%85%e5%ad%98%e4%b8%ad%e9%80%9a%e8%bf%87kubeconfig%e5%ad%97%e7%ac%a6%e4%b8%b2%e6%88%96%e8%80%85byte%e6%95%b0%e7%bb%84%e5%88%9d%e5%a7%8b%e5%8c%96>#</a></h3><p>通过读取kubeconfig文件内容进行初始化一个config：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#a6e22e>config</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>clientcmd</span>.<span style=color:#a6e22e>NewClientConfigFromBytes</span>([]byte(string(<span style=color:#a6e22e>Data</span>[<span style=color:#e6db74>&#34;kubeConfig&#34;</span>])))
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+</span></span><span style=display:flex><span>   <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, <span style=color:#a6e22e>err</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span><span style=color:#a6e22e>restConfig</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>config</span>.<span style=color:#a6e22e>ClientConfig</span>()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+</span></span><span style=display:flex><span>   <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, <span style=color:#a6e22e>err</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=集群中通过serviceacount初始化>集群中通过ServiceAcount初始化
+<a class=anchor href=#%e9%9b%86%e7%be%a4%e4%b8%ad%e9%80%9a%e8%bf%87serviceacount%e5%88%9d%e5%a7%8b%e5%8c%96>#</a></h3><p>通过集群内部配置创建 k8s 配置信息，通过 KUBERNETES_SERVICE_HOST 和 KUBERNETES_SERVICE_PORT 环境变量方式获取。</p><p>若集群使用 TLS 认证方式，则默认读取集群内部 tokenFile 和 CAFile：</p><p><code>tokenFile = "/var/run/secrets/kubernetes.io/serviceaccount/token"</code></p><p><code>rootCAFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"</code></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#75715e>// &#34;k8s.io/client-go/rest&#34;
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#a6e22e>config</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>rest</span>.<span style=color:#a6e22e>InClusterConfig</span>()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+</span></span><span style=display:flex><span>   panic(<span style=color:#a6e22e>err</span>.<span style=color:#a6e22e>Error</span>())
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=operator-sdk中初始化config>operator-sdk中初始化config
+<a class=anchor href=#operator-sdk%e4%b8%ad%e5%88%9d%e5%a7%8b%e5%8c%96config>#</a></h3><p>一般来说，我们使用operator-sdk开发CRDs都会用到在本地调试或者在集群中调试的方法，在低版本operator-sdk中可以使用以下方法：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#75715e>// &#34;sigs.k8s.io/controller-runtime/pkg/client/config&#34;
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#a6e22e>cfg</span>, <span style=color:#a6e22e>err</span> <span style=color:#f92672>:=</span> <span style=color:#a6e22e>config</span>.<span style=color:#a6e22e>GetConfig</span>()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#a6e22e>err</span> <span style=color:#f92672>!=</span> <span style=color:#66d9ef>nil</span> {
+</span></span><span style=display:flex><span><span style=color:#a6e22e>log</span>.<span style=color:#a6e22e>Error</span>(<span style=color:#a6e22e>err</span>, <span style=color:#e6db74>&#34;&#34;</span>)
+</span></span><span style=display:flex><span>   <span style=color:#a6e22e>os</span>.<span style=color:#a6e22e>Exit</span>(<span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>该方法初始化kubeconfig的顺序是&ndash;kubeconfig标签，KUBECONFIG环境变量，In-cluster集群内SA，$HOME/.kube/config文件。</p><p>在初始化的config的同时，设置了请求的QPS，默认20 QPS, 30 burst。</p><p>在某些高版本sdk中，可以用以下方法初始化：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#75715e>//ctrl &#34;sigs.k8s.io/controller-runtime&#34;
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#a6e22e>ctrl</span>.<span style=color:#a6e22e>GetConfigOrDie</span>()
+</span></span></code></pre></div><p>原理同上。</p></article><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script>(function(){function e(e){const t=window.getSelection(),n=document.createRange();n.selectNodeContents(e),t.removeAllRanges(),t.addRange(n)}document.querySelectorAll("pre code").forEach(t=>{t.addEventListener("click",function(){if(window.getSelection().toString())return;e(t.parentElement),navigator.clipboard&&navigator.clipboard.writeText(t.parentElement.textContent)})})})()</script></footer><div class=book-comments></div><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav id=TableOfContents><ul><li><a href=#简介>简介</a><ul><li><a href=#restclient>RESTClient</a></li><li><a href=#clientset>ClientSet</a></li><li><a href=#dynamicclient>DynamicClient</a></li><li><a href=#discoveryclient>DiscoveryClient</a></li></ul></li><li><a href=#restconfig初始化>rest.Config初始化</a><ul><li><a href=#集群外通过kubeconfig初始化>集群外通过kubeconfig初始化</a></li><li><a href=#内存中通过kubeconfig字符串或者byte数组初始化>内存中通过kubeconfig字符串或者byte数组初始化</a></li><li><a href=#集群中通过serviceacount初始化>集群中通过ServiceAcount初始化</a></li><li><a href=#operator-sdk中初始化config>operator-sdk中初始化config</a></li></ul></li></ul></nav></div></aside></main></body></html>
