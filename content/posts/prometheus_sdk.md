@@ -1,0 +1,340 @@
+---
+title: Prometheus GO SDK
+date: 2023-07-19 17:39:52
+description: Prometheus SDK使用小🐥
+tags:
+  - Prometheus
+---
+
+# Prometheus GO SDK
+
+
+
+## 1. 介绍Prometheus
+
+Prometheus 是由前 Google 工程师从 2012 年开始在 Soundcloud 以开源软件的形式进行研发的系统监控和告警工具包，自此以后，许多公司和组织都采用了 Prometheus 作为监控告警工具。Prometheus 的开发者和用户社区非常活跃，它现在是一个独立的开源项目，可以独立于任何公司进行维护。
+
+Prometheus生态有很多丰富的组件以及SDK。其中常见的组合是 SDK + Prometheus + Alert Manager + Grafana + Loki。
+
+## 2. Prometheus Go客户端库概述
+
+Github地址：[https://github.com/prometheus/client_golang](https://github.com/prometheus/client_golang)
+
+```
+.
+├── api
+│   └── prometheus 
+├── examples   # 官方例子
+│   ├── exemplars
+│   ├── gocollector
+│   ├── middleware
+│   ├── random
+│   └── simple
+├── prometheus     # 核心代码定义各种指标接口、结构等
+│   ├── collectors # 定义收集器等
+│   ├── graphite   # 设计模式相关
+│   ├── internal   # 内部实现
+│   ├── promauto   # 与Prometheus实例之间维护一个全局注册表，用于维护指标信息
+│   ├── promhttp   # 通过 HTTP 服务暴露出来的方法集合
+│   ├── push       # 推送指标到Prometheus相关的包
+│   └── testutil   # test相关的
+```
+
+
+## 3. API接口和功能
+
+Prometheus支持的Metric类型有4种：Counter, Gauge, Histogram 和 Summary。
+
+### Counter （只增重启变为0）
+
+计数器类型是一个累积指标，表示单个单调递增的计数器，其值只能在重新启动时增加或重置为零。例如，可以使用计数器来表示服务的请求数、已完成的任务数或错误数。
+
+### Gauge （仪表盘，即可变大变小）
+
+仪表是表示可以任意上下移动的单个数值的指标。可以用来表示温度、内存使用、速度等值。
+
+### Histogram （直方图）
+
+直方图指标是一种用于度量数据分布的指标类型。它将数据分成一系列桶(bucket)，每个桶代表一定范围内的数据，然后记录每个桶中数据的数量以及总和。
+
+比如，每个 Histogram 指标都包含多个子指标：
+
+`my_histogram_bucket{le="0.005"}`：表示数据小于等于 0.005 的数量。
+
+`my_histogram_bucket{le="0.01"}`：表示数据小于等于 0.01 的数量。
+
+`my_histogram_bucket{le="0.025"}`：表示数据小于等于 0.025 的数量。
+
+……
+
+`my_histogram_bucket{le="+Inf"}`：表示数据小于等于正无穷的数量。
+
+
+其中 le 表示“小于等于”，每个子指标包含一个标签 le，表示该子指标所对应的桶的上限值。此外，还有两个子指标：
+
+`my_histogram_sum`：表示所有数据的总和。
+
+`my_histogram_count`：表示所有数据的数量。
+
+
+### Summary
+
+Summary 指标是一种用于度量数据分布情况的指标类型，它类似于 Histogram 指标，也将数据分成多个桶，但每个桶代表的不是数据的数量，而是数据的分位数。
+
+先来理解一下中位数和分位数：
+
+大小排列后：`2, 3, 5, 6, 7, 8, 9`。位于中间的数值是 `6`，因此它是这组数据的中位数。
+
+大小排列后：
+`2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 20, 30, 40, 50, 100`，这组数据中，排在前 90% 的数值为前 13 个数，即：
+`2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 20, 30, 40`，所以这组数据的 90% 分位数为 `40`。
+
+
+每个 Summary 指标都包含多个子指标：
+
+`my_summary{quantile="0.5"}`：表示数据的中位数。
+
+`my_summary{quantile="0.9"}`：表示数据的 90% 分位数。
+
+`my_summary{quantile="0.99"}`：表示数据的 99% 分位数。
+
+……
+
+`my_summary_sum`：表示所有数据的总和。
+
+`my_summary_count`：表示所有数据的数量。
+
+与 Histogram 指标不同的是，Summary 指标不需要定义固定的桶，而是在运行时根据数据动态计算每个分位数的值。
+
+## 4. 实例：如何使用Prometheus Go客户端库
+
+```go
+package main
+
+import (
+	"math/rand"
+	"net/http"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+)
+
+var (
+	// Counter 指标用于计数，它只会增加，不会减少。
+	counter = prometheus.NewCounter(prometheus.CounterOpts{
+		Name: "my_counter",
+		Help: "This is my counter.",
+	})
+
+	// Gauge 指标用于表示一个可变的值，它可以增加或减少。
+	gauge = prometheus.NewGauge(prometheus.GaugeOpts{
+		Name: "my_gauge",
+		Help: "This is my gauge.",
+	})
+
+	// Histogram 指标用于度量数据的分布情况，它将数据分成多个桶，每个桶代表数据的数量。
+	histogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+		Name: "my_histogram",
+		Help: "This is my histogram.",
+		Buckets: []float64{1, 2, 5, 10, 20, 50, 100},
+	})
+
+	// Summary 指标用于度量数据的分布情况，它将数据分成多个桶，每个桶代表数据的分位数。
+	summary = prometheus.NewSummary(prometheus.SummaryOpts{
+		Name: "my_summary",
+		Help: "This is my summary.",
+		Objectives: map[float64]float64{0.5: 0.05, 0.9: 0.01, 0.99: 0.001},
+	})
+)
+
+func init() {
+	// 注册指标到默认的注册器中，默认注册器会包含一些go内建的指标，
+    // 当然也可以new一个自己的registry := prometheus.NewRegistry()
+	prometheus.MustRegister(counter)
+	prometheus.MustRegister(gauge)
+	prometheus.MustRegister(histogram)
+	prometheus.MustRegister(summary)
+}
+
+func main() {
+	// 每隔一秒钟更新指标
+	go func() {
+		for {
+			counter.Inc()
+			gauge.Set(rand.Float64() * 100)
+			histogram.Observe(rand.Float64() * 100)
+			summary.Observe(rand.Float64() * 100)
+			time.Sleep(time.Second)
+		}
+	}()
+
+	// 启动 HTTP 服务器，暴露指标数据
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":8080", nil)
+}
+```
+
+访问metrics：
+```
+# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+... 隐藏Prometheus go自带的指标
+
+# HELP my_counter This is my counter.
+# TYPE my_counter counter
+my_counter 32
+# HELP my_gauge This is my gauge.
+# TYPE my_gauge gauge
+my_gauge 15.232291874677397
+# HELP my_histogram This is my histogram.
+# TYPE my_histogram histogram
+my_histogram_bucket{le="1"} 0
+my_histogram_bucket{le="2"} 0
+my_histogram_bucket{le="5"} 1
+my_histogram_bucket{le="10"} 3
+my_histogram_bucket{le="20"} 3
+my_histogram_bucket{le="50"} 13
+my_histogram_bucket{le="100"} 32
+my_histogram_bucket{le="+Inf"} 32
+my_histogram_sum 1804.8308076418284
+my_histogram_count 32
+# HELP my_summary This is my summary.
+# TYPE my_summary summary
+my_summary{quantile="0.5"} 55.45191711055754
+my_summary{quantile="0.9"} 90.63655279983087
+my_summary{quantile="0.99"} 98.26833189512352
+my_summary_sum 1719.6545962079606
+my_summary_count 32
+
+...
+# HELP promhttp_metric_handler_requests_total Total number of scrapes by HTTP status code.
+# TYPE promhttp_metric_handler_requests_total counter
+promhttp_metric_handler_requests_total{code="200"} 0
+promhttp_metric_handler_requests_total{code="500"} 0
+promhttp_metric_handler_requests_total{code="503"} 0
+```
+
+还可以加上label用于区分不同维度的数据，如alertmanager：
+
+```go
+type Alerts struct {
+	firing   prometheus.Counter
+	resolved prometheus.Counter
+	invalid  prometheus.Counter
+}
+
+// NewAlerts returns an *Alerts struct for the given API version.
+func NewAlerts(version string, r prometheus.Registerer) *Alerts {
+	numReceivedAlerts := prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name:        "alertmanager_alerts_received_total",
+		Help:        "The total number of received alerts.",
+		ConstLabels: prometheus.Labels{"version": version},
+	}, []string{"status"})
+	numInvalidAlerts := prometheus.NewCounter(prometheus.CounterOpts{
+		Name:        "alertmanager_alerts_invalid_total",
+		Help:        "The total number of received alerts that were invalid.",
+		ConstLabels: prometheus.Labels{"version": version},
+	})
+	if r != nil {
+		r.MustRegister(numReceivedAlerts, numInvalidAlerts)
+	}
+	return &Alerts{
+		firing:   numReceivedAlerts.WithLabelValues("firing"),  // 同一个Counter的不同标签，firing.Inc()
+		resolved: numReceivedAlerts.WithLabelValues("resolved"),// 同一个Counter的不同标签，resolved.Inc()
+		invalid:  numInvalidAlerts,
+	}
+}
+```
+效果：
+```
+# HELP alertmanager_alerts_received_total The total number of received alerts.
+# TYPE alertmanager_alerts_received_total counter 这个计数器分别在四个维度上有数据
+alertmanager_alerts_received_total{status="firing",version="v1"} 0
+alertmanager_alerts_received_total{status="firing",version="v2"} 25009
+alertmanager_alerts_received_total{status="resolved",version="v1"} 0
+alertmanager_alerts_received_total{status="resolved",version="v2"} 758
+```
+
+
+## 5. 总结
+
+容易遇到的坑：修改指标的标签导致panic。
+
+当我们定义好一个metric如：
+```go
+var (
+	counter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "my_counter",
+		Help: "This is my counter.",
+	}, []string{"foo", "bar"})
+)
+
+func init() {
+	prometheus.MustRegister(counter)
+}
+
+func main() {
+	// 每隔一秒钟更新指标
+	go func() {
+		for {
+			counter.With(prometheus.Labels{"foo": "a", "bar": "b"}).Inc()
+			time.Sleep(time.Second)
+		}
+	}()
+
+	// 修改指标的标签和信息
+	counter = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "my_counter",
+		Help: "This is my new counter.",
+	}, []string{"foo", "baz"})
+}
+```
+输出：
+```
+go run main.go                                                
+panic: label name "baz" missing in label map
+
+goroutine 19 [running]:
+github.com/prometheus/client_golang/prometheus.(*CounterVec).With(...)
+        /root/go/pkg/mod/github.com/prometheus/client_golang@v1.16.0/prometheus/counter.go:286
+main.main.func1()
+        /root/hxd/code/metrics-example/main.go:53 +0x171
+created by main.main
+        /root/hxd/code/metrics-example/main.go:51 +0x32
+exit status 2
+```
+因此最好定义metric之后不要在在代码逻辑上动态修改Label的值，或者修改之后需要重新注册：`prometheus.MustRegister(counter)`。
+但是也不建议这么做。实际上Prometheus已经帮我们处理好了这个指标的注册过程（上面提到的prometheus/promauto包），因此，在使用时应该提前定义好指标以及label，然后注册到对应的Registry。在使用时，用`CounterVec.WithLabelValues()`方法实例化一个维度的指标并维护值。
+
+也可以设计一个collector或者直接引入第三方collector获得metric能力。
+
+如：
+
+```go
+    // Add Go module build info.
+	reg.MustRegister(collectors.NewBuildInfoCollector())
+
+    func NewBuildInfoCollector() Collector {
+        path, version, sum := "unknown", "unknown", "unknown"
+        if bi, ok := debug.ReadBuildInfo(); ok {
+            path = bi.Main.Path
+            version = bi.Main.Version
+            sum = bi.Main.Sum
+        }
+        c := &selfCollector{MustNewConstMetric(
+            NewDesc(
+                "go_build_info",
+                "Build information about the main Go module.",
+                nil, Labels{"path": path, "version": version, "checksum": sum},
+            ),
+            GaugeValue, 1)}
+        c.init(c.self)
+        return c
+    }
+```
+
+参考连接：
+
+[https://prometheus.io/docs/concepts/metric_types/](https://prometheus.io/docs/concepts/metric_types/)
+
+[https://github.com/prometheus/client_golang](https://github.com/prometheus/client_golang)
