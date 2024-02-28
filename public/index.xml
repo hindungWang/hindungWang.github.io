@@ -1,145 +1,167 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Hindung Blogs</title><link>http://hindung.cn/</link><description>Recent content on Hindung Blogs</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 19 Jul 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://hindung.cn/index.xml" rel="self" type="application/rss+xml"/><item><title>K8s client-go初始化的几种方法</title><link>http://hindung.cn/posts/26/</link><pubDate>Tue, 19 Jul 2022 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/26/</guid><description>简介 # client-go是k8s的一个基础组件库，是用于与API-Server交互的http客户端。K8s中大部分组件都使用了这个库实现与API-Server的通信功能。除了能够对资源对象的增删改查，还可Watch一个对象、升级成websocket链接等等功能。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Hindung's Blog</title><link>https://hindung.cn/</link><description>Recent content on Hindung's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Fri, 01 Sep 2023 09:40:50 +0000</lastBuildDate><atom:link href="https://hindung.cn/index.xml" rel="self" type="application/rss+xml"/><item><title>Prometheus性能压测与高可用设计</title><link>https://hindung.cn/posts/prometheus_test/</link><pubDate>Fri, 01 Sep 2023 09:40:50 +0000</pubDate><guid>https://hindung.cn/posts/prometheus_test/</guid><description>Prometheus性能压测与高可用设计 Prometheus原理 名词 Series（系列） 是指具有相同标签集的一组时间序列。它们是根据标签的组合唯一确定的。&amp;lt;指标名称&amp;gt;{&amp;lt;标签键&amp;gt;=&amp;lt;标签值&amp;gt;, ...}，如：
+|&amp;lt;------------------------Series--------------------------&amp;gt;| avalanche_metric_0_0{cycle_id=&amp;quot;0&amp;quot;,label_key_0=&amp;quot;label_val_0&amp;quot;} 18 Sample（样本） 是指一个数据点，它包含了一个时间戳和相应的数值。样本是 Prometheus 时间序列数据的基本单位。每个样本都与一个唯一的时间序列(Series)标识符相关联，该标识符由一组键值对（标签）唯一确定。这些标签可以用来标识和区分不同的时间序列。&amp;lt;时间戳&amp;gt; &amp;lt;数值&amp;gt;，如：
+|&amp;lt;------------------------------Series--------------------&amp;gt;|&amp;lt;--时间戳-&amp;gt;|&amp;lt;值&amp;gt; avalanche_metric_0_0{cycle_id=&amp;quot;0&amp;quot;,label_key_0=&amp;quot;label_val_0&amp;quot;} @125465645 2 -&amp;gt; 一个Sample @125465646 5 ... Prometheus缺点 原生Prometheus并不支持高可用，也不能做横向扩缩容，当集群规模较大时，单一Prometheus会出现性能瓶颈，无法正常采集数据。
+在集群场景下 单一Prometheus只能查询本地的指标，而不能跨区域查询，因此需要一个统一的管理。
+单节点Prometheus性能压测 压测环境 garden v3.2 3节点环境:
+节点 CPU(Core) Memory(GiB) 存储 IOPS 写速率(1MB) master01 8 16GiB 280GiB 261 10.6 MB/s master02 8 24GiB 280GiB 238 9.6 MB/s master03(Prometheus所在节点) 8 24GiB 280GiB 274 9.5 MB/s 组件版本：</description></item><item><title>Prometheus GO SDK</title><link>https://hindung.cn/posts/prometheus_sdk/</link><pubDate>Wed, 19 Jul 2023 17:39:52 +0000</pubDate><guid>https://hindung.cn/posts/prometheus_sdk/</guid><description>Prometheus GO SDK 1. 介绍Prometheus Prometheus 是由前 Google 工程师从 2012 年开始在 Soundcloud 以开源软件的形式进行研发的系统监控和告警工具包，自此以后，许多公司和组织都采用了 Prometheus 作为监控告警工具。Prometheus 的开发者和用户社区非常活跃，它现在是一个独立的开源项目，可以独立于任何公司进行维护。
+Prometheus生态有很多丰富的组件以及SDK。其中常见的组合是 SDK + Prometheus + Alert Manager + Grafana + Loki。
+2. Prometheus Go客户端库概述 Github地址：https://github.com/prometheus/client_golang
+. ├── api │ └── prometheus ├── examples # 官方例子 │ ├── exemplars │ ├── gocollector │ ├── middleware │ ├── random │ └── simple ├── prometheus # 核心代码定义各种指标接口、结构等 │ ├── collectors # 定义收集器等 │ ├── graphite # 设计模式相关 │ ├── internal # 内部实现 │ ├── promauto # 与Prometheus实例之间维护一个全局注册表，用于维护指标信息 │ ├── promhttp # 通过 HTTP 服务暴露出来的方法集合 │ ├── push # 推送指标到Prometheus相关的包 │ └── testutil # test相关的 3.</description></item><item><title>K8s之kube-ovn网络插件</title><link>https://hindung.cn/posts/kube-ovn/</link><pubDate>Thu, 27 Apr 2023 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/kube-ovn/</guid><description>kube-ovn网络 此项预研包括了多网卡、集群互联、混合部署、OVS/OVN、CNI、kubevirt等基础组件，并探讨基于K8s实现的OVN平台所实现的功能以及能否满足公司不同场景的容器、虚拟机网络需求。
+kube-ovn Kube-OVN是一个基于Open Virtual Network (OVN)的Kubernetes网络解决方案。它使用OVN作为底层网络虚拟化平台，为Kubernetes集群提供高性能、高可用、可扩展的网络服务。
+下面是Kube-OVN的整体架构：
+OVN控制平面（与传统OVN类似） 负责管理Kubernetes集群的网络资源和配置，包括虚拟网络（VPC）、子网（Subnet）、路由、ACL等。这些组件部分来自 OVN/OVS 社区，Kube-OVN 对不同的使用场景做了特定修改。
+OVN控制平面由多个组件组成，包括：
+ovn-central：运行 OVN 的管理平面组件，负责处理逻辑网络拓扑，包括虚拟网络、子网、路由等。包括ovn-nb, ovn-sb,和ovn-northd。 ovn-controller: 执行所有Kubernetes内资源到OVN资源的翻译工作。 ovs-ovn：运行了 openvswitch, ovsdb,和ovn-controller。这些组件作为 ovn-central 的 Agent 将逻辑流表翻译成真实的网络配置。 OVN数据平面（由内核提供） 负责实现虚拟网络的转发和隔离。OVN数据平面利用Linux内核提供的虚拟化技术，如Linux内核自带的Open vSwitch (OVS)和Virtual Extensible LAN (VXLAN)，实现高性能、高可扩展性的虚拟网络。
+Kubernetes控制平面（结合k8s资源） 负责管理Kubernetes集群的各种资源，如Pod、Service、Endpoint、CR等，并将这些资源转换（翻译）为对应的OVN网络配置，以实现Kubernetes网络服务。
+除此之外，Kube-OVN还提供了一些额外的组件和工具：
+kube-ovn-cni：实现 CNI 接口，并操作本地的 OVS 配置单机网络。 kube-ovn-operator：用于简化Kube-OVN的安装、配置和管理。 kube-ovn-monitor：监控指标。 kube-ovn-pinger：收集 OVS 运行信息，节点网络质量，网络延迟等信息。 kubectl-ko：OVN 运维平面用到的命令行工具。 kube-ovn-speaker：对外发布容器网络的路由，使得外部可以直接通过 Pod IP 访问容器。 kube-ovn部署使用 kube-ovn有两种方式部署Overlay和Underlay模式。
+默认是Overlay模式。
+Underlay：容器运行在虚拟机中，ovs运行在k8s上（POD部署），kube-ovn将容器网络和虚拟机网络连接在同一平面，可以直接给容器分配物理网络中的地址资源，达到更好的性能以及和物理网络的连通性。
+Overlay：容器运行在虚拟机中，ovs运行在k8s上（POD部署），kube-ovn的默认子网使用 Geneve 对跨主机流量进行封装，在基础设施之上抽象出一层虚拟的 Overlay 网络。对于容器IP直通的场景可以配合multus-cni为容器添加额外的虚拟机层IP。或者参考高级功能采用路由或者BGP方式将容器网络和物理网络打通。</description></item><item><title>K8s client-go初始化的几种方法</title><link>https://hindung.cn/posts/k8s-client/</link><pubDate>Tue, 19 Jul 2022 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/k8s-client/</guid><description>简介 client-go是k8s的一个基础组件库，是用于与API-Server交互的http客户端。K8s中大部分组件都使用了这个库实现与API-Server的通信功能。除了能够对资源对象的增删改查，还可Watch一个对象、升级成websocket链接等等功能。
 client-go支持四种客户端：RESTClient、ClientSet、DynamicClient、DiscoveryClient。这几个client可以相互转换。
-RESTClient # RESTClient是最基础的客户端，相当于最底层的基础结构，可以直接通过RESTClient提供的RESTful方法如Get()、Put()、Post()、Delete()进行交互。
+RESTClient RESTClient是最基础的客户端，相当于最底层的基础结构，可以直接通过RESTClient提供的RESTful方法如Get()、Put()、Post()、Delete()进行交互。
 一般而言，为了更为优雅的处理，需要进一步封装，通过Clientset封装RESTClient，然后再对外提供接口和服务。
 可以通过ClientSet客户端获得：
-client := cli.CoreV1().RESTClient().(*rest.RESTClient) ClientSet # Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要制定Group、Version，然后根据Resource获取。
-clientset,err := kubernetes.NewForConfig(config) sa, err := clientset.CoreV1().ServiceAccounts(&amp;#34;kube-system&amp;#34;).Get(&amp;#34;kube-shell-admin&amp;#34;, metav1.GetOptions{}) DynamicClient # Dynamic client是一种动态的client，它能处理kubernetes所有的资源。不同于clientset，dynamic client返回的对象是一个map[string]interface{}。
-dynamicClient,err := dynamic.NewForConfig(config) gvr := schema.GroupVersionResource{Version: &amp;#34;v1&amp;#34;,Resource: &amp;#34;pods&amp;#34;} unstructObjList,err := dynamicClient.Resource(gvr).Namespace(&amp;#34;dev&amp;#34;).List(context.TODO(),metav1.ListOptions{Limit: 100}) DiscoveryClient # DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用户本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DisconversyClient实现的。
+client := cli.CoreV1().RESTClient().(*rest.RESTClient) ClientSet Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要制定Group、Version，然后根据Resource获取。
+clientset,err := kubernetes.NewForConfig(config) sa, err := clientset.CoreV1().ServiceAccounts(&amp;#34;kube-system&amp;#34;).Get(&amp;#34;kube-shell-admin&amp;#34;, metav1.GetOptions{}) DynamicClient Dynamic client是一种动态的client，它能处理kubernetes所有的资源。不同于clientset，dynamic client返回的对象是一个map[string]interface{}。
+dynamicClient,err := dynamic.NewForConfig(config) gvr := schema.GroupVersionResource{Version: &amp;#34;v1&amp;#34;,Resource: &amp;#34;pods&amp;#34;} unstructObjList,err := dynamicClient.Resource(gvr).Namespace(&amp;#34;dev&amp;#34;).List(context.TODO(),metav1.ListOptions{Limit: 100}) DiscoveryClient DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用户本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DisconversyClient实现的。
 discoveryClient,err := discovery.NewDiscoveryClientForConfig(config) APIGroup,APIResourceListSlice,err := discoveryClient.ServerGroupsAndResources() 这几种客户端的初始化都涉及到了入参config，即*rest.Config，这个是用于初始化客户端的所有配置信息。
-rest.Config初始化 # 创建client前，需要先从初始化*rest.Config，这个*rest.Config可以从集群外的kubeconfig文件或者集群内部的 tokenFile 和 CAFile初始化（通过ServiceAcount自动挂载）。有以下几种方式：
-集群外通过kubeconfig初始化 # BuildConfigFromFlags方法从给定的url或者kubeconfig文件的文件夹路径去初始化config，如果不成功则会使用集群内部方法初始化config，如果不成功则返回一个默认的config。
-// &amp;#34;k8s.io/client-go/tools/clientcmd&amp;#34; config, err := clientcmd.</description></item><item><title>About Me</title><link>http://hindung.cn/about/</link><pubDate>Mon, 18 Jul 2022 00:00:00 +0000</pubDate><guid>http://hindung.cn/about/</guid><description>Hi there 👋 This is hindung&amp;rsquo;s space # 🌱 I’m currently learning K8s Docker Go etc.
+rest.Config初始化 创建client前，需要先从初始化*rest.Config，这个*rest.Config可以从集群外的kubeconfig文件或者集群内部的 tokenFile 和 CAFile初始化（通过ServiceAcount自动挂载）。有以下几种方式：
+集群外通过kubeconfig初始化 BuildConfigFromFlags方法从给定的url或者kubeconfig文件的文件夹路径去初始化config，如果不成功则会使用集群内部方法初始化config，如果不成功则返回一个默认的config。
+// &amp;#34;k8s.io/client-go/tools/clientcmd&amp;#34; config, err := clientcmd.BuildConfigFromFlags(&amp;#34;&amp;#34;, *kubeconfig) if err != nil { panic(err.Error()) } 内存中通过kubeconfig字符串或者byte数组初始化 通过读取kubeconfig文件内容进行初始化一个config：</description></item><item><title>About Me</title><link>https://hindung.cn/about/about/</link><pubDate>Mon, 18 Jul 2022 00:00:00 +0000</pubDate><guid>https://hindung.cn/about/about/</guid><description>Hi there 👋 This is hindung&amp;rsquo;s space 🌱 I’m currently learning K8s Docker Go etc.
 💬 Ask me about K8s Docker Go
-📫 回电我: tangtione@qq.com</description></item><item><title>Hello World</title><link>http://hindung.cn/posts/post/</link><pubDate>Mon, 18 Jul 2022 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/post/</guid><description>欢迎来到hindung的部落格 Copy from @ 马克飞象 # @(示例笔记本)[飞驰|人生|Markdown]
+📫 我: tangtione@foxmail.com</description></item><item><title>Hello World</title><link>https://hindung.cn/posts/markdown/</link><pubDate>Mon, 18 Jul 2022 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/markdown/</guid><description>欢迎来到hindung的部落格 Copy from @ 马克飞象 @(示例笔记本)[飞驰|人生|Markdown]
 马克飞象是一款专为印象笔记（Evernote）打造的Markdown编辑器，通过精心的设计与技术实现，配合印象笔记强大的存储和同步功能，带来前所未有的书写体验。特点概述：
 功能丰富 ：支持高亮代码块、LaTeX 公式、流程图，本地图片以及附件上传，甚至截图粘贴，工作学习好帮手； 得心应手 ：简洁高效的编辑器，提供桌面客户端以及离线Chrome App，支持移动端 Web； 深度整合 ：支持选择笔记本和添加标签，支持从印象笔记跳转编辑，轻松管理。 [TOC]
-Markdown简介 # Markdown 是一种轻量级标记语言，它允许人们使用易读易写的纯文本格式编写文档，然后转换成格式丰富的HTML页面。 —— 维基百科
+Markdown简介 Markdown 是一种轻量级标记语言，它允许人们使用易读易写的纯文本格式编写文档，然后转换成格式丰富的HTML页面。 —— 维基百科
 正如您在阅读的这份文档，它使用简单的符号标识不同的标题，将某些文字标记为粗体或者斜体，创建一个链接或一个脚注1。下面列举了几个高级功能，更多语法请按Ctrl + /查看帮助。
-代码块 # @requires_authorization def somefunc(param1=&amp;#39;&amp;#39;, param2=0): &amp;#39;&amp;#39;&amp;#39;A docstring&amp;#39;&amp;#39;&amp;#39; if param1 &amp;gt; param2: # interesting print &amp;#39;Greater&amp;#39; return (param2 - param1 + 1) or None class SomeClass: pass &amp;gt;&amp;gt;&amp;gt; message = &amp;#39;&amp;#39;&amp;#39;interpreter ... prompt&amp;#39;&amp;#39;&amp;#39; LaTeX 公式 # 可以创建行内公式，例如 $\Gamma(n) = (n-1)!\quad\forall n\in\mathbb N$。或者块级公式：</description></item><item><title>容器技术之我见</title><link>http://hindung.cn/posts/20/</link><pubDate>Fri, 23 Jul 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/20/</guid><description>容器技术 # 什么是容器呢？
+代码块 @requires_authorization def somefunc(param1=&amp;#39;&amp;#39;, param2=0): &amp;#39;&amp;#39;&amp;#39;A docstring&amp;#39;&amp;#39;&amp;#39; if param1 &amp;gt; param2: # interesting print &amp;#39;Greater&amp;#39; return (param2 - param1 + 1) or None class SomeClass: pass &amp;gt;&amp;gt;&amp;gt; message = &amp;#39;&amp;#39;&amp;#39;interpreter ... prompt&amp;#39;&amp;#39;&amp;#39; LaTeX 公式 可以创建行内公式，例如 $\Gamma(n) = (n-1)!\quad\forall n\in\mathbb N$。或者块级公式：</description></item><item><title>容器技术之我见</title><link>https://hindung.cn/posts/container-1/</link><pubDate>Fri, 23 Jul 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/container-1/</guid><description>容器技术 什么是容器呢？
 印象中第一次接触“容器”这个词，是在化学课上，不就是一装东西的瓶子嘛有啥特别的。
 仔细想想，“装”东西即在某种程度上与其他物体隔离开来了。所以称这个「装东西的东西」为容器。
 是吧！那现在所说的“容器”到底是啥概念，他能装什么东西，又把什么东西在某种程度上隔离开？
 我的理解就是：「把资源隔离开的东西」。
 资源泛指OS上的资源，如CPU、内存、设备、文件系统等等。如何进行隔离呢？Linux内核提供了某种机制能让上诉所说的“资源”隔离开来，即Namespace和CGroups。
 容器技术就是基于这两个内核特性进行设计和开发。
-Namespace # 命名空间在维基百科上的广义解释是：
+Namespace 命名空间在维基百科上的广义解释是：
 “在计算机中，命名空间是一组用于标识和引用各种对象的符号（名称）。命名空间可确保所有给定的对象集都具有唯一的名称，以便可以轻松识别它们。”
 根据这个定义，Linux内核提供的命名空间定义为：
 “命名空间是Linux内核的一项功能，该功能对内核资源进行分区，以使一组进程看到一组资源，而另一组进程看到另一组资源。该功能通过为一组资源和进程具有相同的名称空间而起作用，但是这些名称空间引用了不同的资源。资源可能存在于多个空间中。这样的资源有进程ID、主机名、用户ID、文件名以及一些与网络访问和进程间通信相关。”
 从内核版本5.6开始，存在8种名称空间。命名空间功能在所有类型上都是相同的：每个进程都与一个命名空间相关联并且只能查看或使用与该命名空间以及后代命名空间相关联的资源。 这样，每个进程（或其进程组）可以在资源上拥有唯一的视图。隔离哪个资源取决于已为给定进程组创建的名称空间的类型。
-Mount (mnt) # 挂载命名空间控制隔离挂载点。即隔离文件系统目录结构。
+Mount (mnt) 挂载命名空间控制隔离挂载点。即隔离文件系统目录结构。
 比如你在每个容器里都有/usr目录，你们都可以访问这个目录，但他们是不一样的。
-Process ID (pid) # PID命名空间为进程提供了一套独立于其他命名空间的进程ID（PID）。
+Process ID (pid) PID命名空间为进程提供了一套独立于其他命名空间的进程ID（PID）。
 PID命名空间是嵌套的，这意味着当一个新的进程被创建时，它将有一个从其当前命名空间到初始PID命名空间的每个命名空间的PID。因此，初始PID命名空间能够看到所有进程，尽管其PID与其他命名空间看到的进程不同。
 比如用于创建容器的Runc Daemon进程。
-Network (net) # 网络名称空间可虚拟化网络堆栈。由于每个容器有不同的网络接口，每个地址信息，包括IP地址，都可以分开。
-Interprocess Communication (ipc) # IPC命名空间将进程与SysV风格的进程间通信隔离。
-UTS # UTS（UNIX时间共享）命名空间允许一个系统在不同的进程中出现不同的主机名和域名。
-User ID (user) # 用户命名空间是一个提供权限隔离和用户识别隔离的功能，跨越多组进程，从内核3.8开始可用。
+Network (net) 网络名称空间可虚拟化网络堆栈。由于每个容器有不同的网络接口，每个地址信息，包括IP地址，都可以分开。
+Interprocess Communication (ipc) IPC命名空间将进程与SysV风格的进程间通信隔离。
+UTS UTS（UNIX时间共享）命名空间允许一个系统在不同的进程中出现不同的主机名和域名。
+User ID (user) 用户命名空间是一个提供权限隔离和用户识别隔离的功能，跨越多组进程，从内核3.8开始可用。
 在管理员的协助下，有可能建立一个看起来有管理权限的容器，而实际上没有给用户进程提升权限。像PID命名空间一样，用户命名空间是嵌套的，每个新的用户命名空间都被认为是创建它的用户命名空间的子空间。
-Control group (cgroup) Namespace # 控制组命名空间，隐藏了进程作为成员的控制组的身份。
+Control group (cgroup) Namespace 控制组命名空间，隐藏了进程作为成员的控制组的身份。
 在这样的命名空间中的进程，在检查任何进程属于哪个控制组时，会看到一个实际上是相对于创建时设置的控制组的路径，隐藏其真实的控制组位置和身份。
-Time Namespace # 时间命名空间允许进程以类似于UTS命名空间的方式看到不同的系统时间。 它在2018年被提出，并在2020年3月发布的Linux 5.6上登陆。
-规划中的命名空间 # syslog namespace、Syscalls、Destruction，具体信息请参阅维基百科
-CGroup # 控制组cgroups是Linux内核提供的一个功能，用于从硬件和相关方面限制一组特定的分组进程。
-如隔离CPU、内存、设备、磁盘io、网络io等。</description></item><item><title>Iptable规则初探</title><link>http://hindung.cn/posts/22/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/22/</guid><description>iptable是啥 # 参考维基百科：iptables是运行在用户空间的应用软件，通过控制Linux内核netfilter模块，来管理网络数据包的处理和转发。
-iptables规则 # iptables主要有raw、mangle、filter、nat这几个表，对应几个规则：PREROUTING 、INPUT 、FORWARD 、OUTPUT、POSTROUTING 。
+Time Namespace 时间命名空间允许进程以类似于UTS命名空间的方式看到不同的系统时间。 它在2018年被提出，并在2020年3月发布的Linux 5.6上登陆。
+规划中的命名空间 syslog namespace、Syscalls、Destruction，具体信息请参阅维基百科
+CGroup 控制组cgroups是Linux内核提供的一个功能，用于从硬件和相关方面限制一组特定的分组进程。
+如隔离CPU、内存、设备、磁盘io、网络io等。
+有两个版本的cgroup。Cgroups最初由Paul Menage和Rohit Seth编写，并于2007年进入Linux内核主线。此后称为cgroups版本1。
+然后由Tejun Heo接管了cgroup的开发和维护。Tejun Heo重新设计并重写了cgroup。这种重写现在称为版本2，cgroups-v2的文档首次出现在2016年3月14日发布的Linux内核4.5中。
+与v1不同，cgroup v2仅具有单个进程层次结构，并且在进程之间进行区分，而不对线程进行区分。
+控制组的核心功能：
+资源限制：可以将组设置为不超过配置的内存限制，该限制还包括文件系统缓存 优先级：一些组可能会在CPU利用率或磁盘I / O吞吐量中获得更大份额 可统计：衡量组的资源使用情况 可控制：冻结/复活进程组 控制组具有分层概念，这意味着每个组都从其父组继承限制。内核通过cgroup接口提供对多个控制器（也称为子系统）的访问。例如，“内存”控制器限制内存使用，“ cpuacct”账户CPU使用率等。</description></item><item><title>Iptable规则初探</title><link>https://hindung.cn/posts/iptable/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/iptable/</guid><description>iptable是啥 参考维基百科：iptables是运行在用户空间的应用软件，通过控制Linux内核netfilter模块，来管理网络数据包的处理和转发。
+iptables规则 iptables主要有raw、mangle、filter、nat这几个表，对应几个规则：PREROUTING 、INPUT 、FORWARD 、OUTPUT、POSTROUTING 。
 NAT 包括 SNAT （源地址转换）和 DNAT （目的地址转换）。两者的区别在于做地址转换是在路由前还是路由后，SNAT和DNAT总是成对出现的。
 对应的含义可以简单理解为：
 表名 用途 包含的规则 表名 用途 包含的规则 raw 关闭nat表上启用的连接追踪机制 PREROUTING，OUTPUT mangle 拆解报文，做出修改，并重新封装的功能 PREROUTING，INPUT，FORWARD，OUTPUT，POSTROUTING nat 网络地址转换功能 PREROUTING，OUTPUT，POSTROUTING（centos7中还有INPUT，centos6中没有） filter 负责过滤功能，防火墙 INPUT，FORWARD，OUTPUT 规则的意义：
-规则 意义 PREROUTING 报文刚刚到达主机，还没经过路由 INPUT 报文已经经过路由，判断是发送给本机的报文 FORWARD 报文已经经过路由，判断不是本机的报文，如果内核开启转发功能则转发出去，否则丢弃 OUTPUT 报文从应用发出报文已经经过路由 POSTROUTING 报文从应用发出已经经过路由，准备从网卡发出 数据从网络到达主机，再从主机到达应用的过程，以集群中traefik部署的Ingress为例，可以理解为： iptable相关命令 # 查看iptables规则：
-iptables -L, --list [chain] 列出链 chain 上面的所有规则，如果没有指定链，列出表上所有链的所有规则 参考https://wangchujiang.com/linux-command/c/iptables.html</description></item><item><title>K8s之calico网络插件东西南北流量</title><link>http://hindung.cn/posts/25/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/25/</guid><description>前言 # 环境采用了calico＋ebgp/ibgp＋交换机组成了一个扁平化网络，使用calico宣告POD IP，做到了POD与其他虚拟机和开发网落处在同一个平面的效果。
+规则 意义 PREROUTING 报文刚刚到达主机，还没经过路由 INPUT 报文已经经过路由，判断是发送给本机的报文 FORWARD 报文已经经过路由，判断不是本机的报文，如果内核开启转发功能则转发出去，否则丢弃 OUTPUT 报文从应用发出报文已经经过路由 POSTROUTING 报文从应用发出已经经过路由，准备从网卡发出 数据从网络到达主机，再从主机到达应用的过程，以集群中traefik部署的Ingress为例，可以理解为： iptable相关命令 查看iptables规则：</description></item><item><title>K8s之calico网络插件东西南北流量</title><link>https://hindung.cn/posts/calico/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/calico/</guid><description>前言 环境采用了calico＋ebgp/ibgp＋交换机组成了一个扁平化网络，使用calico宣告POD IP，做到了POD与其他虚拟机和开发网落处在同一个平面的效果。
 具体组网信息可以参考calico网站。
-东西流量 # Pod到Service流量 # 一般的应用大多数是以Pod到Service的形式去请求服务，从而出现东西方向的流量，目前集群的网络采用Calico作为网络插件，POD的IP由Calico进行统一分配，Service IP由集群K8s分配，并且配合Kube-proxy操作Iptable创建对应的规则。
+东西流量 Pod到Service流量 一般的应用大多数是以Pod到Service的形式去请求服务，从而出现东西方向的流量，目前集群的网络采用Calico作为网络插件，POD的IP由Calico进行统一分配，Service IP由集群K8s分配，并且配合Kube-proxy操作Iptable创建对应的规则。
 首先，创建一个POD时，calico会同时在POD对应的主机生成对应的calico网桥calixxx，并且分配IP，并且通过calico组件路由宣告出去：
 发送到calixxx的流量会转发至POD的eth0网卡，而从POD发出来的报文则是通过ARP 代理的方式转发至calixxx网桥。
 而当一个Service创建之后，会根据选择器与POD标签配对，对应上POD IP并且被Kube-Proxy监控到，K8s会随即生成对应的DNS记录service.namespace.local.cluster:serviceclusterIP，然后在Iptables添加相应的规则记录，如(10.88.145.173为ServiceIP，10.90.1.127为POD IP)：
 一般的，在集群中从POD访问Service，再从Service到达对应的POD流程为（正向请求用①表示，回复报文用(1)表示）：
 下面梳理一下请求的主要过程：
 ①POD向domian发送请求 ②由于没有IP，POD先向CoreDNS查询域名对应的IP地址 ③CoreDNS返回对应的Service IP ④POD拿到IP之后，向该IP发送数据，对应的报文从calixxx网桥出来 ⑤从calixxx网桥出来后，进入Host Iptables链，进入IP tables之后，进入对应的链路如上图规则，最后得到Service对应的POD IP，并转发到此IP，此时会经过路由，分为两种情况，目标IP在同一节点上（路由表有记录）或者不在同一节点上（路由表无记录） ⑥如果在同一节点上，根据路由表则会路由到目标IP对应的calixxx网桥 ⑦如果不在同一节点上，则根据路由表规则，会从bond1口出去 ⑧到达交换机，交换机有对应的路由条目，则会走到（3）和（4）过程进入Host，并且走到Iptables，通过路由，转到⑥过程 ⑨到达calixxx网桥之后会转发至POD eth0网卡，到达POD 应答过程：
-(1)POD以传过来的源POD IP作为目的IP从eth0发出，通过ARP代理转发到calixxx网桥 (2)达到calixxx网桥之后会经过POD所在的节点的Host路由表，同样分为两种情况 (3)如果不在同一节点上，则会走bond1到交换机 (4)再从交换机到达对应的节点，之后便到达过程（5） (5)经过路由表，到达目的IP 对应calixxx网桥 (6)再从网桥到达POD eth0 Pod到Pod流量 # 由于网络平面化，POD IP可以直通，所以会存在POD相互访问的场景，如隐私号应用等：
+(1)POD以传过来的源POD IP作为目的IP从eth0发出，通过ARP代理转发到calixxx网桥 (2)达到calixxx网桥之后会经过POD所在的节点的Host路由表，同样分为两种情况 (3)如果不在同一节点上，则会走bond1到交换机 (4)再从交换机到达对应的节点，之后便到达过程（5） (5)经过路由表，到达目的IP 对应calixxx网桥 (6)再从网桥到达POD eth0 Pod到Pod流量 由于网络平面化，POD IP可以直通，所以会存在POD相互访问的场景，如隐私号应用等：
 主要过程：
 ①POD以目标POD的IP作为目的IP，从eth0发出，到达calixxx ②到达calixxx网桥之后会进入Host内核Iptables链到达PREROUTING（路由前） ③之后进入路由模块进行路由，路由判断该报文是否是发给本机的，如果是则往上收将进入INPUT链，此过程不在讨论范围，由于报文目的地址是POD IP，所以会转发出去 ④到达FORWARD链后进入POSTROUTING（路由后） ⑤进入POSTROUTING会进行一些地址转换等操作后发往对应网卡或者网桥，如果路由结果表明该报文要通过网卡Bond1出去则会走到⑧过程，否则会走到⑥ ⑥表明目的IP在本机网桥上（即POD在同一节点上），则进入目的地址对应的calixxx网桥 ⑦再转发至POD eth0网卡到达目的地 ⑧报文从内核出来进入网卡，准备向外发出 ⑨到达交换机，由于交换机有所有POD的路由信息，所以他能正确处理经过的报文 ⑩经过路由后到达POD所在节点的入口网卡Bond1 11.到达网卡之后会进入内核Linux协议栈进行Iptables规则链匹配（可能的路径为到③-&amp;gt;④-&amp;gt;⑤-&amp;gt;⑥-&amp;gt;⑦到达对应的POD） 回复过程：
-(1)到达目的POD之后，应用根据源IP进行回应，转发至calixxx网桥 (2)到达网桥之后进入Linux协议栈，其过程会从③-&amp;gt;④-&amp;gt;⑤-&amp;gt;（3）到达源POD (3)到达源POD对应的网桥 (4)从网桥转发至POD eth0网卡，此时会经过Linux协议栈，最终报文从内核到用户空间送到应用。 南北流量 # 外部流量从Ingress(越过service)到Pod # client客户端请求POD应用，首先要创建对应的Service，并且创建Ingress路由。集群中采用Traefik作为Ingres Controller，以DeamonSet的方式部署，并且开启hostNetwork模式，与主机公用网络协议栈。并且接管所有到达主机的80端口、8080端口的报文。Traefik的原理主要是通过监控APIserver来监控Service、POD的变化，并维护路由，而且接管80端口的流量，转发到对应路由的POD IP上。</description></item><item><title>Kubectl命令行</title><link>http://hindung.cn/posts/24/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/24/</guid><description>注：基于Kubenetes 版本：Server v1.17.2、Client v1.17.9
-kubectl命令行全景图 # kubectl🔗
-有趣的kubectl命令 # 获取正在Running的Pod # kubectl get pods -A --field-selector=status.phase==Running NAMESPACE NAME READY STATUS RESTARTS AGE kelu cka2-75dbf7c54-gm4r4 1/1 Running 0 23h kube-system calico-kube-controllers-ccf66db4-cpvqp 1/1 Running 0 3d20h kube-system calico-node-8d4th 1/1 Running 0 3d2h kube-system calico-node-szmzb 1/1 Running 0 3d20h 查看节点内存容量 # kubectl get no -o json | jq -r &amp;#39;.items | sort_by(.status.capacity.memory)[]|[.metadata.name,.status.capacity.memory]| @tsv&amp;#39; rq-bjptest01 3848040Ki rqinterntest2 7986060Ki 查看各个节点上的Pod数量 # kubectl get po -o json --all-namespaces | jq &amp;#39;.</description></item><item><title>Kubernetes组件</title><link>http://hindung.cn/posts/21/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/21/</guid><description>总体架构 # Kubernetes系统采用C/S架构，分为Master和Node两个部分，Master作为Server端，Node作为Client端。
+(1)到达目的POD之后，应用根据源IP进行回应，转发至calixxx网桥 (2)到达网桥之后进入Linux协议栈，其过程会从③-&amp;gt;④-&amp;gt;⑤-&amp;gt;（3）到达源POD (3)到达源POD对应的网桥 (4)从网桥转发至POD eth0网卡，此时会经过Linux协议栈，最终报文从内核到用户空间送到应用。 南北流量 外部流量从Ingress(越过service)到Pod client客户端请求POD应用，首先要创建对应的Service，并且创建Ingress路由。集群中采用Traefik作为Ingres Controller，以DeamonSet的方式部署，并且开启hostNetwork模式，与主机公用网络协议栈。并且接管所有到达主机的80端口、8080端口的报文。Traefik的原理主要是通过监控APIserver来监控Service、POD的变化，并维护路由，而且接管80端口的流量，转发到对应路由的POD IP上。</description></item><item><title>Kubectl命令行</title><link>https://hindung.cn/posts/kubectl/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/kubectl/</guid><description>注：基于Kubenetes 版本：Server v1.17.2、Client v1.17.9
+kubectl命令行全景图 kubectl🔗
+有趣的kubectl命令 获取正在Running的Pod kubectl get pods -A --field-selector=status.phase==Running NAMESPACE NAME READY STATUS RESTARTS AGE kelu cka2-75dbf7c54-gm4r4 1/1 Running 0 23h kube-system calico-kube-controllers-ccf66db4-cpvqp 1/1 Running 0 3d20h kube-system calico-node-8d4th 1/1 Running 0 3d2h kube-system calico-node-szmzb 1/1 Running 0 3d20h 查看节点内存容量 kubectl get no -o json | jq -r &amp;#39;.items | sort_by(.status.capacity.memory)[]|[.metadata.name,.status.capacity.memory]| @tsv&amp;#39; rq-bjptest01 3848040Ki rqinterntest2 7986060Ki 查看各个节点上的Pod数量 kubectl get po -o json --all-namespaces | jq &amp;#39;.items | group_by(.</description></item><item><title>Kubernetes组件</title><link>https://hindung.cn/posts/k8s-1/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/k8s-1/</guid><description>总体架构 Kubernetes系统采用C/S架构，分为Master和Node两个部分，Master作为Server端，Node作为Client端。
 多Master的方式可以实现集群的高可用。
 Master也叫做主控节点，它主要负责：
 管理所有的节点 调度POD 控制集群运行过程中的所有状态 包含了以下几个组件： API-Server：集群的HTTP REST接口，统一入口 Controller-Manager：所有资源的自动化控制中心 Scheduler：POD调度 Node也叫做工作节点，主要负责：
 管理所有容器 监控、上报所有POD的运行状态 包含了以下几个组件： Kubelet：管理节点上容器的生命，与Master节点通信 Kube-Proxy：服务通信、负载均衡 CRI容器运行时：接收kubelet的容器相关的指令并执行 Master节点也拥有Node相关的组件，即该Master也可以作为工作节点进行计算。
 除此之外，k8s内部的存储采用ETCD作为唯一存储，一般采用集群高可用的方式部署。
 Etcd集群是分布式K/V存储集群，提供了可靠的强一致性服务发现。Etcd集群存储Kubernetes系统的集群状态和元数据，其中包括所有Kubernetes资源对象信息、资源对象状态、集群节点信息等。Kubernetes将所有数据存储至Etcd集群前缀为/registry的目录下。
-各个组件的功能 # 在k8s集群中主要有以下几种组件：
-kubectl # kubectl是K8s官方提供的命令行工具，它主要与API-Server交互，通信协议采用HTTP/Json。
-client-go # 除了有命令行工具对K8s进行管理之外，还提供了编程方式。client-go用golang进行开发，它最初是K8s的部分代码，现在抽成了独立的仓库。
+各个组件的功能 在k8s集群中主要有以下几种组件：
+kubectl kubectl是K8s官方提供的命令行工具，它主要与API-Server交互，通信协议采用HTTP/Json。
+client-go 除了有命令行工具对K8s进行管理之外，还提供了编程方式。client-go用golang进行开发，它最初是K8s的部分代码，现在抽成了独立的仓库。
 K8s任何组件与API-Server通信都是基于client-go。
-API-Server # 负责将K8s “资源组/资源版本/资源” 以RESTful形式对外提供服务。API-Server是集群中唯一与ETCD交互的组件。并且实现了集群的安全访问机制以及认证、授权、准入控制等。
-Controller-Manager # 管理控制器负责管理、维护集群内的状态，如维护POD的副本个数为期望的状态值等。
+API-Server 负责将K8s “资源组/资源版本/资源” 以RESTful形式对外提供服务。API-Server是集群中唯一与ETCD交互的组件。并且实现了集群的安全访问机制以及认证、授权、准入控制等。
+Controller-Manager 管理控制器负责管理、维护集群内的状态，如维护POD的副本个数为期望的状态值等。
 包含了多个控制器：
-DeploymentControllers控制器 StatefulSet控制器 Namespace控制器 PersistentVolume控制器 等等 每个控制器通过kube-apiserver组件提供的接口实时监控整个集群每个资源对象的当前状态，当因发生各种故障而导致系统状态出现变化时，会尝试将系统状态修复到“期望状态”。 Scheduler # 负责调度POD在某个节点上运行。Kubelet上报节点信息，Scheduler通过监控这些信息，当有新的POD需要调度时，会根据这些节点信息进行调度算法计算最有节点。
+DeploymentControllers控制器 StatefulSet控制器 Namespace控制器 PersistentVolume控制器 等等 每个控制器通过kube-apiserver组件提供的接口实时监控整个集群每个资源对象的当前状态，当因发生各种故障而导致系统状态出现变化时，会尝试将系统状态修复到“期望状态”。 Scheduler 负责调度POD在某个节点上运行。Kubelet上报节点信息，Scheduler通过监控这些信息，当有新的POD需要调度时，会根据这些节点信息进行调度算法计算最有节点。
 调度算法分为两种，分别为预选调度算法和优选调度算法。除调度策略外，Kubernetes还支持优先级调度、抢占机制及亲和性调度等功能。
 kube-scheduler组件支持高可用性（即多实例同时运行），即基于Etcd集群上的分布式锁实现领导者选举机制，多实例同时运行，通过kube-apiserver提供的资源锁进行选举竞争。抢先获取锁的实例被称为Leader节点（即领导者节点），并运行kube-scheduler组件的主逻辑；而未获取锁的实例被称为Candidate节点（即候选节点），运行时处于阻塞状态。在Leader节点因某些原因退出后，Candidate节点则通过领导者选举机制参与竞选，成为Leader节点后接替kube-scheduler的工作。
-Kubelet # kubelet组件用来接收、处理、上报kube-apiserver组件下发的任务。kubelet进程启动时会向kube-apiserver注册节点自身信息。它主要负责所在节点（Node）上的Pod资源对象的管理，例如Pod资源对象的创建、修改、监控、删除、驱逐及Pod生命周期管理等。
+Kubelet kubelet组件用来接收、处理、上报kube-apiserver组件下发的任务。kubelet进程启动时会向kube-apiserver注册节点自身信息。它主要负责所在节点（Node）上的Pod资源对象的管理，例如Pod资源对象的创建、修改、监控、删除、驱逐及Pod生命周期管理等。
 kubelet组件实现了3种开放接口：
 Container Runtime Interface：简称CRI（容器运行时接口），提供容器运行时通用插件接口服务。CRI定义了容器和镜像服务的接口。CRI将kubelet组件与容器运行时进行解耦，将原来完全面向Pod级别的内部接口拆分成面向Sandbox和Container的gRPC接口，并将镜像管理和容器管理分离给不同的服务。
 Container Network Interface：简称CNI（容器网络接口），提供网络通用插件接口服务。CNI定义了Kubernetes网络插件的基础，容器创建时通过CNI插件配置网络。
-Container Storage Interface：简称CSI（容器存储接口），提供存储通用插件接口服务。CSI定义了容器存储卷标准规范，容器创建时通过CSI插件配置存储卷。
-Kube-Proxy # kube-proxy组件，作为节点上的网络代理，运行在每个Kubernetes节点上。它监控kube-apiserver的服务和端点资源变化，并通过iptables/ipvs等配置负载均衡器，为一组Pod提供统一的TCP/UDP流量转发和负载均衡功能。</description></item><item><title>容器运行时</title><link>http://hindung.cn/posts/23/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/23/</guid><description>OCI &amp;amp;&amp;amp; CRI # 使用容器经常会听到容器运行时的概念、OCI以及CRI等，这些有什么区别和联系呢？
+Container Storage Interface：简称CSI（容器存储接口），提供存储通用插件接口服务。CSI定义了容器存储卷标准规范，容器创建时通过CSI插件配置存储卷。</description></item><item><title>容器运行时</title><link>https://hindung.cn/posts/cri/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/cri/</guid><description>OCI &amp;amp;&amp;amp; CRI 使用容器经常会听到容器运行时的概念、OCI以及CRI等，这些有什么区别和联系呢？
 CR，即Container Runtime，容器运行时 CRI，即Container Runtime Interface，容器运行时接口，实现该系列接口以实现容器功能 OCI，即Open Container Initiative：开口容器倡议，是建立围绕容器格式和运行时的开放式行业标准的明确目的的开放式的治理结构。 OCI 目前包含两个规范：运行时规范（runtime-spec）和镜像规范（image-spec）。运行时规范概述了如何运行在磁盘上解压缩的“文件系统包”。
 现在清楚了，OCI定义了一种规范，即怎么做如何做。而CR是这个规范的实践并定义了一系列接口CRI，只要实现了该接口就能使用这个CR。
 比如CR有很多种，如runc、lxc等，但他们都提供了统一的CRI，其他实现了这个CRI的组件如kubelet在runc和lxc间切换是无感的。
-低级（low-level）容器运行时 # 我理解的low-level是一系列操作容器的行为在很底层，比如通过Linux内核接口创建各个Namespace以及生成Cgroup等操作。把这些行为打包就是一个低级的运行时的内容。或者说低级容器运行时干了啥。
-高级（high-level）容器运行时 # 高级容器运行时又干了啥事情呢？镜像管理、镜像传输、镜像解压缩等技术都可以归为高级的容器运行时。
+低级（low-level）容器运行时 我理解的low-level是一系列操作容器的行为在很底层，比如通过Linux内核接口创建各个Namespace以及生成Cgroup等操作。把这些行为打包就是一个低级的运行时的内容。或者说低级容器运行时干了啥。
+高级（high-level）容器运行时 高级容器运行时又干了啥事情呢？镜像管理、镜像传输、镜像解压缩等技术都可以归为高级的容器运行时。
 比如docker提供的镜像构建、拉取等。docker可以分为以下几层：
-+----------+ | | | docker | | | +-----+----+ | socket/API | +-----v----+ | | | dockerd | | | +-----+----+ | socket/API | +-----v----+ | | |contanerd | | | +-----+----+ | | OCI +-----v----+ | | | runc | +----------+ K8s 与 CRI # k8s 1.</description></item><item><title>Go源码解读之sync.Cond</title><link>http://hindung.cn/posts/19/</link><pubDate>Sun, 16 May 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/19/</guid><description>前言 # 前面🔗说过，Cond实现了一个条件变量，是等待或宣布一个事件发生的goroutines的汇合点。
++----------+ | | | docker | | | +-----+----+ | socket/API | +-----v----+ | | | dockerd | | | +-----+----+ | socket/API | +-----v----+ | | |contanerd | | | +-----+----+ | | OCI +-----v----+ | | | runc | +----------+ K8s 与 CRI k8s 1.5 中自己实现了 docker CRI shim，通过这个组件与docker交互。管理容器的过程还是通过docker那套，在containerd 1.</description></item><item><title>Go源码解读之sync.Cond</title><link>https://hindung.cn/posts/go-sync-cond/</link><pubDate>Sun, 16 May 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/go-sync-cond/</guid><description>前言 前面🔗说过，Cond实现了一个条件变量，是等待或宣布一个事件发生的goroutines的汇合点。
 就是说，使用sync.Cond可以做到多个协程等待某个协程通知的场景。
 使用channel可以实现一读一写的场景，而Cond则实现多读一写的场景。
-源码解析 # 简化版方法签名：
+源码解析 简化版方法签名：
 // Cond结构体 type Cond struct {} // NewCond 返回带Locker的Cond，这个Locker可以是 // *Mutex 或 *RWMutex func NewCond(l Locker) *Cond {} // 等待L的解锁并挂起goroutine func (c *Cond) Wait() {} // 唤醒1个因c阻塞的goroutine， // 如果在Signal之后才Wait会导致all goroutines are asleep - deadlock func (c *Cond) Signal() {} // 唤醒所有因c阻塞的goroutine // 如果在Broadcast之后才Wait会导致all goroutines are asleep - deadlock func (c *Cond) Broadcast() {} 因此，在Signal或者Broadcast前要先保证目标的协程已经进入了Wait状态，否则会导致死锁。因为Signal或者Broadcast只唤醒当前正在被Wait阻塞的协程。
 Cond的定义：
-// Copyright 2011 The Go Authors. All rights reserved.</description></item><item><title>Go源码解读之sync中的基本类型和使用场景</title><link>http://hindung.cn/posts/18/</link><pubDate>Tue, 11 May 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/18/</guid><description>Overview # 包链接🔗
+// Copyright 2011 The Go Authors. All rights reserved. // Use of this source code is governed by a BSD-style // license that can be found in the LICENSE file.</description></item><item><title>Go源码解读之sync中的基本类型和使用场景</title><link>https://hindung.cn/posts/go-sync-type/</link><pubDate>Tue, 11 May 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/go-sync-type/</guid><description>Overview 包链接🔗
 sync包提供基本的同步原语，例如互斥锁。
 除了Once和WaitGroup类型外，大多数都是供低级库例程使用的。
 更高层次的同步最好通过channels和通信来完成。
 从代码看，sync提供了几种类型：
 Cond：条件变量 Locker：锁的接口定义 Map：协程并发安全的Map Mutex：互斥锁 Once：单次执行 Pool：池 RWMutex：读写锁 WaitGroup：等待组 几个类型分别对应不同的使用场景。
-sync.Cond # Cond实现了一个条件变量，是等待或宣布一个事件发生的goroutines的汇合点。
+sync.Cond Cond实现了一个条件变量，是等待或宣布一个事件发生的goroutines的汇合点。
 通俗的说，sync.Cond用来协调那些访问共享资源的goroutine，当共享资源发生变化时，通知被阻塞goroutine。
 sync.Cond 经常用在多个 goroutine 等待一个 goroutine 通知（事件发生）的场景。
-sync.Map # Map就像Go中的map[interface{}]interface{}，但对于多个goroutine的并发使用是安全的，不需要额外的锁或协调。
+sync.Map Map就像Go中的map[interface{}]interface{}，但对于多个goroutine的并发使用是安全的，不需要额外的锁或协调。
 使用map + sync.Mutex或者sync.RWMutex的方式也可以实现与sync.Map类似的功能，但是在某些场景下，sync.Map具有更高的性能：
 Map类型针对两种常见用例进行了优化：
 当给定key的条目仅被写入一次却被读取多次时，例如在仅增长的高速缓存中 当多个goroutine读取，写入和覆盖的key都不相关时 在这两种情况下，与与单独的Mutex或RWMutex + map 相比，使用Map可以显着减少锁争用。
-sync.Mutex # Mutex是一个相互排斥的锁。Mutex的零值是一个解锁的Mutex。
+sync.Mutex Mutex是一个相互排斥的锁。Mutex的零值是一个解锁的Mutex。
 当调用Lock方法进行加锁时，如果锁已在使用中，则goroutine会阻塞，直到锁可用为止。 当调用UnLock方法进行解锁时，如果锁没有在使用，则会出现运行时错误。
 锁定的互斥锁与特定的goroutine没有关联。允许一个goroutine锁定Mutex，然后安排另一个goroutine对其进行解锁。
-sync.RWMutex # RWMutex是一个读写器相互排斥的锁。 该锁可以由任意数量的读者或单一的写者持有。RWMutex的零值是一个解锁的mutex。
+sync.RWMutex RWMutex是一个读写器相互排斥的锁。 该锁可以由任意数量的读者或单一的写者持有。RWMutex的零值是一个解锁的mutex。
 读读不互斥，读写互斥，写写互斥。
-sync.Once # Once的Do(f)方法保证只运行一次，即使f发生panic。 这常用在单例模式，配置文件加载，初始化这些场景下。
-sync.Pool # Pool是一组可以单独保存和检索的临时对象。 储存在池子里的任何对象都可能在任何时候被自动删除，而无需通知。 池可以安全地同时被多个goroutine使用。
+sync.Once Once的Do(f)方法保证只运行一次，即使f发生panic。 这常用在单例模式，配置文件加载，初始化这些场景下。
+sync.Pool Pool是一组可以单独保存和检索的临时对象。 储存在池子里的任何对象都可能在任何时候被自动删除，而无需通知。 池可以安全地同时被多个goroutine使用。
 Pool的作用是缓存已分配但未使用的项目，以便以后再使用，减轻垃圾收集器的压力。也就是说，它使建立高效、线程安全的自由列表变得容易。
 池的一个适当的用途是管理一组临时项目，这些临时项目在包的独立客户端之间默默地共享，并可能被重复使用。Pool提供了一种在许多客户端之间分摊分配开销的方法。
 当然，Pool并不适用于一些短命的对象池化。
 相当于拿出来，做操作，再放回去，操作过的东西放回去的时候是啥样，拿出来的时候就是啥样的。也就是说，拿出来用的时候需要初始化数据或者清空。 如Gin的源码：https://github.com/gin-gonic/gin/blob/v1.7.1/gin.go#L439
-// ServeHTTP conforms to the http.</description></item><item><title>深拷贝之循环引用</title><link>http://hindung.cn/posts/16/</link><pubDate>Sat, 08 May 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/16/</guid><description>题目 # 实现如下结构体的深拷贝。
+// ServeHTTP conforms to the http.Handler interface. func (engine *Engine) ServeHTTP(w http.</description></item><item><title>深拷贝之循环引用</title><link>https://hindung.cn/posts/deep-copy/</link><pubDate>Sat, 08 May 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/deep-copy/</guid><description>题目 实现如下结构体的深拷贝。
 type Node struct { Data int Fields []*Node } 即指针指向的内存也需要Copy一份。
-解析 # 观察结构体，由于Fields字段里存放的是指向Node结构体的指针切片，深拷贝时要考虑循环引用的问题，如：
+解析 观察结构体，由于Fields字段里存放的是指向Node结构体的指针切片，深拷贝时要考虑循环引用的问题，如：
 struct a : data: 1 fields: b, c struct b: data: 2 fields: c struct c: data: 3 fields: a // 这里循环引用了a， c-&amp;gt;a-&amp;gt;b, c-&amp;gt;a 可以考虑使用map[*Node]*Node来判断是否有环的情况，即用map[src] = dst来保存拷贝过的节点。
-代码 # 代码如下：
-package main import ( &amp;#34;go/ast&amp;#34; &amp;#34;go/token&amp;#34; ) type Node struct { Data int Fields []*Node } // deep copy var M map[*Node]*Node func Dup(src *Node) *Node { if src == nil { return nil } node := &amp;amp;Node{ Data: src.</description></item><item><title>LRU 缓存机制</title><link>http://hindung.cn/posts/15/</link><pubDate>Thu, 06 May 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/15/</guid><description>题目 # 146. LRU 缓存机制
-解析 # 由于要求要用O(1)的时间复杂度，所以要采用双向链表＋map的数据结构解答。
+代码 代码如下：
+package main import ( &amp;#34;go/ast&amp;#34; &amp;#34;go/token&amp;#34; ) type Node struct { Data int Fields []*Node } // deep copy var M map[*Node]*Node func Dup(src *Node) *Node { if src == nil { return nil } node := &amp;amp;Node{ Data: src.</description></item><item><title>LRU 缓存机制</title><link>https://hindung.cn/posts/lru/</link><pubDate>Thu, 06 May 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/lru/</guid><description>题目 146. LRU 缓存机制
+解析 由于要求要用O(1)的时间复杂度，所以要采用双向链表＋map的数据结构解答。
 具体源码如下：
-package main import &amp;#34;fmt&amp;#34; type LRUCache struct { M map[int]*Node Cap int Size int Head, Tail *Node } type Node struct { Key, Value int Pre, Next *Node } // init LRUCache func Constructor(capacity int) LRUCache { l := LRUCache{ M: map[int]*Node{}, Cap: capacity, Size: 0, Head: &amp;amp;Node{ Key: 0, Value: 0, Pre: nil, Next: nil, }, Tail: &amp;amp;Node{ Key: 0, Value: 0, Pre: nil, Next: nil, }, } // nil&amp;lt;-head&amp;lt;-&amp;gt;tail-&amp;gt; l.</description></item><item><title>Go源码解读之sync/atomic</title><link>http://hindung.cn/posts/14/</link><pubDate>Thu, 29 Apr 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/14/</guid><description>注：go version 1.16.x
-Overview # 从网站pkg.go.dev上可以看到，对应的解释。
+package main import &amp;#34;fmt&amp;#34; type LRUCache struct { M map[int]*Node Cap int Size int Head, Tail *Node } type Node struct { Key, Value int Pre, Next *Node } // init LRUCache func Constructor(capacity int) LRUCache { l := LRUCache{ M: map[int]*Node{}, Cap: capacity, Size: 0, Head: &amp;amp;Node{ Key: 0, Value: 0, Pre: nil, Next: nil, }, Tail: &amp;amp;Node{ Key: 0, Value: 0, Pre: nil, Next: nil, }, } // nil&amp;lt;-head&amp;lt;-&amp;gt;tail-&amp;gt; l.</description></item><item><title>Go源码解读之sync/atomic</title><link>https://hindung.cn/posts/go-sync-atomic/</link><pubDate>Thu, 29 Apr 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/go-sync-atomic/</guid><description>注：go version 1.16.x
+Overview 从网站pkg.go.dev上可以看到，对应的解释。
 atomic包提供了用于实现同步算法的低级原子内存原语。
 可以分为几类操作：
-Add操作：加减操作 CAS操作：先比较后赋值操作 Swap操作：赋值操作 Load操作：从某个地址中取值 Store操作：往某个地址赋值 Value类型：对任意类型的Load/Store操作封装 操作分类 # Add操作 # 由AddT函数实现的加法操作在原子上等效于：
+Add操作：加减操作 CAS操作：先比较后赋值操作 Swap操作：赋值操作 Load操作：从某个地址中取值 Store操作：往某个地址赋值 Value类型：对任意类型的Load/Store操作封装 操作分类 Add操作 由AddT函数实现的加法操作在原子上等效于：
 *addr += delta \\ 加上步长 正负数都可以 return *addr \\ 反回加后的结果 相关的方法有：
-func AddInt32(addr *int32, delta int32) (new int32) func AddUint32(addr *uint32, delta uint32) (new uint32) func AddInt64(addr *int64, delta int64) (new int64) func AddUint64(addr *uint64, delta uint64) (new uint64) func AddUintptr(addr *uintptr, delta uintptr) (new uintptr) CAS操作 # CAS即CompareAndSwap，这个函数主要就是先比较一下当前传入的地址的值是否和 old 值相等，如果相等，就赋值新值返回 true，如果不相等就返回 false.</description></item><item><title>使用Go遇到的坑</title><link>http://hindung.cn/posts/13/</link><pubDate>Thu, 01 Apr 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/13/</guid><description>for range 语句中的值传递问题 # package main import &amp;#34;fmt&amp;#34; var pow = []int{1, 2, 4} func main() { for _, v := range pow { v++ } for _, v := range pow { fmt.Println(v) } } //out put : 1 2 4 原因：for range创建了每个元素的副本，而不是直接返回每个元素的引用。
-IPv4与IPv6格式问题 # Go中IPv4的长度和IPv6的长度是一样的，都是16Byte存储，故不能使用len()函数去区别:
-conn, err := net.Dial(&amp;#34;udp&amp;#34;, &amp;#34;8.9.10.11:2342&amp;#34;) if err != nil { fmt.Println(&amp;#34;Error&amp;#34;, err) } localaddr := conn.LocalAddr() addr, _ := net.ResolveUDPAddr(&amp;#34;udp&amp;#34;, localaddr.String()) ip := addr.</description></item><item><title>构建属于你自己的核心力量</title><link>http://hindung.cn/posts/12/</link><pubDate>Fri, 02 Oct 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/12/</guid><description>前言 # Bridging the Gap Between Junior and Senior Engineers这篇文章是偶然在公众号看到的，觉得里面说的从Junior如何向Senior Engineers发展以及所需要掌握的技能，我觉得说的挺好的，这里就翻译过来，做为以后反省的清单吧，向大佬靠齐！
-部分原文译文 # 从Junior向Senior Engineers发展应该关注的一些问题：
+func AddInt32(addr *int32, delta int32) (new int32) func AddUint32(addr *uint32, delta uint32) (new uint32) func AddInt64(addr *int64, delta int64) (new int64) func AddUint64(addr *uint64, delta uint64) (new uint64) func AddUintptr(addr *uintptr, delta uintptr) (new uintptr) CAS操作 CAS即CompareAndSwap，这个函数主要就是先比较一下当前传入的地址的值是否和 old 值相等，如果相等，就赋值新值返回 true，如果不相等就返回 false.</description></item><item><title>使用Go遇到的坑</title><link>https://hindung.cn/posts/keng/</link><pubDate>Thu, 01 Apr 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/keng/</guid><description>for range 语句中的值传递问题 package main import &amp;#34;fmt&amp;#34; var pow = []int{1, 2, 4} func main() { for _, v := range pow { v++ } for _, v := range pow { fmt.Println(v) } } //out put : 1 2 4 原因：for range创建了每个元素的副本，而不是直接返回每个元素的引用。
+IPv4与IPv6格式问题  Go中IPv4的长度和IPv6的长度是一样的，都是16Byte存储，故不能使用len()函数去区别:
+conn, err := net.Dial(&amp;#34;udp&amp;#34;, &amp;#34;8.9.10.11:2342&amp;#34;) if err != nil { fmt.Println(&amp;#34;Error&amp;#34;, err) } localaddr := conn.LocalAddr() addr, _ := net.ResolveUDPAddr(&amp;#34;udp&amp;#34;, localaddr.String()) ip := addr.IP fmt.</description></item><item><title>构建属于你自己的核心力量</title><link>https://hindung.cn/posts/core/</link><pubDate>Fri, 02 Oct 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/core/</guid><description>前言 Bridging the Gap Between Junior and Senior Engineers这篇文章是偶然在公众号看到的，觉得里面说的从Junior如何向Senior Engineers发展以及所需要掌握的技能，我觉得说的挺好的，这里就翻译过来，做为以后反省的清单吧，向大佬靠齐！
+部分原文译文 从Junior向Senior Engineers发展应该关注的一些问题：
 编码硬实力是基本的能力。
 你的代码的可维护性如何？是否有其他工程师不停地轻敲你的肩膀，让你解释你代码的每一行都是如何工作的？你的变量名具有描述性吗？你的方法是直观、易理解的吗？当你发现自己在复制粘贴很多行代码时，你是否能将这些代码的功能写入可重用的服务中？
 别人能够从你在拉取请求(PR)中留下的评论中受益吗？你的反馈意见是有建设性，还是太过粗糙？当你发现别人的知识存在缺口时，你只是告诉他们“把这条线从 ABC 更改为 XYZ”，还是有能力引导他们认识到自己的方法可能不是最佳方法，让他们成长为更优秀的开发者？毕竟，同样是学习新东西，授人以鱼不如授之以渔。
@@ -152,23 +174,18 @@ conn, err := net.Dial(&amp;#34;udp&amp;#34;, &amp;#34;8.9.10.11:2342&amp;#34;) i
 在与其他部门一起确定大型项目的范围时，你对要开发的新功能的问题了解得有多深入？在开始编码之前，你是否能够考虑到每个边缘情况？你是否能够及早识别范围蔓延并尽早制止，从而使团队免于周六加班？
 你的多任务处理能力如何？你的大脑会超负荷吗？同样，在处理大型功能时，比如涉及 50 个文件的功能……你可以一次将它们全部保存在脑海中吗？你有养成扎实的记笔记习惯吗？你打算如何计划跟踪今天下班前弹出的 500 万件事？
 当你编写的一段代码导致帐单页面出错，搞得团队首席工程师不得不取消他们的晚餐计划、熬夜帮你解决问题时，你会如何应对？你会情绪激动吗？你还能理性思考吗？你是否能够摆脱这种情绪，并提醒自己，地球上的每个开发人员每两天就会发布错误代码？
-你了解业务运作方式吗？你了解为什么即使失业人数达到两位数，软件工程师也可以要求如此疯狂的薪水吗？为什么编程是如此宝贵的技能？为什么客户愿意为某些超级基本的 Web 表单向你的公司每年支付 50,000 美元？你是否觉得他们被骗了？
-领导可以放心地让你去负责面试候选人吗？你是否擅长通过有限的信息来对人员进行分类，并可视化他们和团队的适合程度？你能识别出在什么情况下，在工程方面优秀的候选人却不能很好地融入公司文化吗？这种候选人你会建议录取吗？同样，即使你和候选人在 Zoom 里聊了 5 分钟就知道他不可能被录取，你是否还可以确保他仍然可以从你们的聊天中学到东西？毕竟，语言在网络上的传播速度是很快的。
-假如今天是 12 月 28 日，你被困在办公室。你今年有点疯狂，在 9 月中旬就把今年所有的带薪休假糟蹋完了。此时此刻，同事们都休假出去 high 了。你还能按时上班吗？领导不在身边惩罚你，你是否打算半途而废？这种情形下，是否需要领导强迫你你才能尽全力工作？
-机会成本是一件必须考虑的事。你在平衡技术债务和推动业务发展方面做得如何？你是否会重构发现的每个微小的编码样式问题？毕竟大家都很难承认“这段代码很烦人，但它确实有效，需要花费四个小时的清理时间，这段时间可以花在构建其他功能上，而这是很多客户都在请求的”。
-你知道如何向你的下属反馈 他们 的绩效吗？你和他们有良好的工作关系吗？你是否将他们视为敌人？你是否正在积极尝试减轻他们的压力，使他们的生活更轻松？你是否曾经说过“你们那边有什么烦人的任务我可以帮忙削减吗”？公司雇人都是有原因的，你的下属可能比你想象的更有经验和资格。
-你有能力扑灭生产大火吗？你是否会在遇到 大麻烦 时惊慌、不知所措（比如 AWS 中断使网站瘫痪、不小心搞丢了 customer_invoices 表单、某些错误导致了不同用户帐户之间的数据泄漏等）？你是会在压力之下崩溃，还是会在解决问题的同时保持镇静，并与其他部门进行有效的沟通？</description></item><item><title>Golang实现优先队列</title><link>http://hindung.cn/posts/11/</link><pubDate>Wed, 23 Sep 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/11/</guid><description>前言 # 由于刷题时偶尔会用到队列以及优先队列等数据结构，其他语言都有现成的实现，如C++的priority_queue等，使用非常方便，但是由于个人比较喜欢使用golang语言进行答题，但是go对队列以及优先队列的实现只提供了一个接口，即container/heap包中的heap数据结构，故实现还是要自己去码，这里做一个笔记。实现了heap接口来实现priority_queue，并且提供了其他方法的实现。
-heap原理 # go的container/heap包实现的是数据结构是数组构成的二叉树（完全二叉树），如下所示：
-// 树中某个节点的值总是不大于或不小于其孩子节点的值； // 树中每个节点的子树都是堆树 // index 0 1 2 3 4 5 6 7 8 9 // index 1 2 3 4 5 6 7 8 9 10 // a[] = {4, 1, 3, 2, 16, 9, 10, 14, 8, 7} // 4 // / \ // 1 3 // / \ / \ // 2 16 9 10 // /\ / // 14 8 7 // 若取a[1]为堆顶最大或最小，a[i]的左子节点为a[2i],右子节点为a[2i+1],父节点为a[i/2]: // a[i] // / \ // a[2i] a[2i+1] // 若取a[0]为堆顶最大或最小，a[i]的左子节点为a[2i+1],右子节点为a[2i+2],父节点为a[(i-1)/2] // a[i] // / \ // a[2i+1] a[2i+2] 而container/heap包采用的是a[0]作为对顶，故左子、右子节点以及父节点表示为a[2i+1]、a[2i+2]、a[(i-1)/2]。</description></item><item><title>雪花算法</title><link>http://hindung.cn/posts/6/</link><pubDate>Thu, 27 Aug 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/6/</guid><description>前言 # 工作项目中有使用到雪花算法(snowflake)，觉得很有意思，所以想深入了解一下实现的原理并做记录。
-算法简介 # 什么是雪花算法 # snowflake，雪花。所以snowflake算法就叫做雪花算法。最早是Twitter内部使用的分布式环境唯一ID生成算法。
-解决了什么问题 # 那么，该算法主要解决了：
-高并发分布式系统环境下ID不重复 基于时间戳，可以保证有序递增 不依赖第三方库或中间件 生成效率高 算法原理 # 使用统一不重复系统编号的服务器+毫秒级时间戳+递增序列化生成64bit长整型数字：
+你了解业务运作方式吗？你了解为什么即使失业人数达到两位数，软件工程师也可以要求如此疯狂的薪水吗？为什么编程是如此宝贵的技能？为什么客户愿意为某些超级基本的 Web 表单向你的公司每年支付 50,000 美元？你是否觉得他们被骗了？</description></item><item><title>Golang实现优先队列</title><link>https://hindung.cn/posts/go-priority-queue/</link><pubDate>Wed, 23 Sep 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/go-priority-queue/</guid><description>前言 由于刷题时偶尔会用到队列以及优先队列等数据结构，其他语言都有现成的实现，如C++的priority_queue等，使用非常方便，但是由于个人比较喜欢使用golang语言进行答题，但是go对队列以及优先队列的实现只提供了一个接口，即container/heap包中的heap数据结构，故实现还是要自己去码，这里做一个笔记。实现了heap接口来实现priority_queue，并且提供了其他方法的实现。
+heap原理 go的container/heap包实现的是数据结构是数组构成的二叉树（完全二叉树），如下所示：
+// 树中某个节点的值总是不大于或不小于其孩子节点的值； // 树中每个节点的子树都是堆树 // index 0 1 2 3 4 5 6 7 8 9 // index 1 2 3 4 5 6 7 8 9 10 // a[] = {4, 1, 3, 2, 16, 9, 10, 14, 8, 7} // 4 // / \ // 1 3 // / \ / \ // 2 16 9 10 // /\ / // 14 8 7 // 若取a[1]为堆顶最大或最小，a[i]的左子节点为a[2i],右子节点为a[2i+1],父节点为a[i/2]: // a[i] // / \ // a[2i] a[2i+1] // 若取a[0]为堆顶最大或最小，a[i]的左子节点为a[2i+1],右子节点为a[2i+2],父节点为a[(i-1)/2] // a[i] // / \ // a[2i+1] a[2i+2] 而container/heap包采用的是a[0]作为对顶，故左子、右子节点以及父节点表示为a[2i+1]、a[2i+2]、a[(i-1)/2]。</description></item><item><title>雪花算法</title><link>https://hindung.cn/posts/snowflake/</link><pubDate>Thu, 27 Aug 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/snowflake/</guid><description>前言 工作项目中有使用到雪花算法(snowflake)，觉得很有意思，所以想深入了解一下实现的原理并做记录。
+算法简介 什么是雪花算法 snowflake，雪花。所以snowflake算法就叫做雪花算法。最早是Twitter内部使用的分布式环境唯一ID生成算法。
+解决了什么问题 那么，该算法主要解决了：
+高并发分布式系统环境下ID不重复 基于时间戳，可以保证有序递增 不依赖第三方库或中间件 生成效率高 算法原理 使用统一不重复系统编号的服务器+毫秒级时间戳+递增序列化生成64bit长整型数字：
 +-&amp;gt;1bit not use + 000000000000000000000000000000000000000000000000000000000000000 = 64 bit &amp;lt;--------------------------------------&amp;gt;&amp;lt;---+----&amp;gt;&amp;lt;----------&amp;gt; 41bit millisecond timestamp = 69 years | 12bit Inc num = 4096 v 10bit machine ID= 1024 64bit整数由以下部分组成：
 第一位置零，1为负数，故不用； 41位表示毫秒级时间戳； 10位表示机器ID，最多可以部署在1024台服务器上； 12位表示1毫秒的内递增序列，从0开始，到4095； 也就是说同一毫秒内最多能生成4096个id，超出的话需要等待下一毫秒，雪花算法最多冲突等待1ms。
 机器ID保证了系统内的机器唯一性，时间戳和递增序列号保证了时序递增。
-实现思路 # 了解了唯一ID的结构之后就可以简单实现雪花算法（伪代码）：
-machineID # 机器ID n # 递增序列 now := time().now().Unix() if now == last { # 如果是同1毫秒内 n++ # 自增1 if n &amp;gt; 4095 { # 超过4095，则等待下一毫秒 now = nexttime() n = 0 } } else { n = 0 last = now } ID = now &amp;lt;&amp;lt; 22 | mashineID &amp;lt;&amp;lt; 12 | n # 将结果拼接为64bit之后转换成十进制 深入源代码 # 雪花生成算法见：snowflake</description></item><item><title>Golang-channel</title><link>http://hindung.cn/posts/5/</link><pubDate>Sat, 01 Aug 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/5/</guid><description>前言 # 本文主要记录平时使用Golang的channel对象是如何在内存中存储和实现的，包括channel的创建、发送、接收、实现和关闭，最佳实践等，有时还应该更加关注channel的阻塞问题，以及select底层实现与channel的选择执行。
-channel与goroutine # goroutine, to execute tasks independently, potentially in parallel. channels, for communication, synchronization between goroutine.
+实现思路 了解了唯一ID的结构之后就可以简单实现雪花算法（伪代码）：
+machineID # 机器ID n # 递增序列 now := time().now().Unix() if now == last { # 如果是同1毫秒内 n++ # 自增1 if n &amp;gt; 4095 { # 超过4095，则等待下一毫秒 now = nexttime() n = 0 } } else { n = 0 last = now } ID = now &amp;lt;&amp;lt; 22 | mashineID &amp;lt;&amp;lt; 12 | n # 将结果拼接为64bit之后转换成十进制 深入源代码 雪花生成算法见：snowflake</description></item><item><title>Golang-channel</title><link>https://hindung.cn/posts/golang-channel/</link><pubDate>Sat, 01 Aug 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/golang-channel/</guid><description>前言 本文主要记录平时使用Golang的channel对象是如何在内存中存储和实现的，包括channel的创建、发送、接收、实现和关闭，最佳实践等，有时还应该更加关注channel的阻塞问题，以及select底层实现与channel的选择执行。
+channel与goroutine goroutine, to execute tasks independently, potentially in parallel. channels, for communication, synchronization between goroutine.
 正如上面说的，goroutine是独立地，可能并行地执行任务。channel是服务与goroutine之间的通讯，同步等。
 Go语言的并发模型是基于CSP的， Golang从CSP中吸收了Process/Channel。
 channel是一种：
@@ -176,30 +193,31 @@ channel是一种：
 Do not communicate by sharing memory; instead, share memory by communicating.
 这是Go语言的并发哲学。
 下面就来详细了解一下golang是如何实现channel这个对象，并且如何实现goroutine之间的数据通信的。
-channel的基本使用 # var ch chan int //声明一个int类型的channel，注意，该语句仅声明，不初始化channel ch := make(chan int) //创建一个无缓冲的int型的channel，无缓冲的channel当放入1个元素后，后续的输入便会阻塞 ch := make(chan int, 10) //创建一个缓冲区大小为10的int型的channel ch &amp;lt;- x //将x发送到channel中，如果channel缓冲区满，则阻塞当前goroutine &amp;lt;- ch //从channel中接收一个值，如果缓冲区为空，则阻塞 x = &amp;lt;- ch //从channel中接收一个值并存到x中，如果缓冲区为空，则阻塞 x, ok = &amp;lt;- ch //从channel中接收一个值，如果channel关闭了，那么ok为false（在没有defaultselect语句的前提下），在channel未关闭且为空的情况下，会阻塞 close(ch) //关闭channel for item := range ch {} //等待并取出channel中的值，直到channel关闭，会阻塞 无缓冲区的channel # 从无缓存的channel中读取消息会阻塞，直到goroutine向channel中发送消息；同理，向无缓存的channel 中发送消息也会阻塞，直到有goroutine从channel中读取消息。</description></item><item><title>Golang语言模型</title><link>http://hindung.cn/posts/4/</link><pubDate>Sun, 26 Jul 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/4/</guid><description>前言 # 这篇笔记主要记录一下学习Go见到的各种数据类型，从数据类型在内存的分布上看了解其中的原理，主要包括：
+channel的基本使用 var ch chan int //声明一个int类型的channel，注意，该语句仅声明，不初始化channel ch := make(chan int) //创建一个无缓冲的int型的channel，无缓冲的channel当放入1个元素后，后续的输入便会阻塞 ch := make(chan int, 10) //创建一个缓冲区大小为10的int型的channel ch &amp;lt;- x //将x发送到channel中，如果channel缓冲区满，则阻塞当前goroutine &amp;lt;- ch //从channel中接收一个值，如果缓冲区为空，则阻塞 x = &amp;lt;- ch //从channel中接收一个值并存到x中，如果缓冲区为空，则阻塞 x, ok = &amp;lt;- ch //从channel中接收一个值，如果channel关闭了，那么ok为false（在没有defaultselect语句的前提下），在channel未关闭且为空的情况下，会阻塞 close(ch) //关闭channel for item := range ch {} //等待并取出channel中的值，直到channel关闭，会阻塞 无缓冲区的channel 从无缓存的channel中读取消息会阻塞，直到goroutine向channel中发送消息；同理，向无缓存的channel 中发送消息也会阻塞，直到有goroutine从channel中读取消息。</description></item><item><title>Golang语言模型</title><link>https://hindung.cn/posts/go-lang/</link><pubDate>Sun, 26 Jul 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/go-lang/</guid><description>前言 这篇笔记主要记录一下学习Go见到的各种数据类型，从数据类型在内存的分布上看了解其中的原理，主要包括：
 基本类型（int, string, uint, int8, int16, byte, rune, unitptr, float32, float64, complex64, complex128, bool等） 数组和slice的内存模型（string是特殊的slice） 指针的内存模型及unitptr与unsafe.Pointer、普通指针 *T的区别 map的内存模型 struct的内存模型和字节对齐 channel、goroutine的内存模型以后单独记录 interface的内存模型已经在第一篇笔记里 Go的内存模型与C语言很像，所以了解C语言应该很容易理解Go的内存模型。
-基本类型的内存模型 # Go语言有18种基本的数据结构：
+基本类型的内存模型 Go语言有18种基本的数据结构：
 bool string rune byte int uint int8 uint8 int16 uint16 int32 uint32 int64 uint64 float32 float64 complex64 complex128 其中string和bool类型比较特殊，这个后面讨论。
 然后 byte 类型是uint8的别名，rune是int32的别名。
 平台相关的数据类型有：
 uint：int32 或者是 int64，看机子类型 uintptr：足够表示指针大小的无符号整数类型 这些基本类型在内存中的表示如：
-数组和切片 # 数组 # 对于数组来说，如：var arr = [5]byte{1,2,3,4,5}
+数组和切片 数组 对于数组来说，如：var arr = [5]byte{1,2,3,4,5}
 对于arr这个[5]byte类型，他的内存就是5个连续的字节, 一个数组的定义同时包括了长度和类型。 比如：var a [4]int，那么就表示声明了一个类型是数组，元素类型是int，长度是4。这里需要注意的是Go语言的数组和C语言的不一样，C语言的数组是一个指针，指向数组的一个元素。但是在Go语言里面数组就是一个普通的值类型。而不是一个指向数组内存起始位置的指针，也不能和同类型的指针进行转化。
-所以[4]int和[5]int表示两种完全不同的类型。</description></item><item><title>初探Gin框架</title><link>http://hindung.cn/posts/3/</link><pubDate>Sat, 25 Jul 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/3/</guid><description>入门简介 # Gin是一个高性能的HTTP web框架，用Go编写，目前托管在GitHub上：Gin 官方文档：Gin-doc 中文版：Gin-doc Gin框架的几个特性：
+所以[4]int和[5]int表示两种完全不同的类型。
+切片 在之前的一些golang基础里已经有一些切片类型的简单使用方法了，这里就来探究一下切片的底层数据结构和实现。</description></item><item><title>初探Gin框架</title><link>https://hindung.cn/posts/gin/</link><pubDate>Sat, 25 Jul 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/gin/</guid><description>入门简介 Gin是一个高性能的HTTP web框架，用Go编写，目前托管在GitHub上：Gin 官方文档：Gin-doc 中文版：Gin-doc Gin框架的几个特性：
 路由（Routing）：将请求映射到函数，支持动态路由。如/hello/:name 鉴权：统一、分组鉴权能力 模板：统一简化的HTML机制 中间件：一个请求经过多个中间件拦截最后到达DB，如logging .etc 其中比较关键的组件是router路由组件，gin使用的算法是radix 树，是trie 树（前缀树）的一种压缩版本，他们的区别是：假如存在三个单词：hello, hat, have，trie 树得到的数据结构是：
 e - l - l - o / h - a - t \ v - e 总共9个节点。而radix树得到的数据结构是：
 * / (ello) / * - h - * -(a) - * - (t) - * \ (ve) \ * 只需要5个节点，所以，radix树使用更小的内存，但是很难实现。详情请参考：what-is-the-difference-between-trie-and-radix-trie-data-structures
 Gin使用的radix算法实现是：httprouter
-原理及用法 # 路由Routing # go语言本身内置了net/http库，封装了HTTP网络接口，Gin实现的web框架也是基于net/http库。
+原理及用法 路由Routing go语言本身内置了net/http库，封装了HTTP网络接口，Gin实现的web框架也是基于net/http库。
 这个库的简单用法：
-package main import ( &amp;#34;fmt&amp;#34; &amp;#34;log&amp;#34; &amp;#34;net/http&amp;#34; ) func main() { http.</description></item><item><title>Docker镜像优化</title><link>http://hindung.cn/posts/2/</link><pubDate>Thu, 23 Jul 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/2/</guid><description>注：本文章基于docker-ce版本：Client 19.03.8，Server 19.03.8
-Dockerfile简介 # Dockerfile主要有这几个指令，每个指令都会添加新的层，但是镜像大小不一定增长：
-指令 用途 用法 简单示例 FROM 指定基础镜像 FROM &amp;lt;image&amp;gt; 或 FROM &amp;lt;image&amp;gt;:&amp;lt;tag&amp;gt; FROM ubuntu:16.04 MAINTAINER 维护者信息 MAINTAINER &amp;lt;name&amp;gt; MAINTAINER HuangXianDong ADD 复制指定的文件到容器中包括tar，URL等 ADD &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt; ADD conf/jail.local /etc/fail2ban/jail.local COPY 复制host上下文环境的文件或者前一阶段镜像的文件到容器 COPY &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt;有两个标志 –from= –chown= COPY /usr/local/app /usr/local/app USER 指定用户 USER &amp;lt;username&amp;gt; USER root WORKDIR 指定工作目录 WORKDIR /path/to/workdir WORKDIR /root RUN 终端执行sh或者可执行程序 RUN &amp;lt;command&amp;gt; 或 RUN [“executable”, “param1”, “param2”] RUN apt-get update ENV 指定一个环境变量 ENV &amp;lt;key&amp;gt; &amp;lt;value&amp;gt;或ENV &amp;lt;key&amp;gt;=&amp;lt;value&amp;gt; ENV TZ=Asia/Shanghai ONBUILD 配置当所创建的镜像作为其它新创建镜像的基础镜像时，所执行的操作指令 ONBUILD [INSTRUCTION] ONBUILD ADD .</description></item><item><title>Golang-interface的底层原理浅析</title><link>http://hindung.cn/posts/1/</link><pubDate>Thu, 23 Jul 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/1/</guid><description>前言 # Go语言在语法上相对C/C++来说，是比较简单的，基本语法多刷刷题目，然后工程的架构、目录规则等多看看其他开源项目，就应该能比较熟悉了。Go语言比较核心的设计 包括interface、内存模型、defer机制、goroutine实现与调度、cgo、数组与切片、Go编译器和连接器、GC实现这几大块。
+package main import ( &amp;#34;fmt&amp;#34; &amp;#34;log&amp;#34; &amp;#34;net/http&amp;#34; ) func main() { http.</description></item><item><title>Docker镜像优化</title><link>https://hindung.cn/posts/docker-images/</link><pubDate>Thu, 23 Jul 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/docker-images/</guid><description>注：本文章基于docker-ce版本：Client 19.03.8，Server 19.03.8
+Dockerfile简介 Dockerfile主要有这几个指令，每个指令都会添加新的层，但是镜像大小不一定增长：
+指令 用途 用法 简单示例 FROM 指定基础镜像 FROM &amp;lt;image&amp;gt; 或 FROM &amp;lt;image&amp;gt;:&amp;lt;tag&amp;gt; FROM ubuntu:16.04 MAINTAINER 维护者信息 MAINTAINER &amp;lt;name&amp;gt; MAINTAINER HuangXianDong ADD 复制指定的文件到容器中包括tar，URL等 ADD &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt; ADD conf/jail.local /etc/fail2ban/jail.local COPY 复制host上下文环境的文件或者前一阶段镜像的文件到容器 COPY &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt;有两个标志 –from= –chown= COPY /usr/local/app /usr/local/app USER 指定用户 USER &amp;lt;username&amp;gt; USER root WORKDIR 指定工作目录 WORKDIR /path/to/workdir WORKDIR /root RUN 终端执行sh或者可执行程序 RUN &amp;lt;command&amp;gt; 或 RUN [“executable”, “param1”, “param2”] RUN apt-get update ENV 指定一个环境变量 ENV &amp;lt;key&amp;gt; &amp;lt;value&amp;gt;或ENV &amp;lt;key&amp;gt;=&amp;lt;value&amp;gt; ENV TZ=Asia/Shanghai ONBUILD 配置当所创建的镜像作为其它新创建镜像的基础镜像时，所执行的操作指令 ONBUILD [INSTRUCTION] ONBUILD ADD .</description></item><item><title>Golang-interface的底层原理浅析</title><link>https://hindung.cn/posts/golang-interface/</link><pubDate>Thu, 23 Jul 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/golang-interface/</guid><description>前言 Go语言在语法上相对C/C++来说，是比较简单的，基本语法多刷刷题目，然后工程的架构、目录规则等多看看其他开源项目，就应该能比较熟悉了。Go语言比较核心的设计 包括interface、内存模型、defer机制、goroutine实现与调度、cgo、数组与切片、Go编译器和连接器、GC实现这几大块。
 注：所有源码基于 go version go1.13.5 windows/amd64
 本篇笔记目的是了解interface的特性，并知道如何用好它。
-Interface定义 # 是一种类型 可以定义0个或多个方法（一组行为） 可以嵌入其他接口（目标类型方法集中必须拥有包含嵌入接口方法在内的全部方法才算实现了该接口） 如：
+Interface定义 是一种类型 可以定义0个或多个方法（一组行为） 可以嵌入其他接口（目标类型方法集中必须拥有包含嵌入接口方法在内的全部方法才算实现了该接口） 如：
 type Notifier interface { notify() } 这就定义了一个名为Notifier的interface，实现这个interface很简单，实现notify方法即可：
 type User struct { name　string } func (u *User) notify() { fmt.Printf(&amp;#34;Notify user name %s\n&amp;#34;, u.name) } 其他结构体也可以实现这个interface：
 type Admin struct { name　string } func (a *Admin) notify() { fmt.Printf(&amp;#34;Sending admin name %s\n&amp;#34;, a.name) } 这种实现是DuckType：类型不需要显式声明它实现了某个接口：接口被隐式地实现。多个类型可以实现同一个接。
 在调用notify的地方实现如下方法，即可实现多态性，即面向接口编程：
-func sendNotify(n Notifier) { n.notify() } 函数sendNotify接受一个实现了Notifier接口的值作为参数。 既然任意一个实体类型都能实现该接口，那么这个函数可以针对任意实体类型的值来执行notify方法，调用notify时， 会根据对象的实际定义来实现不同的行为，从而实现多态行为。</description></item><item><title>部落格修改记录</title><link>http://hindung.cn/posts/0/</link><pubDate>Mon, 20 Jul 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/0/</guid><description>TODO List # 部落格-侧边栏 下拉固定 已完成👌 2020.08.22 📅 🎉 大海 增加搜索功能 修改后端读取Markdown格式 已完成👌 2020.08.16 📅 🎉 修复前端点击回退时Panic的bug 已完成👌 2020.08.15📅 😁🎉 添加文章TOC功能 已完成 2020.09.20📅 使用GithubFlows实现CICD 已完成 2020.10.02📅 🎉 使用对象存储，实现媒体内容分离，提升网站加载速度 🚮🚮废弃，由于文章目前很少采用图片的形式，后续假如有需求如“添加照片墙”或添加个性页面，类Tumblr等再重启该需求。 深入了解Go内存模块，输出博客 深入了解Goroutine，输出博客 了解常用的Go内置包，总结输出博客 深入了解Go的context，并区分channel的使用场景，输出博客 深入了解锁，并发等，输出博客 深入了解golang runtime机制 深入了解部分K8s组件源码，了解informer机制，watch sync设计哲学，输出博客 备考CKA，总结输出博客 计划5月22号前考试完成 已获得CKA证书🎉🎉 2021.04.09📅 备考软考高级，总结输出博客 暂时放弃🚮 复习网络知识，输出博客 保持刷题，有必要输出题解以及形成类似于答题模板的代码片段，记录博客 💪💪持续进行。。。 文章TOC功能优化，类似掘金平台一样的效果 已完成👌 2021.04.09📅🎉 Kube Source Code Plan （docker和k8s源代码阅读计划） 文章数据持久化，例如文章阅读量、点赞量、有用统计等等，初步方案是gorm+sqlite3实现 eBPF相关知识的研究 。。。。 Change List # 2020.07.20 # 框架形成 发布第一篇Blog 2020.07.23 # 修改了一些前端样式 增加博文 2020.</description></item></channel></rss>
+func sendNotify(n Notifier) { n.notify() } 函数sendNotify接受一个实现了Notifier接口的值作为参数。 既然任意一个实体类型都能实现该接口，那么这个函数可以针对任意实体类型的值来执行notify方法，调用notify时， 会根据对象的实际定义来实现不同的行为，从而实现多态行为。</description></item><item><title>部落格修改记录</title><link>https://hindung.cn/posts/change-log/</link><pubDate>Mon, 20 Jul 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/change-log/</guid><description>TODO List 部落格-侧边栏 下拉固定 已完成👌 2020.08.22 📅 🎉 大海 增加搜索功能 修改后端读取Markdown格式 已完成👌 2020.08.16 📅 🎉 修复前端点击回退时Panic的bug 已完成👌 2020.08.15📅 😁🎉 添加文章TOC功能 已完成 2020.09.20📅 使用GithubFlows实现CICD 已完成 2020.10.02📅 🎉 使用对象存储，实现媒体内容分离，提升网站加载速度 🚮🚮废弃，由于文章目前很少采用图片的形式，后续假如有需求如“添加照片墙”或添加个性页面，类Tumblr等再重启该需求。 深入了解Go内存模块，输出博客 深入了解Goroutine，输出博客 了解常用的Go内置包，总结输出博客 深入了解Go的context，并区分channel的使用场景，输出博客 深入了解锁，并发等，输出博客 深入了解golang runtime机制 深入了解部分K8s组件源码，了解informer机制，watch sync设计哲学，输出博客 备考CKA，总结输出博客 计划5月22号前考试完成 已获得CKA证书🎉🎉 2021.04.09📅 备考软考高级，总结输出博客 暂时放弃🚮 复习网络知识，输出博客 保持刷题，有必要输出题解以及形成类似于答题模板的代码片段，记录博客 💪💪持续进行。。。 文章TOC功能优化，类似掘金平台一样的效果 已完成👌 2021.04.09📅🎉 Kube Source Code Plan （docker和k8s源代码阅读计划） 文章数据持久化，例如文章阅读量、点赞量、有用统计等等，初步方案是gorm+sqlite3实现 eBPF相关知识的研究 。。。。 Change List 2020.07.20 框架形成 发布第一篇Blog 2020.07.23 修改了一些前端样式 增加博文 2020.</description></item></channel></rss>

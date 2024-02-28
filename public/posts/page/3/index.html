@@ -1,75 +1,348 @@
-<!doctype html><html lang=en dir=ltr><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><meta name=theme-color media="(prefers-color-scheme: light)" content="#ffffff"><meta name=theme-color media="(prefers-color-scheme: dark)" content="#343a40"><meta name=color-scheme content="light dark"><meta property="og:title" content="Posts"><meta property="og:description" content><meta property="og:type" content="website"><meta property="og:url" content="http://hindung.cn/posts/"><title>Posts | Hindung Blogs</title><link rel=manifest href=/manifest.json><link rel=icon href=/favicon.png><link rel=stylesheet href=/book.scss integrity crossorigin=anonymous><script defer src=/flexsearch.min.js></script>
-<script defer src=/en.search.min.babd2f636c40f8c2a90eb07eec05db5d5b170c6461306029c9a468cc2daf879d.js integrity="sha256-ur0vY2xA+MKpDrB+7AXbXVsXDGRhMGApyaRozC2vh50=" crossorigin=anonymous></script>
-<link rel=alternate type=application/rss+xml href=http://hindung.cn/posts/index.xml title="Hindung Blogs"></head><body dir=ltr><input type=checkbox class="hidden toggle" id=menu-control>
-<input type=checkbox class="hidden toggle" id=toc-control><main class="container flex"><aside class=book-menu><div class=book-menu-content><nav><h2 class=book-brand><a class="flex align-center" href=/><span>Hindung Blogs</span></a></h2><div class=book-search><input type=text id=book-search-input placeholder=Search aria-label=Search maxlength=64 data-hotkeys=s/><div class="book-search-spinner hidden"></div><ul id=book-search-results></ul></div></nav><script>(function(){var e=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(){localStorage.setItem("menu.scrollTop",e.scrollTop)}),e.scrollTop=localStorage.getItem("menu.scrollTop")})()</script></div></aside><div class=book-page><header class=book-header><div class="flex align-center justify-between"><label for=menu-control><img src=/svg/menu.svg class=book-icon alt=Menu></label>
-<strong>Posts</strong>
-<label for=toc-control><img src=/svg/toc.svg class=book-icon alt="Table of Contents"></label></div><aside class="hidden clearfix"><nav><ul><li class=book-section-flat><strong>Categories</strong><ul></ul></li><li class=book-section-flat><strong>Tags</strong><ul><li class="flex justify-between"><a href=/tags/go/>Go</a>
-<span>12</span></li><li class="flex justify-between"><a href=/tags/kubernetes/>Kubernetes</a>
-<span>5</span></li><li class="flex justify-between"><a href=/tags/blog/>Blog</a>
-<span>2</span></li><li class="flex justify-between"><a href=/tags/makerdown/>Makerdown</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/docker/>Docker</a>
-<span>3</span></li><li class="flex justify-between"><a href=/tags/network/>Network</a>
-<span>2</span></li><li class="flex justify-between"><a href=/tags/leetcode/>LeetCode</a>
-<span>2</span></li><li class="flex justify-between"><a href=/tags/%E6%A0%B8%E5%BF%83%E7%AB%9E%E4%BA%89%E5%8A%9B/>核心竞争力</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/algorithm/>Algorithm</a>
-<span>2</span></li><li class="flex justify-between"><a href=/tags/heap/>heap</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/queue/>queue</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/gin/>Gin</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/dockerfile/>Dockerfile</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/markdown/>Markdown</a>
-<span>1</span></li></ul></li></ul></nav></aside></header><article class="markdown book-post"><h2><a href=/posts/16/>深拷贝之循环引用</a></h2><h5>May 8, 2021</h5><div><a href=/tags/leetcode/>LeetCode</a>,
-<a href=/tags/go/>Go</a></div><p>题目 # 实现如下结构体的深拷贝。
-type Node struct { Data int Fields []*Node } 即指针指向的内存也需要Copy一份。
-解析 # 观察结构体，由于Fields字段里存放的是指向Node结构体的指针切片，深拷贝时要考虑循环引用的问题，如：
-struct a : data: 1 fields: b, c struct b: data: 2 fields: c struct c: data: 3 fields: a // 这里循环引用了a， c->a->b, c->a 可以考虑使用map[*Node]*Node来判断是否有环的情况，即用map[src] = dst来保存拷贝过的节点。
-代码 # 代码如下：
-package main import ( "go/ast" "go/token" ) type Node struct { Data int Fields []*Node } // deep copy var M map[*Node]*Node func Dup(src *Node) *Node { if src == nil { return nil } node := &amp;Node{ Data: src.
-<a href=/posts/16/>...</a></p></article><article class="markdown book-post"><h2><a href=/posts/15/>LRU 缓存机制</a></h2><h5>May 6, 2021</h5><div><a href=/tags/leetcode/>LeetCode</a></div><p>题目 # 146. LRU 缓存机制
-解析 # 由于要求要用O(1)的时间复杂度，所以要采用双向链表＋map的数据结构解答。
-具体源码如下：
-package main import "fmt" type LRUCache struct { M map[int]*Node Cap int Size int Head, Tail *Node } type Node struct { Key, Value int Pre, Next *Node } // init LRUCache func Constructor(capacity int) LRUCache { l := LRUCache{ M: map[int]*Node{}, Cap: capacity, Size: 0, Head: &amp;Node{ Key: 0, Value: 0, Pre: nil, Next: nil, }, Tail: &amp;Node{ Key: 0, Value: 0, Pre: nil, Next: nil, }, } // nil&lt;-head&lt;->tail-> l.
-<a href=/posts/15/>...</a></p></article><article class="markdown book-post"><h2><a href=/posts/14/>Go源码解读之sync/atomic</a></h2><h5>April 29, 2021</h5><div><a href=/tags/go/>Go</a></div><p>注：go version 1.16.x
-Overview # 从网站pkg.go.dev上可以看到，对应的解释。
-atomic包提供了用于实现同步算法的低级原子内存原语。
-可以分为几类操作：
-Add操作：加减操作 CAS操作：先比较后赋值操作 Swap操作：赋值操作 Load操作：从某个地址中取值 Store操作：往某个地址赋值 Value类型：对任意类型的Load/Store操作封装 操作分类 # Add操作 # 由AddT函数实现的加法操作在原子上等效于：
-*addr += delta \\ 加上步长 正负数都可以 return *addr \\ 反回加后的结果 相关的方法有：
-func AddInt32(addr *int32, delta int32) (new int32) func AddUint32(addr *uint32, delta uint32) (new uint32) func AddInt64(addr *int64, delta int64) (new int64) func AddUint64(addr *uint64, delta uint64) (new uint64) func AddUintptr(addr *uintptr, delta uintptr) (new uintptr) CAS操作 # CAS即CompareAndSwap，这个函数主要就是先比较一下当前传入的地址的值是否和 old 值相等，如果相等，就赋值新值返回 true，如果不相等就返回 false.
-<a href=/posts/14/>...</a></p></article><article class="markdown book-post"><h2><a href=/posts/13/>使用Go遇到的坑</a></h2><h5>April 1, 2021</h5><div><a href=/tags/go/>Go</a></div><p>for range 语句中的值传递问题 # package main import "fmt" var pow = []int{1, 2, 4} func main() { for _, v := range pow { v++ } for _, v := range pow { fmt.Println(v) } } //out put : 1 2 4 原因：for range创建了每个元素的副本，而不是直接返回每个元素的引用。
-IPv4与IPv6格式问题 # Go中IPv4的长度和IPv6的长度是一样的，都是16Byte存储，故不能使用len()函数去区别:
-conn, err := net.Dial("udp", "8.9.10.11:2342") if err != nil { fmt.Println("Error", err) } localaddr := conn.LocalAddr() addr, _ := net.ResolveUDPAddr("udp", localaddr.String()) ip := addr.
-<a href=/posts/13/>...</a></p></article><article class="markdown book-post"><h2><a href=/posts/12/>构建属于你自己的核心力量</a></h2><h5>October 2, 2020</h5><div><a href=/tags/%E6%A0%B8%E5%BF%83%E7%AB%9E%E4%BA%89%E5%8A%9B/>核心竞争力</a></div><p>前言 # Bridging the Gap Between Junior and Senior Engineers这篇文章是偶然在公众号看到的，觉得里面说的从Junior如何向Senior Engineers发展以及所需要掌握的技能，我觉得说的挺好的，这里就翻译过来，做为以后反省的清单吧，向大佬靠齐！
-部分原文译文 # 从Junior向Senior Engineers发展应该关注的一些问题：
-编码硬实力是基本的能力。
-你的代码的可维护性如何？是否有其他工程师不停地轻敲你的肩膀，让你解释你代码的每一行都是如何工作的？你的变量名具有描述性吗？你的方法是直观、易理解的吗？当你发现自己在复制粘贴很多行代码时，你是否能将这些代码的功能写入可重用的服务中？
-别人能够从你在拉取请求(PR)中留下的评论中受益吗？你的反馈意见是有建设性，还是太过粗糙？当你发现别人的知识存在缺口时，你只是告诉他们“把这条线从 ABC 更改为 XYZ”，还是有能力引导他们认识到自己的方法可能不是最佳方法，让他们成长为更优秀的开发者？毕竟，同样是学习新东西，授人以鱼不如授之以渔。
-你知道如何基准化你的更改并进行证明、测试吗？如果今天有 100,000 个用户创建帐户，你的代码是否会开始引发大量超时和 500 个错误？你能保证你的PR（合并请求）能够解决这些问题吗？
-你如何将非常技术的问题分解为公司其他部门可以理解的简单语言？向市场解释为什么一个功能实际上不可行时，你是否会让大量的工程术语从嘴里溜出来？
-你对面向对象的编程有深刻的了解吗？你提出的系统架构是不是“顶多算说得通”？
-你的写作能力如何？在回复电子邮件时，你是能把自己的意思表达清楚，还是发完邮件后同事仍然需要走到你的办公桌旁，来询问你更多的背景信息？
-你是否会主动提出想法，使你的团队效率更高？当需要改动现有进程时，你是否能够向所有参与方说明收益？你能使所有人都对这一变化感到兴奋吗？你是否可以持续跟进，并确保新流程确实有效？
-你尊重别人的时间吗？当你要求别人帮助你解决问题时，你能否准确描述你遇到问题的代码库的确切定位（如抛出异常的行号、你在问别人之前已经尝试过的 debug 方法，免得别人再浪费时间重复你已经做过的工作）？别人是否必须反复问你，才能从你嘴里撬出这些信息？在别人走到你办公桌前，你已经整理好要问的问题并在 MacBook 上打开了吗？
-在与其他部门一起确定大型项目的范围时，你对要开发的新功能的问题了解得有多深入？在开始编码之前，你是否能够考虑到每个边缘情况？你是否能够及早识别范围蔓延并尽早制止，从而使团队免于周六加班？
-你的多任务处理能力如何？你的大脑会超负荷吗？同样，在处理大型功能时，比如涉及 50 个文件的功能……你可以一次将它们全部保存在脑海中吗？你有养成扎实的记笔记习惯吗？你打算如何计划跟踪今天下班前弹出的 500 万件事？
-当你编写的一段代码导致帐单页面出错，搞得团队首席工程师不得不取消他们的晚餐计划、熬夜帮你解决问题时，你会如何应对？你会情绪激动吗？你还能理性思考吗？你是否能够摆脱这种情绪，并提醒自己，地球上的每个开发人员每两天就会发布错误代码？
-你了解业务运作方式吗？你了解为什么即使失业人数达到两位数，软件工程师也可以要求如此疯狂的薪水吗？为什么编程是如此宝贵的技能？为什么客户愿意为某些超级基本的 Web 表单向你的公司每年支付 50,000 美元？你是否觉得他们被骗了？
-领导可以放心地让你去负责面试候选人吗？你是否擅长通过有限的信息来对人员进行分类，并可视化他们和团队的适合程度？你能识别出在什么情况下，在工程方面优秀的候选人却不能很好地融入公司文化吗？这种候选人你会建议录取吗？同样，即使你和候选人在 Zoom 里聊了 5 分钟就知道他不可能被录取，你是否还可以确保他仍然可以从你们的聊天中学到东西？毕竟，语言在网络上的传播速度是很快的。
-假如今天是 12 月 28 日，你被困在办公室。你今年有点疯狂，在 9 月中旬就把今年所有的带薪休假糟蹋完了。此时此刻，同事们都休假出去 high 了。你还能按时上班吗？领导不在身边惩罚你，你是否打算半途而废？这种情形下，是否需要领导强迫你你才能尽全力工作？
-机会成本是一件必须考虑的事。你在平衡技术债务和推动业务发展方面做得如何？你是否会重构发现的每个微小的编码样式问题？毕竟大家都很难承认“这段代码很烦人，但它确实有效，需要花费四个小时的清理时间，这段时间可以花在构建其他功能上，而这是很多客户都在请求的”。
-你知道如何向你的下属反馈 他们 的绩效吗？你和他们有良好的工作关系吗？你是否将他们视为敌人？你是否正在积极尝试减轻他们的压力，使他们的生活更轻松？你是否曾经说过“你们那边有什么烦人的任务我可以帮忙削减吗”？公司雇人都是有原因的，你的下属可能比你想象的更有经验和资格。
-你有能力扑灭生产大火吗？你是否会在遇到 大麻烦 时惊慌、不知所措（比如 AWS 中断使网站瘫痪、不小心搞丢了 customer_invoices 表单、某些错误导致了不同用户帐户之间的数据泄漏等）？你是会在压力之下崩溃，还是会在解决问题的同时保持镇静，并与其他部门进行有效的沟通？
-<a href=/posts/12/>...</a></p></article><ul class="pagination pagination-default"><li class=page-item><a href=/posts/ aria-label=First class=page-link role=button><span aria-hidden=true>&#171;&#171;</span></a></li><li class=page-item><a href=/posts/page/2/ aria-label=Previous class=page-link role=button><span aria-hidden=true>&#171;</span></a></li><li class=page-item><a href=/posts/ aria-label="Page 1" class=page-link role=button>1</a></li><li class=page-item><a href=/posts/page/2/ aria-label="Page 2" class=page-link role=button>2</a></li><li class="page-item active"><a aria-current=page aria-label="Page 3" class=page-link role=button>3</a></li><li class=page-item><a href=/posts/page/4/ aria-label="Page 4" class=page-link role=button>4</a></li><li class=page-item><a href=/posts/page/5/ aria-label="Page 5" class=page-link role=button>5</a></li><li class=page-item><a href=/posts/page/4/ aria-label=Next class=page-link role=button><span aria-hidden=true>&#187;</span></a></li><li class=page-item><a href=/posts/page/5/ aria-label=Last class=page-link role=button><span aria-hidden=true>&#187;&#187;</span></a></li></ul><footer class=book-footer><div class="flex flex-wrap justify-between"></div><script>(function(){function e(e){const t=window.getSelection(),n=document.createRange();n.selectNodeContents(e),t.removeAllRanges(),t.addRange(n)}document.querySelectorAll("pre code").forEach(t=>{t.addEventListener("click",function(){if(window.getSelection().toString())return;e(t.parentElement),navigator.clipboard&&navigator.clipboard.writeText(t.parentElement.textContent)})})})()</script></footer><label for=menu-control class="hidden book-menu-overlay"></label></div><aside class=book-toc><div class=book-toc-content><nav><ul><li class=book-section-flat><strong>Categories</strong><ul></ul></li><li class=book-section-flat><strong>Tags</strong><ul><li class="flex justify-between"><a href=/tags/go/>Go</a>
-<span>12</span></li><li class="flex justify-between"><a href=/tags/kubernetes/>Kubernetes</a>
-<span>5</span></li><li class="flex justify-between"><a href=/tags/blog/>Blog</a>
-<span>2</span></li><li class="flex justify-between"><a href=/tags/makerdown/>Makerdown</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/docker/>Docker</a>
-<span>3</span></li><li class="flex justify-between"><a href=/tags/network/>Network</a>
-<span>2</span></li><li class="flex justify-between"><a href=/tags/leetcode/>LeetCode</a>
-<span>2</span></li><li class="flex justify-between"><a href=/tags/%E6%A0%B8%E5%BF%83%E7%AB%9E%E4%BA%89%E5%8A%9B/>核心竞争力</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/algorithm/>Algorithm</a>
-<span>2</span></li><li class="flex justify-between"><a href=/tags/heap/>heap</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/queue/>queue</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/gin/>Gin</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/dockerfile/>Dockerfile</a>
-<span>1</span></li><li class="flex justify-between"><a href=/tags/markdown/>Markdown</a>
-<span>1</span></li></ul></li></ul></nav></div></aside></main></body></html>
+<!doctype html><html xmlns=http://www.w3.org/1999/xhtml xml:lang=en-us lang=en-us>
+<head>
+<script defer language=javascript type=text/javascript src=/js/bundle.min.38ccdf5c998a71d2ad889faefccbe9132577d265b25e73d94a1be540ebcaaa18.js></script>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=icon href=/favicon.png>
+<title itemprop=name>Hxd - Posts</title>
+<meta property="og:title" content="Hxd - Posts">
+<meta name=twitter:title content="Hxd - Posts">
+<meta itemprop=name content="Hxd - Posts">
+<meta name=application-name content="Hxd - Posts">
+<meta property="og:site_name" content="Hindung's Blog">
+<meta name=description content>
+<meta itemprop=description content>
+<meta property="og:description" content>
+<meta name=twitter:description content>
+<base href=https://hindung.cn/posts/>
+<link rel=canonical href=https://hindung.cn/posts/ itemprop=url>
+<meta name=url content="https://hindung.cn/posts/">
+<meta name=twitter:url content="https://hindung.cn/posts/">
+<meta property="og:url" content="https://hindung.cn/posts/">
+<meta property="og:updated_time" content="1009-01-09T940:50:23Z">
+<link rel=sitemap type=application/xml title=Sitemap href=https://hindung.cn/sitemap.xml>
+<link href=https://hindung.cn/posts/index.xml rel=alternate type=application/rss+xml title="Hindung's Blog">
+<meta name=robots content="index,follow">
+<meta name=googlebot content="index,follow">
+<meta name=twitter:site content="https://twitter.com">
+<meta name=twitter:creator content="https://twitter.com">
+<meta property="fb:admins" content>
+<meta name=apple-mobile-web-app-title content="Hindung's Blog">
+<meta name=apple-mobile-web-app-capable content="yes">
+<meta name=apple-mobile-web-app-status-bar-style content="black">
+<link rel=first href=/posts/>
+<link rel=last href=/posts/page/3/>
+<link rel=prev href=/posts/page/2/>
+<meta property="og:type" content="article">
+<meta property="article:publisher" content="https://facebook.com">
+<meta property="og:article:published_time" content="1009-01-09T940:50:23Z">
+<meta property="article:published_time" content="1009-01-09T940:50:23Z">
+<meta name=generator content="Hugo 0.92.1">
+<link type=text/css rel=stylesheet href=/css/bundle.min.94a339836f89f0d25f31980cb6b0631da21e20af128308747ce44e0525eb16ef.css>
+<style>body{--sidebar-bg-color:#202020;--sidebar-img-border-color:#515151;--sidebar-p-color:#909090;--sidebar-h1-color:#FFF;--sidebar-a-color:#FFF;--sidebar-socials-color:#FFF;--text-color:#222;--bkg-color:#FAF9F6;--post-title-color:#303030;--list-color:#5A5A5A;--link-color:#268BD2;--date-color:#515151;--table-border-color:#E5E5E5;--table-stripe-color:#F9F9F9;--code-color:#000;--code-background-color:#E5E5E5;--code-block-color:#FFF;--code-block-background-color:#272822;--moon-sun-color:#FFF;--moon-sun-background-color:#515151}body.dark-theme{--text-color:#EEE;--bkg-color:#121212;--post-title-color:#DBE2E9;--list-color:#9D9D9D;--link-color:#268BD2;--date-color:#9A9A9A;--table-border-color:#515151;--table-stripe-color:#202020;--code-color:#FFF;--code-background-color:#515151;--code-block-color:#FFF;--code-block-background-color:#272822}body{background-color:var(--bkg-color)}</style>
+</head>
+<body class=dark-theme>
+<div class=wrapper>
+<aside class=sidebar>
+<div class="container sidebar-sticky">
+<div class=light-dark align=right>
+<button class=btn-light-dark title="Toggle light/dark mode"><svg class="moon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path fill="currentcolor" d="M6 .278a.768.768.0 01.08.858 7.208 7.208.0 00-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527.0 1.04-.055 1.533-.16a.787.787.0 01.81.316.733.733.0 01-.031.893A8.349 8.349.0 018.344 16C3.734 16 0 12.286.0 7.71.0 4.266 2.114 1.312 5.124.06A.752.752.0 016 .278z"/></svg><svg class="sun" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path fill="currentcolor" d="M8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.5.5.0 01.5.5v2a.5.5.0 01-1 0v-2A.5.5.0 018 0zm0 13a.5.5.0 01.5.5v2a.5.5.0 01-1 0v-2A.5.5.0 018 13zm8-5a.5.5.0 01-.5.5h-2a.5.5.0 010-1h2a.5.5.0 01.5.5zM3 8a.5.5.0 01-.5.5h-2a.5.5.0 010-1h2A.5.5.0 013 8zm10.657-5.657a.5.5.0 010 .707l-1.414 1.415a.5.5.0 11-.707-.708l1.414-1.414a.5.5.0 01.707.0zm-9.193 9.193a.5.5.0 010 .707L3.05 13.657a.5.5.0 01-.707-.707l1.414-1.414a.5.5.0 01.707.0zm9.193 2.121a.5.5.0 01-.707.0l-1.414-1.414a.5.5.0 01.707-.707l1.414 1.414a.5.5.0 010 .707zM4.464 4.465a.5.5.0 01-.707.0L2.343 3.05a.5.5.0 11.707-.707l1.414 1.414a.5.5.0 010 .708z"/></svg>
+</button>
+</div>
+<div class=sidebar-about>
+<h1 class=brand>
+<a href=https://hindung.cn/>
+<h1>Hxd</h1>
+</a>
+</h1>
+<p class=lead>
+♪٩(´ω`)و♪网络✏️记
+</p>
+</div>
+<nav>
+<ul class=sidebar-nav>
+<li class=heading>
+<a href=/about/>About</a>
+</li>
+<li class=heading>
+<a href=/posts/>Posts</a>
+</li>
+<li class=sub-heading>
+Recent
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/prometheus_test/>Prometheus性能压测与高可用设计</a>
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/prometheus_sdk/>Prometheus GO SDK</a>
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/kube-ovn/>K8s之kube-ovn网络插件</a>
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/k8s-client/>K8s client-go初始化的几种方法</a>
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/markdown/>Hello World</a>
+</li>
+</ul>
+</nav>
+<a target=_blank class=social title=GitHub href=https://github.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="-2 -2 24 24"><path fill="currentcolor" d="M18.88 1.099C18.147.366 17.265.0 16.233.0H3.746C2.714.0 1.832.366 1.099 1.099.366 1.832.0 2.714.0 3.746v12.487c0 1.032.366 1.914 1.099 2.647.733.733 1.615 1.099 2.647 1.099H6.66c.19.0.333-.007.429-.02a.504.504.0 00.286-.169c.095-.1.143-.245.143-.435l-.007-.885c-.004-.564-.006-1.01-.006-1.34l-.3.052c-.19.035-.43.05-.721.046a5.555 5.555.0 01-.904-.091 2.026 2.026.0 01-.872-.39 1.651 1.651.0 01-.572-.8l-.13-.3a3.25 3.25.0 00-.41-.663c-.186-.243-.375-.407-.566-.494l-.09-.065a.956.956.0 01-.17-.156.723.723.0 01-.117-.182c-.026-.061-.004-.111.065-.15.07-.04.195-.059.378-.059l.26.04c.173.034.388.138.643.311a2.1 2.1.0 01.631.677c.2.355.44.626.722.813.282.186.566.28.852.28.286.0.533-.022.742-.065a2.59 2.59.0 00.585-.196c.078-.58.29-1.028.637-1.34a8.907 8.907.0 01-1.333-.234 5.314 5.314.0 01-1.223-.507 3.5 3.5.0 01-1.047-.872c-.277-.347-.505-.802-.683-1.365-.177-.564-.266-1.215-.266-1.952.0-1.049.342-1.942 1.027-2.68-.32-.788-.29-1.673.091-2.652.252-.079.625-.02 1.119.175.494.195.856.362 1.086.5.23.14.414.257.553.352a9.233 9.233.0 012.497-.338c.859.0 1.691.113 2.498.338l.494-.312a6.997 6.997.0 011.197-.572c.46-.174.81-.221 1.054-.143.39.98.424 1.864.103 2.653.685.737 1.028 1.63 1.028 2.68.0.737-.089 1.39-.267 1.957-.177.568-.407 1.023-.689 1.366a3.65 3.65.0 01-1.053.865c-.42.234-.828.403-1.223.507a8.9 8.9.0 01-1.333.235c.45.39.676 1.005.676 1.846v3.11c0 .147.021.266.065.357a.36.36.0 00.208.189c.096.034.18.056.254.064.074.01.18.013.318.013h2.914c1.032.0 1.914-.366 2.647-1.099.732-.732 1.099-1.615 1.099-2.647V3.746c0-1.032-.367-1.914-1.1-2.647z"/></svg>
+</a>
+<a target=_blank class=social title=Gitlab href=https://gitlab.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="-2 -2.5 24 24"><path fill="currentcolor" d="M10.006 18.443 6.326 7.118h7.36l-3.68 11.325zm0 0L1.168 7.118h5.158l3.68 11.325zM1.168 7.118l8.838 11.325-9.68-7.032a.762.762.0 01-.276-.852l1.118-3.441zm0 0L3.385.296a.38.38.0 01.724.0l2.217 6.822H1.168zm8.838 11.325 3.68-11.325h5.157l-8.837 11.325zm8.837-11.325 1.119 3.441a.762.762.0 01-.277.852l-9.68 7.032 8.838-11.325zm0 0h-5.157L15.902.296a.38.38.0 01.725.0l2.216 6.822z"/></svg>
+</a>
+<a target=_blank class=social title=LinkedIn href=https://linkedin.com><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 448 512"><path fill="currentcolor" d="M416 32H31.9C14.3 32 0 46.5.0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6.0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3.0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2.0 38.5 17.3 38.5 38.5.0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6.0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2.0 79.7 44.3 79.7 101.9V416z"/></svg>
+</a>
+<a target=_blank class=social title=Twitter href=https://twitter.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16"><path fill="currentcolor" d="M5.032 14.286c6.037.0 9.34-4.837 9.34-9.032.0-.137.0-.274-.01-.41A6.56 6.56.0 0016 3.2c-.6.256-1.235.425-1.885.5a3.207 3.207.0 001.443-1.757c-.645.37-1.35.63-2.085.77a3.322 3.322.0 00-1.862-.958 3.384 3.384.0 00-2.082.334 3.223 3.223.0 00-1.442 1.49 3.08 3.08.0 00-.208 2.03 9.57 9.57.0 01-3.747-.963A9.269 9.269.0 011.114 2.292a3.086 3.086.0 00-.36 2.314c.189.787.68 1.475 1.376 1.924A3.344 3.344.0 01.64 6.132v.04c0 .734.263 1.444.743 2.01a3.3 3.3.0 001.89 1.102c-.483.128-.99.146-1.482.055a3.19 3.19.0 001.168 1.577 3.36 3.36.0 001.9.627A6.732 6.732.0 010 12.86a9.527 9.527.0 005.032 1.423"/></svg>
+</a>
+<a target=_blank class=social rel=me title=Mastodon href=https://mastodon.social><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentcolor" d="M20.94 14c-.28 1.41-2.44 2.96-4.97 3.26-1.31.15-2.6.3-3.97.24-2.25-.11-4-.54-4-.54v.62c.32 2.22 2.22 2.35 4.03 2.42 1.82.05 3.44-.46 3.44-.46l.08 1.65s-1.28.68-3.55.81c-1.25.07-2.81-.03-4.62-.5-3.92-1.05-4.6-5.24-4.7-9.5l-.01-3.43c0-4.34 2.83-5.61 2.83-5.61C6.95 2.3 9.41 2 11.97 2h.06c2.56.0 5.02.3 6.47.96.0.0 2.83 1.27 2.83 5.61.0.0.04 3.21-.39 5.43M18 8.91c0-1.08-.3-1.91-.85-2.56-.56-.63-1.3-.96-2.23-.96-1.06.0-1.87.41-2.42 1.23l-.5.88-.5-.88c-.56-.82-1.36-1.23-2.43-1.23-.92.0-1.66.33-2.23.96C6.29 7 6 7.83 6 8.91v5.26h2.1V9.06c0-1.06.45-1.62 1.36-1.62 1 0 1.5.65 1.5 1.93v2.79h2.07V9.37c0-1.28.5-1.93 1.51-1.93.9.0 1.35.56 1.35 1.62v5.11H18V8.91z"/></svg>
+</a>
+<a target=_blank class=social title=TryHackMe href=https://tryhackme.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="#fff" d="M10.705.0C7.54.0 4.902 2.285 4.349 5.291a4.525 4.525.0 00-4.107 4.5 4.525 4.525.0 004.52 4.52h6.761a.625.625.0 100-1.25H4.761a3.273 3.273.0 01-3.27-3.27A3.273 3.273.0 016.59 7.08a.625.625.0 00.7-1.035 4.488 4.488.0 00-1.68-.69 5.223 5.223.0 015.096-4.104 5.221 5.221.0 015.174 4.57 4.489 4.489.0 00-.488.305.625.625.0 10.731 1.013 3.245 3.245.0 011.912-.616 3.278 3.278.0 013.203 2.61.625.625.0 001.225-.251 4.533 4.533.0 00-4.428-3.61 4.54 4.54.0 00-.958.105C16.556 2.328 13.9.0 10.705.0zm5.192 10.64a.925.925.0 00-.462.108.913.913.0 00-.313.29 1.27 1.27.0 00-.175.427 2.39 2.39.0 00-.054.514c0 .181.018.353.054.517s.095.307.175.43a.899.899.0 00.313.297c.127.073.281.11.462.11.18.0.334-.037.46-.11a.897.897.0 00.309-.296c.08-.124.137-.267.173-.431.036-.164.054-.336.054-.517.0-.18-.018-.352-.054-.514a1.271 1.271.0 00-.173-.426.901.901.0 00-.309-.291.917.917.0 00-.46-.108zm6.486.0a.925.925.0 00-.462.108.913.913.0 00-.313.29 1.27 1.27.0 00-.175.427 2.39 2.39.0 00-.053.514c0 .181.017.353.053.517s.095.307.175.43a.899.899.0 00.313.297c.127.073.281.11.462.11.18.0.334-.037.46-.11a.897.897.0 00.31-.296c.078-.124.136-.267.172-.431s.054-.336.054-.517c0-.18-.018-.352-.054-.514a1.271 1.271.0 00-.173-.426.901.901.0 00-.308-.291.916.916.0 00-.461-.108zm-8.537.068-.84.618.313.43.476-.368v1.877h.603v-2.557zm6.486.0-.841.618.314.43.477-.368v1.877h.603v-2.557zm-4.435.445c.08.0.143.028.193.084.05.057.087.127.114.21.026.083.044.173.054.269a2.541 2.541.0 010 .533c-.01.097-.028.187-.054.27a.584.584.0 01-.114.21.243.243.0 01-.193.085.248.248.0 01-.195-.086.584.584.0 01-.118-.209 1.245 1.245.0 01-.056-.27 2.645 2.645.0 010-.533c.01-.096.029-.186.056-.27a.583.583.0 01.118-.209.25.25.0 01.195-.084zm6.486.0c.08.0.144.028.193.084.05.057.087.127.114.21s.044.173.054.269a2.541 2.541.0 010 .533c-.01.097-.027.187-.054.27a.584.584.0 01-.114.21.243.243.0 01-.193.085.249.249.0 01-.195-.086.581.581.0 01-.117-.209 1.245 1.245.0 01-.056-.27 2.642 2.642.0 010-.533c.01-.096.028-.186.056-.27a.58.58.0 01.117-.209.25.25.0 01.195-.084zm-2.191 3.51a.93.93.0 00-.463.109.908.908.0 00-.312.291c-.08.122-.139.263-.175.426a2.383 2.383.0 00-.054.514c0 .18.018.353.054.516.036.164.094.308.175.432a.91.91.0 00.312.296.92.92.0 00.463.11c.18.0.333-.037.46-.11a.892.892.0 00.308-.296 1.32 1.32.0 00.174-.432c.036-.163.054-.335.054-.516.0-.18-.018-.352-.054-.514a1.274 1.274.0 00-.174-.426.89.89.0 00-.309-.291.918.918.0 00-.46-.108zm-6.402.07-.841.617.314.43.476-.369v1.878h.604v-2.557zm2.125.0-.841.617.314.43.477-.369v1.878h.603v-2.557zm2.116.0-.84.617.313.43.477-.369v1.878h.603v-2.557zm2.16.443c.08.0.144.028.194.085a.605.605.0 01.114.21c.026.083.044.172.053.269a2.639 2.639.0 010 .532 1.28 1.28.0 01-.053.27.585.585.0 01-.114.21.244.244.0 01-.193.085.25.25.0 01-.196-.085.589.589.0 01-.117-.21 1.245 1.245.0 01-.056-.27 2.597 2.597.0 010-.532c.01-.097.028-.186.056-.27a.589.589.0 01.117-.209.249.249.0 01.196-.085zm-6.729 3.073a.676.676.0 00-.335.078.661.661.0 00-.227.211.91.91.0 00-.127.31c-.027.118-.04.242-.04.373s.013.256.04.375a.93.93.0 00.127.313.65.65.0 00.227.215c.092.053.204.08.335.08a.655.655.0 00.334-.08.65.65.0 00.225-.215c.057-.09.1-.194.125-.313a1.75 1.75.0 00.04-.375c0-.13-.014-.255-.04-.373a.931.931.0 00-.125-.31.658.658.0 00-.225-.21.667.667.0 00-.334-.08zm3.086.0a.675.675.0 00-.336.078.661.661.0 00-.226.211.907.907.0 00-.127.31 1.69 1.69.0 00-.04.373c0 .131.013.256.04.375a.928.928.0 00.127.313c.058.09.134.162.226.215.093.053.205.08.336.08a.655.655.0 00.334-.08.65.65.0 00.224-.215c.058-.09.1-.194.126-.313a1.752 1.752.0 000-.748.94.94.0 00-.126-.31.657.657.0 00-.224-.21.667.667.0 00-.334-.08zm5.108.0a.675.675.0 00-.336.078.661.661.0 00-.226.211.91.91.0 00-.127.31c-.027.118-.04.242-.04.373s.013.256.04.375a.931.931.0 00.127.313c.058.09.134.162.226.215.093.053.205.08.336.08.13.0.243-.027.334-.08a.65.65.0 00.224-.215c.058-.09.1-.194.126-.313a1.75 1.75.0 00.04-.375c0-.13-.014-.255-.04-.373a.943.943.0 00-.126-.31.657.657.0 00-.224-.21.668.668.0 00-.334-.08zm-6.658.05-.61.448.227.311.346-.266v1.362h.438v-1.856zm3.068.0-.61.448.227.311.346-.266v1.362h.438v-1.856zm5.108.0-.611.448.228.311.346-.266v1.362h.438v-1.856zm-9.712.322c.058.0.105.02.14.062a.421.421.0 01.083.151.96.96.0 01.04.196 1.932 1.932.0 010 .386.954.954.0 01-.04.197.421.421.0 01-.083.152.176.176.0 01-.14.061.18.18.0 01-.141-.06.427.427.0 01-.085-.153.887.887.0 01-.041-.197 1.96 1.96.0 010-.386.893.893.0 01.04-.196.42.42.0 01.086-.151.181.181.0 01.141-.062zm3.086.0c.058.0.104.02.14.062a.421.421.0 01.082.151.94.94.0 01.04.196 1.906 1.906.0 010 .386.93.93.0 01-.04.197.421.421.0 01-.082.152.176.176.0 01-.14.061.18.18.0 01-.141-.06.42.42.0 01-.086-.153.846.846.0 01-.04-.197 1.965 1.965.0 01-.011-.195c0-.057.004-.121.01-.191a.849.849.0 01.041-.196.42.42.0 01.086-.151.182.182.0 01.141-.062zm5.108.0c.058.0.104.02.14.062a.421.421.0 01.082.151.92.92.0 01.04.196 1.963 1.963.0 010 .386.943.943.0 01-.04.197.421.421.0 01-.082.152.177.177.0 01-.14.061.18.18.0 01-.142-.06.437.437.0 01-.085-.153.95.95.0 01-.04-.197 1.965 1.965.0 01-.011-.195c0-.057.004-.121.01-.191a.959.959.0 01.04-.196.47.47.0 01.086-.151.181.181.0 01.142-.062zm-1.684 1.814a.675.675.0 00-.336.079.66.66.0 00-.227.21.91.91.0 00-.127.31 1.731 1.731.0 000 .748.939.939.0 00.127.314c.059.09.134.162.227.215s.205.08.336.08a.66.66.0 00.334-.08.648.648.0 00.224-.215c.058-.09.1-.195.126-.314a1.737 1.737.0 00-.001-.747.928.928.0 00-.125-.31.65.65.0 00-.224-.211.668.668.0 00-.334-.079zm3.063.0a.676.676.0 00-.336.079.664.664.0 00-.227.21.906.906.0 00-.127.31 1.74 1.74.0 000 .748.936.936.0 00.127.314.66.66.0 00.227.215c.092.053.204.08.336.08a.654.654.0 00.334-.08.648.648.0 00.223-.215c.058-.09.1-.195.126-.314a1.74 1.74.0 000-.747.928.928.0 00-.126-.31.65.65.0 00-.223-.211.666.666.0 00-.334-.079zm-1.545.05-.611.448.228.312.346-.267v1.363h.438v-1.856zm-1.518.323c.057.0.104.02.14.061a.42.42.0 01.082.152.91.91.0 01.04.195 1.966 1.966.0 010 .387.951.951.0 01-.04.197.421.421.0 01-.082.152.177.177.0 01-.14.06.18.18.0 01-.142-.06.428.428.0 01-.085-.152.914.914.0 01-.04-.197 1.96 1.96.0 01-.011-.195c0-.058.003-.122.01-.192a.923.923.0 01.041-.195c.02-.06.048-.11.085-.152a.181.181.0 01.142-.061zm3.063.0c.057.0.104.02.14.061a.42.42.0 01.082.152.94.94.0 01.04.195 1.91 1.91.0 010 .387.93.93.0 01-.04.197.422.422.0 01-.083.152.175.175.0 01-.14.06.18.18.0 01-.141-.06.423.423.0 01-.085-.152.907.907.0 01-.04-.197 1.95 1.95.0 010-.387.915.915.0 01.04-.195c.02-.06.048-.11.085-.152a.182.182.0 01.142-.061zm-9.713.185a.465.465.0 00-.232.055.456.456.0 00-.157.146.627.627.0 00-.089.215 1.168 1.168.0 00-.027.259c0 .09.009.177.027.26a.648.648.0 00.089.216c.04.063.093.112.157.149a.459.459.0 00.232.056c.09.0.168-.02.231-.056a.45.45.0 00.156-.149.67.67.0 00.087-.217 1.218 1.218.0 000-.518.647.647.0 00-.087-.215.448.448.0 00-.156-.146.458.458.0 00-.23-.055zm1.052.035-.423.31.158.217.24-.185v.944h.303v-1.286zm-1.052.224c.04.0.073.014.097.042a.284.284.0 01.057.105.69.69.0 01.028.136c.004.049.007.092.007.133.0.04-.003.086-.007.135a.684.684.0 01-.028.136.285.285.0 01-.057.105.123.123.0 01-.097.043.125.125.0 01-.098-.043.298.298.0 01-.059-.105.612.612.0 01-.028-.136 1.39 1.39.0 010-.268.62.62.0 01.028-.136.297.297.0 01.06-.105.125.125.0 01.097-.042zm3.775 1.394a.463.463.0 00-.232.054.452.452.0 00-.157.146.621.621.0 00-.088.214 1.19 1.19.0 000 .519.641.641.0 00.088.217.46.46.0 00.157.15.458.458.0 00.232.054.454.454.0 00.232-.055.45.45.0 00.155-.149.664.664.0 00.087-.217 1.189 1.189.0 000-.519.642.642.0 00-.087-.214.446.446.0 00-.155-.146.459.459.0 00-.232-.054zm1.052.034-.423.31.158.216.24-.185v.945h.303V22.68zm-1.052.223c.04.0.073.014.098.043a.3.3.0 01.057.105.643.643.0 01.027.135 1.31 1.31.0 010 .268.654.654.0 01-.027.137.307.307.0 01-.057.105.124.124.0 01-.098.042.125.125.0 01-.098-.042.293.293.0 01-.059-.105.618.618.0 01-.028-.137 1.364 1.364.0 010-.268.612.612.0 01.028-.135.287.287.0 01.06-.105.123.123.0 01.097-.043z"/></svg>
+</a>
+<a target=_blank class=social title=Discord href=https://discord.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentcolor" d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09.0 00-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09.0 00-4.8.0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01.0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95.0.02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06.0.07-.02.4-.55.76-1.13 1.07-1.74.02-.04.0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55.0.02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.09-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03.0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06.0 1.9.96 1.89 2.12.0 1.17-.84 2.12-1.89 2.12zm6.97.0c-1.03.0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06.0 1.9.96 1.89 2.12.0 1.17-.83 2.12-1.89 2.12z"/></svg>
+</a>
+<a target=_blank class=social title=YouTube href=https://youtube.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentcolor" d="M12.006 19.012h-.02c-.062.0-6.265-.012-7.83-.437A2.5 2.5.0 012.392 16.81 26.494 26.494.0 011.986 12a26.646 26.646.0 01.417-4.817A2.564 2.564.0 014.169 5.4c1.522-.4 7.554-.4 7.81-.4H12c.063.0 6.282.012 7.831.437.859.233 1.53.904 1.762 1.763.29 1.594.427 3.211.407 4.831a26.568 26.568.0 01-.418 4.811 2.51 2.51.0 01-1.767 1.763c-1.52.403-7.553.407-7.809.407zm-2-10.007-.005 6 5.212-3-5.207-3z"/></svg>
+</a>
+<a target=_blank class=social title=Instagram href=https://instagram.com><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 448 512"><path fill="currentcolor" d="M224.1 141c-63.6.0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1.0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9.0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9.0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9.0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9.0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8.0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
+</a>
+<a target=_blank class=social title=Facebook href=https://facebook.com><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 448 512"><path fill="currentcolor" d="M4e2 32H48A48 48 0 000 80v352a48 48 0 0048 48h137.25V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14.0 55.52 4.84 55.52 4.84v61h-31.27c-30.81.0-40.42 19.12-40.42 38.73V256h68.78l-11 71.69h-57.78V480H4e2a48 48 0 0048-48V80a48 48 0 00-48-48z"/></svg>
+</a>
+<a target=_blank class=social title=Flickr href=https://flickr.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 54 54"><path fill="currentcolor" d="M40 4.8c2.2.0 4.1.8 5.7 2.4s2.4 3.5 2.4 5.7v26.8c0 2.2-.8 4.1-2.4 5.7s-3.5 2.4-5.7 2.4H13.3c-2.2.0-4.1-.8-5.7-2.4s-2.4-3.5-2.4-5.7V12.9c0-2.2.8-4.1 2.4-5.7 1.6-1.6 3.5-2.4 5.7-2.4H40zM23 30.4c1.2-1.2 1.7-2.5 1.7-4.2s-.6-3-1.7-4.2c-1.2-1.2-2.5-1.7-4.2-1.7s-3 .6-4.2 1.7c-1.2 1.2-1.7 2.5-1.7 4.2s.6 3 1.7 4.2 2.5 1.7 4.2 1.7 3-.5 4.2-1.7zm15.7.0c1.2-1.2 1.7-2.5 1.7-4.2s-.6-3-1.7-4.2c-1.2-1.2-2.5-1.7-4.2-1.7-1.6.0-3 .6-4.2 1.7-1.2 1.2-1.7 2.5-1.7 4.2s.6 3 1.7 4.2c1.2 1.2 2.5 1.7 4.2 1.7C36.1 32.2 37.5 31.6 38.7 30.4z"/>
+</a>
+<a target=_blank class=social title=Telegram href=https://telegram.org><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentcolor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2.0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08.0.27.02.39.12.1.08.13.19.14.27-.01.06.01.24.0.38z"/></svg>
+</a>
+<a target=_blank class=social title=Matrix href=https://matrix.org><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 27.9 32"><path fill="currentcolor" d="m27.1 31.2v-30.5h-2.19v-.732h3.04v32h-3.04v-.732z"/><path fill="currentcolor" d="m8.23 10.4v1.54h.044c.385-.564.893-1.03 1.49-1.37.58-.323 1.25-.485 1.99-.485.72.0 1.38.14 1.97.42.595.279 1.05.771 1.36 1.48.338-.5.796-.941 1.38-1.32.58-.383 1.27-.574 2.06-.574.602.0 1.16.074 1.67.22.514.148.954.383 1.32.707.366.323.653.746.859 1.27.205.522.308 1.15.308 1.89v7.63h-3.13v-6.46c0-.383-.015-.743-.044-1.08-.0209-.307-.103-.607-.242-.882-.133-.251-.336-.458-.584-.596-.257-.146-.606-.22-1.05-.22-.44.0-.796.085-1.07.253-.272.17-.485.39-.639.662-.159.287-.264.602-.308.927-.052.347-.078.697-.078 1.05v6.35h-3.13v-6.4c0-.338-.007-.673-.021-1-.0114-.314-.0749-.623-.188-.916-.108-.277-.3-.512-.55-.673-.258-.168-.636-.253-1.14-.253-.198.0083-.394.042-.584.1-.258.0745-.498.202-.705.374-.228.184-.422.449-.584.794-.161.346-.242.798-.242 1.36v6.62h-3.13v-11.4z"/><path fill="currentcolor" d="m.936.732v30.5h2.19v.732h-3.04v-32h3.03v.732z"/></svg>
+</a>
+<a target=_blank class=social title=XMPP href=https://xmpp.org><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 1750 1273"><path fill="currentcolor" d="m445.5368 1260.3774.2798-12.6227 12.5-3.3998c86.3329-23.4818 169.6413-62.291 250.3046-116.6045 21.6348-14.5674 54.9023-39.6297 54.4411-41.0135-.219-.6568-4.8638-3.8543-10.3219-7.1055C643.2778 1014.4283 545.02 941.13549 450.3396 854.06369 429.6559 835.04199 380.3414 785.90449 358.9481 762.99999 180.5946 572.04763 62.054497 360.05908 18.4066 153.99998 8.7628 108.47213 2.3059 58.553447.6664 16.850277L0-.10203342 6.4083 2.3337566c3.5246 1.33968 58.833297 22.7793104 122.9083 47.6436104 166.6481 64.667773 168.944 65.464203 304.4367 105.604623 62.1152 18.40194 113.1902 33.71169 113.5 34.02166.3099.30997.4154 15.03845.2346 32.72995-.7292 71.3433 7.8053 140.72171 26.8373 218.16638 39.0143 158.75637 118.1187 319.92841 223.5627 455.50001 28.91491 37.1765 73.62151 88 77.40871 88 2.7547.0 26.96638-26.2437 52.834-57.2683C1060.6744 767.76429 1155.5512 568.642 1189.7797 377.59673c10.0437-56.05859 13.7745-98.67828 13.4235-153.34671-.121-18.83748-.032-34.43372.1968-34.6583.2292-.22459 50.1417-15.11502 110.9167-33.08986 134.5925-39.80714 140.484-41.85315 312-108.352043l123.5-47.88249042.3207 7.61633002c.3596 8.5370104-1.1628 33.2485804-3.3954 55.1163204-3.8106 37.324233-12.1421 84.466813-21.8263 123.500003-60.4804 243.77385-227.0666 496.24088-463.599 702.59971-78.2752 68.2899-161.6555 129.12491-251.25 183.31441-12.5125 7.5679-22.75 14.1335-22.75 14.5903.0 1.0394 22.9632 18.4731 41.5 31.5068 84.3957 59.3407 173.6883 101.5869 269 127.2694l7 1.8862.2799 12.6666.2799 12.6666-3.2799-6e-4c-5.2353-.001-37.4406-3.7921-60.2799-7.0959-85.6385-12.3881-177.8337-38.246-257.5-72.2208-39.76812-16.9597-71.45999-30.8513-87.00005-38.1349-9.075-4.2535-17.85004-8.1823-19.50004-8.7307-2.6877-.8934-5.0814-.039-23 8.2132-20.2043 9.3045-59.60201 26.5462-89.00001 38.9493-95.6207 40.3427-198.208 66.8187-300.3568 77.5168-7.8962.827-15.6722 1.5036-17.2799 1.5036h-2.923l.2799-12.6226z"/>
+</a>
+<a target=_blank class=social title="RSS Feed" href=/posts/index.xml><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 1280 1280"><g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="currentcolor"><path d="M2295 11929c-284-12-642-45-707-65-17-5-18-63-18-1039 0-569 4-1036 8-1039 5-3 74 6 153 19 510 86 1168 95 1789 25 1348-153 2602-677 3670-1531 385-308 820-744 1126-1129 842-1060 1362-2313 1514-3650 70-621 61-1279-25-1789-13-79-22-148-19-153 3-4 471-8 1039-8h1035l5 23c51 225 85 942 67 1419-23 605-77 1044-198 1617-294 14e2-927 2734-1823 3846-1043 1295-2364 2259-3909 2854-1158 447-2451 656-3707 6e2z"/><path d="M2255 7845c-269-25-620-81-667-106-17-9-18-55-18-899 0-706 3-890 13-890 6 0 66 18 132 41 130 44 288 79 467 105 154 21 577 30 749 15 1207-107 2267-823 2814-1902 166-327 268-637 330-1001 38-227 48-384 42-662-8-348-44-590-126-831-23-66-41-126-41-132 0-10 184-13 890-13 844 0 890 1 899 18 27 50 88 452 110 725 14 162 14 624 1 782-59 703-233 1323-545 1945-481 956-1313 1788-2270 2268-620 310-1239 483-1940 542-165 14-669 10-840-5z"/><path d="M2519 3815c-391-66-725-336-868-703-79-201-96-462-45-677 83-344 338-641 666-774 116-47 205-69 330-80 412-39 811 153 1040 5e2 193 292 240 648 128 981-135 403-492 699-914 757-1e2 14-241 12-337-4z"/></g></svg>
+</a>
+<a target=_blank class=social title=Email href=mailto://user@domain><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 485.211 485.211"><path fill="currentcolor" d="M301.393 241.631 464.866 424.56H20.332l163.474-182.928 58.801 51.443 58.786-51.444zM462.174 60.651H23.027l219.579 192.142L462.174 60.651zM324.225 221.67l160.986 180.151V80.792L324.225 221.67zM0 80.792v321.029L160.972 221.64.0 80.792z"/></svg>
+</a>
+<p class=footnote>
+powered by <a target=_blank href=https://gohugo.io>Hugo</a> | themed with <a target=_blank href=https://github.com/lukeorth/poison>poison</a>
+<br>
+&copy; 2024 Hindung's Blog. All rights reserved.
+</p>
+</div>
+</aside>
+<main class="content container">
+<h1 class=title>Posts</h1>
+<ul class=entries>
+<h3 style=text-align:center>2023</h3>
+<li>
+<span class=title>
+<a href=/posts/prometheus_test/>Prometheus性能压测与高可用设计</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">September 1, 2023</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/prometheus_sdk/>Prometheus GO SDK</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">July 19, 2023</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/kube-ovn/>K8s之kube-ovn网络插件</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">April 27, 2023</time>
+</span>
+</li>
+<h3 style=text-align:center>2022</h3>
+<li>
+<span class=title>
+<a href=/posts/k8s-client/>K8s client-go初始化的几种方法</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">July 19, 2022</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/markdown/>Hello World</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">July 18, 2022</time>
+</span>
+</li>
+<h3 style=text-align:center>2021</h3>
+<li>
+<span class=title>
+<a href=/posts/container-1/>容器技术之我见</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">July 23, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/cri/>容器运行时</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">June 1, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/k8s-1/>Kubernetes组件</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">June 1, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/kubectl/>Kubectl命令行</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">June 1, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/calico/>K8s之calico网络插件东西南北流量</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">June 1, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/iptable/>Iptable规则初探</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">June 1, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/go-sync-cond/>Go源码解读之sync.Cond</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">May 16, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/go-sync-type/>Go源码解读之sync中的基本类型和使用场景</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">May 11, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/deep-copy/>深拷贝之循环引用</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">May 8, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/lru/>LRU 缓存机制</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">May 6, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/go-sync-atomic/>Go源码解读之sync/atomic</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">April 29, 2021</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/keng/>使用Go遇到的坑</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">April 1, 2021</time>
+</span>
+</li>
+<h3 style=text-align:center>2020</h3>
+<li>
+<span class=title>
+<a href=/posts/core/>构建属于你自己的核心力量</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">October 2, 2020</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/go-priority-queue/>Golang实现优先队列</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">September 23, 2020</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/snowflake/>雪花算法</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">August 27, 2020</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/golang-channel/>Golang-channel</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">August 1, 2020</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/go-lang/>Golang语言模型</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">July 26, 2020</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/gin/>初探Gin框架</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">July 25, 2020</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/golang-interface/>Golang-interface的底层原理浅析</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">July 23, 2020</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/docker-images/>Docker镜像优化</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">July 23, 2020</time>
+</span>
+</li>
+<li>
+<span class=title>
+<a href=/posts/change-log/>部落格修改记录</a>
+</span>
+<span class=published>
+<time class="pull-right post-list">July 20, 2020</time>
+</span>
+</li>
+</ul>
+</main>
+</div>
+</body>
+</html>

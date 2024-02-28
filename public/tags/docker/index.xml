@@ -1,37 +1,42 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on Hindung Blogs</title><link>http://hindung.cn/tags/docker/</link><description>Recent content in Docker on Hindung Blogs</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Fri, 23 Jul 2021 00:00:00 +0000</lastBuildDate><atom:link href="http://hindung.cn/tags/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>容器技术之我见</title><link>http://hindung.cn/posts/20/</link><pubDate>Fri, 23 Jul 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/20/</guid><description>容器技术 # 什么是容器呢？
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Docker on Hindung's Blog</title><link>https://hindung.cn/tags/docker/</link><description>Recent content in Docker on Hindung's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Fri, 23 Jul 2021 00:00:00 +0000</lastBuildDate><atom:link href="https://hindung.cn/tags/docker/index.xml" rel="self" type="application/rss+xml"/><item><title>容器技术之我见</title><link>https://hindung.cn/posts/container-1/</link><pubDate>Fri, 23 Jul 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/container-1/</guid><description>容器技术 什么是容器呢？
 印象中第一次接触“容器”这个词，是在化学课上，不就是一装东西的瓶子嘛有啥特别的。
 仔细想想，“装”东西即在某种程度上与其他物体隔离开来了。所以称这个「装东西的东西」为容器。
 是吧！那现在所说的“容器”到底是啥概念，他能装什么东西，又把什么东西在某种程度上隔离开？
 我的理解就是：「把资源隔离开的东西」。
 资源泛指OS上的资源，如CPU、内存、设备、文件系统等等。如何进行隔离呢？Linux内核提供了某种机制能让上诉所说的“资源”隔离开来，即Namespace和CGroups。
 容器技术就是基于这两个内核特性进行设计和开发。
-Namespace # 命名空间在维基百科上的广义解释是：
+Namespace 命名空间在维基百科上的广义解释是：
 “在计算机中，命名空间是一组用于标识和引用各种对象的符号（名称）。命名空间可确保所有给定的对象集都具有唯一的名称，以便可以轻松识别它们。”
 根据这个定义，Linux内核提供的命名空间定义为：
 “命名空间是Linux内核的一项功能，该功能对内核资源进行分区，以使一组进程看到一组资源，而另一组进程看到另一组资源。该功能通过为一组资源和进程具有相同的名称空间而起作用，但是这些名称空间引用了不同的资源。资源可能存在于多个空间中。这样的资源有进程ID、主机名、用户ID、文件名以及一些与网络访问和进程间通信相关。”
 从内核版本5.6开始，存在8种名称空间。命名空间功能在所有类型上都是相同的：每个进程都与一个命名空间相关联并且只能查看或使用与该命名空间以及后代命名空间相关联的资源。 这样，每个进程（或其进程组）可以在资源上拥有唯一的视图。隔离哪个资源取决于已为给定进程组创建的名称空间的类型。
-Mount (mnt) # 挂载命名空间控制隔离挂载点。即隔离文件系统目录结构。
+Mount (mnt) 挂载命名空间控制隔离挂载点。即隔离文件系统目录结构。
 比如你在每个容器里都有/usr目录，你们都可以访问这个目录，但他们是不一样的。
-Process ID (pid) # PID命名空间为进程提供了一套独立于其他命名空间的进程ID（PID）。
+Process ID (pid) PID命名空间为进程提供了一套独立于其他命名空间的进程ID（PID）。
 PID命名空间是嵌套的，这意味着当一个新的进程被创建时，它将有一个从其当前命名空间到初始PID命名空间的每个命名空间的PID。因此，初始PID命名空间能够看到所有进程，尽管其PID与其他命名空间看到的进程不同。
 比如用于创建容器的Runc Daemon进程。
-Network (net) # 网络名称空间可虚拟化网络堆栈。由于每个容器有不同的网络接口，每个地址信息，包括IP地址，都可以分开。
-Interprocess Communication (ipc) # IPC命名空间将进程与SysV风格的进程间通信隔离。
-UTS # UTS（UNIX时间共享）命名空间允许一个系统在不同的进程中出现不同的主机名和域名。
-User ID (user) # 用户命名空间是一个提供权限隔离和用户识别隔离的功能，跨越多组进程，从内核3.8开始可用。
+Network (net) 网络名称空间可虚拟化网络堆栈。由于每个容器有不同的网络接口，每个地址信息，包括IP地址，都可以分开。
+Interprocess Communication (ipc) IPC命名空间将进程与SysV风格的进程间通信隔离。
+UTS UTS（UNIX时间共享）命名空间允许一个系统在不同的进程中出现不同的主机名和域名。
+User ID (user) 用户命名空间是一个提供权限隔离和用户识别隔离的功能，跨越多组进程，从内核3.8开始可用。
 在管理员的协助下，有可能建立一个看起来有管理权限的容器，而实际上没有给用户进程提升权限。像PID命名空间一样，用户命名空间是嵌套的，每个新的用户命名空间都被认为是创建它的用户命名空间的子空间。
-Control group (cgroup) Namespace # 控制组命名空间，隐藏了进程作为成员的控制组的身份。
+Control group (cgroup) Namespace 控制组命名空间，隐藏了进程作为成员的控制组的身份。
 在这样的命名空间中的进程，在检查任何进程属于哪个控制组时，会看到一个实际上是相对于创建时设置的控制组的路径，隐藏其真实的控制组位置和身份。
-Time Namespace # 时间命名空间允许进程以类似于UTS命名空间的方式看到不同的系统时间。 它在2018年被提出，并在2020年3月发布的Linux 5.6上登陆。
-规划中的命名空间 # syslog namespace、Syscalls、Destruction，具体信息请参阅维基百科
-CGroup # 控制组cgroups是Linux内核提供的一个功能，用于从硬件和相关方面限制一组特定的分组进程。
-如隔离CPU、内存、设备、磁盘io、网络io等。</description></item><item><title>容器运行时</title><link>http://hindung.cn/posts/23/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/23/</guid><description>OCI &amp;amp;&amp;amp; CRI # 使用容器经常会听到容器运行时的概念、OCI以及CRI等，这些有什么区别和联系呢？
+Time Namespace 时间命名空间允许进程以类似于UTS命名空间的方式看到不同的系统时间。 它在2018年被提出，并在2020年3月发布的Linux 5.6上登陆。
+规划中的命名空间 syslog namespace、Syscalls、Destruction，具体信息请参阅维基百科
+CGroup 控制组cgroups是Linux内核提供的一个功能，用于从硬件和相关方面限制一组特定的分组进程。
+如隔离CPU、内存、设备、磁盘io、网络io等。
+有两个版本的cgroup。Cgroups最初由Paul Menage和Rohit Seth编写，并于2007年进入Linux内核主线。此后称为cgroups版本1。
+然后由Tejun Heo接管了cgroup的开发和维护。Tejun Heo重新设计并重写了cgroup。这种重写现在称为版本2，cgroups-v2的文档首次出现在2016年3月14日发布的Linux内核4.5中。
+与v1不同，cgroup v2仅具有单个进程层次结构，并且在进程之间进行区分，而不对线程进行区分。
+控制组的核心功能：
+资源限制：可以将组设置为不超过配置的内存限制，该限制还包括文件系统缓存 优先级：一些组可能会在CPU利用率或磁盘I / O吞吐量中获得更大份额 可统计：衡量组的资源使用情况 可控制：冻结/复活进程组 控制组具有分层概念，这意味着每个组都从其父组继承限制。内核通过cgroup接口提供对多个控制器（也称为子系统）的访问。例如，“内存”控制器限制内存使用，“ cpuacct”账户CPU使用率等。</description></item><item><title>容器运行时</title><link>https://hindung.cn/posts/cri/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/cri/</guid><description>OCI &amp;amp;&amp;amp; CRI 使用容器经常会听到容器运行时的概念、OCI以及CRI等，这些有什么区别和联系呢？
 CR，即Container Runtime，容器运行时 CRI，即Container Runtime Interface，容器运行时接口，实现该系列接口以实现容器功能 OCI，即Open Container Initiative：开口容器倡议，是建立围绕容器格式和运行时的开放式行业标准的明确目的的开放式的治理结构。 OCI 目前包含两个规范：运行时规范（runtime-spec）和镜像规范（image-spec）。运行时规范概述了如何运行在磁盘上解压缩的“文件系统包”。
 现在清楚了，OCI定义了一种规范，即怎么做如何做。而CR是这个规范的实践并定义了一系列接口CRI，只要实现了该接口就能使用这个CR。
 比如CR有很多种，如runc、lxc等，但他们都提供了统一的CRI，其他实现了这个CRI的组件如kubelet在runc和lxc间切换是无感的。
-低级（low-level）容器运行时 # 我理解的low-level是一系列操作容器的行为在很底层，比如通过Linux内核接口创建各个Namespace以及生成Cgroup等操作。把这些行为打包就是一个低级的运行时的内容。或者说低级容器运行时干了啥。
-高级（high-level）容器运行时 # 高级容器运行时又干了啥事情呢？镜像管理、镜像传输、镜像解压缩等技术都可以归为高级的容器运行时。
+低级（low-level）容器运行时 我理解的low-level是一系列操作容器的行为在很底层，比如通过Linux内核接口创建各个Namespace以及生成Cgroup等操作。把这些行为打包就是一个低级的运行时的内容。或者说低级容器运行时干了啥。
+高级（high-level）容器运行时 高级容器运行时又干了啥事情呢？镜像管理、镜像传输、镜像解压缩等技术都可以归为高级的容器运行时。
 比如docker提供的镜像构建、拉取等。docker可以分为以下几层：
-+----------+ | | | docker | | | +-----+----+ | socket/API | +-----v----+ | | | dockerd | | | +-----+----+ | socket/API | +-----v----+ | | |contanerd | | | +-----+----+ | | OCI +-----v----+ | | | runc | +----------+ K8s 与 CRI # k8s 1.</description></item><item><title>Docker镜像优化</title><link>http://hindung.cn/posts/2/</link><pubDate>Thu, 23 Jul 2020 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/2/</guid><description>注：本文章基于docker-ce版本：Client 19.03.8，Server 19.03.8
-Dockerfile简介 # Dockerfile主要有这几个指令，每个指令都会添加新的层，但是镜像大小不一定增长：
++----------+ | | | docker | | | +-----+----+ | socket/API | +-----v----+ | | | dockerd | | | +-----+----+ | socket/API | +-----v----+ | | |contanerd | | | +-----+----+ | | OCI +-----v----+ | | | runc | +----------+ K8s 与 CRI k8s 1.5 中自己实现了 docker CRI shim，通过这个组件与docker交互。管理容器的过程还是通过docker那套，在containerd 1.</description></item><item><title>Docker镜像优化</title><link>https://hindung.cn/posts/docker-images/</link><pubDate>Thu, 23 Jul 2020 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/docker-images/</guid><description>注：本文章基于docker-ce版本：Client 19.03.8，Server 19.03.8
+Dockerfile简介 Dockerfile主要有这几个指令，每个指令都会添加新的层，但是镜像大小不一定增长：
 指令 用途 用法 简单示例 FROM 指定基础镜像 FROM &amp;lt;image&amp;gt; 或 FROM &amp;lt;image&amp;gt;:&amp;lt;tag&amp;gt; FROM ubuntu:16.04 MAINTAINER 维护者信息 MAINTAINER &amp;lt;name&amp;gt; MAINTAINER HuangXianDong ADD 复制指定的文件到容器中包括tar，URL等 ADD &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt; ADD conf/jail.local /etc/fail2ban/jail.local COPY 复制host上下文环境的文件或者前一阶段镜像的文件到容器 COPY &amp;lt;src&amp;gt; &amp;lt;dest&amp;gt;有两个标志 –from= –chown= COPY /usr/local/app /usr/local/app USER 指定用户 USER &amp;lt;username&amp;gt; USER root WORKDIR 指定工作目录 WORKDIR /path/to/workdir WORKDIR /root RUN 终端执行sh或者可执行程序 RUN &amp;lt;command&amp;gt; 或 RUN [“executable”, “param1”, “param2”] RUN apt-get update ENV 指定一个环境变量 ENV &amp;lt;key&amp;gt; &amp;lt;value&amp;gt;或ENV &amp;lt;key&amp;gt;=&amp;lt;value&amp;gt; ENV TZ=Asia/Shanghai ONBUILD 配置当所创建的镜像作为其它新创建镜像的基础镜像时，所执行的操作指令 ONBUILD [INSTRUCTION] ONBUILD ADD .</description></item></channel></rss>

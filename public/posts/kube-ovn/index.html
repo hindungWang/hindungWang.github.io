@@ -1,0 +1,922 @@
+<!doctype html><html xmlns=http://www.w3.org/1999/xhtml xml:lang=en-us lang=en-us>
+<head>
+<script defer language=javascript type=text/javascript src=/js/bundle.min.38ccdf5c998a71d2ad889faefccbe9132577d265b25e73d94a1be540ebcaaa18.js></script>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<link rel=icon href=/favicon.png>
+<title itemprop=name>Hxd - K8s之kube-ovn网络插件</title>
+<meta property="og:title" content="Hxd - K8s之kube-ovn网络插件">
+<meta name=twitter:title content="Hxd - K8s之kube-ovn网络插件">
+<meta itemprop=name content="Hxd - K8s之kube-ovn网络插件">
+<meta name=application-name content="Hxd - K8s之kube-ovn网络插件">
+<meta property="og:site_name" content="Hindung's Blog">
+<meta name=description content="kube-ovn研究">
+<meta itemprop=description content="kube-ovn研究">
+<meta property="og:description" content="kube-ovn研究">
+<meta name=twitter:description content="kube-ovn研究">
+<base href=https://hindung.cn/posts/kube-ovn/>
+<link rel=canonical href=https://hindung.cn/posts/kube-ovn/ itemprop=url>
+<meta name=url content="https://hindung.cn/posts/kube-ovn/">
+<meta name=twitter:url content="https://hindung.cn/posts/kube-ovn/">
+<meta property="og:url" content="https://hindung.cn/posts/kube-ovn/">
+<meta property="og:updated_time" content="27004-27-12T40:00:23Z">
+<link rel=sitemap type=application/xml title=Sitemap href=https://hindung.cn/sitemap.xml>
+<meta name=robots content="index,follow">
+<meta name=googlebot content="index,follow">
+<meta name=twitter:site content="https://twitter.com">
+<meta name=twitter:creator content="https://twitter.com">
+<meta property="fb:admins" content>
+<meta name=apple-mobile-web-app-title content="Hindung's Blog">
+<meta name=apple-mobile-web-app-capable content="yes">
+<meta name=apple-mobile-web-app-status-bar-style content="black">
+<meta property="og:type" content="article">
+<meta property="article:publisher" content="https://facebook.com">
+<meta property="og:article:published_time" content="27004-27-12T40:00:23Z">
+<meta property="article:published_time" content="27004-27-12T40:00:23Z">
+<meta name=generator content="Hugo 0.92.1">
+<link type=text/css rel=stylesheet href=/css/bundle.min.94a339836f89f0d25f31980cb6b0631da21e20af128308747ce44e0525eb16ef.css>
+<style>body{--sidebar-bg-color:#202020;--sidebar-img-border-color:#515151;--sidebar-p-color:#909090;--sidebar-h1-color:#FFF;--sidebar-a-color:#FFF;--sidebar-socials-color:#FFF;--text-color:#222;--bkg-color:#FAF9F6;--post-title-color:#303030;--list-color:#5A5A5A;--link-color:#268BD2;--date-color:#515151;--table-border-color:#E5E5E5;--table-stripe-color:#F9F9F9;--code-color:#000;--code-background-color:#E5E5E5;--code-block-color:#FFF;--code-block-background-color:#272822;--moon-sun-color:#FFF;--moon-sun-background-color:#515151}body.dark-theme{--text-color:#EEE;--bkg-color:#121212;--post-title-color:#DBE2E9;--list-color:#9D9D9D;--link-color:#268BD2;--date-color:#9A9A9A;--table-border-color:#515151;--table-stripe-color:#202020;--code-color:#FFF;--code-background-color:#515151;--code-block-color:#FFF;--code-block-background-color:#272822}body{background-color:var(--bkg-color)}</style>
+</head>
+<body class=dark-theme>
+<div class=wrapper>
+<aside class=sidebar>
+<div class="container sidebar-sticky">
+<div class=light-dark align=right>
+<button class=btn-light-dark title="Toggle light/dark mode"><svg class="moon" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path fill="currentcolor" d="M6 .278a.768.768.0 01.08.858 7.208 7.208.0 00-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527.0 1.04-.055 1.533-.16a.787.787.0 01.81.316.733.733.0 01-.031.893A8.349 8.349.0 018.344 16C3.734 16 0 12.286.0 7.71.0 4.266 2.114 1.312 5.124.06A.752.752.0 016 .278z"/></svg><svg class="sun" xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16"><path fill="currentcolor" d="M8 12a4 4 0 100-8 4 4 0 000 8zM8 0a.5.5.0 01.5.5v2a.5.5.0 01-1 0v-2A.5.5.0 018 0zm0 13a.5.5.0 01.5.5v2a.5.5.0 01-1 0v-2A.5.5.0 018 13zm8-5a.5.5.0 01-.5.5h-2a.5.5.0 010-1h2a.5.5.0 01.5.5zM3 8a.5.5.0 01-.5.5h-2a.5.5.0 010-1h2A.5.5.0 013 8zm10.657-5.657a.5.5.0 010 .707l-1.414 1.415a.5.5.0 11-.707-.708l1.414-1.414a.5.5.0 01.707.0zm-9.193 9.193a.5.5.0 010 .707L3.05 13.657a.5.5.0 01-.707-.707l1.414-1.414a.5.5.0 01.707.0zm9.193 2.121a.5.5.0 01-.707.0l-1.414-1.414a.5.5.0 01.707-.707l1.414 1.414a.5.5.0 010 .707zM4.464 4.465a.5.5.0 01-.707.0L2.343 3.05a.5.5.0 11.707-.707l1.414 1.414a.5.5.0 010 .708z"/></svg>
+</button>
+</div>
+<div class=sidebar-about>
+<h1 class=brand>
+<a href=https://hindung.cn/>
+<h1>Hxd</h1>
+</a>
+</h1>
+<p class=lead>
+♪٩(´ω`)و♪网络✏️记
+</p>
+</div>
+<nav>
+<ul class=sidebar-nav>
+<li class=heading>
+<a href=/about/>About</a>
+</li>
+<li class=heading>
+<a href=/posts/>Posts</a>
+</li>
+<li class=sub-heading>
+Recent
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/prometheus_test/>Prometheus性能压测与高可用设计</a>
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/prometheus_sdk/>Prometheus GO SDK</a>
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/kube-ovn/>K8s之kube-ovn网络插件</a>
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/k8s-client/>K8s client-go初始化的几种方法</a>
+</li>
+<li class=bullet>
+<a href=https://hindung.cn/posts/markdown/>Hello World</a>
+</li>
+</ul>
+</nav>
+<a target=_blank class=social title=GitHub href=https://github.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="-2 -2 24 24"><path fill="currentcolor" d="M18.88 1.099C18.147.366 17.265.0 16.233.0H3.746C2.714.0 1.832.366 1.099 1.099.366 1.832.0 2.714.0 3.746v12.487c0 1.032.366 1.914 1.099 2.647.733.733 1.615 1.099 2.647 1.099H6.66c.19.0.333-.007.429-.02a.504.504.0 00.286-.169c.095-.1.143-.245.143-.435l-.007-.885c-.004-.564-.006-1.01-.006-1.34l-.3.052c-.19.035-.43.05-.721.046a5.555 5.555.0 01-.904-.091 2.026 2.026.0 01-.872-.39 1.651 1.651.0 01-.572-.8l-.13-.3a3.25 3.25.0 00-.41-.663c-.186-.243-.375-.407-.566-.494l-.09-.065a.956.956.0 01-.17-.156.723.723.0 01-.117-.182c-.026-.061-.004-.111.065-.15.07-.04.195-.059.378-.059l.26.04c.173.034.388.138.643.311a2.1 2.1.0 01.631.677c.2.355.44.626.722.813.282.186.566.28.852.28.286.0.533-.022.742-.065a2.59 2.59.0 00.585-.196c.078-.58.29-1.028.637-1.34a8.907 8.907.0 01-1.333-.234 5.314 5.314.0 01-1.223-.507 3.5 3.5.0 01-1.047-.872c-.277-.347-.505-.802-.683-1.365-.177-.564-.266-1.215-.266-1.952.0-1.049.342-1.942 1.027-2.68-.32-.788-.29-1.673.091-2.652.252-.079.625-.02 1.119.175.494.195.856.362 1.086.5.23.14.414.257.553.352a9.233 9.233.0 012.497-.338c.859.0 1.691.113 2.498.338l.494-.312a6.997 6.997.0 011.197-.572c.46-.174.81-.221 1.054-.143.39.98.424 1.864.103 2.653.685.737 1.028 1.63 1.028 2.68.0.737-.089 1.39-.267 1.957-.177.568-.407 1.023-.689 1.366a3.65 3.65.0 01-1.053.865c-.42.234-.828.403-1.223.507a8.9 8.9.0 01-1.333.235c.45.39.676 1.005.676 1.846v3.11c0 .147.021.266.065.357a.36.36.0 00.208.189c.096.034.18.056.254.064.074.01.18.013.318.013h2.914c1.032.0 1.914-.366 2.647-1.099.732-.732 1.099-1.615 1.099-2.647V3.746c0-1.032-.367-1.914-1.1-2.647z"/></svg>
+</a>
+<a target=_blank class=social title=Gitlab href=https://gitlab.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="-2 -2.5 24 24"><path fill="currentcolor" d="M10.006 18.443 6.326 7.118h7.36l-3.68 11.325zm0 0L1.168 7.118h5.158l3.68 11.325zM1.168 7.118l8.838 11.325-9.68-7.032a.762.762.0 01-.276-.852l1.118-3.441zm0 0L3.385.296a.38.38.0 01.724.0l2.217 6.822H1.168zm8.838 11.325 3.68-11.325h5.157l-8.837 11.325zm8.837-11.325 1.119 3.441a.762.762.0 01-.277.852l-9.68 7.032 8.838-11.325zm0 0h-5.157L15.902.296a.38.38.0 01.725.0l2.216 6.822z"/></svg>
+</a>
+<a target=_blank class=social title=LinkedIn href=https://linkedin.com><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 448 512"><path fill="currentcolor" d="M416 32H31.9C14.3 32 0 46.5.0 64.3v383.4C0 465.5 14.3 480 31.9 480H416c17.6.0 32-14.5 32-32.3V64.3c0-17.8-14.4-32.3-32-32.3zM135.4 416H69V202.2h66.5V416zm-33.2-243c-21.3.0-38.5-17.3-38.5-38.5S80.9 96 102.2 96c21.2.0 38.5 17.3 38.5 38.5.0 21.3-17.2 38.5-38.5 38.5zm282.1 243h-66.4V312c0-24.8-.5-56.7-34.5-56.7-34.6.0-39.9 27-39.9 54.9V416h-66.4V202.2h63.7v29.2h.9c8.9-16.8 30.6-34.5 62.9-34.5 67.2.0 79.7 44.3 79.7 101.9V416z"/></svg>
+</a>
+<a target=_blank class=social title=Twitter href=https://twitter.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 16 16"><path fill="currentcolor" d="M5.032 14.286c6.037.0 9.34-4.837 9.34-9.032.0-.137.0-.274-.01-.41A6.56 6.56.0 0016 3.2c-.6.256-1.235.425-1.885.5a3.207 3.207.0 001.443-1.757c-.645.37-1.35.63-2.085.77a3.322 3.322.0 00-1.862-.958 3.384 3.384.0 00-2.082.334 3.223 3.223.0 00-1.442 1.49 3.08 3.08.0 00-.208 2.03 9.57 9.57.0 01-3.747-.963A9.269 9.269.0 011.114 2.292a3.086 3.086.0 00-.36 2.314c.189.787.68 1.475 1.376 1.924A3.344 3.344.0 01.64 6.132v.04c0 .734.263 1.444.743 2.01a3.3 3.3.0 001.89 1.102c-.483.128-.99.146-1.482.055a3.19 3.19.0 001.168 1.577 3.36 3.36.0 001.9.627A6.732 6.732.0 010 12.86a9.527 9.527.0 005.032 1.423"/></svg>
+</a>
+<a target=_blank class=social rel=me title=Mastodon href=https://mastodon.social><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentcolor" d="M20.94 14c-.28 1.41-2.44 2.96-4.97 3.26-1.31.15-2.6.3-3.97.24-2.25-.11-4-.54-4-.54v.62c.32 2.22 2.22 2.35 4.03 2.42 1.82.05 3.44-.46 3.44-.46l.08 1.65s-1.28.68-3.55.81c-1.25.07-2.81-.03-4.62-.5-3.92-1.05-4.6-5.24-4.7-9.5l-.01-3.43c0-4.34 2.83-5.61 2.83-5.61C6.95 2.3 9.41 2 11.97 2h.06c2.56.0 5.02.3 6.47.96.0.0 2.83 1.27 2.83 5.61.0.0.04 3.21-.39 5.43M18 8.91c0-1.08-.3-1.91-.85-2.56-.56-.63-1.3-.96-2.23-.96-1.06.0-1.87.41-2.42 1.23l-.5.88-.5-.88c-.56-.82-1.36-1.23-2.43-1.23-.92.0-1.66.33-2.23.96C6.29 7 6 7.83 6 8.91v5.26h2.1V9.06c0-1.06.45-1.62 1.36-1.62 1 0 1.5.65 1.5 1.93v2.79h2.07V9.37c0-1.28.5-1.93 1.51-1.93.9.0 1.35.56 1.35 1.62v5.11H18V8.91z"/></svg>
+</a>
+<a target=_blank class=social title=TryHackMe href=https://tryhackme.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="#fff" d="M10.705.0C7.54.0 4.902 2.285 4.349 5.291a4.525 4.525.0 00-4.107 4.5 4.525 4.525.0 004.52 4.52h6.761a.625.625.0 100-1.25H4.761a3.273 3.273.0 01-3.27-3.27A3.273 3.273.0 016.59 7.08a.625.625.0 00.7-1.035 4.488 4.488.0 00-1.68-.69 5.223 5.223.0 015.096-4.104 5.221 5.221.0 015.174 4.57 4.489 4.489.0 00-.488.305.625.625.0 10.731 1.013 3.245 3.245.0 011.912-.616 3.278 3.278.0 013.203 2.61.625.625.0 001.225-.251 4.533 4.533.0 00-4.428-3.61 4.54 4.54.0 00-.958.105C16.556 2.328 13.9.0 10.705.0zm5.192 10.64a.925.925.0 00-.462.108.913.913.0 00-.313.29 1.27 1.27.0 00-.175.427 2.39 2.39.0 00-.054.514c0 .181.018.353.054.517s.095.307.175.43a.899.899.0 00.313.297c.127.073.281.11.462.11.18.0.334-.037.46-.11a.897.897.0 00.309-.296c.08-.124.137-.267.173-.431.036-.164.054-.336.054-.517.0-.18-.018-.352-.054-.514a1.271 1.271.0 00-.173-.426.901.901.0 00-.309-.291.917.917.0 00-.46-.108zm6.486.0a.925.925.0 00-.462.108.913.913.0 00-.313.29 1.27 1.27.0 00-.175.427 2.39 2.39.0 00-.053.514c0 .181.017.353.053.517s.095.307.175.43a.899.899.0 00.313.297c.127.073.281.11.462.11.18.0.334-.037.46-.11a.897.897.0 00.31-.296c.078-.124.136-.267.172-.431s.054-.336.054-.517c0-.18-.018-.352-.054-.514a1.271 1.271.0 00-.173-.426.901.901.0 00-.308-.291.916.916.0 00-.461-.108zm-8.537.068-.84.618.313.43.476-.368v1.877h.603v-2.557zm6.486.0-.841.618.314.43.477-.368v1.877h.603v-2.557zm-4.435.445c.08.0.143.028.193.084.05.057.087.127.114.21.026.083.044.173.054.269a2.541 2.541.0 010 .533c-.01.097-.028.187-.054.27a.584.584.0 01-.114.21.243.243.0 01-.193.085.248.248.0 01-.195-.086.584.584.0 01-.118-.209 1.245 1.245.0 01-.056-.27 2.645 2.645.0 010-.533c.01-.096.029-.186.056-.27a.583.583.0 01.118-.209.25.25.0 01.195-.084zm6.486.0c.08.0.144.028.193.084.05.057.087.127.114.21s.044.173.054.269a2.541 2.541.0 010 .533c-.01.097-.027.187-.054.27a.584.584.0 01-.114.21.243.243.0 01-.193.085.249.249.0 01-.195-.086.581.581.0 01-.117-.209 1.245 1.245.0 01-.056-.27 2.642 2.642.0 010-.533c.01-.096.028-.186.056-.27a.58.58.0 01.117-.209.25.25.0 01.195-.084zm-2.191 3.51a.93.93.0 00-.463.109.908.908.0 00-.312.291c-.08.122-.139.263-.175.426a2.383 2.383.0 00-.054.514c0 .18.018.353.054.516.036.164.094.308.175.432a.91.91.0 00.312.296.92.92.0 00.463.11c.18.0.333-.037.46-.11a.892.892.0 00.308-.296 1.32 1.32.0 00.174-.432c.036-.163.054-.335.054-.516.0-.18-.018-.352-.054-.514a1.274 1.274.0 00-.174-.426.89.89.0 00-.309-.291.918.918.0 00-.46-.108zm-6.402.07-.841.617.314.43.476-.369v1.878h.604v-2.557zm2.125.0-.841.617.314.43.477-.369v1.878h.603v-2.557zm2.116.0-.84.617.313.43.477-.369v1.878h.603v-2.557zm2.16.443c.08.0.144.028.194.085a.605.605.0 01.114.21c.026.083.044.172.053.269a2.639 2.639.0 010 .532 1.28 1.28.0 01-.053.27.585.585.0 01-.114.21.244.244.0 01-.193.085.25.25.0 01-.196-.085.589.589.0 01-.117-.21 1.245 1.245.0 01-.056-.27 2.597 2.597.0 010-.532c.01-.097.028-.186.056-.27a.589.589.0 01.117-.209.249.249.0 01.196-.085zm-6.729 3.073a.676.676.0 00-.335.078.661.661.0 00-.227.211.91.91.0 00-.127.31c-.027.118-.04.242-.04.373s.013.256.04.375a.93.93.0 00.127.313.65.65.0 00.227.215c.092.053.204.08.335.08a.655.655.0 00.334-.08.65.65.0 00.225-.215c.057-.09.1-.194.125-.313a1.75 1.75.0 00.04-.375c0-.13-.014-.255-.04-.373a.931.931.0 00-.125-.31.658.658.0 00-.225-.21.667.667.0 00-.334-.08zm3.086.0a.675.675.0 00-.336.078.661.661.0 00-.226.211.907.907.0 00-.127.31 1.69 1.69.0 00-.04.373c0 .131.013.256.04.375a.928.928.0 00.127.313c.058.09.134.162.226.215.093.053.205.08.336.08a.655.655.0 00.334-.08.65.65.0 00.224-.215c.058-.09.1-.194.126-.313a1.752 1.752.0 000-.748.94.94.0 00-.126-.31.657.657.0 00-.224-.21.667.667.0 00-.334-.08zm5.108.0a.675.675.0 00-.336.078.661.661.0 00-.226.211.91.91.0 00-.127.31c-.027.118-.04.242-.04.373s.013.256.04.375a.931.931.0 00.127.313c.058.09.134.162.226.215.093.053.205.08.336.08.13.0.243-.027.334-.08a.65.65.0 00.224-.215c.058-.09.1-.194.126-.313a1.75 1.75.0 00.04-.375c0-.13-.014-.255-.04-.373a.943.943.0 00-.126-.31.657.657.0 00-.224-.21.668.668.0 00-.334-.08zm-6.658.05-.61.448.227.311.346-.266v1.362h.438v-1.856zm3.068.0-.61.448.227.311.346-.266v1.362h.438v-1.856zm5.108.0-.611.448.228.311.346-.266v1.362h.438v-1.856zm-9.712.322c.058.0.105.02.14.062a.421.421.0 01.083.151.96.96.0 01.04.196 1.932 1.932.0 010 .386.954.954.0 01-.04.197.421.421.0 01-.083.152.176.176.0 01-.14.061.18.18.0 01-.141-.06.427.427.0 01-.085-.153.887.887.0 01-.041-.197 1.96 1.96.0 010-.386.893.893.0 01.04-.196.42.42.0 01.086-.151.181.181.0 01.141-.062zm3.086.0c.058.0.104.02.14.062a.421.421.0 01.082.151.94.94.0 01.04.196 1.906 1.906.0 010 .386.93.93.0 01-.04.197.421.421.0 01-.082.152.176.176.0 01-.14.061.18.18.0 01-.141-.06.42.42.0 01-.086-.153.846.846.0 01-.04-.197 1.965 1.965.0 01-.011-.195c0-.057.004-.121.01-.191a.849.849.0 01.041-.196.42.42.0 01.086-.151.182.182.0 01.141-.062zm5.108.0c.058.0.104.02.14.062a.421.421.0 01.082.151.92.92.0 01.04.196 1.963 1.963.0 010 .386.943.943.0 01-.04.197.421.421.0 01-.082.152.177.177.0 01-.14.061.18.18.0 01-.142-.06.437.437.0 01-.085-.153.95.95.0 01-.04-.197 1.965 1.965.0 01-.011-.195c0-.057.004-.121.01-.191a.959.959.0 01.04-.196.47.47.0 01.086-.151.181.181.0 01.142-.062zm-1.684 1.814a.675.675.0 00-.336.079.66.66.0 00-.227.21.91.91.0 00-.127.31 1.731 1.731.0 000 .748.939.939.0 00.127.314c.059.09.134.162.227.215s.205.08.336.08a.66.66.0 00.334-.08.648.648.0 00.224-.215c.058-.09.1-.195.126-.314a1.737 1.737.0 00-.001-.747.928.928.0 00-.125-.31.65.65.0 00-.224-.211.668.668.0 00-.334-.079zm3.063.0a.676.676.0 00-.336.079.664.664.0 00-.227.21.906.906.0 00-.127.31 1.74 1.74.0 000 .748.936.936.0 00.127.314.66.66.0 00.227.215c.092.053.204.08.336.08a.654.654.0 00.334-.08.648.648.0 00.223-.215c.058-.09.1-.195.126-.314a1.74 1.74.0 000-.747.928.928.0 00-.126-.31.65.65.0 00-.223-.211.666.666.0 00-.334-.079zm-1.545.05-.611.448.228.312.346-.267v1.363h.438v-1.856zm-1.518.323c.057.0.104.02.14.061a.42.42.0 01.082.152.91.91.0 01.04.195 1.966 1.966.0 010 .387.951.951.0 01-.04.197.421.421.0 01-.082.152.177.177.0 01-.14.06.18.18.0 01-.142-.06.428.428.0 01-.085-.152.914.914.0 01-.04-.197 1.96 1.96.0 01-.011-.195c0-.058.003-.122.01-.192a.923.923.0 01.041-.195c.02-.06.048-.11.085-.152a.181.181.0 01.142-.061zm3.063.0c.057.0.104.02.14.061a.42.42.0 01.082.152.94.94.0 01.04.195 1.91 1.91.0 010 .387.93.93.0 01-.04.197.422.422.0 01-.083.152.175.175.0 01-.14.06.18.18.0 01-.141-.06.423.423.0 01-.085-.152.907.907.0 01-.04-.197 1.95 1.95.0 010-.387.915.915.0 01.04-.195c.02-.06.048-.11.085-.152a.182.182.0 01.142-.061zm-9.713.185a.465.465.0 00-.232.055.456.456.0 00-.157.146.627.627.0 00-.089.215 1.168 1.168.0 00-.027.259c0 .09.009.177.027.26a.648.648.0 00.089.216c.04.063.093.112.157.149a.459.459.0 00.232.056c.09.0.168-.02.231-.056a.45.45.0 00.156-.149.67.67.0 00.087-.217 1.218 1.218.0 000-.518.647.647.0 00-.087-.215.448.448.0 00-.156-.146.458.458.0 00-.23-.055zm1.052.035-.423.31.158.217.24-.185v.944h.303v-1.286zm-1.052.224c.04.0.073.014.097.042a.284.284.0 01.057.105.69.69.0 01.028.136c.004.049.007.092.007.133.0.04-.003.086-.007.135a.684.684.0 01-.028.136.285.285.0 01-.057.105.123.123.0 01-.097.043.125.125.0 01-.098-.043.298.298.0 01-.059-.105.612.612.0 01-.028-.136 1.39 1.39.0 010-.268.62.62.0 01.028-.136.297.297.0 01.06-.105.125.125.0 01.097-.042zm3.775 1.394a.463.463.0 00-.232.054.452.452.0 00-.157.146.621.621.0 00-.088.214 1.19 1.19.0 000 .519.641.641.0 00.088.217.46.46.0 00.157.15.458.458.0 00.232.054.454.454.0 00.232-.055.45.45.0 00.155-.149.664.664.0 00.087-.217 1.189 1.189.0 000-.519.642.642.0 00-.087-.214.446.446.0 00-.155-.146.459.459.0 00-.232-.054zm1.052.034-.423.31.158.216.24-.185v.945h.303V22.68zm-1.052.223c.04.0.073.014.098.043a.3.3.0 01.057.105.643.643.0 01.027.135 1.31 1.31.0 010 .268.654.654.0 01-.027.137.307.307.0 01-.057.105.124.124.0 01-.098.042.125.125.0 01-.098-.042.293.293.0 01-.059-.105.618.618.0 01-.028-.137 1.364 1.364.0 010-.268.612.612.0 01.028-.135.287.287.0 01.06-.105.123.123.0 01.097-.043z"/></svg>
+</a>
+<a target=_blank class=social title=Discord href=https://discord.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentcolor" d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09.0 00-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09.0 00-4.8.0c-.14-.34-.35-.76-.54-1.09-.01-.02-.04-.03-.07-.03-1.5.26-2.93.71-4.27 1.33-.01.0-.02.01-.03.02-2.72 4.07-3.47 8.03-3.1 11.95.0.02.01.04.03.05 1.8 1.32 3.53 2.12 5.24 2.65.03.01.06.0.07-.02.4-.55.76-1.13 1.07-1.74.02-.04.0-.08-.04-.09-.57-.22-1.11-.48-1.64-.78-.04-.02-.04-.08-.01-.11.11-.08.22-.17.33-.25.02-.02.05-.02.07-.01 3.44 1.57 7.15 1.57 10.55.0.02-.01.05-.01.07.01.11.09.22.17.33.26.04.03.04.09-.01.11-.52.31-1.07.56-1.64.78-.04.01-.05.06-.04.09.32.61.68 1.19 1.07 1.74.03.01.06.02.09.01 1.72-.53 3.45-1.33 5.25-2.65.02-.01.03-.03.03-.05.44-4.53-.73-8.46-3.1-11.95-.01-.01-.02-.02-.04-.02zM8.52 14.91c-1.03.0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06.0 1.9.96 1.89 2.12.0 1.17-.84 2.12-1.89 2.12zm6.97.0c-1.03.0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06.0 1.9.96 1.89 2.12.0 1.17-.83 2.12-1.89 2.12z"/></svg>
+</a>
+<a target=_blank class=social title=YouTube href=https://youtube.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentcolor" d="M12.006 19.012h-.02c-.062.0-6.265-.012-7.83-.437A2.5 2.5.0 012.392 16.81 26.494 26.494.0 011.986 12a26.646 26.646.0 01.417-4.817A2.564 2.564.0 014.169 5.4c1.522-.4 7.554-.4 7.81-.4H12c.063.0 6.282.012 7.831.437.859.233 1.53.904 1.762 1.763.29 1.594.427 3.211.407 4.831a26.568 26.568.0 01-.418 4.811 2.51 2.51.0 01-1.767 1.763c-1.52.403-7.553.407-7.809.407zm-2-10.007-.005 6 5.212-3-5.207-3z"/></svg>
+</a>
+<a target=_blank class=social title=Instagram href=https://instagram.com><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 448 512"><path fill="currentcolor" d="M224.1 141c-63.6.0-114.9 51.3-114.9 114.9s51.3 114.9 114.9 114.9S339 319.5 339 255.9 287.7 141 224.1 141zm0 189.6c-41.1.0-74.7-33.5-74.7-74.7s33.5-74.7 74.7-74.7 74.7 33.5 74.7 74.7-33.6 74.7-74.7 74.7zm146.4-194.3c0 14.9-12 26.8-26.8 26.8-14.9.0-26.8-12-26.8-26.8s12-26.8 26.8-26.8 26.8 12 26.8 26.8zm76.1 27.2c-1.7-35.9-9.9-67.7-36.2-93.9-26.2-26.2-58-34.4-93.9-36.2-37-2.1-147.9-2.1-184.9.0-35.8 1.7-67.6 9.9-93.9 36.1s-34.4 58-36.2 93.9c-2.1 37-2.1 147.9.0 184.9 1.7 35.9 9.9 67.7 36.2 93.9s58 34.4 93.9 36.2c37 2.1 147.9 2.1 184.9.0 35.9-1.7 67.7-9.9 93.9-36.2 26.2-26.2 34.4-58 36.2-93.9 2.1-37 2.1-147.8.0-184.8zM398.8 388c-7.8 19.6-22.9 34.7-42.6 42.6-29.5 11.7-99.5 9-132.1 9s-102.7 2.6-132.1-9c-19.6-7.8-34.7-22.9-42.6-42.6-11.7-29.5-9-99.5-9-132.1s-2.6-102.7 9-132.1c7.8-19.6 22.9-34.7 42.6-42.6 29.5-11.7 99.5-9 132.1-9s102.7-2.6 132.1 9c19.6 7.8 34.7 22.9 42.6 42.6 11.7 29.5 9 99.5 9 132.1s2.7 102.7-9 132.1z"/></svg>
+</a>
+<a target=_blank class=social title=Facebook href=https://facebook.com><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 448 512"><path fill="currentcolor" d="M4e2 32H48A48 48 0 000 80v352a48 48 0 0048 48h137.25V327.69h-63V256h63v-54.64c0-62.15 37-96.48 93.67-96.48 27.14.0 55.52 4.84 55.52 4.84v61h-31.27c-30.81.0-40.42 19.12-40.42 38.73V256h68.78l-11 71.69h-57.78V480H4e2a48 48 0 0048-48V80a48 48 0 00-48-48z"/></svg>
+</a>
+<a target=_blank class=social title=Flickr href=https://flickr.com><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 54 54"><path fill="currentcolor" d="M40 4.8c2.2.0 4.1.8 5.7 2.4s2.4 3.5 2.4 5.7v26.8c0 2.2-.8 4.1-2.4 5.7s-3.5 2.4-5.7 2.4H13.3c-2.2.0-4.1-.8-5.7-2.4s-2.4-3.5-2.4-5.7V12.9c0-2.2.8-4.1 2.4-5.7 1.6-1.6 3.5-2.4 5.7-2.4H40zM23 30.4c1.2-1.2 1.7-2.5 1.7-4.2s-.6-3-1.7-4.2c-1.2-1.2-2.5-1.7-4.2-1.7s-3 .6-4.2 1.7c-1.2 1.2-1.7 2.5-1.7 4.2s.6 3 1.7 4.2 2.5 1.7 4.2 1.7 3-.5 4.2-1.7zm15.7.0c1.2-1.2 1.7-2.5 1.7-4.2s-.6-3-1.7-4.2c-1.2-1.2-2.5-1.7-4.2-1.7-1.6.0-3 .6-4.2 1.7-1.2 1.2-1.7 2.5-1.7 4.2s.6 3 1.7 4.2c1.2 1.2 2.5 1.7 4.2 1.7C36.1 32.2 37.5 31.6 38.7 30.4z"/>
+</a>
+<a target=_blank class=social title=Telegram href=https://telegram.org><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 24 24"><path fill="currentcolor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2.0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08.0.27.02.39.12.1.08.13.19.14.27-.01.06.01.24.0.38z"/></svg>
+</a>
+<a target=_blank class=social title=Matrix href=https://matrix.org><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 27.9 32"><path fill="currentcolor" d="m27.1 31.2v-30.5h-2.19v-.732h3.04v32h-3.04v-.732z"/><path fill="currentcolor" d="m8.23 10.4v1.54h.044c.385-.564.893-1.03 1.49-1.37.58-.323 1.25-.485 1.99-.485.72.0 1.38.14 1.97.42.595.279 1.05.771 1.36 1.48.338-.5.796-.941 1.38-1.32.58-.383 1.27-.574 2.06-.574.602.0 1.16.074 1.67.22.514.148.954.383 1.32.707.366.323.653.746.859 1.27.205.522.308 1.15.308 1.89v7.63h-3.13v-6.46c0-.383-.015-.743-.044-1.08-.0209-.307-.103-.607-.242-.882-.133-.251-.336-.458-.584-.596-.257-.146-.606-.22-1.05-.22-.44.0-.796.085-1.07.253-.272.17-.485.39-.639.662-.159.287-.264.602-.308.927-.052.347-.078.697-.078 1.05v6.35h-3.13v-6.4c0-.338-.007-.673-.021-1-.0114-.314-.0749-.623-.188-.916-.108-.277-.3-.512-.55-.673-.258-.168-.636-.253-1.14-.253-.198.0083-.394.042-.584.1-.258.0745-.498.202-.705.374-.228.184-.422.449-.584.794-.161.346-.242.798-.242 1.36v6.62h-3.13v-11.4z"/><path fill="currentcolor" d="m.936.732v30.5h2.19v.732h-3.04v-32h3.03v.732z"/></svg>
+</a>
+<a target=_blank class=social title=XMPP href=https://xmpp.org><svg xmlns="http://www.w3.org/2000/svg" width="1.2em" height="1.2em" viewBox="0 0 1750 1273"><path fill="currentcolor" d="m445.5368 1260.3774.2798-12.6227 12.5-3.3998c86.3329-23.4818 169.6413-62.291 250.3046-116.6045 21.6348-14.5674 54.9023-39.6297 54.4411-41.0135-.219-.6568-4.8638-3.8543-10.3219-7.1055C643.2778 1014.4283 545.02 941.13549 450.3396 854.06369 429.6559 835.04199 380.3414 785.90449 358.9481 762.99999 180.5946 572.04763 62.054497 360.05908 18.4066 153.99998 8.7628 108.47213 2.3059 58.553447.6664 16.850277L0-.10203342 6.4083 2.3337566c3.5246 1.33968 58.833297 22.7793104 122.9083 47.6436104 166.6481 64.667773 168.944 65.464203 304.4367 105.604623 62.1152 18.40194 113.1902 33.71169 113.5 34.02166.3099.30997.4154 15.03845.2346 32.72995-.7292 71.3433 7.8053 140.72171 26.8373 218.16638 39.0143 158.75637 118.1187 319.92841 223.5627 455.50001 28.91491 37.1765 73.62151 88 77.40871 88 2.7547.0 26.96638-26.2437 52.834-57.2683C1060.6744 767.76429 1155.5512 568.642 1189.7797 377.59673c10.0437-56.05859 13.7745-98.67828 13.4235-153.34671-.121-18.83748-.032-34.43372.1968-34.6583.2292-.22459 50.1417-15.11502 110.9167-33.08986 134.5925-39.80714 140.484-41.85315 312-108.352043l123.5-47.88249042.3207 7.61633002c.3596 8.5370104-1.1628 33.2485804-3.3954 55.1163204-3.8106 37.324233-12.1421 84.466813-21.8263 123.500003-60.4804 243.77385-227.0666 496.24088-463.599 702.59971-78.2752 68.2899-161.6555 129.12491-251.25 183.31441-12.5125 7.5679-22.75 14.1335-22.75 14.5903.0 1.0394 22.9632 18.4731 41.5 31.5068 84.3957 59.3407 173.6883 101.5869 269 127.2694l7 1.8862.2799 12.6666.2799 12.6666-3.2799-6e-4c-5.2353-.001-37.4406-3.7921-60.2799-7.0959-85.6385-12.3881-177.8337-38.246-257.5-72.2208-39.76812-16.9597-71.45999-30.8513-87.00005-38.1349-9.075-4.2535-17.85004-8.1823-19.50004-8.7307-2.6877-.8934-5.0814-.039-23 8.2132-20.2043 9.3045-59.60201 26.5462-89.00001 38.9493-95.6207 40.3427-198.208 66.8187-300.3568 77.5168-7.8962.827-15.6722 1.5036-17.2799 1.5036h-2.923l.2799-12.6226z"/>
+</a>
+<a target=_blank class=social title="RSS Feed" href=/posts/index.xml><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 1280 1280"><g transform="translate(0.000000,1280.000000) scale(0.100000,-0.100000)" fill="currentcolor"><path d="M2295 11929c-284-12-642-45-707-65-17-5-18-63-18-1039 0-569 4-1036 8-1039 5-3 74 6 153 19 510 86 1168 95 1789 25 1348-153 2602-677 3670-1531 385-308 820-744 1126-1129 842-1060 1362-2313 1514-3650 70-621 61-1279-25-1789-13-79-22-148-19-153 3-4 471-8 1039-8h1035l5 23c51 225 85 942 67 1419-23 605-77 1044-198 1617-294 14e2-927 2734-1823 3846-1043 1295-2364 2259-3909 2854-1158 447-2451 656-3707 6e2z"/><path d="M2255 7845c-269-25-620-81-667-106-17-9-18-55-18-899 0-706 3-890 13-890 6 0 66 18 132 41 130 44 288 79 467 105 154 21 577 30 749 15 1207-107 2267-823 2814-1902 166-327 268-637 330-1001 38-227 48-384 42-662-8-348-44-590-126-831-23-66-41-126-41-132 0-10 184-13 890-13 844 0 890 1 899 18 27 50 88 452 110 725 14 162 14 624 1 782-59 703-233 1323-545 1945-481 956-1313 1788-2270 2268-620 310-1239 483-1940 542-165 14-669 10-840-5z"/><path d="M2519 3815c-391-66-725-336-868-703-79-201-96-462-45-677 83-344 338-641 666-774 116-47 205-69 330-80 412-39 811 153 1040 5e2 193 292 240 648 128 981-135 403-492 699-914 757-1e2 14-241 12-337-4z"/></g></svg>
+</a>
+<a target=_blank class=social title=Email href=mailto://user@domain><svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1.2em" viewBox="0 0 485.211 485.211"><path fill="currentcolor" d="M301.393 241.631 464.866 424.56H20.332l163.474-182.928 58.801 51.443 58.786-51.444zM462.174 60.651H23.027l219.579 192.142L462.174 60.651zM324.225 221.67l160.986 180.151V80.792L324.225 221.67zM0 80.792v321.029L160.972 221.64.0 80.792z"/></svg>
+</a>
+<p class=footnote>
+powered by <a target=_blank href=https://gohugo.io>Hugo</a> | themed with <a target=_blank href=https://github.com/lukeorth/poison>poison</a>
+<br>
+&copy; 2024 Hindung's Blog. All rights reserved.
+</p>
+</div>
+</aside>
+<main class="content container">
+<div class=post>
+<div class=info>
+<h1 class=post-title>
+<a href=https://hindung.cn/posts/kube-ovn/>K8s之kube-ovn网络插件</a>
+</h1>
+<div class=headline>
+<div>
+<time datetime=" 2023-04-27T00:00:00Z" class=post-date>
+April 27, 2023
+</time>
+<span> - </span>
+<span class=reading-time>
+<span>8 mins read</span>
+</span>
+</div>
+<ul class=tags>
+<li class=tag-Kubernetes>
+<a href=https://hindung.cn/tags/kubernetes>Kubernetes</a>
+</li>
+<li class=tag-Network>
+<a href=https://hindung.cn/tags/network>Network</a>
+</li>
+</ul>
+</div>
+</div>
+<h1 id=kube-ovn网络>kube-ovn网络</h1>
+<p>此项预研包括了多网卡、集群互联、混合部署、OVS/OVN、CNI、kubevirt等基础组件，并探讨基于K8s实现的OVN平台所实现的功能以及能否满足公司不同场景的容器、虚拟机网络需求。</p>
+<h2 id=kube-ovn>kube-ovn</h2>
+<p>Kube-OVN是一个基于Open Virtual Network (OVN)的Kubernetes网络解决方案。它使用OVN作为底层网络虚拟化平台，为Kubernetes集群提供高性能、高可用、可扩展的网络服务。</p>
+<p>下面是Kube-OVN的整体架构：</p>
+<ol>
+<li>OVN控制平面（与传统OVN类似）</li>
+</ol>
+<p>负责管理Kubernetes集群的网络资源和配置，包括虚拟网络（VPC）、子网（Subnet）、路由、ACL等。<strong>这些组件部分来自 OVN/OVS 社区，Kube-OVN 对不同的使用场景做了特定修改。</strong></p>
+<p>OVN控制平面由多个组件组成，包括：</p>
+<ul>
+<li>ovn-central：运行 OVN 的管理平面组件，负责处理逻辑网络拓扑，包括虚拟网络、子网、路由等。包括ovn-nb, ovn-sb,和ovn-northd。</li>
+<li>ovn-controller: 执行所有Kubernetes内资源到OVN资源的翻译工作。</li>
+<li>ovs-ovn：运行了 openvswitch, ovsdb,和ovn-controller。这些组件作为 ovn-central 的 Agent 将逻辑流表翻译成真实的网络配置。</li>
+</ul>
+<ol start=2>
+<li>OVN数据平面（由内核提供）</li>
+</ol>
+<p>负责实现虚拟网络的转发和隔离。OVN数据平面利用Linux内核提供的虚拟化技术，如Linux内核自带的Open vSwitch (OVS)和Virtual Extensible LAN (VXLAN)，实现高性能、高可扩展性的虚拟网络。</p>
+<ol start=3>
+<li>Kubernetes控制平面（结合k8s资源）</li>
+</ol>
+<p>负责管理Kubernetes集群的各种资源，如Pod、Service、Endpoint、CR等，并将这些资源转换（翻译）为对应的OVN网络配置，以实现Kubernetes网络服务。</p>
+<p>除此之外，Kube-OVN还提供了一些额外的组件和工具：</p>
+<ul>
+<li>kube-ovn-cni：实现 CNI 接口，并操作本地的 OVS 配置单机网络。</li>
+<li>kube-ovn-operator：用于简化Kube-OVN的安装、配置和管理。</li>
+<li>kube-ovn-monitor：监控指标。</li>
+<li>kube-ovn-pinger：收集 OVS 运行信息，节点网络质量，网络延迟等信息。</li>
+<li>kubectl-ko：OVN 运维平面用到的命令行工具。</li>
+<li>kube-ovn-speaker：对外发布容器网络的路由，使得外部可以直接通过 Pod IP 访问容器。</li>
+</ul>
+<h3 id=kube-ovn部署使用>kube-ovn部署使用</h3>
+<p>kube-ovn有两种方式部署Overlay和Underlay模式。</p>
+<p>默认是Overlay模式。</p>
+<p>Underlay：容器运行在虚拟机中，ovs运行在k8s上（POD部署），kube-ovn将容器网络和虚拟机网络连接在同一平面，<strong>可以直接给容器分配物理网络中的地址资源</strong>，达到更好的性能以及和物理网络的连通性。</p>
+<p>Overlay：容器运行在虚拟机中，ovs运行在k8s上（POD部署），kube-ovn的默认子网<strong>使用 Geneve 对跨主机流量进行封装</strong>，在基础设施之上抽象出一层虚拟的 Overlay 网络。对于容器IP直通的场景可以配合multus-cni为容器添加额外的虚拟机层IP。或者参考高级功能采用路由或者BGP方式将容器网络和物理网络打通。</p>
+<p>Underlay模式下能够获得更好网络性能，但是无法使用Overlay模式下的SNAT/EIP，分布式网关/集中式网关等 L3 功能，VPC 级别的隔离也无法对 Underlay 子网生效。</p>
+<p>安装完成kube-ovn之后会自动创建一些组件以及CRDs：</p>
+<p><strong>Deployment：</strong></p>
+<ul>
+<li>kube-ovn-controller</li>
+<li>ovn-central</li>
+<li>kube-ovn-monitor</li>
+</ul>
+<p><strong>DaemonSet：</strong></p>
+<ul>
+<li>kube-ovn</li>
+<li>kube-ovn-cni</li>
+<li>kube-ovn-pinger</li>
+</ul>
+<p><strong>CRDs:</strong></p>
+<ul>
+<li>Vpc：多租户隔离级别的 VPC 网络。不同 VPC 网络相互独立。（VPC 无法对 Underlay 子网进行隔离）</li>
+<li>VpcNatGateway：VPC 网络与外部通讯的网关。Overlay 子网下的 Pod 需要通过网关来访问集群外部网络</li>
+<li>VpcDns：VPC 内 Pod 无法使用默认的 coredns 服务进行域名解析。可以定义 VPC 内的 DNS。</li>
+<li>Vlan：Underlay 使用 Vlan 模式部署。</li>
+<li>Vip：虚拟IP。</li>
+<li>SwitchLBRule：VPC 的使用场景下，自定义内部负载均衡的地址范围（Service的增强）。</li>
+<li>Subnet：子网。</li>
+<li>SecurityGroup：安全组。</li>
+<li>ProviderNetwork：Underlay 模式下的网卡网络管理。</li>
+<li>OvnSnatRule：官网未提及。</li>
+<li>OvnFip：官网未提及。</li>
+<li>OvnEip：官网未提及。</li>
+<li>IptablesSnatRule：配置SNAT规则，一组 Pod 可以共享一个 IP 地址对外进行访问。</li>
+<li>IptablesFIPRule：配置浮动IP。</li>
+<li>IptablesEIP：配置外部访问IP，一个 Pod 可以直接和一个外部 IP 关联， 外部服务可以通过 EIP 直接访问 Pod，Pod 也将通过这个 EIP 访问外部服务。</li>
+<li>IptablesDnatRule：配置DNAT规则。</li>
+<li>IP：已分配的 IP 地址列表。</li>
+</ul>
+<h4 id=功能使用>功能使用</h4>
+<p>一些功能看起来比较复杂，但实际使用还是比较简单的，在对应的资源上打 Annotation 就可以了。此外即使不做任何配置，Kube-OVN 会带一个默认的子网，默认的分布式网关，以及内置的 Service 和 NetworkPolicy 实现。</p>
+<p>比如给POD固定地址：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>v1</span>
+<span style=color:#f92672>kind</span>: <span style=color:#ae81ff>Pod</span>
+<span style=color:#f92672>metadata</span>:
+  <span style=color:#f92672>name</span>: <span style=color:#ae81ff>static-ip</span>
+  <span style=color:#f92672>annotations</span>:
+    <span style=color:#f92672>ovn.kubernetes.io/ip_address</span>: <span style=color:#ae81ff>10.16.0.15</span>
+    <span style=color:#f92672>ovn.kubernetes.io/mac_address</span>: <span style=color:#ae81ff>00</span>:<span style=color:#ae81ff>00</span>:<span style=color:#ae81ff>00</span>:<span style=color:#ae81ff>53</span>:<span style=color:#ae81ff>6B:B6</span>
+<span style=color:#f92672>spec</span>:
+  <span style=color:#f92672>containers</span>:
+  - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>static-ip</span>
+    <span style=color:#f92672>image</span>: <span style=color:#ae81ff>nginx:alpine</span>
+</code></pre></div><p>或者IP池：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#f92672>ovn.kubernetes.io/ip_pool</span>: <span style=color:#ae81ff>10.16.0.15</span>,<span style=color:#ae81ff>10.16.0.16</span>,<span style=color:#ae81ff>10.16.0.17</span>
+</code></pre></div><p>kube-ovn针对kubevirt虚拟机有做特定的处理，能让kubevirt虚拟机实例在生命周期内启停，升级，迁移等操作过程中地址固定不变。</p>
+<p>除此之外，还提供容器网络QoS设置、流量镜像等功能。</p>
+<p>创建VPC、Subnet等：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#f92672>kind</span>: <span style=color:#ae81ff>Vpc</span>
+<span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>kubeovn.io/v1</span>
+<span style=color:#f92672>metadata</span>:
+  <span style=color:#f92672>name</span>: <span style=color:#ae81ff>test-vpc-1</span>
+<span style=color:#f92672>spec</span>:
+  <span style=color:#f92672>namespaces</span>:
+  - <span style=color:#ae81ff>ns1</span>
+---
+<span style=color:#f92672>kind</span>: <span style=color:#ae81ff>Subnet</span>
+<span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>kubeovn.io/v1</span>
+<span style=color:#f92672>metadata</span>:
+  <span style=color:#f92672>name</span>: <span style=color:#ae81ff>net1</span>
+<span style=color:#f92672>spec</span>:
+  <span style=color:#f92672>vpc</span>: <span style=color:#ae81ff>test-vpc-1</span>
+  <span style=color:#f92672>cidrBlock</span>: <span style=color:#ae81ff>10.0.1.0</span><span style=color:#ae81ff>/24</span>
+  <span style=color:#f92672>protocol</span>: <span style=color:#ae81ff>IPv4</span>
+  <span style=color:#f92672>namespaces</span>:
+    - <span style=color:#ae81ff>ns1</span>
+</code></pre></div><h3 id=kube-ovn架构及技术分析>kube-ovn架构及技术分析</h3>
+<p>kube-ovn通过监听自定义资源CR的创建，将这些配置翻译成网络配置并设置，主要是调用以下ovn命令行工具配置ovs：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#75715e>// pkg/ovs/ovn.go
+</span><span style=color:#75715e></span><span style=color:#66d9ef>const</span> (
+	<span style=color:#a6e22e>OvnNbCtl</span>    = <span style=color:#e6db74>&#34;ovn-nbctl&#34;</span>
+	<span style=color:#a6e22e>OvnSbCtl</span>    = <span style=color:#e6db74>&#34;ovn-sbctl&#34;</span>
+	<span style=color:#a6e22e>OVNIcNbCtl</span>  = <span style=color:#e6db74>&#34;ovn-ic-nbctl&#34;</span>
+	<span style=color:#a6e22e>OVNIcSbCtl</span>  = <span style=color:#e6db74>&#34;ovn-ic-sbctl&#34;</span>
+	<span style=color:#a6e22e>OvsVsCtl</span>    = <span style=color:#e6db74>&#34;ovs-vsctl&#34;</span>
+	<span style=color:#a6e22e>MayExist</span>    = <span style=color:#e6db74>&#34;--may-exist&#34;</span>
+	<span style=color:#a6e22e>IfExists</span>    = <span style=color:#e6db74>&#34;--if-exists&#34;</span>
+	<span style=color:#a6e22e>Policy</span>      = <span style=color:#e6db74>&#34;--policy&#34;</span>
+	<span style=color:#a6e22e>PolicyDstIP</span> = <span style=color:#e6db74>&#34;dst-ip&#34;</span>
+	<span style=color:#a6e22e>PolicySrcIP</span> = <span style=color:#e6db74>&#34;src-ip&#34;</span>
+
+	<span style=color:#a6e22e>OVSDBWaitTimeout</span> = <span style=color:#ae81ff>0</span>
+)
+</code></pre></div><p>整体架构如图所示：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/kube-ovn.jpg alt=1></p>
+<p>相对于k8s网络要求来说，ovn的能力已经超出了这个范围。即在软件交换机层面实现网络打通，而且提供了更丰富的网络功能。</p>
+<p>为了方便理解，可以做以下对比：</p>
+<p>ovs：单机软件，没有集群的概念，就好比docker或者其他容器运行时。</p>
+<p>ovn：相当于ovs的k8s，一个集中式的OVS控制面。从集群角度编排网络设施。</p>
+<p>当给一个pod分配ip地址的同时，ovn会更新对应的逻辑交换机端口：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># 容器内</span>
+/ <span style=color:#75715e># ip a</span>
+56: eth0@if57: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span style=color:#ae81ff>1400</span> qdisc noqueue state UP
+    link/ether 00:00:00:c4:e5:f9 brd ff:ff:ff:ff:ff:ff
+    inet 10.16.0.5/16 brd 10.16.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::200:ff:fec4:e5f9/64 scope link
+       valid_lft forever preferred_lft forever
+/ <span style=color:#75715e># route -n</span>
+Kernel IP routing table
+Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
+0.0.0.0         10.16.0.1       0.0.0.0         UG    <span style=color:#ae81ff>0</span>      <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span> eth0
+10.16.0.0       0.0.0.0         255.255.0.0     U     <span style=color:#ae81ff>0</span>      <span style=color:#ae81ff>0</span>        <span style=color:#ae81ff>0</span> eth0
+<span style=color:#75715e># 节点上与之对应的虚拟网卡</span>
+<span style=color:#f92672>[</span>root@vm25 ~<span style=color:#f92672>]</span><span style=color:#75715e># ip a</span>
+57: f254898cfaf5_h@if56: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#ae81ff>1400</span> qdisc noqueue master ovs-system state UP group default qlen <span style=color:#ae81ff>1000</span>
+    link/ether 62:ca:ab:20:7d:7b brd ff:ff:ff:ff:ff:ff link-netnsid <span style=color:#ae81ff>3</span>
+    inet6 fe80::60ca:abff:fe20:7d7b/64 scope link 
+       valid_lft forever preferred_lft forever
+<span style=color:#75715e># 节点上的ovs网桥连接状态</span>
+<span style=color:#f92672>[</span>root@vm24 ~<span style=color:#f92672>]</span><span style=color:#75715e># kubectl ko vsctl vm25 show</span>
+a0c00567-d1e1-4be8-b131-9e5dd1f014f8
+    Bridge br-int
+        fail_mode: secure
+        datapath_type: system
+        Port f254898cfaf5_h
+            Interface f254898cfaf5_h
+        ...
+    ovs_version: <span style=color:#e6db74>&#34;2.17.7&#34;</span>
+
+<span style=color:#75715e># 查看ovs北向连接状态</span>
+<span style=color:#f92672>[</span>root@vm24 ~<span style=color:#f92672>]</span><span style=color:#75715e># kubectl ko nbctl show</span>
+switch cf603059-294b-4147-a3b4-98ddb45cb051 <span style=color:#f92672>(</span>ovn-default<span style=color:#f92672>)</span> <span style=color:#75715e># 虚拟交换机信息</span>
+    port static-mul-vm-ip.default   <span style=color:#75715e># 连接到容器的端口</span>
+        addresses: <span style=color:#f92672>[</span><span style=color:#e6db74>&#34;00:00:00:C4:E5:F9 10.16.0.5&#34;</span><span style=color:#f92672>]</span>
+    ...
+switch 626913df-9994-42ad-96e3-330a8fec1f08 <span style=color:#f92672>(</span>join<span style=color:#f92672>)</span>
+    port node-vm25
+        addresses: <span style=color:#f92672>[</span><span style=color:#e6db74>&#34;00:00:00:72:50:54 100.64.0.3&#34;</span><span style=color:#f92672>]</span>
+    port node-vm24
+        addresses: <span style=color:#f92672>[</span><span style=color:#e6db74>&#34;00:00:00:49:34:29 100.64.0.2&#34;</span><span style=color:#f92672>]</span>
+    port node-vm26
+        addresses: <span style=color:#f92672>[</span><span style=color:#e6db74>&#34;00:00:00:0A:39:76 100.64.0.4&#34;</span><span style=color:#f92672>]</span>
+    port join-ovn-cluster
+        type: router
+        router-port: ovn-cluster-join
+router e0926da7-aca3-4c41-821d-3bc5305ebf1c <span style=color:#f92672>(</span>ovn-cluster<span style=color:#f92672>)</span> <span style=color:#75715e># 路由信息</span>
+    port ovn-cluster-join
+        mac: <span style=color:#e6db74>&#34;00:00:00:42:79:A9&#34;</span>
+        networks: <span style=color:#f92672>[</span><span style=color:#e6db74>&#34;100.64.0.1/16&#34;</span><span style=color:#f92672>]</span>
+    port ovn-cluster-ovn-default
+        mac: <span style=color:#e6db74>&#34;00:00:00:BE:79:30&#34;</span>
+        networks: <span style=color:#f92672>[</span><span style=color:#e6db74>&#34;10.16.0.1/16&#34;</span><span style=color:#f92672>]</span>  <span style=color:#75715e># 容器所指向的网关</span>
+</code></pre></div><h2 id=多网卡方案>多网卡方案</h2>
+<p>目前主流的多网卡方案都是采用<a href=https://github.com/k8snetworkplumbingwg/multus-cni target=_blank>multus-cni</a>来实现多网卡功能，multus-cni是英特尔公司开源的多网卡的解决方案。</p>
+<h3 id=部署>部署</h3>
+<p>multus-cni允许POD通过不同的接口连接到多个网络，并且每个接口都将使用其自己的CNI插件。</p>
+<p>构建高性能网络可以采用sr-iov、dpdk的方案。但这需要硬件网卡的支持。我们用multus和macvlan的方案实现pod多网卡的功能。</p>
+<p>macvlan是linux内核实现的功能，它可以实现虚拟化多个物理网络接口（NIC）并为每个虚拟接口分配一个唯一的MAC地址。</p>
+<p>开启macvlan需要内核编译并加载模块，可以使用以下方法：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># 查看内核是否加载了 macvlan 模块</span>
+lsmod | grep macvlan 
+<span style=color:#75715e># 加载 macvlan</span>
+modprobe macvlan
+</code></pre></div><p>其余操作按照官网部署即可：https://github.com/k8snetworkplumbingwg/multus-cni/blob/master/docs/quickstart.md</p>
+<h3 id=功能使用-1>功能使用</h3>
+<p>首先创建一个NetworkAttachmentDefinition CR 用于配置POD的网卡。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>k8s.cni.cncf.io/v1</span>
+<span style=color:#f92672>kind</span>: <span style=color:#ae81ff>NetworkAttachmentDefinition</span>
+<span style=color:#f92672>metadata</span>:
+  <span style=color:#f92672>name</span>: <span style=color:#ae81ff>macvlaneip</span>
+  <span style=color:#f92672>namespace</span>: <span style=color:#ae81ff>default</span>
+<span style=color:#f92672>spec</span>:
+  <span style=color:#f92672>config</span>: &gt;-<span style=color:#e6db74>
+</span><span style=color:#e6db74>    {
+</span><span style=color:#e6db74>      &#34;cniVersion&#34;: &#34;0.3.0&#34;,
+</span><span style=color:#e6db74>      &#34;type&#34;: &#34;macvlan&#34;,
+</span><span style=color:#e6db74>      &#34;master&#34;: &#34;eth0&#34;,
+</span><span style=color:#e6db74>      &#34;mode&#34;: &#34;bridge&#34;,
+</span><span style=color:#e6db74>      &#34;ipam&#34;: {
+</span><span style=color:#e6db74>        &#34;type&#34;: &#34;kube-ovn&#34;,
+</span><span style=color:#e6db74>        &#34;server_socket&#34;: &#34;/run/openvswitch/kube-ovn-daemon.sock&#34;,
+</span><span style=color:#e6db74>        &#34;provider&#34;: &#34;macvlaneip.default&#34;
+</span><span style=color:#e6db74>      }
+</span><span style=color:#e6db74>    }</span>    
+</code></pre></div><p>这里直接对接的是kube-ovn插件。</p>
+<p>type表示所使用的多网卡的方案类型，macvlan、sriov。
+master是macvlan类型特有的配置，有5种模式。</p>
+<p>provider表示当前 NetworkAttachmentDefinition 的 <code>&lt;name>.&lt;namespace></code> , Kube-OVN 将会使用这些信息找到对应的 Subnet 资源。并从Subnet里分配IP。</p>
+<p>创建对应的Subnet和POD：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>kubeovn.io/v1</span>
+<span style=color:#f92672>kind</span>: <span style=color:#ae81ff>Subnet</span>
+<span style=color:#f92672>metadata</span>:
+  <span style=color:#f92672>name</span>: <span style=color:#ae81ff>macvlaneip</span>
+<span style=color:#f92672>spec</span>:
+  <span style=color:#f92672>cidrBlock</span>: <span style=color:#ae81ff>192.168.101.0</span><span style=color:#ae81ff>/24</span>
+  <span style=color:#f92672>excludeIps</span>:
+    - <span style=color:#ae81ff>192.168.101.1</span><span style=color:#ae81ff>..192.168.101.56</span>
+    - <span style=color:#ae81ff>192.168.101.59</span><span style=color:#ae81ff>..192.168.101.255</span>
+  <span style=color:#f92672>gateway</span>: <span style=color:#ae81ff>192.168.101.1</span>
+  <span style=color:#f92672>protocol</span>: <span style=color:#ae81ff>IPv4</span>
+  <span style=color:#f92672>provider</span>: <span style=color:#ae81ff>macvlaneip.default</span> <span style=color:#75715e># 与上面的provider一致</span>
+---
+<span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>v1</span>
+<span style=color:#f92672>kind</span>: <span style=color:#ae81ff>Pod</span>
+<span style=color:#f92672>metadata</span>:
+  <span style=color:#f92672>name</span>: <span style=color:#ae81ff>static-mul-eip</span>
+  <span style=color:#f92672>namespace</span>: <span style=color:#ae81ff>default</span>
+  <span style=color:#f92672>annotations</span>:
+    <span style=color:#f92672>k8s.v1.cni.cncf.io/networks</span>: <span style=color:#ae81ff>macvlaneip@nic1</span>
+<span style=color:#f92672>spec</span>:
+  <span style=color:#f92672>containers</span>:
+    - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>static-ip</span>
+      <span style=color:#f92672>image</span>: <span style=color:#ae81ff>nginx:alpine</span>
+</code></pre></div><p>从容器中可以看到 nic1 是我们添加的网卡：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash> <span style=color:#75715e># ip addr</span>
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span style=color:#ae81ff>65536</span> qdisc noqueue state UNKNOWN qlen <span style=color:#ae81ff>1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+2: tunl0@NONE: &lt;NOARP&gt; mtu <span style=color:#ae81ff>1480</span> qdisc noop state DOWN qlen <span style=color:#ae81ff>1000</span>
+    link/ipip 0.0.0.0 brd 0.0.0.0
+3: nic1@tunl0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span style=color:#ae81ff>1500</span> qdisc noqueue state UP
+    link/ether aa:1c:38:5f:82:be brd ff:ff:ff:ff:ff:ff
+    inet 192.168.101.57/24 brd 192.168.101.255 scope global nic1
+       valid_lft forever preferred_lft forever
+208: eth0@if209: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span style=color:#ae81ff>1400</span> qdisc noqueue state UP
+    link/ether 00:00:00:af:ee:fd brd ff:ff:ff:ff:ff:ff
+    inet 10.16.0.127/16 brd 10.16.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+</code></pre></div><h3 id=原理介绍>原理介绍</h3>
+<p>multus实现的原理如图所示：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/multus.jpg alt=1></p>
+<p>当创建pod时，Kubelet 会调用其容器运行时（如 Docker 或 containerd）设置 pod。Kubelet 还为容器运行时提供一个网络插件包装程序，用于配置其网络。此处指 Multus CNI 插件。Multus 可与配置文件一起使用，支持使用网络对象或二者的组合。在所有这些模式中，Multus 读取配置，将设置网络的实际任务转移至其他被称为代理 (delegate) 的 CNI 插件。</p>
+<p>Multus 然后为每个代理（CNI 插件及其相应配置）调用 delegateAdd()。然后，它们调用自己的 confAdd()函数，以添加 Pod 的网络接口。这些代理定义需调用的 CNI 插件和它们的参数。这些 CNI 插件的参数可作为 CRD 对象存储在 Kubernetes 中。</p>
+<p>Multus 利用 pod 注释中的网络信息创建更多网络。通过获取 pod 注释，Multus 将确定应调用其他哪些 CNI 插件。</p>
+<h2 id=kubevirt>Kubevirt</h2>
+<p>结合 Kube-OVN（Overlay模式） 和 Kubevirt，通过控制网络所属的 VPC 和 Subnet 来实现不同的 VM 落在不同的租户网络，从而实现整个虚拟化方案的多租户。</p>
+<p>而且 Kube-OVN（Overlay模式） 还提供了租户内的 LB/EIP/NAT/Route Table 等功能，能够像控制传统虚拟化网络一样来控制云原生虚拟化下的网络。</p>
+<h3 id=vm网络>VM网络</h3>
+<p>kubevirt 启动时，会首先启动启动virt-launcher Pod，通过virt-launcher配置虚拟机的网络。virt-launcher Pod中会启动compute容器用与执行qemu和libvirt进程。整个网络装载过程如图：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/kubevirt-network.jpg alt=1></p>
+<p>首先由kube-ovn-cni为virt-launcher POD通过veth pair（类似于管道通向两端）的方式将kube-ovn ovs 网桥 xxx_h 与容器中的 eth0 连接起来。</p>
+<p>然后kubevirt会将virt-launcher POD eth0网卡创建网桥k6t-eth0和tap0设备，tap0设备用于连接到VM中的eth0。</p>
+<p><strong>虚拟机层面</strong></p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>$ ip a
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span style=color:#ae81ff>65536</span> qdisc noqueue qlen <span style=color:#ae81ff>1</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host 
+       valid_lft forever preferred_lft forever
+2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#ae81ff>1400</span> qdisc pfifo_fast qlen <span style=color:#ae81ff>1000</span>
+    link/ether 52:54:00:1f:04:35 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.2/24 brd 10.0.2.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::5054:ff:fe1f:435/64 scope link 
+       valid_lft forever preferred_lft forever
+$ ip route
+default via 10.0.2.1 dev eth0 
+10.0.2.0/24 dev eth0  src 10.0.2.2 
+</code></pre></div><p><strong>POD 层面</strong></p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>bash-5.1$ ip route
+default via 10.16.0.1 dev eth0
+10.0.2.0/24 dev k6t-eth0 proto kernel scope link src 10.0.2.1
+10.16.0.0/16 dev eth0 proto kernel scope link src 10.16.0.25
+bash-5.1$ ./brctl show
+bridge name     bridge id               STP enabled     interfaces
+k6t-eth0                8000.020000000000       no              tap0
+bash-5.1$ ip a
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span style=color:#ae81ff>65536</span> qdisc noqueue state UNKNOWN group default qlen <span style=color:#ae81ff>1000</span>
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+2: k6t-eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#ae81ff>1400</span> qdisc noqueue state UP group default
+    link/ether 02:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff
+    inet 10.0.2.1/24 brd 10.0.2.255 scope global k6t-eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::ff:fe00:0/64 scope link
+       valid_lft forever preferred_lft forever
+3: tap0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#ae81ff>1400</span> qdisc fq_codel master k6t-eth0 state UP group default qlen <span style=color:#ae81ff>1000</span>
+    link/ether b6:87:36:f4:9b:8a brd ff:ff:ff:ff:ff:ff
+    inet6 fe80::b487:36ff:fef4:9b8a/64 scope link
+       valid_lft forever preferred_lft forever
+75: eth0@if76: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#ae81ff>1400</span> qdisc noqueue state UP group default
+    link/ether 00:00:00:e6:52:13 brd ff:ff:ff:ff:ff:ff link-netnsid <span style=color:#ae81ff>0</span>
+    inet 10.16.0.25/16 brd 10.16.255.255 scope global eth0
+       valid_lft forever preferred_lft forever
+    inet6 fe80::200:ff:fee6:5213/64 scope link
+       valid_lft forever preferred_lft forever
+</code></pre></div><p><strong>k8s节点层面</strong></p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml>[<span style=color:#ae81ff>root@vm26 ~]# ip a</span>
+<span style=color:#f92672>76: ef1d592ced89_h@if75</span>: <span style=color:#ae81ff>&lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1400 qdisc noqueue master ovs-system state UP group default qlen 1000</span>
+    <span style=color:#ae81ff>link/ether e2:ed:1d:c1:8b:4e brd ff:ff:ff:ff:ff:ff link-netnsid 0</span>
+    <span style=color:#ae81ff>inet6 fe80::e0ed:1dff:fec1:8b4e/64 scope link </span>
+       <span style=color:#f92672>valid_lft forever preferred_lft forever76: ef1d592ced89_h@if75</span>: <span style=color:#ae81ff>&lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1400 qdisc noqueue master ovs-system state UP group default qlen 1000</span>
+    <span style=color:#ae81ff>link/ether e2:ed:1d:c1:8b:4e brd ff:ff:ff:ff:ff:ff link-netnsid 0</span>
+    <span style=color:#ae81ff>inet6 fe80::e0ed:1dff:fec1:8b4e/64 scope link </span>
+       <span style=color:#ae81ff>valid_lft forever preferred_lft forever</span>
+[<span style=color:#ae81ff>root@vm24 ~]# kubectl ko vsctl vm26 show</span>
+<span style=color:#ae81ff>9a3df829-3706-4c1d-bd7a-85cc0c9061c5</span>
+    <span style=color:#ae81ff>Bridge br-int</span>
+        <span style=color:#f92672>fail_mode</span>: <span style=color:#ae81ff>secure</span>
+        <span style=color:#f92672>datapath_type</span>: <span style=color:#ae81ff>system</span>
+        <span style=color:#ae81ff>Port ef1d592ced89_h</span>
+            <span style=color:#ae81ff>Interface ef1d592ced89_h</span>
+        <span style=color:#ae81ff>...</span>
+    <span style=color:#f92672>ovs_version</span>: <span style=color:#e6db74>&#34;2.17.7&#34;</span>
+<span style=color:#75715e># 查看ovn南向连接状态</span>
+[<span style=color:#ae81ff>root@vm24 ~]# kubectl ko sbctl show</span>
+<span style=color:#ae81ff>Chassis &#34;f1a48d0c-42b0-43ba-894c-09089e7e0df9&#34;</span>
+    <span style=color:#f92672>hostname</span>: <span style=color:#ae81ff>vm24</span>
+    <span style=color:#ae81ff>Encap geneve</span>
+        <span style=color:#f92672>ip</span>: <span style=color:#e6db74>&#34;192.168.101.24&#34;</span>
+        <span style=color:#f92672>options</span>: {<span style=color:#ae81ff>csum=&#34;true&#34;}</span>
+    <span style=color:#ae81ff>Port_Binding cdi-deployment-69d44b67b5-65v7d.cdi</span>
+    <span style=color:#ae81ff>...</span>
+<span style=color:#ae81ff>Chassis &#34;a54d8da5-1c31-4180-bd39-bdc7bcaf41cc&#34;</span>
+    <span style=color:#f92672>hostname</span>: <span style=color:#ae81ff>vm25</span>
+    <span style=color:#ae81ff>Encap geneve</span>
+        <span style=color:#f92672>ip</span>: <span style=color:#e6db74>&#34;192.168.101.25&#34;</span>
+        <span style=color:#f92672>options</span>: {<span style=color:#ae81ff>csum=&#34;true&#34;}</span>
+    <span style=color:#ae81ff>Port_Binding virt-operator-6dfbd947b4-fppk4.kubevirt</span>
+    <span style=color:#ae81ff>...</span>
+<span style=color:#ae81ff>Chassis &#34;5e051e73-b926-470d-9c99-8f1604b7bf8d&#34;</span>
+    <span style=color:#f92672>hostname</span>: <span style=color:#ae81ff>vm26</span>
+    <span style=color:#ae81ff>Encap geneve</span>
+        <span style=color:#f92672>ip</span>: <span style=color:#e6db74>&#34;192.168.101.26&#34;</span>
+        <span style=color:#f92672>options</span>: {<span style=color:#ae81ff>csum=&#34;true&#34;}</span>
+    <span style=color:#ae81ff>Port_Binding testvm.default</span>
+    <span style=color:#ae81ff>...</span>
+<span style=color:#75715e># 查看ovn北向连接状态</span>
+[<span style=color:#ae81ff>root@vm24 ~]# kubectl ko nbctl show</span>
+<span style=color:#ae81ff>switch cf603059-294b-4147-a3b4-98ddb45cb051 (ovn-default)</span>
+    <span style=color:#ae81ff>port testvm.default</span>
+        <span style=color:#f92672>addresses</span>: [<span style=color:#e6db74>&#34;00:00:00:E6:52:13 10.16.0.25&#34;</span>]
+    <span style=color:#ae81ff>port virt-handler-hxbpw.kubevirt</span>
+        <span style=color:#f92672>addresses</span>: [<span style=color:#e6db74>&#34;00:00:00:CC:6D:4D 10.16.0.23&#34;</span>]
+    <span style=color:#ae81ff>...</span>
+<span style=color:#ae81ff>switch 626913df-9994-42ad-96e3-330a8fec1f08 (join)</span>
+    <span style=color:#ae81ff>port node-vm25</span>
+        <span style=color:#f92672>addresses</span>: [<span style=color:#e6db74>&#34;00:00:00:72:50:54 100.64.0.3&#34;</span>]
+    <span style=color:#ae81ff>port node-vm24</span>
+        <span style=color:#f92672>addresses</span>: [<span style=color:#e6db74>&#34;00:00:00:49:34:29 100.64.0.2&#34;</span>]
+    <span style=color:#ae81ff>port node-vm26</span>
+        <span style=color:#f92672>addresses</span>: [<span style=color:#e6db74>&#34;00:00:00:0A:39:76 100.64.0.4&#34;</span>]
+    <span style=color:#ae81ff>port join-ovn-cluster</span>
+        <span style=color:#f92672>type</span>: <span style=color:#ae81ff>router</span>
+        <span style=color:#f92672>router-port</span>: <span style=color:#ae81ff>ovn-cluster-join</span>
+<span style=color:#ae81ff>router e0926da7-aca3-4c41-821d-3bc5305ebf1c (ovn-cluster)</span>
+    <span style=color:#ae81ff>port ovn-cluster-join</span>
+        <span style=color:#f92672>mac</span>: <span style=color:#e6db74>&#34;00:00:00:42:79:A9&#34;</span>
+        <span style=color:#f92672>networks</span>: [<span style=color:#e6db74>&#34;100.64.0.1/16&#34;</span>]
+    <span style=color:#ae81ff>port ovn-cluster-ovn-default</span>
+        <span style=color:#f92672>mac</span>: <span style=color:#e6db74>&#34;00:00:00:BE:79:30&#34;</span>
+        <span style=color:#f92672>networks</span>: [<span style=color:#e6db74>&#34;10.16.0.1/16&#34;</span>]
+</code></pre></div><p>目前kubevirt支持的配置：</p>
+<h3 id=pod网络桥接方式>pod网络，桥接方式</h3>
+<p>在网桥模式下，虚拟机通过一个 linux网桥连接到网络后端。这种方式会导致pod没有ip（给了虚拟机），在使用第三方mesh网络如Istio会不兼容，官网有提示。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml>    <span style=color:#f92672>spec</span>:
+      <span style=color:#f92672>domain</span>:
+        <span style=color:#f92672>devices</span>:
+          <span style=color:#f92672>interfaces</span>: <span style=color:#75715e># 前端</span>
+            - <span style=color:#f92672>bridge</span>: {}
+              <span style=color:#f92672>name</span>: <span style=color:#ae81ff>default</span>
+              <span style=color:#f92672>ports</span>:
+                - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>ssh</span>
+                  <span style=color:#f92672>port</span>: <span style=color:#ae81ff>22</span>
+      <span style=color:#f92672>networks</span>: <span style=color:#75715e># 后端</span>
+        - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>default</span>
+          <span style=color:#f92672>pod</span>: {}
+</code></pre></div><h3 id=pod网络masquerade伪装方式>pod网络，masquerade(伪装)方式</h3>
+<p>在伪装模式下，KubeVirt 将内部 IP 地址分配（DHCP）给虚拟机，并将它们隐藏在 NAT 之后。所有退出虚拟机的通信都是使用 pod IP 地址进行NAT的。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml>    <span style=color:#f92672>spec</span>:
+      <span style=color:#f92672>domain</span>:
+        <span style=color:#f92672>devices</span>:
+          <span style=color:#f92672>interfaces</span>: <span style=color:#75715e># 前端</span>
+            - <span style=color:#f92672>masquerade</span>: {}
+              <span style=color:#f92672>name</span>: <span style=color:#ae81ff>default</span>
+              <span style=color:#f92672>ports</span>:
+                - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>ssh</span>
+                  <span style=color:#f92672>port</span>: <span style=color:#ae81ff>22</span>
+      <span style=color:#f92672>networks</span>: <span style=color:#75715e># 后端</span>
+        - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>default</span>
+          <span style=color:#f92672>pod</span>: {}
+</code></pre></div><h3 id=vm热迁移>VM热迁移</h3>
+<p>KubeVirt热迁移在固定 IP 的场景下，由于 KubeVirt 在热迁移中使用 default network 进行状态的同步，通过结合 multus-cni 将业务网络和迁移网络分离，可以在功能层面实现热迁移过程中的地址固定。</p>
+<p>使用kube-ovn注解可以使pod或vm固定ip：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>kubevirt.io/v1alpha3</span>
+<span style=color:#f92672>kind</span>: <span style=color:#ae81ff>VirtualMachine</span>
+<span style=color:#f92672>metadata</span>:
+  <span style=color:#f92672>name</span>: <span style=color:#ae81ff>testvm</span>
+<span style=color:#f92672>spec</span>:
+  <span style=color:#f92672>template</span>:
+    <span style=color:#f92672>metadata</span>:
+      <span style=color:#f92672>annotations</span>:
+        <span style=color:#f92672>ovn.kubernetes.io/ip_address</span>: <span style=color:#ae81ff>10.16.0.15</span>
+</code></pre></div><p>kube-ovn针对kubevirt场景提供了<code>--keep-vm-ip=true</code>参数，能够在VM生命周期内保持IP不变。</p>
+<h3 id=网络直通与高性能网络>网络直通与高性能网络</h3>
+<p>由于VM网络可以直接使用POD网络，所以通过multus-cni可以对POD/VM配置多个网卡。在某些场景下，如需要给POD/VM分配一个节点网段的IP就需要挂载直通网络到POD/VM，主流的方案有以下几种：</p>
+<h4 id=macvtap--multus>macvtap + multus</h4>
+<p>macvtap是kubevirt官方推行的一种方式，能够分配给VM一个MAC使VM与k8s节点处于L2同一层网络。</p>
+<p>目前仍属于特性开关阶段。试了一下能够分配MAC但是无IP。、</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#f92672>apiVersion</span>: <span style=color:#ae81ff>k8s.cni.cncf.io/v1</span>
+<span style=color:#f92672>kind</span>: <span style=color:#ae81ff>NetworkAttachmentDefinition</span>
+<span style=color:#f92672>metadata</span>:
+  <span style=color:#f92672>name</span>: <span style=color:#ae81ff>dataplane</span>
+  <span style=color:#f92672>namespace</span>: <span style=color:#ae81ff>default</span>
+<span style=color:#f92672>spec</span>:
+  <span style=color:#f92672>config</span>: &gt;-<span style=color:#e6db74>
+</span><span style=color:#e6db74>    { &#34;cniVersion&#34;: &#34;0.3.1&#34;, &#34;name&#34;: &#34;dataplane&#34;, &#34;type&#34;: &#34;macvtap&#34;, &#34;mtu&#34;: 1500
+</span><span style=color:#e6db74>    }</span>    
+---
+    <span style=color:#f92672>spec</span>:
+      <span style=color:#f92672>domain</span>:
+        <span style=color:#f92672>devices</span>:
+          <span style=color:#f92672>interfaces</span>:
+            - <span style=color:#f92672>macvtap</span>: {}
+              <span style=color:#f92672>name</span>: <span style=color:#ae81ff>attachnet</span>
+            - <span style=color:#f92672>masquerade</span>: {}
+              <span style=color:#f92672>name</span>: <span style=color:#ae81ff>default</span>
+      <span style=color:#f92672>networks</span>:
+        - <span style=color:#f92672>multus</span>:
+            <span style=color:#f92672>networkName</span>: <span style=color:#ae81ff>dataplane</span>
+          <span style=color:#f92672>name</span>: <span style=color:#ae81ff>attachnet</span>
+        - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>default</span>
+          <span style=color:#f92672>pod</span>: {}
+</code></pre></div><h4 id=macvlan--multus--桥接--单网卡>macvlan + multus + 桥接 + 单网卡</h4>
+<p>macvlan方式在POD上能正常工作，但是由于kubevirt VM网络的特性，会占用POD的MAC（官网有解释），导致无法正确配置POD网络。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml>    <span style=color:#f92672>spec</span>:
+      <span style=color:#f92672>domain</span>:
+        <span style=color:#f92672>devices</span>:
+          <span style=color:#f92672>interfaces</span>:
+            - <span style=color:#f92672>bridge</span>: {}
+              <span style=color:#f92672>name</span>: <span style=color:#ae81ff>default</span>
+              <span style=color:#f92672>ports</span>:
+                - <span style=color:#f92672>name</span>: <span style=color:#ae81ff>ssh</span>
+                  <span style=color:#f92672>port</span>: <span style=color:#ae81ff>22</span>
+      <span style=color:#f92672>networks</span>:
+        - <span style=color:#f92672>multus</span>:
+            <span style=color:#f92672>networkName</span>: <span style=color:#ae81ff>default/macvlaneip</span>
+          <span style=color:#f92672>name</span>: <span style=color:#ae81ff>default</span>
+</code></pre></div><h4 id=ipvlan--multus--桥接--单网卡>ipvlan + multus + 桥接 + 单网卡</h4>
+<p>ipvlan需要Linux内核高版本支持，与macvlan一样同样存在问题。</p>
+<p><a href=https://kubevirt.io/user-guide/virtual_machines/interfaces_and_networks/#invalid-cnis-for-secondary-networks target=_blank>invalid-cnis-for-secondary-network</a></p>
+<p>有待研究的方案：</p>
+<ul>
+<li>sriov + multus</li>
+<li>dpdk结合：目前kube-von的dpdk方案还不成熟，只有商用版提供。</li>
+<li>underlay模式打通pod和VM和k8s节点的网络</li>
+</ul>
+<p>以上方式均直接与节点上的物理网络直接联通，所以网络流向是无法经过ovn的ovs，从而也无法做到隔离的要求。因此需要考虑一种既能高效给VM分配网络也能对网络设备进行策略和限制的方法。目前没有成熟的方案。</p>
+<h4 id=与社区讨论的方案vhost补丁--策略挂载需要定制化开发>与社区讨论的方案：vhost补丁 + 策略/挂载（需要定制化开发）</h4>
+<p>vhost 补丁是一种用于优化虚拟机网络性能的技术。在传统的虚拟化技术中，虚拟机网络通信需要经过虚拟交换机和虚拟网卡，这会导致一定的性能损失。而使用 vhost 补丁，可以将虚拟机网络通信的处理流程转移到宿主机的内核空间中，从而避免了虚拟交换机和虚拟网卡的性能损失。这样可以显著提高虚拟机网络性能。</p>
+<h2 id=与传统ovn的区别>与传统OVN的区别</h2>
+<p>kube-ovn实际上使用的是传统ovn的能力而且实现了CNI功能为POD提供网络能力，并且以k8s作为部署的方式。可以理解为部署了一套ovn的同时实现了CNI的功能来解决k8s的网络问题。因此如果能将cni功能单独抽出来做成“可以对接OVN的CNI组件”既能满足可拆可堆叠的系统。</p>
+<p>从OVN系统获取一个IP的详细过程如下:</p>
+<ol>
+<li>
+<p>OVN控制器从地址池选择一个可用IP</p>
+</li>
+<li>
+<p>OVN控制器更新ovs数据库,将IP绑定到虚拟机接口</p>
+</li>
+<li>
+<p>ovn-sb通过流表在OVS实现IP和接口的绑定</p>
+</li>
+<li>
+<p>虚拟机通过DHCP或手动配置获取绑定的IP</p>
+</li>
+<li>
+<p>虚拟机使用该IP与外部网络通信</p>
+</li>
+</ol>
+<p>整个过程由OVN控制器自动完成。</p>
+<p>而kube-ovn的区别如下：</p>
+<ol>
+<li>
+<p>kube-ovn在OVN中创建逻辑网络和预分配IP地址池</p>
+</li>
+<li>
+<p>Pod创建时,kube-ovn在OVN中为Pod创建逻辑port</p>
+</li>
+<li>
+<p>kube-ovn从地址池为Pod选择一个IP并绑定到逻辑port</p>
+</li>
+<li>
+<p>kube-ovn在K8S为Pod的接口配置选择的IP地址</p>
+</li>
+<li>
+<p>kubelet根据IP配置Pod网络,Pod使用该IP与OVN通信</p>
+</li>
+<li>
+<p>Pod删除时,kube-ovn释放逻辑port的IP回收到地址池</p>
+</li>
+</ol>
+<p>整个过程由kube-ovn控制器自动完成,K8S用户不需要任何操作。</p>
+<p>因此，这里的区别是给虚拟机分配IP和给容器分配IP，需要一个统一的方法。</p>
+<h2 id=总结>总结</h2>
+<p>Kube-OVN是一个基于OVN和Kubernetes的网络解决方案，具有多租户网络、多网络拓扑、灵活的网络策略和高度自动化等特点，还能通过集成其他cni插件如Cilium来加速网络。通过软件交换机的方式打通网络，配合multus-cni多网卡，对于容器直通能够比较好的支持,kubevirt虚拟机直通也有比较多的方案。</p>
+<p>目前kube-ovn仍在处于发展阶段，许多特性成熟度仍在Alpha阶段：Cilium 集成、DPDK 支持、Underlay 和 Overlay 互通等。</p>
+<p>更加深入ovn相关的知识，有待充电。参考下方的文档链接。</p>
+<h2 id=名词解释>名词解释</h2>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>名词</th>
+<th style=text-align:left>英文或缩写</th>
+<th style=text-align:left>解释</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>OVS</td>
+<td style=text-align:left>Open vSwitch</td>
+<td style=text-align:left>是一种开源的虚拟交换机，它通过软件定义网络（SDN）技术实现了高性能的虚拟网络功能。</td>
+</tr>
+<tr>
+<td style=text-align:left>OVN</td>
+<td style=text-align:left>Open Virtual Network</td>
+<td style=text-align:left>在OVS之上构建的一种虚拟网络解决方案，它提供了以逻辑为基础的网络虚拟化功能和服务。</td>
+</tr>
+<tr>
+<td style=text-align:left>VLAN</td>
+<td style=text-align:left>Virtual Local Area Network</td>
+<td style=text-align:left>虚拟局域网。它是一种将物理局域网划分为多个逻辑上的虚拟子网的技术。</td>
+</tr>
+<tr>
+<td style=text-align:left>MacVLAN</td>
+<td style=text-align:left>-</td>
+<td style=text-align:left>MacVLAN是一种Linux内核网络驱动程序，它可以实现虚拟化多个物理网络接口（NIC）并为每个虚拟接口分配一个唯一的MAC地址，从而使得每个虚拟接口可以像独立的物理接口一样运行。</td>
+</tr>
+<tr>
+<td style=text-align:left>VXLAN</td>
+<td style=text-align:left>-</td>
+<td style=text-align:left>VXLAN是一种网络虚拟化技术，它可以扩展虚拟局域网（VLAN）的数量，提高虚拟网络的可扩展性。VXLAN通过将VLAN封装在UDP数据包中，实现了在物理网络之上建立逻辑网络的功能，从而实现了跨物理网络的通信。</td>
+</tr>
+<tr>
+<td style=text-align:left>Overlay网络</td>
+<td style=text-align:left>-</td>
+<td style=text-align:left>一种虚拟网络，它是建立在底层物理网络之上的。Overlay网络可以将多个物理网络连接成一个逻辑网络，从而实现跨物理网络的通信。</td>
+</tr>
+<tr>
+<td style=text-align:left>Underlay网络</td>
+<td style=text-align:left>-</td>
+<td style=text-align:left>底层物理网络，它是构成Overlay网络的基础设施。Underlay网络是由物理设备、物理链路和物理协议组成的，它负责传输Overlay网络中的数据包。</td>
+</tr>
+<tr>
+<td style=text-align:left>IPAM</td>
+<td style=text-align:left>Internet Protocol Address Management</td>
+<td style=text-align:left>一种网络管理方法，用于管理和分配 IP 地址和子网。它通常用于大型企业、ISP（Internet Service Provider）和数据中心等组织，以帮助管理和优化网络地址使用。</td>
+</tr>
+<tr>
+<td style=text-align:left>VPC</td>
+<td style=text-align:left>Virtual Private Cloud</td>
+<td style=text-align:left>是一种虚拟化的网络环境，它可以在公共云上创建一个私有的、隔离的网络环境，使得用户可以在这个网络环境中运行其计算资源和应用程序，同时也可以控制网络的访问和安全性。</td>
+</tr>
+<tr>
+<td style=text-align:left>QoS</td>
+<td style=text-align:left>Quality of Service</td>
+<td style=text-align:left>一种网络管理方法，用于优化网络资源的使用和分配，以提供更高的网络性能、可靠性和可用性，同时满足不同类型的网络流量对网络的不同要求。</td>
+</tr>
+<tr>
+<td style=text-align:left>CIDR</td>
+<td style=text-align:left>Classless Inter-Domain Routing</td>
+<td style=text-align:left>一种 IP 地址分配和路由选择的方法，它可以更有效地利用 IP 地址，并简化网络地址的管理和配置。例如“192.168.1.0/24”，其中“/24”表示网络前缀有 24 位。</td>
+</tr>
+<tr>
+<td style=text-align:left>Geneve</td>
+<td style=text-align:left>Generic Network Virtualization Encapsulation</td>
+<td style=text-align:left>一种网络虚拟化协议，用于在云计算和虚拟化环境中实现网络隔离和多租户网络，好比下一代vxlan</td>
+</tr>
+<tr>
+<td style=text-align:left>南北流量</td>
+<td style=text-align:left>North-South Traffic</td>
+<td style=text-align:left>指在网络中从内部网络流向外部网络（例如从企业内部网络流向公共互联网）的流量。</td>
+</tr>
+<tr>
+<td style=text-align:left>东西流量</td>
+<td style=text-align:left>East-West Traffic</td>
+<td style=text-align:left>指在网络中从内部网络中的一个子网或部门流向另一个子网或部门的流量。与南北流量不同，东西流量主要发生在内部网络中，通常不需要经过网络边界设备进行转发和处理，而是直接在内部网络中进行通信。</td>
+</tr>
+</tbody>
+</table>
+<h2 id=环境信息>环境信息</h2>
+<p>xen,开启仿真模式：http://192.168.101.24:30036/
+kvm: http://192.168.239.122:30036/</p>
+<h2 id=使用过程中遇到的问题>使用过程中遇到的问题</h2>
+<p>1、使用kube-ovn配置外部网关过程中，配置ovn-external-gw-config时，误将external-gw-nic设置成eth0即节点主要的沟通网卡，导致节点无法ssh连接，也无法ping通内外网络。该节点成为了孤岛，重启无效。询问社区也无法解决。最后在集群删除节点然后恢复快照，重新添加到集群解决。</p>
+<p>2、ovn-external-gw-config配置外部网关错误导致虚拟交换机与物理交换机形成环路，同一局域网内网络崩溃（待确认），相关issue：https://github.com/kubeovn/kube-ovn/issues/2184</p>
+<p>3、在k3s+kube-ovn+multus-cni+kubevirt+kvm环境下创建的虚拟机，出现ssh无法连接的情况，可能跟内核版本有关，待排查。</p>
+<p>4、部署k3s时使用环境变量会将环境变量持久化到<code>/etc/systemd/system/k3s.service.env</code>文件。如果使用代理可能会造成k3s无法访问pod或者svc网络。</p>
+<p>5、与kube-ovn结合使用时，如果使用ovn做容器网络，macvlan、ipvlan等方式无法桥接到vm使用，无法使用ovs网络模型。</p>
+<p>6、目前只能通过vm使用pod的网络的方式使用ovs网络模型，但是性能待测试。（如果采用underlay模式则无法做到vpc隔离）</p>
+<p>7、资源占用问题，每一个pod需要qemu、virt-launcher、virt-launcher-monitor进程</p>
+<h2 id=参考文档>参考文档</h2>
+<p><a href=https://kubeovn.github.io/docs/v1.11.x/ target=_blank>kubeovn</a></p>
+<p><a href=https://toutiao.io/posts/0s3ct9/preview target=_blank>基于 OVN 的 Kubernetes 网络架构解析</a></p>
+<p><a href=https://www.mankier.com/7/ovn-architecture target=_blank>ovn-architecture</a></p>
+<p><a href=https://kubevirt.io/2018/KubeVirt-Network-Deep-Dive.html target=_blank>KubeVirt-Network-Deep-Dive</a></p>
+<h2 id=附件>附件</h2>
+<h3 id=网络性能基准测试>网络性能基准测试</h3>
+<p>环境信息：</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>组件</th>
+<th style=text-align:left>版本</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>k3s</td>
+<td style=text-align:left>v1.26.4+k3s1</td>
+</tr>
+<tr>
+<td style=text-align:left>kube-ovn</td>
+<td style=text-align:left>v1.11.3</td>
+</tr>
+<tr>
+<td style=text-align:left>ovs</td>
+<td style=text-align:left>2.17.7</td>
+</tr>
+<tr>
+<td style=text-align:left>kubevirt</td>
+<td style=text-align:left>v1.0.0-alpha.0</td>
+</tr>
+<tr>
+<td style=text-align:left>node * 3</td>
+<td style=text-align:left>3.10.0-1160.el7.x86_64 16Core 16G</td>
+</tr>
+</tbody>
+</table>
+<h3 id=msg_size4kib>msg_size:4KiB</h3>
+<p>使用以下命令进行测试：
+<code>qperf -t 60 server-ip -ub -oo msg_size:4K -vu tcp_lat tcp_bw udp_lat udp_bw</code></p>
+<p>结果：</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>Flow</th>
+<th style=text-align:left>tcp_lat</th>
+<th style=text-align:left>udp_lat</th>
+<th style=text-align:left>tcp_bw</th>
+<th style=text-align:left>udp_send_bw</th>
+<th style=text-align:left>udp_recv_bw</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>node-to-node</td>
+<td style=text-align:left>86.8 us</td>
+<td style=text-align:left>98.7 us</td>
+<td style=text-align:left>8.99 Gb/sec</td>
+<td style=text-align:left>2.77 Gb/sec</td>
+<td style=text-align:left>1.94 Gb/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>pod-to-pod(in-cluster-cross-node)</td>
+<td style=text-align:left>145 us</td>
+<td style=text-align:left>144 us</td>
+<td style=text-align:left>2.4 Gb/sec</td>
+<td style=text-align:left>1.88 Gb/sec</td>
+<td style=text-align:left>1.21 Gb/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>pod-to-pod(in-cluster-in-node)</td>
+<td style=text-align:left>47.7 us</td>
+<td style=text-align:left>28.5 us</td>
+<td style=text-align:left>1.03 Gb/sec</td>
+<td style=text-align:left>1.42 Gb/sec</td>
+<td style=text-align:left>1.41 Gb/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>pod-to-pod(cross-cluster)</td>
+<td style=text-align:left>2.24 ms</td>
+<td style=text-align:left>2.25 ms</td>
+<td style=text-align:left>858 Mb/sec</td>
+<td style=text-align:left>1.91 Gb/sec</td>
+<td style=text-align:left>8.23 Mb/sec</td>
+</tr>
+</tbody>
+</table>
+<hr>
+<div class=footer>
+<a class=previous-post href="https://hindung.cn/posts/k8s-client/?ref=footer"><span style=font-weight:700>« Previous</span><br>K8s client-go初始化的几种方法</a>
+<div class=next-post>
+<a href="https://hindung.cn/posts/prometheus_sdk/?ref=footer"><span style=font-weight:700>Next »</span><br>Prometheus GO SDK</a>
+</div>
+</div>
+</div>
+</main>
+<div class=article-toc>
+<div class=toc-wrapper>
+<h4 id=contents></h4>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#kube-ovn>kube-ovn</a>
+<ul>
+<li><a href=#kube-ovn部署使用>kube-ovn部署使用</a></li>
+<li><a href=#kube-ovn架构及技术分析>kube-ovn架构及技术分析</a></li>
+</ul>
+</li>
+<li><a href=#多网卡方案>多网卡方案</a>
+<ul>
+<li><a href=#部署>部署</a></li>
+<li><a href=#功能使用-1>功能使用</a></li>
+<li><a href=#原理介绍>原理介绍</a></li>
+</ul>
+</li>
+<li><a href=#kubevirt>Kubevirt</a>
+<ul>
+<li><a href=#vm网络>VM网络</a></li>
+<li><a href=#pod网络桥接方式>pod网络，桥接方式</a></li>
+<li><a href=#pod网络masquerade伪装方式>pod网络，masquerade(伪装)方式</a></li>
+<li><a href=#vm热迁移>VM热迁移</a></li>
+<li><a href=#网络直通与高性能网络>网络直通与高性能网络</a></li>
+</ul>
+</li>
+<li><a href=#与传统ovn的区别>与传统OVN的区别</a></li>
+<li><a href=#总结>总结</a></li>
+<li><a href=#名词解释>名词解释</a></li>
+<li><a href=#环境信息>环境信息</a></li>
+<li><a href=#使用过程中遇到的问题>使用过程中遇到的问题</a></li>
+<li><a href=#参考文档>参考文档</a></li>
+<li><a href=#附件>附件</a>
+<ul>
+<li><a href=#网络性能基准测试>网络性能基准测试</a></li>
+<li><a href=#msg_size4kib>msg_size:4KiB</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+</div>
+</div>
+</div>
+</body>
+</html>

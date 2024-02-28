@@ -1,54 +1,63 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Kubernetes on Hindung Blogs</title><link>http://hindung.cn/tags/kubernetes/</link><description>Recent content in Kubernetes on Hindung Blogs</description><generator>Hugo -- gohugo.io</generator><language>en</language><lastBuildDate>Tue, 19 Jul 2022 00:00:00 +0000</lastBuildDate><atom:link href="http://hindung.cn/tags/kubernetes/index.xml" rel="self" type="application/rss+xml"/><item><title>K8s client-go初始化的几种方法</title><link>http://hindung.cn/posts/26/</link><pubDate>Tue, 19 Jul 2022 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/26/</guid><description>简介 # client-go是k8s的一个基础组件库，是用于与API-Server交互的http客户端。K8s中大部分组件都使用了这个库实现与API-Server的通信功能。除了能够对资源对象的增删改查，还可Watch一个对象、升级成websocket链接等等功能。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Kubernetes on Hindung's Blog</title><link>https://hindung.cn/tags/kubernetes/</link><description>Recent content in Kubernetes on Hindung's Blog</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Thu, 27 Apr 2023 00:00:00 +0000</lastBuildDate><atom:link href="https://hindung.cn/tags/kubernetes/index.xml" rel="self" type="application/rss+xml"/><item><title>K8s之kube-ovn网络插件</title><link>https://hindung.cn/posts/kube-ovn/</link><pubDate>Thu, 27 Apr 2023 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/kube-ovn/</guid><description>kube-ovn网络 此项预研包括了多网卡、集群互联、混合部署、OVS/OVN、CNI、kubevirt等基础组件，并探讨基于K8s实现的OVN平台所实现的功能以及能否满足公司不同场景的容器、虚拟机网络需求。
+kube-ovn Kube-OVN是一个基于Open Virtual Network (OVN)的Kubernetes网络解决方案。它使用OVN作为底层网络虚拟化平台，为Kubernetes集群提供高性能、高可用、可扩展的网络服务。
+下面是Kube-OVN的整体架构：
+OVN控制平面（与传统OVN类似） 负责管理Kubernetes集群的网络资源和配置，包括虚拟网络（VPC）、子网（Subnet）、路由、ACL等。这些组件部分来自 OVN/OVS 社区，Kube-OVN 对不同的使用场景做了特定修改。
+OVN控制平面由多个组件组成，包括：
+ovn-central：运行 OVN 的管理平面组件，负责处理逻辑网络拓扑，包括虚拟网络、子网、路由等。包括ovn-nb, ovn-sb,和ovn-northd。 ovn-controller: 执行所有Kubernetes内资源到OVN资源的翻译工作。 ovs-ovn：运行了 openvswitch, ovsdb,和ovn-controller。这些组件作为 ovn-central 的 Agent 将逻辑流表翻译成真实的网络配置。 OVN数据平面（由内核提供） 负责实现虚拟网络的转发和隔离。OVN数据平面利用Linux内核提供的虚拟化技术，如Linux内核自带的Open vSwitch (OVS)和Virtual Extensible LAN (VXLAN)，实现高性能、高可扩展性的虚拟网络。
+Kubernetes控制平面（结合k8s资源） 负责管理Kubernetes集群的各种资源，如Pod、Service、Endpoint、CR等，并将这些资源转换（翻译）为对应的OVN网络配置，以实现Kubernetes网络服务。
+除此之外，Kube-OVN还提供了一些额外的组件和工具：
+kube-ovn-cni：实现 CNI 接口，并操作本地的 OVS 配置单机网络。 kube-ovn-operator：用于简化Kube-OVN的安装、配置和管理。 kube-ovn-monitor：监控指标。 kube-ovn-pinger：收集 OVS 运行信息，节点网络质量，网络延迟等信息。 kubectl-ko：OVN 运维平面用到的命令行工具。 kube-ovn-speaker：对外发布容器网络的路由，使得外部可以直接通过 Pod IP 访问容器。 kube-ovn部署使用 kube-ovn有两种方式部署Overlay和Underlay模式。
+默认是Overlay模式。
+Underlay：容器运行在虚拟机中，ovs运行在k8s上（POD部署），kube-ovn将容器网络和虚拟机网络连接在同一平面，可以直接给容器分配物理网络中的地址资源，达到更好的性能以及和物理网络的连通性。
+Overlay：容器运行在虚拟机中，ovs运行在k8s上（POD部署），kube-ovn的默认子网使用 Geneve 对跨主机流量进行封装，在基础设施之上抽象出一层虚拟的 Overlay 网络。对于容器IP直通的场景可以配合multus-cni为容器添加额外的虚拟机层IP。或者参考高级功能采用路由或者BGP方式将容器网络和物理网络打通。</description></item><item><title>K8s client-go初始化的几种方法</title><link>https://hindung.cn/posts/k8s-client/</link><pubDate>Tue, 19 Jul 2022 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/k8s-client/</guid><description>简介 client-go是k8s的一个基础组件库，是用于与API-Server交互的http客户端。K8s中大部分组件都使用了这个库实现与API-Server的通信功能。除了能够对资源对象的增删改查，还可Watch一个对象、升级成websocket链接等等功能。
 client-go支持四种客户端：RESTClient、ClientSet、DynamicClient、DiscoveryClient。这几个client可以相互转换。
-RESTClient # RESTClient是最基础的客户端，相当于最底层的基础结构，可以直接通过RESTClient提供的RESTful方法如Get()、Put()、Post()、Delete()进行交互。
+RESTClient RESTClient是最基础的客户端，相当于最底层的基础结构，可以直接通过RESTClient提供的RESTful方法如Get()、Put()、Post()、Delete()进行交互。
 一般而言，为了更为优雅的处理，需要进一步封装，通过Clientset封装RESTClient，然后再对外提供接口和服务。
 可以通过ClientSet客户端获得：
-client := cli.CoreV1().RESTClient().(*rest.RESTClient) ClientSet # Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要制定Group、Version，然后根据Resource获取。
-clientset,err := kubernetes.NewForConfig(config) sa, err := clientset.CoreV1().ServiceAccounts(&amp;#34;kube-system&amp;#34;).Get(&amp;#34;kube-shell-admin&amp;#34;, metav1.GetOptions{}) DynamicClient # Dynamic client是一种动态的client，它能处理kubernetes所有的资源。不同于clientset，dynamic client返回的对象是一个map[string]interface{}。
-dynamicClient,err := dynamic.NewForConfig(config) gvr := schema.GroupVersionResource{Version: &amp;#34;v1&amp;#34;,Resource: &amp;#34;pods&amp;#34;} unstructObjList,err := dynamicClient.Resource(gvr).Namespace(&amp;#34;dev&amp;#34;).List(context.TODO(),metav1.ListOptions{Limit: 100}) DiscoveryClient # DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用户本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DisconversyClient实现的。
+client := cli.CoreV1().RESTClient().(*rest.RESTClient) ClientSet Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要制定Group、Version，然后根据Resource获取。
+clientset,err := kubernetes.NewForConfig(config) sa, err := clientset.CoreV1().ServiceAccounts(&amp;#34;kube-system&amp;#34;).Get(&amp;#34;kube-shell-admin&amp;#34;, metav1.GetOptions{}) DynamicClient Dynamic client是一种动态的client，它能处理kubernetes所有的资源。不同于clientset，dynamic client返回的对象是一个map[string]interface{}。
+dynamicClient,err := dynamic.NewForConfig(config) gvr := schema.GroupVersionResource{Version: &amp;#34;v1&amp;#34;,Resource: &amp;#34;pods&amp;#34;} unstructObjList,err := dynamicClient.Resource(gvr).Namespace(&amp;#34;dev&amp;#34;).List(context.TODO(),metav1.ListOptions{Limit: 100}) DiscoveryClient DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用户本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DisconversyClient实现的。
 discoveryClient,err := discovery.NewDiscoveryClientForConfig(config) APIGroup,APIResourceListSlice,err := discoveryClient.ServerGroupsAndResources() 这几种客户端的初始化都涉及到了入参config，即*rest.Config，这个是用于初始化客户端的所有配置信息。
-rest.Config初始化 # 创建client前，需要先从初始化*rest.Config，这个*rest.Config可以从集群外的kubeconfig文件或者集群内部的 tokenFile 和 CAFile初始化（通过ServiceAcount自动挂载）。有以下几种方式：
-集群外通过kubeconfig初始化 # BuildConfigFromFlags方法从给定的url或者kubeconfig文件的文件夹路径去初始化config，如果不成功则会使用集群内部方法初始化config，如果不成功则返回一个默认的config。
-// &amp;#34;k8s.io/client-go/tools/clientcmd&amp;#34; config, err := clientcmd.</description></item><item><title>Iptable规则初探</title><link>http://hindung.cn/posts/22/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/22/</guid><description>iptable是啥 # 参考维基百科：iptables是运行在用户空间的应用软件，通过控制Linux内核netfilter模块，来管理网络数据包的处理和转发。
-iptables规则 # iptables主要有raw、mangle、filter、nat这几个表，对应几个规则：PREROUTING 、INPUT 、FORWARD 、OUTPUT、POSTROUTING 。
+rest.Config初始化 创建client前，需要先从初始化*rest.Config，这个*rest.Config可以从集群外的kubeconfig文件或者集群内部的 tokenFile 和 CAFile初始化（通过ServiceAcount自动挂载）。有以下几种方式：
+集群外通过kubeconfig初始化 BuildConfigFromFlags方法从给定的url或者kubeconfig文件的文件夹路径去初始化config，如果不成功则会使用集群内部方法初始化config，如果不成功则返回一个默认的config。
+// &amp;#34;k8s.io/client-go/tools/clientcmd&amp;#34; config, err := clientcmd.BuildConfigFromFlags(&amp;#34;&amp;#34;, *kubeconfig) if err != nil { panic(err.Error()) } 内存中通过kubeconfig字符串或者byte数组初始化 通过读取kubeconfig文件内容进行初始化一个config：</description></item><item><title>Iptable规则初探</title><link>https://hindung.cn/posts/iptable/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/iptable/</guid><description>iptable是啥 参考维基百科：iptables是运行在用户空间的应用软件，通过控制Linux内核netfilter模块，来管理网络数据包的处理和转发。
+iptables规则 iptables主要有raw、mangle、filter、nat这几个表，对应几个规则：PREROUTING 、INPUT 、FORWARD 、OUTPUT、POSTROUTING 。
 NAT 包括 SNAT （源地址转换）和 DNAT （目的地址转换）。两者的区别在于做地址转换是在路由前还是路由后，SNAT和DNAT总是成对出现的。
 对应的含义可以简单理解为：
 表名 用途 包含的规则 表名 用途 包含的规则 raw 关闭nat表上启用的连接追踪机制 PREROUTING，OUTPUT mangle 拆解报文，做出修改，并重新封装的功能 PREROUTING，INPUT，FORWARD，OUTPUT，POSTROUTING nat 网络地址转换功能 PREROUTING，OUTPUT，POSTROUTING（centos7中还有INPUT，centos6中没有） filter 负责过滤功能，防火墙 INPUT，FORWARD，OUTPUT 规则的意义：
-规则 意义 PREROUTING 报文刚刚到达主机，还没经过路由 INPUT 报文已经经过路由，判断是发送给本机的报文 FORWARD 报文已经经过路由，判断不是本机的报文，如果内核开启转发功能则转发出去，否则丢弃 OUTPUT 报文从应用发出报文已经经过路由 POSTROUTING 报文从应用发出已经经过路由，准备从网卡发出 数据从网络到达主机，再从主机到达应用的过程，以集群中traefik部署的Ingress为例，可以理解为： iptable相关命令 # 查看iptables规则：
-iptables -L, --list [chain] 列出链 chain 上面的所有规则，如果没有指定链，列出表上所有链的所有规则 参考https://wangchujiang.com/linux-command/c/iptables.html</description></item><item><title>K8s之calico网络插件东西南北流量</title><link>http://hindung.cn/posts/25/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/25/</guid><description>前言 # 环境采用了calico＋ebgp/ibgp＋交换机组成了一个扁平化网络，使用calico宣告POD IP，做到了POD与其他虚拟机和开发网落处在同一个平面的效果。
+规则 意义 PREROUTING 报文刚刚到达主机，还没经过路由 INPUT 报文已经经过路由，判断是发送给本机的报文 FORWARD 报文已经经过路由，判断不是本机的报文，如果内核开启转发功能则转发出去，否则丢弃 OUTPUT 报文从应用发出报文已经经过路由 POSTROUTING 报文从应用发出已经经过路由，准备从网卡发出 数据从网络到达主机，再从主机到达应用的过程，以集群中traefik部署的Ingress为例，可以理解为： iptable相关命令 查看iptables规则：</description></item><item><title>K8s之calico网络插件东西南北流量</title><link>https://hindung.cn/posts/calico/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/calico/</guid><description>前言 环境采用了calico＋ebgp/ibgp＋交换机组成了一个扁平化网络，使用calico宣告POD IP，做到了POD与其他虚拟机和开发网落处在同一个平面的效果。
 具体组网信息可以参考calico网站。
-东西流量 # Pod到Service流量 # 一般的应用大多数是以Pod到Service的形式去请求服务，从而出现东西方向的流量，目前集群的网络采用Calico作为网络插件，POD的IP由Calico进行统一分配，Service IP由集群K8s分配，并且配合Kube-proxy操作Iptable创建对应的规则。
+东西流量 Pod到Service流量 一般的应用大多数是以Pod到Service的形式去请求服务，从而出现东西方向的流量，目前集群的网络采用Calico作为网络插件，POD的IP由Calico进行统一分配，Service IP由集群K8s分配，并且配合Kube-proxy操作Iptable创建对应的规则。
 首先，创建一个POD时，calico会同时在POD对应的主机生成对应的calico网桥calixxx，并且分配IP，并且通过calico组件路由宣告出去：
 发送到calixxx的流量会转发至POD的eth0网卡，而从POD发出来的报文则是通过ARP 代理的方式转发至calixxx网桥。
 而当一个Service创建之后，会根据选择器与POD标签配对，对应上POD IP并且被Kube-Proxy监控到，K8s会随即生成对应的DNS记录service.namespace.local.cluster:serviceclusterIP，然后在Iptables添加相应的规则记录，如(10.88.145.173为ServiceIP，10.90.1.127为POD IP)：
 一般的，在集群中从POD访问Service，再从Service到达对应的POD流程为（正向请求用①表示，回复报文用(1)表示）：
 下面梳理一下请求的主要过程：
 ①POD向domian发送请求 ②由于没有IP，POD先向CoreDNS查询域名对应的IP地址 ③CoreDNS返回对应的Service IP ④POD拿到IP之后，向该IP发送数据，对应的报文从calixxx网桥出来 ⑤从calixxx网桥出来后，进入Host Iptables链，进入IP tables之后，进入对应的链路如上图规则，最后得到Service对应的POD IP，并转发到此IP，此时会经过路由，分为两种情况，目标IP在同一节点上（路由表有记录）或者不在同一节点上（路由表无记录） ⑥如果在同一节点上，根据路由表则会路由到目标IP对应的calixxx网桥 ⑦如果不在同一节点上，则根据路由表规则，会从bond1口出去 ⑧到达交换机，交换机有对应的路由条目，则会走到（3）和（4）过程进入Host，并且走到Iptables，通过路由，转到⑥过程 ⑨到达calixxx网桥之后会转发至POD eth0网卡，到达POD 应答过程：
-(1)POD以传过来的源POD IP作为目的IP从eth0发出，通过ARP代理转发到calixxx网桥 (2)达到calixxx网桥之后会经过POD所在的节点的Host路由表，同样分为两种情况 (3)如果不在同一节点上，则会走bond1到交换机 (4)再从交换机到达对应的节点，之后便到达过程（5） (5)经过路由表，到达目的IP 对应calixxx网桥 (6)再从网桥到达POD eth0 Pod到Pod流量 # 由于网络平面化，POD IP可以直通，所以会存在POD相互访问的场景，如隐私号应用等：
+(1)POD以传过来的源POD IP作为目的IP从eth0发出，通过ARP代理转发到calixxx网桥 (2)达到calixxx网桥之后会经过POD所在的节点的Host路由表，同样分为两种情况 (3)如果不在同一节点上，则会走bond1到交换机 (4)再从交换机到达对应的节点，之后便到达过程（5） (5)经过路由表，到达目的IP 对应calixxx网桥 (6)再从网桥到达POD eth0 Pod到Pod流量 由于网络平面化，POD IP可以直通，所以会存在POD相互访问的场景，如隐私号应用等：
 主要过程：
 ①POD以目标POD的IP作为目的IP，从eth0发出，到达calixxx ②到达calixxx网桥之后会进入Host内核Iptables链到达PREROUTING（路由前） ③之后进入路由模块进行路由，路由判断该报文是否是发给本机的，如果是则往上收将进入INPUT链，此过程不在讨论范围，由于报文目的地址是POD IP，所以会转发出去 ④到达FORWARD链后进入POSTROUTING（路由后） ⑤进入POSTROUTING会进行一些地址转换等操作后发往对应网卡或者网桥，如果路由结果表明该报文要通过网卡Bond1出去则会走到⑧过程，否则会走到⑥ ⑥表明目的IP在本机网桥上（即POD在同一节点上），则进入目的地址对应的calixxx网桥 ⑦再转发至POD eth0网卡到达目的地 ⑧报文从内核出来进入网卡，准备向外发出 ⑨到达交换机，由于交换机有所有POD的路由信息，所以他能正确处理经过的报文 ⑩经过路由后到达POD所在节点的入口网卡Bond1 11.到达网卡之后会进入内核Linux协议栈进行Iptables规则链匹配（可能的路径为到③-&amp;gt;④-&amp;gt;⑤-&amp;gt;⑥-&amp;gt;⑦到达对应的POD） 回复过程：
-(1)到达目的POD之后，应用根据源IP进行回应，转发至calixxx网桥 (2)到达网桥之后进入Linux协议栈，其过程会从③-&amp;gt;④-&amp;gt;⑤-&amp;gt;（3）到达源POD (3)到达源POD对应的网桥 (4)从网桥转发至POD eth0网卡，此时会经过Linux协议栈，最终报文从内核到用户空间送到应用。 南北流量 # 外部流量从Ingress(越过service)到Pod # client客户端请求POD应用，首先要创建对应的Service，并且创建Ingress路由。集群中采用Traefik作为Ingres Controller，以DeamonSet的方式部署，并且开启hostNetwork模式，与主机公用网络协议栈。并且接管所有到达主机的80端口、8080端口的报文。Traefik的原理主要是通过监控APIserver来监控Service、POD的变化，并维护路由，而且接管80端口的流量，转发到对应路由的POD IP上。</description></item><item><title>Kubectl命令行</title><link>http://hindung.cn/posts/24/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/24/</guid><description>注：基于Kubenetes 版本：Server v1.17.2、Client v1.17.9
-kubectl命令行全景图 # kubectl🔗
-有趣的kubectl命令 # 获取正在Running的Pod # kubectl get pods -A --field-selector=status.phase==Running NAMESPACE NAME READY STATUS RESTARTS AGE kelu cka2-75dbf7c54-gm4r4 1/1 Running 0 23h kube-system calico-kube-controllers-ccf66db4-cpvqp 1/1 Running 0 3d20h kube-system calico-node-8d4th 1/1 Running 0 3d2h kube-system calico-node-szmzb 1/1 Running 0 3d20h 查看节点内存容量 # kubectl get no -o json | jq -r &amp;#39;.items | sort_by(.status.capacity.memory)[]|[.metadata.name,.status.capacity.memory]| @tsv&amp;#39; rq-bjptest01 3848040Ki rqinterntest2 7986060Ki 查看各个节点上的Pod数量 # kubectl get po -o json --all-namespaces | jq &amp;#39;.</description></item><item><title>Kubernetes组件</title><link>http://hindung.cn/posts/21/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>http://hindung.cn/posts/21/</guid><description>总体架构 # Kubernetes系统采用C/S架构，分为Master和Node两个部分，Master作为Server端，Node作为Client端。
+(1)到达目的POD之后，应用根据源IP进行回应，转发至calixxx网桥 (2)到达网桥之后进入Linux协议栈，其过程会从③-&amp;gt;④-&amp;gt;⑤-&amp;gt;（3）到达源POD (3)到达源POD对应的网桥 (4)从网桥转发至POD eth0网卡，此时会经过Linux协议栈，最终报文从内核到用户空间送到应用。 南北流量 外部流量从Ingress(越过service)到Pod client客户端请求POD应用，首先要创建对应的Service，并且创建Ingress路由。集群中采用Traefik作为Ingres Controller，以DeamonSet的方式部署，并且开启hostNetwork模式，与主机公用网络协议栈。并且接管所有到达主机的80端口、8080端口的报文。Traefik的原理主要是通过监控APIserver来监控Service、POD的变化，并维护路由，而且接管80端口的流量，转发到对应路由的POD IP上。</description></item><item><title>Kubectl命令行</title><link>https://hindung.cn/posts/kubectl/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/kubectl/</guid><description>注：基于Kubenetes 版本：Server v1.17.2、Client v1.17.9
+kubectl命令行全景图 kubectl🔗
+有趣的kubectl命令 获取正在Running的Pod kubectl get pods -A --field-selector=status.phase==Running NAMESPACE NAME READY STATUS RESTARTS AGE kelu cka2-75dbf7c54-gm4r4 1/1 Running 0 23h kube-system calico-kube-controllers-ccf66db4-cpvqp 1/1 Running 0 3d20h kube-system calico-node-8d4th 1/1 Running 0 3d2h kube-system calico-node-szmzb 1/1 Running 0 3d20h 查看节点内存容量 kubectl get no -o json | jq -r &amp;#39;.items | sort_by(.status.capacity.memory)[]|[.metadata.name,.status.capacity.memory]| @tsv&amp;#39; rq-bjptest01 3848040Ki rqinterntest2 7986060Ki 查看各个节点上的Pod数量 kubectl get po -o json --all-namespaces | jq &amp;#39;.items | group_by(.</description></item><item><title>Kubernetes组件</title><link>https://hindung.cn/posts/k8s-1/</link><pubDate>Tue, 01 Jun 2021 00:00:00 +0000</pubDate><guid>https://hindung.cn/posts/k8s-1/</guid><description>总体架构 Kubernetes系统采用C/S架构，分为Master和Node两个部分，Master作为Server端，Node作为Client端。
 多Master的方式可以实现集群的高可用。
 Master也叫做主控节点，它主要负责：
 管理所有的节点 调度POD 控制集群运行过程中的所有状态 包含了以下几个组件： API-Server：集群的HTTP REST接口，统一入口 Controller-Manager：所有资源的自动化控制中心 Scheduler：POD调度 Node也叫做工作节点，主要负责：
 管理所有容器 监控、上报所有POD的运行状态 包含了以下几个组件： Kubelet：管理节点上容器的生命，与Master节点通信 Kube-Proxy：服务通信、负载均衡 CRI容器运行时：接收kubelet的容器相关的指令并执行 Master节点也拥有Node相关的组件，即该Master也可以作为工作节点进行计算。
 除此之外，k8s内部的存储采用ETCD作为唯一存储，一般采用集群高可用的方式部署。
 Etcd集群是分布式K/V存储集群，提供了可靠的强一致性服务发现。Etcd集群存储Kubernetes系统的集群状态和元数据，其中包括所有Kubernetes资源对象信息、资源对象状态、集群节点信息等。Kubernetes将所有数据存储至Etcd集群前缀为/registry的目录下。
-各个组件的功能 # 在k8s集群中主要有以下几种组件：
-kubectl # kubectl是K8s官方提供的命令行工具，它主要与API-Server交互，通信协议采用HTTP/Json。
-client-go # 除了有命令行工具对K8s进行管理之外，还提供了编程方式。client-go用golang进行开发，它最初是K8s的部分代码，现在抽成了独立的仓库。
+各个组件的功能 在k8s集群中主要有以下几种组件：
+kubectl kubectl是K8s官方提供的命令行工具，它主要与API-Server交互，通信协议采用HTTP/Json。
+client-go 除了有命令行工具对K8s进行管理之外，还提供了编程方式。client-go用golang进行开发，它最初是K8s的部分代码，现在抽成了独立的仓库。
 K8s任何组件与API-Server通信都是基于client-go。
-API-Server # 负责将K8s “资源组/资源版本/资源” 以RESTful形式对外提供服务。API-Server是集群中唯一与ETCD交互的组件。并且实现了集群的安全访问机制以及认证、授权、准入控制等。
-Controller-Manager # 管理控制器负责管理、维护集群内的状态，如维护POD的副本个数为期望的状态值等。
+API-Server 负责将K8s “资源组/资源版本/资源” 以RESTful形式对外提供服务。API-Server是集群中唯一与ETCD交互的组件。并且实现了集群的安全访问机制以及认证、授权、准入控制等。
+Controller-Manager 管理控制器负责管理、维护集群内的状态，如维护POD的副本个数为期望的状态值等。
 包含了多个控制器：
-DeploymentControllers控制器 StatefulSet控制器 Namespace控制器 PersistentVolume控制器 等等 每个控制器通过kube-apiserver组件提供的接口实时监控整个集群每个资源对象的当前状态，当因发生各种故障而导致系统状态出现变化时，会尝试将系统状态修复到“期望状态”。 Scheduler # 负责调度POD在某个节点上运行。Kubelet上报节点信息，Scheduler通过监控这些信息，当有新的POD需要调度时，会根据这些节点信息进行调度算法计算最有节点。
+DeploymentControllers控制器 StatefulSet控制器 Namespace控制器 PersistentVolume控制器 等等 每个控制器通过kube-apiserver组件提供的接口实时监控整个集群每个资源对象的当前状态，当因发生各种故障而导致系统状态出现变化时，会尝试将系统状态修复到“期望状态”。 Scheduler 负责调度POD在某个节点上运行。Kubelet上报节点信息，Scheduler通过监控这些信息，当有新的POD需要调度时，会根据这些节点信息进行调度算法计算最有节点。
 调度算法分为两种，分别为预选调度算法和优选调度算法。除调度策略外，Kubernetes还支持优先级调度、抢占机制及亲和性调度等功能。
 kube-scheduler组件支持高可用性（即多实例同时运行），即基于Etcd集群上的分布式锁实现领导者选举机制，多实例同时运行，通过kube-apiserver提供的资源锁进行选举竞争。抢先获取锁的实例被称为Leader节点（即领导者节点），并运行kube-scheduler组件的主逻辑；而未获取锁的实例被称为Candidate节点（即候选节点），运行时处于阻塞状态。在Leader节点因某些原因退出后，Candidate节点则通过领导者选举机制参与竞选，成为Leader节点后接替kube-scheduler的工作。
-Kubelet # kubelet组件用来接收、处理、上报kube-apiserver组件下发的任务。kubelet进程启动时会向kube-apiserver注册节点自身信息。它主要负责所在节点（Node）上的Pod资源对象的管理，例如Pod资源对象的创建、修改、监控、删除、驱逐及Pod生命周期管理等。
+Kubelet kubelet组件用来接收、处理、上报kube-apiserver组件下发的任务。kubelet进程启动时会向kube-apiserver注册节点自身信息。它主要负责所在节点（Node）上的Pod资源对象的管理，例如Pod资源对象的创建、修改、监控、删除、驱逐及Pod生命周期管理等。
 kubelet组件实现了3种开放接口：
 Container Runtime Interface：简称CRI（容器运行时接口），提供容器运行时通用插件接口服务。CRI定义了容器和镜像服务的接口。CRI将kubelet组件与容器运行时进行解耦，将原来完全面向Pod级别的内部接口拆分成面向Sandbox和Container的gRPC接口，并将镜像管理和容器管理分离给不同的服务。
 Container Network Interface：简称CNI（容器网络接口），提供网络通用插件接口服务。CNI定义了Kubernetes网络插件的基础，容器创建时通过CNI插件配置网络。
-Container Storage Interface：简称CSI（容器存储接口），提供存储通用插件接口服务。CSI定义了容器存储卷标准规范，容器创建时通过CSI插件配置存储卷。
-Kube-Proxy # kube-proxy组件，作为节点上的网络代理，运行在每个Kubernetes节点上。它监控kube-apiserver的服务和端点资源变化，并通过iptables/ipvs等配置负载均衡器，为一组Pod提供统一的TCP/UDP流量转发和负载均衡功能。</description></item></channel></rss>
+Container Storage Interface：简称CSI（容器存储接口），提供存储通用插件接口服务。CSI定义了容器存储卷标准规范，容器创建时通过CSI插件配置存储卷。</description></item></channel></rss>
