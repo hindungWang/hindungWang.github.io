@@ -1,10 +1,13 @@
 baseUrl: https://hindung.cn/
 title: Hindung's Blog
 theme: poison
-languageCode: en-us
+languageCode: cn-zh
 paginate: 10
 pluralizelisttitles: false
 params:
+  remote_brand_image: https://github.com/hindungWang.png
+  assets:
+    disableFingerprinting: true
   brand: Hxd
   description: ♪٩(´ω`)و♪网络✏️记
   dark_mode: true
@@ -20,10 +23,10 @@ params:
       HasChildren: true
       Limit: 5
   discord_url: https://discord.com
-  email_url: mailto://user@domain
+  email_url: mailto://hindung@foxmail.com
   facebook_url: https://facebook.com
   flickr_url: https://flickr.com
-  github_url: https://github.com
+  github_url: https://github.com/hindungWang
   gitlab_url: https://gitlab.com
   instagram_url: https://instagram.com
   linkedin_url: https://linkedin.com
