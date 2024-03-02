@@ -1,11 +1,11 @@
-baseURL: /
+baseURL: https://hindungWang.github.io/
 title: Hindung's Blog
 theme: poison
 languageCode: cn-zh
 paginate: 10
 pluralizelisttitles: false
 params:
-  remote_brand_image: https://github.com/hindungWang.png
+  remote_brand_image: https://i1.hdslb.com/bfs/face/be439fbf7ff0741eaab0f81203606cf9f2475ff9.jpg
   assets:
     disableFingerprinting: true
   brand: Hxd
