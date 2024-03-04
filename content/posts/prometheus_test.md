@@ -402,9 +402,6 @@ Thanos提供了一个Ruler组件，用来实现与PrometheusRule相同的功能�
 
 *Prometheus的cpu已经打满了，故查询很慢*
 
-## Minio
-
-压测详情：[http://devops.docs.win/pages/55bb85](http://devops.docs.win/pages/55bb85)
 
 ## 参考文档
 
