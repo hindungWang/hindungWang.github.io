@@ -1,11 +1,10 @@
 ---
-title: K8s之cilium网络插件预研
-date: 2023-10-31
+title: K8s之cilium网络插件
+date: 2023-11-15
 tags:
   - Kubernetes
   - Network
-​---
-
+---
 
 ## 名词术语
 
@@ -678,15 +677,4 @@ https://doc.crds.dev/github.com/cilium/cilium@1.14.3
 - **nsenter: cannot open /hostproc/1/ns/cgroup**: No such file or directory 内核版本不符合要求，升级到符合的版本
 
 - **CiliumNode: error: allocator not configured for the requested cidr 10.0.1.0/24** 由于安装时已指定cluster-cidr为10.42.0.0/16，但是在第一安装cilium时，默认的配置是：clusterPoolIPv4PodCIDRList: ["10.0.0.0/8"]，卸载cilium也不会删除掉已经安装的CRD和CR资源，因此重新安装也会有这个报错。卸载时把CRD全部清理解决。
-
-
-11/29号会议纪要：
-
-1、对于Wingarden目前的规模来说，可以按较低优先级支持cilium组件
-
-2、关注与Wingarden应用的场景，如网络抖动、丢包预警等，可视化可以参考Tetrate skywalking 
-
-3、对于eBPF的安全性需要进一步了解与研究
-
-4、罗云要求研究cilium，是因为他去参加容器相关标准的会议时，听到有要求支持先进的网络组件，我们的系统做出来不希望是用的落后的网络组件
 
