@@ -1,0 +1,221 @@
+---
+title: K8s之网络策略
+date: 2023-11-15
+tags:
+  - Kubernetes
+  - Network
+---
+
+
+## 概述
+
+目前，k8s的网络策略只支持到了L3/L4层的策略以及只能作用于Pod，使用一些网络插件可以拓展这一能力，提供更加强大的策略。
+
+## 支持网络策略的CNI
+
+目前我们平台涉及到的，能够支持k8s原生网络策略甚至还能拓展的有以下网络插件：
+
+| 网络插件 | 支持程度 | 实现方法 | 是否支持集群策略  |
+|:-----|:-------------|:-------------|:-------------|
+| kube-ovn | k8s原生网络策略，仅适用于 Pod ，仅支持L3/L4层策略。| ovs流表|不支持|
+| calico | 支持原生网络策略，实现了策略排序/优先级、拒绝规则和更灵活的匹配规则。可以应用于多种类型的端点，包括 Pod、VM 和主机接口。仅支持L3/L4层策略。 |iptable |支持|
+| cilium | 支持原生网络策略，在此基础上实现L7层策略，总体上功能最全最丰富 | eBPF | 支持|
+
+*注：目前k8s原生的网络策略只能作用于Pod实体。*
+
+在大规模策略场景下，iptable实现的网络策略表现不佳：https://docs.daocloud.io/network/modules/calico/policy/
+
+如果使用flannel等不支持网络策略的插件，即使创建NetworkPolicy也无法生效。
+
+## kube-ovn
+
+kube-ovn支持使用k8s原生网络策略，没有自己实现，因此使用方法即为原生NetworkPolicy。
+
+```yaml
+apiVersion: networking.k8s.io/v1 # k8s原生资源
+kind: NetworkPolicy
+metadata:
+  name: test-network-policy
+  namespace: default
+spec:
+  podSelector:    # 作用的对象集合
+    matchLabels:  # 通过标签选择对应的POD
+      xxx: xxx
+  policyTypes:    # 生效的策略，不填默认是Ingress
+    - Ingress
+    - Egress
+  ingress:        # 入方向的策略
+    - from:       # 从哪个集合来
+      ports：     # 端口或者端口范围
+  egress:         # 出方向的策略 
+    - to:         # 到哪个集合去
+      ports：     # 端口或者端口范围
+```
+
+`to`和`from`支持一些选择器：
+- podSelector：Pod选择
+- namespaceSelector：命名空间选择
+- ipBlock：ip地址范围
+
+如：
+```yaml
+    ingress: 
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              user: alice
+        - podSelector:
+            matchLabels:
+               role: client
+        - ipBlock:
+            cidr: 172.17.0.0/16
+            except: # 排除
+            - 172.17.1.0/24
+```
+
+默认情况下，规则的生效是`只允许`策略，规则声明则允许，规则外的默认阻塞。即：`只允许`从含有`user: alice`标签的命名空间中含有`role: client`标签的pod并且ip为`172.17.0.0/16`且不能在`172.17.1.0/24`范围内的流量`进来`。
+
+### 默认策略
+
+默认情况下，如果名字空间中不存在任何策略，则所有进出该名字空间中 Pod 的流量都被允许。 
+
+### 更改默认策略
+
+#### 默认拒绝所有入站和所有出站流量
+拒绝default命名空间下的所有流量：
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: default
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+```
+
+## calico
+
+calico也支持原生策略，此外还实现了自己的`networkPolicy.crd.projectcalico.org`和`globalNetworkPolicy.crd.projectcalico.org`。增加了一些特性：策略排序/优先级、拒绝规则和更灵活的匹配规则。也拓展了原生策略只能作用于pod的限制。
+
+### NetworkPolicy
+
+calico实现的网络策略如下：
+```yaml
+apiVersion: projectcalico.org/v3
+kind: NetworkPolicy
+metadata:
+  name: allow-tcp-6379
+  namespace: production
+spec:
+  order: 1                      # 顺序或优先级，越大优先级越低，不填默认无限大，可选 
+  selector: role == 'database'  # 标签选择器（calico自己实现的），策略作用的对象集合
+  serviceAccountSelector:       # 基于服务账户选择Pod，可选 
+  types:                        # 策略类型
+    - Ingress
+    - Egress
+  ingress:                      # 入方向
+    - action: Allow
+      ipVersion: 4              # ipv4或6
+      metadata:                 # 备注信息
+        annotations:
+          xxx: xxx
+      http:                     # L7规则，需要启用istio
+        methods:                # http方法
+        paths:                  # uri路径
+          - prefix:             # 前缀匹配
+          - exact:              # 精确匹配
+      protocol: TCP             # 允许的协议"TCP", "UDP", "ICMP", "ICMPv6", "SCTP", "UDPLite"
+      notProtocol:              # 不允许的协议
+      icmp:                     # 允许的icmp
+        code:                   # 匹配特定的ICMP代码。如果指定了，还必须指定Type值。这是由Calico用于执行规则的内核iptables防火墙所强加的技术限制
+        type:                   # 匹配特定的ICMP类型。例如，值为8表示ICMP Echo请求（即ping）
+      notICMP:                  # 不允许的icmp
+        code: 
+        type: 
+      source:                   # 源实体，即允许从哪些端点进来
+        selector:                 # 标签选择器
+        notSelector:              # 不选择，与selector相反
+        nets:                     # 仅适用于源IP地址（或目的IP地址）在任何给定子网中的流量
+        notNets:                  # 与nets相反 
+        namespaceSelector:        # 命名空间选择
+        ports:                    # 选择的端点
+        notPorts:                 # 不选择的端点
+        serviceAccounts:          # 通过服务账号选择pod
+      destination:              # 目的实体，允许去到的地方，结构和source一样
+        ports:
+          - 6379
+  egress:                       # 出方向，结构和ingress一样
+    - action: Allow
+```
+
+例子表示：
+
+对于标签为`role == 'database'`的Pod：
+- 入方向：允许标签为`role == 'frontend'`的Pod使用tcp访问6379端口
+- 出方向：允许所有流量，即允许`role == 'database'`的Pod访问外部所有流量
+```yaml
+apiVersion: projectcalico.org/v3
+kind: NetworkPolicy
+metadata:
+  name: allow-tcp-6379
+  namespace: production
+spec:
+  selector: role == 'database'
+  types:
+    - Ingress
+    - Egress
+  ingress:
+    - action: Allow
+      metadata:
+        annotations:
+          from: frontend
+          to: database
+      protocol: TCP
+      source:
+        selector: role == 'frontend'
+      destination:
+        ports:
+          - 6379
+  egress:
+    - action: Allow
+```
+
+
+### GlobalNetworkPolicy
+
+全局网络策略资源（GlobalNetworkPolicy）表示一组有序规则，这些规则适用于匹配标签选择器的一组端点。区别于NetworkPolicy，GlobalNetworkPolicy是集群级别的。
+
+```yaml
+apiVersion: projectcalico.org/v3
+kind: NetworkPolicy
+metadata:
+  name: allow-tcp-6379
+  namespace: production
+spec:
+  applyOnForward: false  # 转发相关的策略
+  preDNAT: false         # 代理相关的策略
+  doNotTrack: false      # 在连接跟踪之前应用策略中的规则，并且不应跟踪这些规则允许的数据包
+  # 其他字段和NetworkPolicy一致
+```
+
+
+## cilium
+
+cilium除了支持原生网络策略之外，还支持L7策略。
+
+详见cilium文档。
+
+## 参考文档
+
+https://kubernetes.io/zh-cn/docs/concepts/services-networking/network-policies
+
+https://docs.tigera.io/calico/latest/network-policy/get-started/calico-policy/calico-network-policy
+
+https://kubeovn.github.io/docs/v1.12.x/
+
+https://docs.cilium.io/en/stable/security/policy/language/#policy-examples
+
+https://doc.crds.dev/github.com/projectcalico/calico/crd.projectcalico.org/NetworkPolicy/v1@v3.26.3
