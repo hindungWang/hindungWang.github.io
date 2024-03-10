@@ -10,4 +10,6 @@ author: "Hindung"
 
 - 💬 Ask me about `K8s` `Docker` `Go`
 
-- 📫 我: tangtione@foxmail.com
+- 📫 我: hindung@foxmail.com
+
+![](https://hindung.oss-cn-beijing.aliyuncs.com/img/GIILCVZaoAARQzf.jpeg)
