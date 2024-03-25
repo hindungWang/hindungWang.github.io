@@ -64,11 +64,28 @@ int64   uint64  float32   float64     complex64   complex128
 
 比如我通过s := make([]byte, 5)当容量参数被忽略时，它默认为指定的长度，创建的切片内存如下：
 
-![1577587354(https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gadealbq7nj208d02t741.jpg).jpg](https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gadealbq7nj208d02t741.jpg)
+```text
+ s := make([]int, 5) 
+┌───┬───┬───┬───┬───┐
+│ 0 │ 0 │ 0 │ 0 │ 0 │
+└───┴───┴───┴───┴───┘
+```
+
+
 
 如果我们通过修改切片引用的数据区域和大小，s = s[2:4], 那么就变成了如下的结构
 
-![1577587559(https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gadee0257zj207x03pjr5.jpg).jpg](https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gadee0257zj207x03pjr5.jpg)
+```text
+   s := make([]int, 5) 
+  ┌───┬───┬───┬───┬───┐
+  │ 0 │ 0 │ 0 │ 0 │ 0 │
+  └───┴───┴───┴───┴───┘
+    0   1   2   3   4  
+                       
+          ┌───┬───┐    
+s         │ 0 │ 0 │    
+          └───┴───┘    
+```
 
 我们通过下面的代码可以很快弄清楚slice的内存模型
 

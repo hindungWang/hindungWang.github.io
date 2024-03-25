@@ -196,17 +196,6 @@ Thanos核心原理就是采用数据冗余的方式，部署多个Prometheus实�
 ![](https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar.png)
 
 
-### 观测方法
-
-[thanos-component](http://grafana.cloud-infra.192.168.231.116.nip.io/d/200ac8fdbfbb74b39aff88118se4d1c2c/thanos-component?orgId=1&refresh=1m)
-
-[prometheus-overview](http://grafana.cloud-infra.192.168.231.116.nip.io/d/e5250d32-14b3-47c1-ab5b-bb493a342f42/prometheus-overview?orgId=1&refresh=60s)
-
-[thanos-query](http://grafana.cloud-infra.192.168.231.116.nip.io/d/af36c91291a603f1d9fbdabdd127ac4a/thanos-query?orgId=1&refresh=10s)
-
-更多看板：http://grafana.cloud-infra.192.168.231.116.nip.io/dashboards
-
-
 ## Receiver模式
 
 ### 压测方法
