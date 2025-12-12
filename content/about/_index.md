@@ -2,6 +2,7 @@
 title: "About Me"
 date: "2022-07-18"
 author: "Hindung"
+type: page
 ---
 
 # Hi there 👋 This is hindung's space
@@ -10,6 +11,6 @@ author: "Hindung"
 
 - 💬 Ask me about `K8s` `Docker` `Go`
 
-- 📫 我: hindung@foxmail.com
+- 📫 hindung@foxmail.com
 
 ![](https://hindung.oss-cn-beijing.aliyuncs.com/img/GIILCVZaoAARQzf.jpeg)
