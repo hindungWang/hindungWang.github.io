@@ -18,6 +18,11 @@ title = "Hindung's Blog"
   metaKeywords = ["blog", "gokarna", "hugo"]
   showBackToTopButton = true # true or false for "back to top" button on posts and pages
 
+  CustomHeadHTML = """
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+  """
+
   socialIcons = [
     {name = "twitter", url = "https://example.com"},
     {name = "linkedin", url = "https://example.com"},

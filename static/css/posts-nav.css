@@ -1,0 +1,61 @@
+/* 左侧文章导航侧栏 —— 仅 post 页、宽屏显示
+ * 颜色继承主题文本色（深/浅模式自动），用 opacity 做弱化
+ */
+.posts-nav {
+  display: none;
+  position: fixed;
+  left: 24px;
+  top: 96px;
+  bottom: 24px;
+  width: 210px;
+  overflow-y: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  z-index: 5;
+  scrollbar-width: thin;
+}
+@media (min-width: 1300px) {
+  .posts-nav { display: block; }
+}
+
+.posts-nav h3 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.45;
+  margin: 0 0 10px;
+}
+
+.posts-nav ul { list-style: none; margin: 0; padding: 0; }
+.posts-nav li { margin: 0; }
+
+.posts-nav a {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border-left: 2px solid transparent;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.72;
+  transition: background 0.15s, opacity 0.15s;
+}
+.posts-nav a:hover {
+  background: rgba(127, 127, 127, 0.12);
+  opacity: 1;
+}
+.posts-nav li.active a {
+  color: var(--accent-color, #FF4D4D);
+  font-weight: 700;
+  border-left-color: var(--accent-color, #FF4D4D);
+  opacity: 1;
+}
+
+.posts-nav::-webkit-scrollbar { width: 6px; }
+.posts-nav::-webkit-scrollbar-thumb {
+  background: rgba(127, 127, 127, 0.3);
+  border-radius: 3px;
+}

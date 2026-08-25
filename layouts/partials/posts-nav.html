@@ -1,0 +1,12 @@
+<aside class="posts-nav" aria-label="所有文章">
+  <h3>文章</h3>
+  <ul>
+    {{ $posts := where .Site.RegularPages "Type" "post" }}
+    {{ range $posts.ByDate.Reverse }}
+      <li class="{{ if eq .RelPermalink $.RelPermalink }}active{{ end }}">
+        <a href="{{ .RelPermalink }}" title="{{ .Title }}">{{ .Title }}</a>
+      </li>
+    {{ end }}
+  </ul>
+</aside>
+<link rel="stylesheet" href="{{ "/css/posts-nav.css" | relURL }}">
