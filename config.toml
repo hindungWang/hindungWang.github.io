@@ -48,10 +48,16 @@ title = "Hindung's Blog"
     weight = 3
 
   [[menu.main]]
+    name = "Game Agent"
+    pre = "<span data-feather='gamepad'></span>"
+    url = "/game-agent/"
+    weight = 4
+
+  [[menu.main]]
     name = "Tags"
     pre = "<span data-feather='tag'></span>"
     url = "/tags/"
-    weight = 4
+    weight = 5
 
   [[menu.main]]
     identifier = "github"
