@@ -251,6 +251,21 @@
 
   render();
 
+  /* 跟随主题深色模式：监听主题的 #dark-theme <link> 是否被禁用 */
+  (function watchTheme() {
+    var themeLink = document.getElementById("dark-theme");
+    function apply() {
+      var dark = themeLink
+        ? themeLink.disabled !== true
+        : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      el.classList.toggle("gac-dark", dark);
+    }
+    apply();
+    if (themeLink) {
+      new MutationObserver(apply).observe(themeLink, { attributes: true, attributeFilter: ["disabled"] });
+    }
+  })();
+
   sendBtn.addEventListener("click", onSend);
   inputEl.addEventListener("keydown", function (e) {
     if (e.key === "Enter" && !e.shiftKey) {
