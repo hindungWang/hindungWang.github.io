@@ -30,18 +30,21 @@
     return d;
   }
 
-  async function typeInto(node, text) {
+  async function typeInto(node, text, ms) {
+    var step = ms == null ? typeCharMs : ms;
     for (var i = 0; i < text.length; i++) {
       node.textContent = text.slice(0, i + 1);
-      await sleep(typeCharMs);
+      await sleep(step);
     }
   }
 
   async function playTurn(item) {
     var node = addNode(item.role);
+    // 用户消息也用打字机逐字呈现，节奏稍快
+    var delay = item.role === "user" ? typeCharMs * 1.5 : 0;
     if (item.role === "user") {
-      node.textContent = item.text;
-      await sleep(300);
+      await typeInto(node, item.text, delay);
+      await sleep(280);
       return;
     }
     await sleep(typingMs);
