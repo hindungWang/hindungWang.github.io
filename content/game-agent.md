@@ -6,8 +6,6 @@ showTableOfContents: false
 description: 一个可以实时对话的 Game Agent，后端由消息网关 + LLM 驱动
 ---
 
-# Game Agent: Stray
-
 ## 这是什么
 
 **Stray** 是我这段时间一直在做的**微信游戏助手 Bot**。它通过 Wechaty 桥接到微信，能在群里被 `@stray` 直接唤起：你问它什么游戏、想找折扣、看榜单，它都会调用后面的工具链拿到真实数据再组织成回复。
