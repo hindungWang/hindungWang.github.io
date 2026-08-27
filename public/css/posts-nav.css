@@ -296,6 +296,7 @@ body.post-page .post-content h5 {
   background: transparent !important;
   font-size: 0.92rem;
   padding: 0;
+  color: inherit; /* 继承 pre 正文色，覆盖主题 code 的白色（否则无 token 的文本不可见） */
 }
 
 /* 代码块头部：语言 + 复制 */

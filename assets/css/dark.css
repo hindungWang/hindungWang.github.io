@@ -255,7 +255,7 @@ body.post-page .post-toc a.active {
 .chroma .c, .chroma .ch, .chroma .cm, .chroma .c1,
 .chroma .cs, .chroma .cp, .chroma .cpf {
   color: #9198A1;
-  font-style: italic;
+  font-style: normal;
 }
 
 .chroma .k, .chroma .kc, .chroma .kd, .chroma .kn,
@@ -303,3 +303,42 @@ body.post-page .post-toc a.active {
 .chroma .w { color: #E6EDF3; }
 .chroma .err { color: #FFA198; background-color: #451A1A; }
 .chroma .l, .chroma .ld { color: #A5D6FF; }
+
+/* ================================================================
+   深色模式 · 终端类代码块（bash/sh/shell/console）中性降噪
+   ================================================================ */
+.post-content code.language-bash span,
+.post-content code.language-sh span,
+.post-content code.language-shell span,
+.post-content code.language-console span {
+  color: #E6EDF3 !important;
+}
+.post-content code.language-bash span.c, .post-content code.language-bash span.c1,
+.post-content code.language-bash span.cm, .post-content code.language-bash span.ch,
+.post-content code.language-bash span.cs, .post-content code.language-bash span.cp,
+.post-content code.language-bash span.cpf,
+.post-content code.language-sh span.c, .post-content code.language-sh span.c1,
+.post-content code.language-sh span.cm,
+.post-content code.language-shell span.c, .post-content code.language-shell span.c1,
+.post-content code.language-shell span.cm,
+.post-content code.language-console span.c, .post-content code.language-console span.c1,
+.post-content code.language-console span.cm {
+  color: #9198A1 !important;
+  font-style: normal !important;
+}
+.post-content code.language-bash span.s, .post-content code.language-bash span.s1,
+.post-content code.language-bash span.s2,
+.post-content code.language-sh span.s, .post-content code.language-sh span.s1,
+.post-content code.language-sh span.s2,
+.post-content code.language-shell span.s, .post-content code.language-shell span.s1,
+.post-content code.language-shell span.s2,
+.post-content code.language-console span.s, .post-content code.language-console span.s1,
+.post-content code.language-console span.s2 {
+  color: #A5D6FF !important;
+}
+.post-content code.language-bash span.nv, .post-content code.language-bash span.vm,
+.post-content code.language-sh span.nv, .post-content code.language-sh span.vm,
+.post-content code.language-shell span.nv, .post-content code.language-shell span.vm,
+.post-content code.language-console span.nv, .post-content code.language-console span.vm {
+  color: #79C0FF !important;
+}

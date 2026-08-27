@@ -22,11 +22,11 @@
 .chroma .lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; width: auto; overflow: auto; display: block; }
 .chroma .hl { display: block; width: 100%; background-color: #FFF8C5; }
 
-/* 注释 */
+/* 注释（不斜体：中文注释无斜体字形，斜体会被浏览器强制倾斜很难看） */
 .chroma .c, .chroma .ch, .chroma .cm, .chroma .c1,
 .chroma .cs, .chroma .cp, .chroma .cpf {
   color: #59636E;
-  font-style: italic;
+  font-style: normal;
 }
 
 /* 关键字 */
@@ -88,3 +88,59 @@
 .chroma .w { color: #1F2328; }
 .chroma .err { color: #82071E; background-color: #FFEBE9; }
 .chroma .l, .chroma .ld { color: #0A3069; }
+
+/* ================================================================
+   终端类代码块（bash / sh / shell / console）· 中性降噪
+   ----------------------------------------------------------------
+   bash 块常包含：命令 + 输出、ASCII 图、带提示符的终端会话。
+   chroma 会把输出里的数字/括号/图示符号都染成彩色（斑驳噪点），
+   且把 "[root@host ~]# cmd" 提示符后的命令当作注释。
+   这里统一为「终端风格」：正文中性色，只保留注释/字符串/变量弱色。
+   ================================================================ */
+.post-content code.language-bash span,
+.post-content code.language-sh span,
+.post-content code.language-shell span,
+.post-content code.language-console span {
+  color: #1F2328;
+}
+.post-content code.language-bash span.c, .post-content code.language-bash span.c1,
+.post-content code.language-bash span.cm, .post-content code.language-bash span.ch,
+.post-content code.language-bash span.cs, .post-content code.language-bash span.cp,
+.post-content code.language-bash span.cpf,
+.post-content code.language-sh span.c, .post-content code.language-sh span.c1,
+.post-content code.language-sh span.cm, .post-content code.language-sh span.ch,
+.post-content code.language-sh span.cs, .post-content code.language-sh span.cp,
+.post-content code.language-sh span.cpf,
+.post-content code.language-shell span.c, .post-content code.language-shell span.c1,
+.post-content code.language-shell span.cm, .post-content code.language-shell span.ch,
+.post-content code.language-shell span.cs, .post-content code.language-shell span.cp,
+.post-content code.language-shell span.cpf,
+.post-content code.language-console span.c, .post-content code.language-console span.c1,
+.post-content code.language-console span.cm, .post-content code.language-console span.ch,
+.post-content code.language-console span.cs, .post-content code.language-console span.cp,
+.post-content code.language-console span.cpf {
+  color: #59636E;
+  font-style: normal;
+}
+.post-content code.language-bash span.s, .post-content code.language-bash span.s1,
+.post-content code.language-bash span.s2, .post-content code.language-bash span.sb,
+.post-content code.language-bash span.sc, .post-content code.language-bash span.sd,
+.post-content code.language-bash span.se, .post-content code.language-bash span.sh,
+.post-content code.language-bash span.si, .post-content code.language-bash span.sx,
+.post-content code.language-bash span.sr, .post-content code.language-bash span.ss,
+.post-content code.language-sh span.s, .post-content code.language-sh span.s1,
+.post-content code.language-sh span.s2,
+.post-content code.language-shell span.s, .post-content code.language-shell span.s1,
+.post-content code.language-shell span.s2,
+.post-content code.language-console span.s, .post-content code.language-console span.s1,
+.post-content code.language-console span.s2 {
+  color: #0A3069;
+}
+.post-content code.language-bash span.nv, .post-content code.language-bash span.vm,
+.post-content code.language-bash span.vc, .post-content code.language-bash span.vg,
+.post-content code.language-bash span.vi,
+.post-content code.language-sh span.nv, .post-content code.language-sh span.vm,
+.post-content code.language-shell span.nv, .post-content code.language-shell span.vm,
+.post-content code.language-console span.nv, .post-content code.language-console span.vm {
+  color: #0550AE;
+}
