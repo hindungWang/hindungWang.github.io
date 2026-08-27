@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>k3s on Hindung's Blog</title><link>https://hindungwang.github.io/tags/k3s/</link><description>Recent content in k3s on Hindung's Blog</description><generator>Hugo -- gohugo.io</generator><language>cn-zh</language><lastBuildDate>Sat, 07 Sep 2024 00:00:00 +0000</lastBuildDate><atom:link href="https://hindungwang.github.io/tags/k3s/index.xml" rel="self" type="application/rss+xml"/><item><title>Pod不停被创建？？</title><link>https://hindungwang.github.io/posts/32.to-many-pods-created/</link><pubDate>Sat, 07 Sep 2024 00:00:00 +0000</pubDate><guid>https://hindungwang.github.io/posts/32.to-many-pods-created/</guid><description>背景 在一次对K3s节点磁盘进行混沌测试过程中，我们把节点的磁盘使用率提升到了90%+，触发了kubelet的镜像GC以及POD驱逐。
+然鹅，有一个Pod在驱逐的过程中，又被不停的调度到该节点上，又不断被驱逐，进而创建了大量（大约1.2w个）被驱逐中的Pod，切Pod的状态为ContainerStatusUnknown。
+原因 该Pod容忍了节点所有情况，当发生磁盘压力驱逐后，又被调度到改节点上，导致不停的创建pod同时不停的驱逐pod，然而又没有自动回收已驱逐的pod，导致pod泄露。
+即Deployment使用了：
+tolerations: - effect: NoExecute operator: Exists - effect: NoSchedule operator: Exists 并且terminated-pod-gc-threshold默认为12500个。
+解决方案 设置kube-controller-manager-arg参数：
+--kube-controller-manager-arg=terminated-pod-gc-threshold=10 和修改tolerations：
+tolerations: - effect: NoExecute key: node.kubernetes.io/not-ready operator: Exists - effect: NoExecute key: node.kubernetes.io/unreachable operator: Exists - effect: NoSchedule key: node.kubernetes.io/unschedulable operator: Exists 因此，对于deployment来说，应该正确使用tolerations来避免这种情况。</description></item></channel></rss>

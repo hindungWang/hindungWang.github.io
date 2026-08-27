@@ -1,0 +1,219 @@
+/* Game Agent 聊天窗样式 —— 贴合 gokarna 主题设计系统
+ * 沿用主题变量：--accent-color / primary / secondary / tertiary
+ * 深色模式：监听主题的 #dark-theme <link>，给容器加 .gac-dark 由本文件覆写
+ */
+#game-agent-chat {
+  --gac-bg: #ffffff;
+  --gac-border: #dddddd;
+  --gac-header: #272822;
+  --gac-header-text: #ffffff;
+  --gac-bubble-agent: #ffffff;
+  --gac-bubble-agent-text: #24292f;
+  --gac-muted: #8a8f98;
+  --gac-input: #ffffff;
+  --gac-focus: var(--accent-color, #FF4D4D);
+  --gac-shadow: rgb(220 220 220) 0px 1px 5px;
+
+  max-width: 720px;
+  margin: 28px auto;
+  border: 1px solid var(--gac-border);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--gac-bg);
+  box-shadow: var(--gac-shadow);
+  font-family: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+#game-agent-chat.gac-dark {
+  --gac-bg: rgb(34, 39, 46);
+  --gac-border: #2d333b;
+  --gac-header: #2d333b;
+  --gac-header-text: #ffffff;
+  --gac-bubble-agent: #2d333b;
+  --gac-bubble-agent-text: #e6e6e6;
+  --gac-muted: #646464;
+  --gac-input: rgb(34, 39, 46);
+  --gac-shadow: rgb(0 0 0 / 0.35) 0px 4px 18px;
+}
+
+/* ---- 头部 ---- */
+.gac-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--gac-header);
+  color: var(--gac-header-text);
+}
+
+.gac-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent-color, #FF4D4D), #272822);
+  color: #fff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  letter-spacing: 1px;
+  flex-shrink: 0;
+}
+
+.gac-meta { min-width: 0; }
+
+.gac-name { font-weight: 700; font-size: 15px; }
+
+.gac-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: 2px;
+}
+.gac-status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3fb950;
+}
+
+/* ---- 消息区 ---- */
+.gac-body {
+  min-height: 320px;
+  max-height: 440px;
+  overflow-y: auto;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+}
+
+.gac-msg {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 13px;
+  font-size: 14.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  animation: gac-in 0.22s ease-out;
+}
+@keyframes gac-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+.gac-msg.user {
+  align-self: flex-end;
+  background: var(--gac-focus);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.gac-msg.agent {
+  align-self: flex-start;
+  background: var(--gac-bubble-agent);
+  color: var(--gac-bubble-agent-text);
+  border: 1px solid var(--gac-border);
+  border-bottom-left-radius: 4px;
+}
+.gac-msg.error {
+  align-self: center;
+  background: #fdecea;
+  color: #b3261e;
+  border: 1px solid #f5c6c0;
+  font-size: 13px;
+  animation: none;
+}
+#game-agent-chat.gac-dark .gac-msg.error {
+  background: #3a2625;
+  color: #ffb4ab;
+  border-color: #6b3a35;
+}
+
+/* ---- 打字指示 ---- */
+.gac-typing {
+  align-self: flex-start;
+  display: flex;
+  gap: 5px;
+  padding: 13px 15px;
+  background: var(--gac-bubble-agent);
+  border: 1px solid var(--gac-border);
+  border-radius: 13px;
+  border-bottom-left-radius: 4px;
+  animation: gac-in 0.22s ease-out;
+}
+.gac-typing span {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gac-muted);
+  animation: gac-blink 1.2s infinite both;
+}
+.gac-typing span:nth-child(2) { animation-delay: 0.2s; }
+.gac-typing span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes gac-blink {
+  0%, 80%, 100% { opacity: 0.25; transform: scale(0.9); }
+  40% { opacity: 1; transform: scale(1); }
+}
+
+/* ---- 输入区 ---- */
+.gac-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--gac-bg);
+  border-top: 1px solid var(--gac-border);
+}
+.gac-input {
+  flex: 1;
+  border: 1px solid var(--gac-border);
+  border-radius: 10px;
+  padding: 10px 13px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--gac-bubble-agent-text);
+  background: var(--gac-input);
+  outline: none;
+  resize: none;
+  max-height: 110px;
+  font-family: inherit;
+  transition: border-color 0.15s;
+}
+.gac-input::placeholder { color: var(--gac-muted); }
+.gac-input:focus { border-color: var(--gac-focus); }
+
+.gac-send {
+  border: none;
+  border-radius: 10px;
+  background: var(--gac-focus);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.05s;
+}
+.gac-send:hover:not(:disabled) { filter: brightness(0.92); }
+.gac-send:active:not(:disabled) { transform: translateY(1px); }
+.gac-send:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ---- 底部提示 ---- */
+.gac-hint {
+  padding: 9px 16px;
+  font-size: 12px;
+  color: var(--gac-muted);
+  background: var(--gac-bg);
+  border-top: 1px solid var(--gac-border);
+}
+
+/* ---- 窄屏 ---- */
+@media (max-width: 480px) {
+  #game-agent-chat { margin: 18px auto; border-radius: 12px; }
+  .gac-msg { max-width: 88%; }
+  .gac-send { padding: 10px 14px; }
+}

@@ -1,0 +1,534 @@
+<!doctype html><html lang=en><head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>:root{--accent-color:#FF4D4D;--font-size:1.1rem}</style>
+<title>Prometheus GO SDK</title>
+<meta name=description content="Prometheus SDK使用小🐥">
+<meta name=keywords content="blog,gokarna,hugo,Prometheus">
+<meta property="og:url" content="https://hindungwang.github.io/posts/26.prometheus_sdk/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Prometheus GO SDK">
+<meta property="og:description" content="Prometheus SDK使用小🐥">
+<meta property="og:image" content="https://github.com/hindungWang.png">
+<meta property="og:image:secure_url" content="https://github.com/hindungWang.png">
+<meta name=twitter:card content="summary_large_image">
+<meta name=twitter:title content="Prometheus GO SDK">
+<meta name=twitter:description content="Prometheus SDK使用小🐥">
+<meta property="twitter:domain" content="https://hindungwang.github.io/posts/26.prometheus_sdk/">
+<meta property="twitter:url" content="https://hindungwang.github.io/posts/26.prometheus_sdk/">
+<meta name=twitter:image content="https://github.com/hindungWang.png">
+<link rel=canonical href=https://hindungwang.github.io/posts/26.prometheus_sdk/>
+<link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
+<link rel=stylesheet type=text/css href=/css/main.min.css>
+<link id=dark-theme rel=stylesheet href=/css/dark.min.css>
+<script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<link rel=icon type=image/png href=/favicon.png>
+<link rel=apple-touch-icon href=/favicon.png>
+<link rel=stylesheet href=/css/posts-nav.css>
+</head>
+<body class=post-page>
+<script>setThemeByUserPref()</script><header class=header>
+<nav class=header-nav>
+<div class=avatar>
+<a href=https://hindungwang.github.io/>
+<img src=https://github.com/hindungWang.png alt=avatar>
+</a>
+</div>
+<div class=nav-title>
+<a class=nav-brand href=https://hindungwang.github.io/>Hindung's Blog</a>
+</div>
+<div class=nav-links>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/ aria-label><span data-feather=home></span> Home </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/about aria-label><span data-feather=home></span> About </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/posts/ aria-label><span data-feather=page></span> Posts </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/game-agent/ aria-label><span data-feather=gamepad></span> Game Agent </a>
+</div>
+<div class=nav-link>
+<a href=https://github.com/hindungWang aria-label=github><span data-feather=github></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/tags/ aria-label><span data-feather=tag></span> Tags </a>
+</div>
+<div class=nav-link>
+<a href=https://buymeacoffee.com/hindung aria-label=buymeacoffee><span data-feather=coffee></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/index.xml aria-label=rss><span data-feather=rss></span> </a>
+</div>
+<span class=nav-icons-divider></span>
+<div class="nav-link dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a aria-hidden=true role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</div>
+<div class=nav-link id=hamburger-menu-toggle>
+<span class="sr-only hamburger-menu-toggle-screen-reader-target">menu</span>
+<a aria-checked=false aria-labelledby=hamburger-menu-toggle id=hamburger-menu-toggle-target role=switch>
+<span data-feather=menu></span>
+</a>
+</div>
+<ul class="nav-hamburger-list visibility-hidden">
+<li class=nav-item>
+<a href=https://hindungwang.github.io/><span data-feather=home></span> Home </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/about><span data-feather=home></span> About </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/posts/><span data-feather=page></span> Posts </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/game-agent/><span data-feather=gamepad></span> Game Agent </a>
+</li>
+<li class=nav-item>
+<a href=https://github.com/hindungWang><span data-feather=github></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/tags/><span data-feather=tag></span> Tags </a>
+</li>
+<li class=nav-item>
+<a href=https://buymeacoffee.com/hindung><span data-feather=coffee></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/index.xml><span data-feather=rss></span> </a>
+</li>
+<li class="nav-item dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main id=content>
+<div id=reading-progress aria-hidden=true></div>
+<aside class=posts-nav aria-label=所有文章>
+<h3>文章<span class=posts-nav-count>36</span></h3>
+<ul>
+<li>
+<a href=/posts/35.kube-vip-pr/ title="给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败">给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败</a>
+</li>
+<li>
+<a href=/posts/34.helm-3-way-merge/ title="Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录">Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录</a>
+</li>
+<li>
+<a href=/posts/33.terraform/ title=Terraform技术分享>Terraform技术分享</a>
+</li>
+<li>
+<a href=/posts/32.to-many-pods-created/ title=Pod不停被创建？？>Pod不停被创建？？</a>
+</li>
+<li>
+<a href=/posts/31.hight-cpu/ title="记一次节点高 CPU 高 Load 的排查经历">记一次节点高 CPU 高 Load 的排查经历</a>
+</li>
+<li>
+<a href=/posts/30.go-gc/ title="Golang GC 初探">Golang GC 初探</a>
+</li>
+<li>
+<a href=/posts/29.k8s-apimachinery-util/ title="k8s.io/apimachinery/util 包源码解读">k8s.io/apimachinery/util 包源码解读</a>
+</li>
+<li>
+<a href=/posts/28.k8s-utils/ title="Kubernetes 的 utils 包源码鉴赏">Kubernetes 的 utils 包源码鉴赏</a>
+</li>
+<li>
+<a href=/posts/24.k8s-network-policy/ title=K8s之网络策略>K8s之网络策略</a>
+</li>
+<li>
+<a href=/posts/22.k8s-cilium/ title=K8s之cilium网络插件>K8s之cilium网络插件</a>
+</li>
+<li>
+<a href=/posts/27.prometheus_test/ title=Prometheus性能压测与高可用设计>Prometheus性能压测与高可用设计</a>
+</li>
+<li class=active>
+<a href=/posts/26.prometheus_sdk/ title="Prometheus GO SDK">Prometheus GO SDK</a>
+</li>
+<li>
+<a href=/posts/25.kube-ovn/ title=K8s之kube-ovn网络插件>K8s之kube-ovn网络插件</a>
+</li>
+<li>
+<a href=/posts/23.k8s-client/ title="K8s client-go初始化的几种方法">K8s client-go初始化的几种方法</a>
+</li>
+<li>
+<a href=/posts/18.container-1/ title=容器技术之我见>容器技术之我见</a>
+</li>
+<li>
+<a href=/posts/19.cri/ title=容器运行时>容器运行时</a>
+</li>
+<li>
+<a href=/posts/21.k8s-1/ title=Kubernetes组件>Kubernetes组件</a>
+</li>
+<li>
+<a href=/posts/17.kubectl/ title=Kubectl命令行>Kubectl命令行</a>
+</li>
+<li>
+<a href=/posts/16.calico/ title=K8s之calico网络插件东西南北流量>K8s之calico网络插件东西南北流量</a>
+</li>
+<li>
+<a href=/posts/15.iptable/ title=Iptable规则初探>Iptable规则初探</a>
+</li>
+<li>
+<a href=/posts/14.go-sync-cond/ title=Go源码解读之sync.Cond>Go源码解读之sync.Cond</a>
+</li>
+<li>
+<a href=/posts/13.go-sync-type/ title=Go源码解读之sync中的基本类型和使用场景>Go源码解读之sync中的基本类型和使用场景</a>
+</li>
+<li>
+<a href=/posts/12.deep-copy/ title=深拷贝之循环引用>深拷贝之循环引用</a>
+</li>
+<li>
+<a href=/posts/11.lru/ title="LRU 缓存机制">LRU 缓存机制</a>
+</li>
+<li>
+<a href=/posts/10.go-sync-atomic/ title=Go源码解读之sync/atomic>Go源码解读之sync/atomic</a>
+</li>
+<li>
+<a href=/posts/09.keng/ title=使用Go遇到的坑>使用Go遇到的坑</a>
+</li>
+<li>
+<a href=/posts/08.core/ title=构建属于你自己的核心力量>构建属于你自己的核心力量</a>
+</li>
+<li>
+<a href=/posts/20.go-priority-queue/ title=Golang实现优先队列>Golang实现优先队列</a>
+</li>
+<li>
+<a href=/posts/07.snowflake/ title=雪花算法>雪花算法</a>
+</li>
+<li>
+<a href=/posts/06.golang-channel/ title=Golang-channel>Golang-channel</a>
+</li>
+<li>
+<a href=/posts/05.go-lang/ title=Golang语言模型>Golang语言模型</a>
+</li>
+<li>
+<a href=/posts/04.gin/ title=初探Gin框架>初探Gin框架</a>
+</li>
+<li>
+<a href=/posts/03.golang-interface/ title=Golang-interface的底层原理浅析>Golang-interface的底层原理浅析</a>
+</li>
+<li>
+<a href=/posts/02.docker-images/ title=Docker镜像优化>Docker镜像优化</a>
+</li>
+<li>
+<a href=/posts/01.change-log/ title=部落格修改记录>部落格修改记录</a>
+</li>
+<li>
+<a href=/posts/00.markdown/ title="Hello World">Hello World</a>
+</li>
+</ul>
+</aside>
+<script>(function(){var b=document.getElementById('reading-progress'),a;if(!b)return;a=function(){var a=document.documentElement,c=a.scrollHeight-a.clientHeight;b.style.transform='scaleX('+(c>0?window.scrollY/c:0)+')'},window.addEventListener('scroll',a,{passive:!0}),window.addEventListener('resize',a),a()})()</script>
+<div class="post container">
+<div class=post-header-section>
+<h1>Prometheus GO SDK</h1>
+<small role=doc-subtitle>Prometheus SDK使用小🐥</small>
+<p class=post-date>
+July 19, 2023
+</p>
+<ul class=post-tags>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/prometheus>Prometheus</a></li>
+</ul>
+</div>
+<div class=post-content>
+<h1 id=prometheus-go-sdk>Prometheus GO SDK</h1>
+<h2 id=1-介绍prometheus>1. 介绍Prometheus</h2>
+<p>Prometheus 是由前 Google 工程师从 2012 年开始在 Soundcloud 以开源软件的形式进行研发的系统监控和告警工具包，自此以后，许多公司和组织都采用了 Prometheus 作为监控告警工具。Prometheus 的开发者和用户社区非常活跃，它现在是一个独立的开源项目，可以独立于任何公司进行维护。</p>
+<p>Prometheus生态有很多丰富的组件以及SDK。其中常见的组合是 SDK + Prometheus + Alert Manager + Grafana + Loki。</p>
+<h2 id=2-prometheus-go客户端库概述>2. Prometheus Go客户端库概述</h2>
+<p>Github地址：<a href=https://github.com/prometheus/client_golang>https://github.com/prometheus/client_golang</a></p>
+<pre tabindex=0><code>.
+├── api
+│   └── prometheus 
+├── examples   # 官方例子
+│   ├── exemplars
+│   ├── gocollector
+│   ├── middleware
+│   ├── random
+│   └── simple
+├── prometheus     # 核心代码定义各种指标接口、结构等
+│   ├── collectors # 定义收集器等
+│   ├── graphite   # 设计模式相关
+│   ├── internal   # 内部实现
+│   ├── promauto   # 与Prometheus实例之间维护一个全局注册表，用于维护指标信息
+│   ├── promhttp   # 通过 HTTP 服务暴露出来的方法集合
+│   ├── push       # 推送指标到Prometheus相关的包
+│   └── testutil   # test相关的
+</code></pre><h2 id=3-api接口和功能>3. API接口和功能</h2>
+<p>Prometheus支持的Metric类型有4种：Counter, Gauge, Histogram 和 Summary。</p>
+<h3 id=counter-只增重启变为0>Counter （只增重启变为0）</h3>
+<p>计数器类型是一个累积指标，表示单个单调递增的计数器，其值只能在重新启动时增加或重置为零。例如，可以使用计数器来表示服务的请求数、已完成的任务数或错误数。</p>
+<h3 id=gauge-仪表盘即可变大变小>Gauge （仪表盘，即可变大变小）</h3>
+<p>仪表是表示可以任意上下移动的单个数值的指标。可以用来表示温度、内存使用、速度等值。</p>
+<h3 id=histogram-直方图>Histogram （直方图）</h3>
+<p>直方图指标是一种用于度量数据分布的指标类型。它将数据分成一系列桶(bucket)，每个桶代表一定范围内的数据，然后记录每个桶中数据的数量以及总和。</p>
+<p>比如，每个 Histogram 指标都包含多个子指标：</p>
+<p><code>my_histogram_bucket{le="0.005"}</code>：表示数据小于等于 0.005 的数量。</p>
+<p><code>my_histogram_bucket{le="0.01"}</code>：表示数据小于等于 0.01 的数量。</p>
+<p><code>my_histogram_bucket{le="0.025"}</code>：表示数据小于等于 0.025 的数量。</p>
+<p>……</p>
+<p><code>my_histogram_bucket{le="+Inf"}</code>：表示数据小于等于正无穷的数量。</p>
+<p>其中 le 表示“小于等于”，每个子指标包含一个标签 le，表示该子指标所对应的桶的上限值。此外，还有两个子指标：</p>
+<p><code>my_histogram_sum</code>：表示所有数据的总和。</p>
+<p><code>my_histogram_count</code>：表示所有数据的数量。</p>
+<h3 id=summary>Summary</h3>
+<p>Summary 指标是一种用于度量数据分布情况的指标类型，它类似于 Histogram 指标，也将数据分成多个桶，但每个桶代表的不是数据的数量，而是数据的分位数。</p>
+<p>先来理解一下中位数和分位数：</p>
+<p>大小排列后：<code>2, 3, 5, 6, 7, 8, 9</code>。位于中间的数值是 <code>6</code>，因此它是这组数据的中位数。</p>
+<p>大小排列后：
+<code>2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 20, 30, 40, 50, 100</code>，这组数据中，排在前 90% 的数值为前 13 个数，即：
+<code>2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 20, 30, 40</code>，所以这组数据的 90% 分位数为 <code>40</code>。</p>
+<p>每个 Summary 指标都包含多个子指标：</p>
+<p><code>my_summary{quantile="0.5"}</code>：表示数据的中位数。</p>
+<p><code>my_summary{quantile="0.9"}</code>：表示数据的 90% 分位数。</p>
+<p><code>my_summary{quantile="0.99"}</code>：表示数据的 99% 分位数。</p>
+<p>……</p>
+<p><code>my_summary_sum</code>：表示所有数据的总和。</p>
+<p><code>my_summary_count</code>：表示所有数据的数量。</p>
+<p>与 Histogram 指标不同的是，Summary 指标不需要定义固定的桶，而是在运行时根据数据动态计算每个分位数的值。</p>
+<h2 id=4-实例如何使用prometheus-go客户端库>4. 实例：如何使用Prometheus Go客户端库</h2>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> main
+
+<span style=color:#ff79c6>import</span> (
+	<span style=color:#f1fa8c>&#34;math/rand&#34;</span>
+	<span style=color:#f1fa8c>&#34;net/http&#34;</span>
+	<span style=color:#f1fa8c>&#34;time&#34;</span>
+
+	<span style=color:#f1fa8c>&#34;github.com/prometheus/client_golang/prometheus&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/prometheus/client_golang/prometheus/promhttp&#34;</span>
+)
+
+<span style=color:#8be9fd;font-style:italic>var</span> (
+	<span style=color:#6272a4>// Counter 指标用于计数，它只会增加，不会减少。
+</span><span style=color:#6272a4></span>	counter = prometheus.<span style=color:#50fa7b>NewCounter</span>(prometheus.CounterOpts{
+		Name: <span style=color:#f1fa8c>&#34;my_counter&#34;</span>,
+		Help: <span style=color:#f1fa8c>&#34;This is my counter.&#34;</span>,
+	})
+
+	<span style=color:#6272a4>// Gauge 指标用于表示一个可变的值，它可以增加或减少。
+</span><span style=color:#6272a4></span>	gauge = prometheus.<span style=color:#50fa7b>NewGauge</span>(prometheus.GaugeOpts{
+		Name: <span style=color:#f1fa8c>&#34;my_gauge&#34;</span>,
+		Help: <span style=color:#f1fa8c>&#34;This is my gauge.&#34;</span>,
+	})
+
+	<span style=color:#6272a4>// Histogram 指标用于度量数据的分布情况，它将数据分成多个桶，每个桶代表数据的数量。
+</span><span style=color:#6272a4></span>	histogram = prometheus.<span style=color:#50fa7b>NewHistogram</span>(prometheus.HistogramOpts{
+		Name: <span style=color:#f1fa8c>&#34;my_histogram&#34;</span>,
+		Help: <span style=color:#f1fa8c>&#34;This is my histogram.&#34;</span>,
+		Buckets: []<span style=color:#8be9fd>float64</span>{<span style=color:#bd93f9>1</span>, <span style=color:#bd93f9>2</span>, <span style=color:#bd93f9>5</span>, <span style=color:#bd93f9>10</span>, <span style=color:#bd93f9>20</span>, <span style=color:#bd93f9>50</span>, <span style=color:#bd93f9>100</span>},
+	})
+
+	<span style=color:#6272a4>// Summary 指标用于度量数据的分布情况，它将数据分成多个桶，每个桶代表数据的分位数。
+</span><span style=color:#6272a4></span>	summary = prometheus.<span style=color:#50fa7b>NewSummary</span>(prometheus.SummaryOpts{
+		Name: <span style=color:#f1fa8c>&#34;my_summary&#34;</span>,
+		Help: <span style=color:#f1fa8c>&#34;This is my summary.&#34;</span>,
+		Objectives: <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>float64</span>]<span style=color:#8be9fd>float64</span>{<span style=color:#bd93f9>0.5</span>: <span style=color:#bd93f9>0.05</span>, <span style=color:#bd93f9>0.9</span>: <span style=color:#bd93f9>0.01</span>, <span style=color:#bd93f9>0.99</span>: <span style=color:#bd93f9>0.001</span>},
+	})
+)
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>init</span>() {
+	<span style=color:#6272a4>// 注册指标到默认的注册器中，默认注册器会包含一些go内建的指标，
+</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// 当然也可以new一个自己的registry := prometheus.NewRegistry()
+</span><span style=color:#6272a4></span>	prometheus.<span style=color:#50fa7b>MustRegister</span>(counter)
+	prometheus.<span style=color:#50fa7b>MustRegister</span>(gauge)
+	prometheus.<span style=color:#50fa7b>MustRegister</span>(histogram)
+	prometheus.<span style=color:#50fa7b>MustRegister</span>(summary)
+}
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
+	<span style=color:#6272a4>// 每隔一秒钟更新指标
+</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>go</span> <span style=color:#8be9fd;font-style:italic>func</span>() {
+		<span style=color:#ff79c6>for</span> {
+			counter.<span style=color:#50fa7b>Inc</span>()
+			gauge.<span style=color:#50fa7b>Set</span>(rand.<span style=color:#50fa7b>Float64</span>() <span style=color:#ff79c6>*</span> <span style=color:#bd93f9>100</span>)
+			histogram.<span style=color:#50fa7b>Observe</span>(rand.<span style=color:#50fa7b>Float64</span>() <span style=color:#ff79c6>*</span> <span style=color:#bd93f9>100</span>)
+			summary.<span style=color:#50fa7b>Observe</span>(rand.<span style=color:#50fa7b>Float64</span>() <span style=color:#ff79c6>*</span> <span style=color:#bd93f9>100</span>)
+			time.<span style=color:#50fa7b>Sleep</span>(time.Second)
+		}
+	}()
+
+	<span style=color:#6272a4>// 启动 HTTP 服务器，暴露指标数据
+</span><span style=color:#6272a4></span>	http.<span style=color:#50fa7b>Handle</span>(<span style=color:#f1fa8c>&#34;/metrics&#34;</span>, promhttp.<span style=color:#50fa7b>Handler</span>())
+	http.<span style=color:#50fa7b>ListenAndServe</span>(<span style=color:#f1fa8c>&#34;:8080&#34;</span>, <span style=color:#ff79c6>nil</span>)
+}
+</code></pre></div><p>访问metrics：</p>
+<pre tabindex=0><code># HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+... 隐藏Prometheus go自带的指标
+
+# HELP my_counter This is my counter.
+# TYPE my_counter counter
+my_counter 32
+# HELP my_gauge This is my gauge.
+# TYPE my_gauge gauge
+my_gauge 15.232291874677397
+# HELP my_histogram This is my histogram.
+# TYPE my_histogram histogram
+my_histogram_bucket{le=&quot;1&quot;} 0
+my_histogram_bucket{le=&quot;2&quot;} 0
+my_histogram_bucket{le=&quot;5&quot;} 1
+my_histogram_bucket{le=&quot;10&quot;} 3
+my_histogram_bucket{le=&quot;20&quot;} 3
+my_histogram_bucket{le=&quot;50&quot;} 13
+my_histogram_bucket{le=&quot;100&quot;} 32
+my_histogram_bucket{le=&quot;+Inf&quot;} 32
+my_histogram_sum 1804.8308076418284
+my_histogram_count 32
+# HELP my_summary This is my summary.
+# TYPE my_summary summary
+my_summary{quantile=&quot;0.5&quot;} 55.45191711055754
+my_summary{quantile=&quot;0.9&quot;} 90.63655279983087
+my_summary{quantile=&quot;0.99&quot;} 98.26833189512352
+my_summary_sum 1719.6545962079606
+my_summary_count 32
+
+...
+# HELP promhttp_metric_handler_requests_total Total number of scrapes by HTTP status code.
+# TYPE promhttp_metric_handler_requests_total counter
+promhttp_metric_handler_requests_total{code=&quot;200&quot;} 0
+promhttp_metric_handler_requests_total{code=&quot;500&quot;} 0
+promhttp_metric_handler_requests_total{code=&quot;503&quot;} 0
+</code></pre><p>还可以加上label用于区分不同维度的数据，如alertmanager：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>type</span> Alerts <span style=color:#8be9fd;font-style:italic>struct</span> {
+	firing   prometheus.Counter
+	resolved prometheus.Counter
+	invalid  prometheus.Counter
+}
+
+<span style=color:#6272a4>// NewAlerts returns an *Alerts struct for the given API version.
+</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>NewAlerts</span>(version <span style=color:#8be9fd>string</span>, r prometheus.Registerer) <span style=color:#ff79c6>*</span>Alerts {
+	numReceivedAlerts <span style=color:#ff79c6>:=</span> prometheus.<span style=color:#50fa7b>NewCounterVec</span>(prometheus.CounterOpts{
+		Name:        <span style=color:#f1fa8c>&#34;alertmanager_alerts_received_total&#34;</span>,
+		Help:        <span style=color:#f1fa8c>&#34;The total number of received alerts.&#34;</span>,
+		ConstLabels: prometheus.Labels{<span style=color:#f1fa8c>&#34;version&#34;</span>: version},
+	}, []<span style=color:#8be9fd>string</span>{<span style=color:#f1fa8c>&#34;status&#34;</span>})
+	numInvalidAlerts <span style=color:#ff79c6>:=</span> prometheus.<span style=color:#50fa7b>NewCounter</span>(prometheus.CounterOpts{
+		Name:        <span style=color:#f1fa8c>&#34;alertmanager_alerts_invalid_total&#34;</span>,
+		Help:        <span style=color:#f1fa8c>&#34;The total number of received alerts that were invalid.&#34;</span>,
+		ConstLabels: prometheus.Labels{<span style=color:#f1fa8c>&#34;version&#34;</span>: version},
+	})
+	<span style=color:#ff79c6>if</span> r <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+		r.<span style=color:#50fa7b>MustRegister</span>(numReceivedAlerts, numInvalidAlerts)
+	}
+	<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>&amp;</span>Alerts{
+		firing:   numReceivedAlerts.<span style=color:#50fa7b>WithLabelValues</span>(<span style=color:#f1fa8c>&#34;firing&#34;</span>),  <span style=color:#6272a4>// 同一个Counter的不同标签，firing.Inc()
+</span><span style=color:#6272a4></span>		resolved: numReceivedAlerts.<span style=color:#50fa7b>WithLabelValues</span>(<span style=color:#f1fa8c>&#34;resolved&#34;</span>),<span style=color:#6272a4>// 同一个Counter的不同标签，resolved.Inc()
+</span><span style=color:#6272a4></span>		invalid:  numInvalidAlerts,
+	}
+}
+</code></pre></div><p>效果：</p>
+<pre tabindex=0><code># HELP alertmanager_alerts_received_total The total number of received alerts.
+# TYPE alertmanager_alerts_received_total counter 这个计数器分别在四个维度上有数据
+alertmanager_alerts_received_total{status=&quot;firing&quot;,version=&quot;v1&quot;} 0
+alertmanager_alerts_received_total{status=&quot;firing&quot;,version=&quot;v2&quot;} 25009
+alertmanager_alerts_received_total{status=&quot;resolved&quot;,version=&quot;v1&quot;} 0
+alertmanager_alerts_received_total{status=&quot;resolved&quot;,version=&quot;v2&quot;} 758
+</code></pre><h2 id=5-总结>5. 总结</h2>
+<p>容易遇到的坑：修改指标的标签导致panic。</p>
+<p>当我们定义好一个metric如：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>var</span> (
+	counter = prometheus.<span style=color:#50fa7b>NewCounterVec</span>(prometheus.CounterOpts{
+		Name: <span style=color:#f1fa8c>&#34;my_counter&#34;</span>,
+		Help: <span style=color:#f1fa8c>&#34;This is my counter.&#34;</span>,
+	}, []<span style=color:#8be9fd>string</span>{<span style=color:#f1fa8c>&#34;foo&#34;</span>, <span style=color:#f1fa8c>&#34;bar&#34;</span>})
+)
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>init</span>() {
+	prometheus.<span style=color:#50fa7b>MustRegister</span>(counter)
+}
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
+	<span style=color:#6272a4>// 每隔一秒钟更新指标
+</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>go</span> <span style=color:#8be9fd;font-style:italic>func</span>() {
+		<span style=color:#ff79c6>for</span> {
+			counter.<span style=color:#50fa7b>With</span>(prometheus.Labels{<span style=color:#f1fa8c>&#34;foo&#34;</span>: <span style=color:#f1fa8c>&#34;a&#34;</span>, <span style=color:#f1fa8c>&#34;bar&#34;</span>: <span style=color:#f1fa8c>&#34;b&#34;</span>}).<span style=color:#50fa7b>Inc</span>()
+			time.<span style=color:#50fa7b>Sleep</span>(time.Second)
+		}
+	}()
+
+	<span style=color:#6272a4>// 修改指标的标签和信息
+</span><span style=color:#6272a4></span>	counter = prometheus.<span style=color:#50fa7b>NewCounterVec</span>(prometheus.CounterOpts{
+		Name: <span style=color:#f1fa8c>&#34;my_counter&#34;</span>,
+		Help: <span style=color:#f1fa8c>&#34;This is my new counter.&#34;</span>,
+	}, []<span style=color:#8be9fd>string</span>{<span style=color:#f1fa8c>&#34;foo&#34;</span>, <span style=color:#f1fa8c>&#34;baz&#34;</span>})
+}
+</code></pre></div><p>输出：</p>
+<pre tabindex=0><code>go run main.go                                                
+panic: label name &quot;baz&quot; missing in label map
+
+goroutine 19 [running]:
+github.com/prometheus/client_golang/prometheus.(*CounterVec).With(...)
+        /root/go/pkg/mod/github.com/prometheus/client_golang@v1.16.0/prometheus/counter.go:286
+main.main.func1()
+        /root/hxd/code/metrics-example/main.go:53 +0x171
+created by main.main
+        /root/hxd/code/metrics-example/main.go:51 +0x32
+exit status 2
+</code></pre><p>因此最好定义metric之后不要在在代码逻辑上动态修改Label的值，或者修改之后需要重新注册：<code>prometheus.MustRegister(counter)</code>。
+但是也不建议这么做。实际上Prometheus已经帮我们处理好了这个指标的注册过程（上面提到的prometheus/promauto包），因此，在使用时应该提前定义好指标以及label，然后注册到对应的Registry。在使用时，用<code>CounterVec.WithLabelValues()</code>方法实例化一个维度的指标并维护值。</p>
+<p>也可以设计一个collector或者直接引入第三方collector获得metric能力。</p>
+<p>如：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>    <span style=color:#6272a4>// Add Go module build info.
+</span><span style=color:#6272a4></span>	reg.<span style=color:#50fa7b>MustRegister</span>(collectors.<span style=color:#50fa7b>NewBuildInfoCollector</span>())
+
+    <span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>NewBuildInfoCollector</span>() Collector {
+        path, version, sum <span style=color:#ff79c6>:=</span> <span style=color:#f1fa8c>&#34;unknown&#34;</span>, <span style=color:#f1fa8c>&#34;unknown&#34;</span>, <span style=color:#f1fa8c>&#34;unknown&#34;</span>
+        <span style=color:#ff79c6>if</span> bi, ok <span style=color:#ff79c6>:=</span> debug.<span style=color:#50fa7b>ReadBuildInfo</span>(); ok {
+            path = bi.Main.Path
+            version = bi.Main.Version
+            sum = bi.Main.Sum
+        }
+        c <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>selfCollector{<span style=color:#50fa7b>MustNewConstMetric</span>(
+            <span style=color:#50fa7b>NewDesc</span>(
+                <span style=color:#f1fa8c>&#34;go_build_info&#34;</span>,
+                <span style=color:#f1fa8c>&#34;Build information about the main Go module.&#34;</span>,
+                <span style=color:#ff79c6>nil</span>, Labels{<span style=color:#f1fa8c>&#34;path&#34;</span>: path, <span style=color:#f1fa8c>&#34;version&#34;</span>: version, <span style=color:#f1fa8c>&#34;checksum&#34;</span>: sum},
+            ),
+            GaugeValue, <span style=color:#bd93f9>1</span>)}
+        c.<span style=color:#50fa7b>init</span>(c.self)
+        <span style=color:#ff79c6>return</span> c
+    }
+</code></pre></div><p>参考连接：</p>
+<p><a href=https://prometheus.io/docs/concepts/metric_types/>https://prometheus.io/docs/concepts/metric_types/</a></p>
+<p><a href=https://github.com/prometheus/client_golang>https://github.com/prometheus/client_golang</a></p>
+</div>
+<div class=prev-next>
+</div><svg id="btt-button" class="arrow-logo" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512" onclick="scrollToTop()" title="Go to top"><path d="M177 159.7l136 136c9.4 9.4 9.4 24.6.0 33.9l-22.6 22.6c-9.4 9.4-24.6 9.4-33.9.0L160 255.9l-96.4 96.4c-9.4 9.4-24.6 9.4-33.9.0L7 329.7c-9.4-9.4-9.4-24.6.0-33.9l136-136c9.4-9.5 24.6-9.5 34-.1z"/></svg>
+<script>let backToTopButton=document.getElementById("btt-button");window.onscroll=function(){scrollFunction()};function scrollFunction(){document.body.scrollTop>20||document.documentElement.scrollTop>20?backToTopButton.style.display="block":backToTopButton.style.display="none"}function scrollToTop(){window.scrollTo(0,0)}</script>
+</div>
+<aside class=post-toc aria-label=文章目录>
+<h3 class=toc-title>目录</h3>
+<nav id=toc>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#1-介绍prometheus>1. 介绍Prometheus</a></li>
+<li><a href=#2-prometheus-go客户端库概述>2. Prometheus Go客户端库概述</a></li>
+<li><a href=#3-api接口和功能>3. API接口和功能</a>
+<ul>
+<li><a href=#counter-只增重启变为0>Counter （只增重启变为0）</a></li>
+<li><a href=#gauge-仪表盘即可变大变小>Gauge （仪表盘，即可变大变小）</a></li>
+<li><a href=#histogram-直方图>Histogram （直方图）</a></li>
+<li><a href=#summary>Summary</a></li>
+</ul>
+</li>
+<li><a href=#4-实例如何使用prometheus-go客户端库>4. 实例：如何使用Prometheus Go客户端库</a></li>
+<li><a href=#5-总结>5. 总结</a></li>
+</ul>
+</nav>
+</nav>
+</aside>
+<link rel=stylesheet href=/css/toc.css>
+</main><footer class=footer>
+<span>&copy; 2023 HindungWang</span>
+<span>
+Made with &#10084;&#65039; using <a target=_blank href=https://github.com/gokarna-theme/gokarna-hugo>Gokarna</a>
+</span>
+</footer>
+</body>
+</html>

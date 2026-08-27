@@ -1,0 +1,793 @@
+<!doctype html><html lang=en><head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>:root{--accent-color:#FF4D4D;--font-size:1.1rem}</style>
+<title>Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录</title>
+<meta name=description content="摘要 现象：helm install 时 values 与模板各写了一份 SERVER_IP env，YAML 里出现同名双份；修掉其中的 values 那份后，第一次 helm upgrade 反而把 SERVER_IP 从集群里删光了，第二次升级又恢复了。
+根因：Helm 3 升级走的是三路 strategic …">
+<meta name=keywords content="blog,gokarna,hugo,Helm,kubernetes">
+<meta property="og:url" content="https://hindungwang.github.io/posts/34.helm-3-way-merge/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录">
+<meta property="og:description" content="摘要 现象：helm install 时 values 与模板各写了一份 SERVER_IP env，YAML 里出现同名双份；修掉其中的 values 那份后，第一次 helm upgrade 反而把 SERVER_IP 从集群里删光了，第二次升级又恢复了。
+根因：Helm 3 升级走的是三路 strategic …">
+<meta property="og:image" content="https://github.com/hindungWang.png">
+<meta property="og:image:secure_url" content="https://github.com/hindungWang.png">
+<meta name=twitter:card content="summary_large_image">
+<meta name=twitter:title content="Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录">
+<meta name=twitter:description content="摘要 现象：helm install 时 values 与模板各写了一份 SERVER_IP env，YAML 里出现同名双份；修掉其中的 values 那份后，第一次 helm upgrade 反而把 SERVER_IP 从集群里删光了，第二次升级又恢复了。
+根因：Helm 3 升级走的是三路 strategic …">
+<meta property="twitter:domain" content="https://hindungwang.github.io/posts/34.helm-3-way-merge/">
+<meta property="twitter:url" content="https://hindungwang.github.io/posts/34.helm-3-way-merge/">
+<meta name=twitter:image content="https://github.com/hindungWang.png">
+<link rel=canonical href=https://hindungwang.github.io/posts/34.helm-3-way-merge/>
+<link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
+<link rel=stylesheet type=text/css href=/css/main.min.css>
+<link id=dark-theme rel=stylesheet href=/css/dark.min.css>
+<script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<link rel=icon type=image/png href=/favicon.png>
+<link rel=apple-touch-icon href=/favicon.png>
+<link rel=stylesheet href=/css/posts-nav.css>
+</head>
+<body class=post-page>
+<script>setThemeByUserPref()</script><header class=header>
+<nav class=header-nav>
+<div class=avatar>
+<a href=https://hindungwang.github.io/>
+<img src=https://github.com/hindungWang.png alt=avatar>
+</a>
+</div>
+<div class=nav-title>
+<a class=nav-brand href=https://hindungwang.github.io/>Hindung's Blog</a>
+</div>
+<div class=nav-links>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/ aria-label><span data-feather=home></span> Home </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/about aria-label><span data-feather=home></span> About </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/posts/ aria-label><span data-feather=page></span> Posts </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/game-agent/ aria-label><span data-feather=gamepad></span> Game Agent </a>
+</div>
+<div class=nav-link>
+<a href=https://github.com/hindungWang aria-label=github><span data-feather=github></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/tags/ aria-label><span data-feather=tag></span> Tags </a>
+</div>
+<div class=nav-link>
+<a href=https://buymeacoffee.com/hindung aria-label=buymeacoffee><span data-feather=coffee></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/index.xml aria-label=rss><span data-feather=rss></span> </a>
+</div>
+<span class=nav-icons-divider></span>
+<div class="nav-link dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a aria-hidden=true role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</div>
+<div class=nav-link id=hamburger-menu-toggle>
+<span class="sr-only hamburger-menu-toggle-screen-reader-target">menu</span>
+<a aria-checked=false aria-labelledby=hamburger-menu-toggle id=hamburger-menu-toggle-target role=switch>
+<span data-feather=menu></span>
+</a>
+</div>
+<ul class="nav-hamburger-list visibility-hidden">
+<li class=nav-item>
+<a href=https://hindungwang.github.io/><span data-feather=home></span> Home </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/about><span data-feather=home></span> About </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/posts/><span data-feather=page></span> Posts </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/game-agent/><span data-feather=gamepad></span> Game Agent </a>
+</li>
+<li class=nav-item>
+<a href=https://github.com/hindungWang><span data-feather=github></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/tags/><span data-feather=tag></span> Tags </a>
+</li>
+<li class=nav-item>
+<a href=https://buymeacoffee.com/hindung><span data-feather=coffee></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/index.xml><span data-feather=rss></span> </a>
+</li>
+<li class="nav-item dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main id=content>
+<div id=reading-progress aria-hidden=true></div>
+<aside class=posts-nav aria-label=所有文章>
+<h3>文章<span class=posts-nav-count>36</span></h3>
+<ul>
+<li>
+<a href=/posts/35.kube-vip-pr/ title="给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败">给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败</a>
+</li>
+<li class=active>
+<a href=/posts/34.helm-3-way-merge/ title="Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录">Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录</a>
+</li>
+<li>
+<a href=/posts/33.terraform/ title=Terraform技术分享>Terraform技术分享</a>
+</li>
+<li>
+<a href=/posts/32.to-many-pods-created/ title=Pod不停被创建？？>Pod不停被创建？？</a>
+</li>
+<li>
+<a href=/posts/31.hight-cpu/ title="记一次节点高 CPU 高 Load 的排查经历">记一次节点高 CPU 高 Load 的排查经历</a>
+</li>
+<li>
+<a href=/posts/30.go-gc/ title="Golang GC 初探">Golang GC 初探</a>
+</li>
+<li>
+<a href=/posts/29.k8s-apimachinery-util/ title="k8s.io/apimachinery/util 包源码解读">k8s.io/apimachinery/util 包源码解读</a>
+</li>
+<li>
+<a href=/posts/28.k8s-utils/ title="Kubernetes 的 utils 包源码鉴赏">Kubernetes 的 utils 包源码鉴赏</a>
+</li>
+<li>
+<a href=/posts/24.k8s-network-policy/ title=K8s之网络策略>K8s之网络策略</a>
+</li>
+<li>
+<a href=/posts/22.k8s-cilium/ title=K8s之cilium网络插件>K8s之cilium网络插件</a>
+</li>
+<li>
+<a href=/posts/27.prometheus_test/ title=Prometheus性能压测与高可用设计>Prometheus性能压测与高可用设计</a>
+</li>
+<li>
+<a href=/posts/26.prometheus_sdk/ title="Prometheus GO SDK">Prometheus GO SDK</a>
+</li>
+<li>
+<a href=/posts/25.kube-ovn/ title=K8s之kube-ovn网络插件>K8s之kube-ovn网络插件</a>
+</li>
+<li>
+<a href=/posts/23.k8s-client/ title="K8s client-go初始化的几种方法">K8s client-go初始化的几种方法</a>
+</li>
+<li>
+<a href=/posts/18.container-1/ title=容器技术之我见>容器技术之我见</a>
+</li>
+<li>
+<a href=/posts/19.cri/ title=容器运行时>容器运行时</a>
+</li>
+<li>
+<a href=/posts/21.k8s-1/ title=Kubernetes组件>Kubernetes组件</a>
+</li>
+<li>
+<a href=/posts/17.kubectl/ title=Kubectl命令行>Kubectl命令行</a>
+</li>
+<li>
+<a href=/posts/16.calico/ title=K8s之calico网络插件东西南北流量>K8s之calico网络插件东西南北流量</a>
+</li>
+<li>
+<a href=/posts/15.iptable/ title=Iptable规则初探>Iptable规则初探</a>
+</li>
+<li>
+<a href=/posts/14.go-sync-cond/ title=Go源码解读之sync.Cond>Go源码解读之sync.Cond</a>
+</li>
+<li>
+<a href=/posts/13.go-sync-type/ title=Go源码解读之sync中的基本类型和使用场景>Go源码解读之sync中的基本类型和使用场景</a>
+</li>
+<li>
+<a href=/posts/12.deep-copy/ title=深拷贝之循环引用>深拷贝之循环引用</a>
+</li>
+<li>
+<a href=/posts/11.lru/ title="LRU 缓存机制">LRU 缓存机制</a>
+</li>
+<li>
+<a href=/posts/10.go-sync-atomic/ title=Go源码解读之sync/atomic>Go源码解读之sync/atomic</a>
+</li>
+<li>
+<a href=/posts/09.keng/ title=使用Go遇到的坑>使用Go遇到的坑</a>
+</li>
+<li>
+<a href=/posts/08.core/ title=构建属于你自己的核心力量>构建属于你自己的核心力量</a>
+</li>
+<li>
+<a href=/posts/20.go-priority-queue/ title=Golang实现优先队列>Golang实现优先队列</a>
+</li>
+<li>
+<a href=/posts/07.snowflake/ title=雪花算法>雪花算法</a>
+</li>
+<li>
+<a href=/posts/06.golang-channel/ title=Golang-channel>Golang-channel</a>
+</li>
+<li>
+<a href=/posts/05.go-lang/ title=Golang语言模型>Golang语言模型</a>
+</li>
+<li>
+<a href=/posts/04.gin/ title=初探Gin框架>初探Gin框架</a>
+</li>
+<li>
+<a href=/posts/03.golang-interface/ title=Golang-interface的底层原理浅析>Golang-interface的底层原理浅析</a>
+</li>
+<li>
+<a href=/posts/02.docker-images/ title=Docker镜像优化>Docker镜像优化</a>
+</li>
+<li>
+<a href=/posts/01.change-log/ title=部落格修改记录>部落格修改记录</a>
+</li>
+<li>
+<a href=/posts/00.markdown/ title="Hello World">Hello World</a>
+</li>
+</ul>
+</aside>
+<script>(function(){var b=document.getElementById('reading-progress'),a;if(!b)return;a=function(){var a=document.documentElement,c=a.scrollHeight-a.clientHeight;b.style.transform='scaleX('+(c>0?window.scrollY/c:0)+')'},window.addEventListener('scroll',a,{passive:!0}),window.addEventListener('resize',a),a()})()</script>
+<div class="post container">
+<div class=post-header-section>
+<h1>Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录</h1>
+<small role=doc-subtitle></small>
+<p class=post-date>
+September 16, 2025
+</p>
+<ul class=post-tags>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/helm>Helm</a></li>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/kubernetes>kubernetes</a></li>
+</ul>
+</div>
+<div class=post-content>
+<h2 id=摘要>摘要</h2>
+<p><strong>现象</strong>：<code>helm install</code> 时 values 与模板各写了一份 <code>SERVER_IP</code> env，YAML 里出现同名双份；修掉其中的 values 那份后，第一次 <code>helm upgrade</code> 反而把 <code>SERVER_IP</code> 从集群里删光了，第二次升级又恢复了。</p>
+<p><strong>根因</strong>：Helm 3 升级走的是<strong>三路 strategic merge patch</strong>，最终 patch 由两部分拼成：<code>diff(旧→新)</code> 里的<strong>删除项</strong> + <code>diff(live→新)</code> 里的<strong>增改项</strong>。第一次升级时，<code>diff(旧→新)</code> 发现旧快照里多出一条同名 <code>SERVER_IP</code>（旧 2 条 vs 新 1 条），判定"用户删了"，生成 <code>$patch: delete</code> 且<strong>按 key 全删</strong>，把 live 里仅存的一份也带走；与此同时 <code>diff(live→新)</code> 里 old 与 live 完全相等（都只有 1 条），增改部分无事可做，救不回来。第二次升级 <code>diff(live→新)</code> 看到 live 是 0 条、新清单是 1 条，于是把它<strong>加回</strong>。</p>
+<p><strong>结论</strong>：<strong>“模板输出 ≠ 最终 patch”</strong>。<code>--debug</code> / <code>--dry-run</code> 只能看到模板渲染结果，真正的增删判定发生在 Helm 本地的 3-way merge 阶段。</p>
+<hr>
+<h2 id=一现象复盘>一、现象复盘</h2>
+<h3 id=1-安装阶段helm-install>1. 安装阶段（helm install）</h3>
+<p>由于疏忽，我在 <code>values.yaml</code> 里写上了 <code>env</code>，又在 <code>deployment.yaml</code> 模板里 <code>range</code> 了一次，结果 YAML 里出现<strong>同名双份</strong> env：</p>
+<ul>
+<li>既在 <code>values.yaml</code> 里写了
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>env</span>:
+  - <span style=color:#ff79c6>name</span>: SERVER_IP
+    <span style=color:#ff79c6>value</span>: <span style=color:#f1fa8c>&#34;1.2.3.4&#34;</span>
+</code></pre></div></li>
+<li>又在 <code>deployment.yaml</code> 模板里 <code>range</code> 了一次：
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>env</span>:
+- <span style=color:#ff79c6>name</span>: SERVER_IP
+  <span style=color:#ff79c6>value</span>: <span style=color:#f1fa8c>&#34;1.2.3.4&#34;</span>
+...
+- <span style=color:#ff79c6>name</span>: SERVER_IP      <span style=color:#6272a4># 重复</span>
+  <span style=color:#ff79c6>value</span>: <span style=color:#f1fa8c>&#34;1.2.3.4&#34;</span>
+</code></pre></div></li>
+<li>运行时有效值只认后一条，同时抛警告（警告来自 kubelet 启动容器时）：
+<pre tabindex=0><code>spec.template.spec.containers[0].env[11]: hides previous definition of &quot;SERVER_IP&quot;
+</code></pre>注意：这里的"只认一条"是<strong>容器运行时</strong>的最终取值；apiserver 里存的对象可能仍保留两份同名条目——这正是后面 3-way 合并踩坑的根源。无论 live 里剩 1 条还是 2 条（见下文 <code>$patch: delete</code> 按 key 删），最终都会消失。</li>
+</ul>
+<p>为了消除这个告警消息，我将 <code>values.yaml</code> 里的 <code>SERVER_IP</code> 删掉，但保留了 <code>template/deployment.yaml</code> 里的 <code>SERVER_IP</code>。使用 <code>--dry-run</code> 可看到新渲染结果是只存在一个 <code>SERVER_IP</code>，符合预期。</p>
+<p>然鹅，第 1 次执行 <code>helm upgrade</code> 时，k8s 中 <code>SERVER_IP</code> 消失了；同时 <code>--debug</code> 返回的渲染结果的确有一个 <code>SERVER_IP</code>。
+第 2 次执行 <code>helm upgrade</code> 时，k8s 中 <code>SERVER_IP</code> 又出现了，符合预期。</p>
+<h3 id=2-疑问>2. 疑问</h3>
+<ol>
+<li>为什么第一次升级 <code>SERVER_IP</code> 会消失？（实际不是 env 全删光，只删了它）</li>
+<li><code>--dry-run=server</code>、<code>--post-renderer</code> 为何也看不出"被删"的证据？</li>
+<li>Helm 到底把什么发给了 apiserver？</li>
+</ol>
+<hr>
+<h2 id=二helm-渲染与提交的三段流水线>二、Helm 渲染与提交的三段流水线</h2>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>内容</th>
+<th>可见开关</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 模板渲染</td>
+<td>go-template 输出完整 YAML</td>
+<td><code>--debug</code>、 <code>--dry-run</code>、 <code>--post-renderer</code></td>
+</tr>
+<tr>
+<td>② 3-way merge</td>
+<td>本地计算 strategic-merge-patch：<code>diff(旧→新)的删除</code> + <code>diff(live→新)的增改</code></td>
+<td><strong>无官方开关</strong>（下文给办法）</td>
+</tr>
+<tr>
+<td>③ 调用 K8s</td>
+<td>把 patch/apply 发给 apiserver</td>
+<td><code>--v=6</code> 可打印 PATCH 体</td>
+</tr>
+</tbody>
+</table>
+<p>大多数排障工具都停在阶段 ①，而可能让字段"消失"的决定发生在阶段 ②。这也是为什么"渲染有、集群无"。</p>
+<hr>
+<h2 id=三3-way-merge-到底在合并什么>三、3-way merge 到底在合并什么</h2>
+<h3 id=1-背景helm-为什么需要三路>1. 背景：Helm 为什么需要"三路”</h3>
+<p>Helm 管理 Kubernetes 资源时，本质上是在做一件事：把 Chart 渲染出来的 manifest 应用到集群中，并在升级、回滚时把已有对象更新到新的期望状态。</p>
+<p>在 Helm 2 中，升级主要采用"两路"比较：</p>
+<ul>
+<li>上一次 Helm release 中保存的 manifest（old manifest）；</li>
+<li>本次 <code>helm upgrade</code> 渲染出的 manifest（new manifest）。</li>
+</ul>
+<p>Helm 2 根据 old 与 new 的差异生成 patch 提交给 Kubernetes。问题是：它没有把集群中真实存在的 live state 纳入计算。如果资源在 Helm 之外被改过（<code>kubectl edit</code>、HPA、MutatingWebhook、Service Mesh sidecar 注入、控制器自动加 annotation/label 等），这些变化在补丁生成阶段可能被忽略或误删。Helm 官方文档明确指出，Helm 3 改进为<strong>三路 strategic merge patch</strong>：生成 patch 时同时考虑 old manifest、live state 和 new manifest <a href=https://helm.sh/docs/v3/faq/changes_since_helm2>Helm FAQ</a>。</p>
+<h3 id=2-三路到底是哪三路>2. “三路”到底是哪三路？</h3>
+<p>Helm 3 的三路合并有三个输入：</p>
+<ol>
+<li><strong>Old / Original：上一次 Helm 保存的对象声明</strong>
+来自上一个 release revision 中保存的 manifest，表示"Helm 上次认为自己管理的期望状态"。</li>
+<li><strong>Live / Current：集群当前真实对象状态</strong>
+Helm 在升级时从 Kubernetes API Server 读取当前对象，表示"现在集群里实际长什么样"。</li>
+<li><strong>New / Modified：本次 Chart 渲染出的新对象声明</strong>
+来自当前 <code>helm upgrade</code> 使用的 chart、values、模板渲染结果，表示"这次 Helm 想把对象变成什么样"。</li>
+</ol>
+<p>因此，三路合并不是简单地"new 覆盖 live"，也不是单纯"old 和 new 做 diff"。它是把 <strong>old 作为共同基线</strong>，同时比较：</p>
+<ul>
+<li>Helm 自己从 old 到 new 想改什么；</li>
+<li>集群从 old 到 live 被别人或控制器改了什么；</li>
+<li>然后尽量只应用 Helm 本次声明的变更，同时保留不冲突的 live 变更。</li>
+</ul>
+<h3 id=3-补丁如何生成strategic-merge-patch-与-merge-key>3. 补丁如何生成：strategic merge patch 与 merge key</h3>
+<p>在 Helm 的 Go 代码中，对内置结构化资源，补丁生成逻辑位于 <code>pkg/kube/client.go</code> 附近，使用 Kubernetes 的 <code>strategicpatch.CreateThreeWayMergePatch</code>，patch 类型为 <code>types.StrategicMergePatchType</code> <a href=https://github.com/helm/helm/blob/main/pkg/kube/client.go>Helm client.go</a>。</p>
+<p><strong>这个函数不是"old 与 new 两路求差、再把结果打到 live"</strong>。它做的是<strong>两个 diff 相加</strong>（源码注释原话：&ldquo;patch 是 current→modified 的增改，加上 original→modified 的删除&rdquo;，见 <a href=https://github.com/kubernetes/apimachinery/blob/master/pkg/util/strategicpatch/patch.go#L2123>apimachinery patch.go</a>）。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>oldData     <span style=color:#ff79c6>:=</span> json.<span style=color:#50fa7b>Marshal</span>(oldObj)      <span style=color:#6272a4>// 上次 release 保存的 manifest（= original）
+</span><span style=color:#6272a4></span>newData     <span style=color:#ff79c6>:=</span> json.<span style=color:#50fa7b>Marshal</span>(newObj)      <span style=color:#6272a4>// 本次渲染结果（= modified / target）
+</span><span style=color:#6272a4></span>currentData <span style=color:#ff79c6>:=</span> json.<span style=color:#50fa7b>Marshal</span>(liveObj)     <span style=color:#6272a4>// 从 API Server 读取的 live object（= current）
+</span><span style=color:#6272a4></span>
+<span style=color:#6272a4>// 内部实际是：
+</span><span style=color:#6272a4>//  deletions := diffMaps(old,      new)   // 只取&#34;删除&#34;：old 有、new 没有 → 生成 $patch: delete
+</span><span style=color:#6272a4>//  delta     := diffMaps(live,     new)   // 只取&#34;增改&#34;：live 缺/不同、new 有 → 生成增补项
+</span><span style=color:#6272a4>//  patch     := mergeMap(deletions, delta) // 两者拼成最终 patch
+</span><span style=color:#6272a4></span>
+patch, _ <span style=color:#ff79c6>:=</span> strategicpatch.<span style=color:#50fa7b>CreateThreeWayMergePatch</span>(
+    oldData,
+    newData,
+    currentData,
+    patchMeta, <span style=color:#6272a4>// 来自 OpenAPI / Go struct tag 的 patch metadata，决定 list 按哪个 merge key 合并
+</span><span style=color:#6272a4></span>    overwrite,
+)
+</code></pre></div><p>这样拆成两份就明白了：</p>
+<ul>
+<li><strong>删除部分 <code>diff(old → new)</code></strong>：负责"Helm 想删掉什么"——old 里有的、new 里没有（或多出）的项目在这里被判为删除。</li>
+<li><strong>增改部分 <code>diff(live → new)</code></strong>：负责"让 live 收敛到 new 还缺什么"——live 里没有、new 里有的项目在这里被<strong>加回</strong>；两者都有的字段按值修改。</li>
+</ul>
+<p>第二、四节里"old+new 求差 → 打到 live"只是便于理解的可视化比喻，<strong>严格来说是左右两个 diff 取并集</strong>。理解这一点，才能解释&rsquo;为什么 old==new 时 patch 不为空'。</p>
+<p>拿到这份 patch 之后，Helm 才把它 PATCH 到 apiserver（阶段 ③）。所以<strong>真正决定"增/删/改"的是阶段 ② 生出的补丁，而不是阶段 ① 渲染出的全量 YAML</strong>。</p>
+<p>补丁里不只是"值"，还带语义操作：</p>
+<ul>
+<li><code>$setElementOrder/xxx</code>：标定列表项顺序；</li>
+<li><code>$patch: delete</code>：<strong>按 merge key 删除</strong>（不是按条目）；</li>
+<li><code>value: null</code>：清空字段。</li>
+</ul>
+<p>关键点：<strong>env、containers 这类列表是按"合并键"（merge key = <code>name</code>）来合并的</strong>，不是按"有没有"判断的。Strategic Merge Patch 正是比 JSON Merge Patch 强的地方：它知道某些 list 应按 key 合并，而不是整体替换，所以 sidecar 场景下不会把整个 <code>containers</code> 数组粗暴换掉。</p>
+<h3 id=4-三路合并的行为模型>4. 三路合并的行为模型</h3>
+<p>可以把 Helm 3 的行为理解为四条规则：</p>
+<table>
+<thead>
+<tr>
+<th>情形</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>字段在 Chart 中声明，且 new 明确给了值</td>
+<td><strong>按 new 收敛</strong>：把 live 拉回 new 的值</td>
+</tr>
+<tr>
+<td>字段不在 old/new 中，是 webhook/controller/人工在 live 里加的</td>
+<td><strong>尽量保留</strong></td>
+</tr>
+<tr>
+<td>字段曾在 old 中、本次 new 删除了它</td>
+<td><strong>删除</strong>：视为 Chart 作者有意移除</td>
+</tr>
+<tr>
+<td>删除时命中列表 merge key</td>
+<td><strong>按 key 全删</strong>（同名项全部移除）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>规则一：Helm 声明并改变的字段，按 new 收敛</strong></p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#6272a4># old manifest / # live state / # new manifest</span>
+<span style=color:#ff79c6>metadata</span>:
+  <span style=color:#ff79c6>annotations</span>:        <span style=color:#ff79c6>metadata</span>:
+    <span style=color:#ff79c6>a</span>: <span style=color:#f1fa8c>&#34;1&#34;</span>              <span style=color:#ff79c6>annotations</span>:
+                        <span style=color:#ff79c6>a</span>: <span style=color:#f1fa8c>&#34;2&#34;</span>     <span style=color:#ff79c6>a</span>: <span style=color:#f1fa8c>&#34;2&#34;</span>
+                        <span style=color:#ff79c6>b</span>: <span style=color:#f1fa8c>&#34;3&#34;</span>     <span style=color:#ff79c6>b</span>: <span style=color:#f1fa8c>&#34;3&#34;</span>
+</code></pre></div><p>即使 new 与 old 中 <code>a</code> 都是 <code>"1"</code>，live 中的 <code>a</code> 被改成 <code>"2"</code>，三路合并仍会把 <code>a</code> 拉回 <code>"1"</code>，因为 <code>a</code> 是 Helm 声明过的字段。这是预期行为：你让 Helm 管理并声明了 <code>a</code>，Helm 就会把它收敛到 Chart 中的值 <a href=https://github.com/helm/helm/issues/9937>Helm issue #9937</a>。</p>
+<p><strong>规则二：Helm 没声明、live 中额外存在的字段，尽量保留</strong></p>
+<p>如果字段不在 old/new 中，而是 live 里由 webhook、controller 或人工添加，例如 <code>b: "3"</code>，三路合并通常会保留它，不会主动删除。</p>
+<p><strong>规则三：old 有、new 删除的字段，Helm 会删除</strong></p>
+<p>例如 label <code>version: v1</code> 曾被 Helm 管理，本次 new 里消失了——即使 live 里这个 label 还在，也会被视作需要移除的 Helm 管理字段。</p>
+<p><strong>规则四：merge key 配不上一对一时，多出的同名项被删</strong></p>
+<p>这才是本文踩坑的那个分支：<strong>旧里同名 2 份、新里同名 1 份</strong> → 旧的第 2 条成了"孤儿" → 判定为"用户不要多余的这条"，生成 <code>$patch: delete</code>，且按 key 把 live 里该名字的条目全部删掉。</p>
+<hr>
+<h2 id=四回到案例第一次-vs-第二次升级完整推演>四、回到案例：第一次 vs 第二次升级完整推演</h2>
+<h3 id=第一次升级>第一次升级</h3>
+<p>三组数据：</p>
+<table>
+<thead>
+<tr>
+<th>输入</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>旧 manifest 快照</td>
+<td>env 列表里 <strong>2 条</strong> <code>name: SERVER_IP</code>（values 一份 + 模板 range 一份）</td>
+</tr>
+<tr>
+<td>新 manifest</td>
+<td>env 列表里 <strong>1 条</strong> <code>SERVER_IP</code>（修复后渲染）</td>
+</tr>
+<tr>
+<td>live object</td>
+<td>1 条 <code>SERVER_IP</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>按左右两个 diff 拆开看：</strong></p>
+<ul>
+<li>
+<p><strong>删除部分 <code>diff(旧 → 新)</code></strong>：旧里 2 条同名 <code>SERVER_IP</code>、新里 1 条 → 多的那条成了"孤儿"，被判删：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=color:#f1fa8c>&#34;env&#34;</span>:[{<span style=color:#ff79c6>&#34;$patch&#34;</span>:<span style=color:#f1fa8c>&#34;delete&#34;</span>,<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;SERVER_IP&#34;</span>}]
+</code></pre></div></li>
+<li>
+<p><strong>增改部分 <code>diff(live → 新)</code></strong>：live 1 条 vs 新 1 条，完全相等 → <strong>无事可做，没有"加回"指令</strong>。</p>
+</li>
+</ul>
+<p>最终 patch = 两部分取并集 → 只剩下删除指令。<code>$patch: delete</code> 是<strong>按 key 删</strong>：无论 live 里剩 1 条还是 2 条 <code>SERVER_IP</code>，都会被<strong>全部删掉</strong>。于是集群侧 SERVER_IP 消失，其它 env 不受影响。</p>
+<pre tabindex=0><code>删除部分 diff(旧→新)：旧 2 条 vs 新 1 条 → 多余的判删 → $patch:delete SERVER_IP ──┐
+                                                                                 ├→ 并集 → 打在 live(1 条) → 按 key 全删 → 消失
+增改部分 diff(live→新)：live 1 条 vs 新 1 条 → 相等，无指令 ──────────────────────┘
+</code></pre><p>↑ 只要旧 manifest 快照里还是 2 条同名 key，删除部分就永远会产生这条 delete 指令。</p>
+<h3 id=第二次升级>第二次升级</h3>
+<p>三组数据：</p>
+<table>
+<thead>
+<tr>
+<th>输入</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>旧 manifest 快照</td>
+<td><strong>1 条</strong>（第一次 upgrade 成功后，release Secret 里存的快照已被更新为渲染结果，即干净的 1 条）</td>
+</tr>
+<tr>
+<td>新 manifest</td>
+<td><strong>1 条</strong></td>
+</tr>
+<tr>
+<td>live object</td>
+<td><strong>0 条</strong>（第一次升级已经把它删光了）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>按左右两个 diff 拆开看：</strong></p>
+<ul>
+<li><strong>删除部分 <code>diff(旧 → 新)</code></strong>：旧 1 条 vs 新 1 条，相等 → <strong>没有 delete 指令</strong>。</li>
+<li><strong>增改部分 <code>diff(live → 新)</code></strong>：live 0 条、新 1 条 → <strong>判定"缺了 SERVER_IP，要补上"</strong>，生成增补指令（即 <code>$setElementOrder/env</code> 里列出 SERVER_IP + env 补上完整条目）。</li>
+</ul>
+<p>最终 patch = 两部分取并集 → 只剩「补上 SERVER_IP」。把它打到 live（0 条）→ 变成 1 条，<code>SERVER_IP</code> 重新出现。</p>
+<pre tabindex=0><code>删除部分 diff(旧→新)：旧 1 条 vs 新 1 条 → 相等，无指令 ──────────────────────┐
+                                                                        ├→ 并集 → 打在 live(0 条) → 补上 SERVER_IP → 恢复
+增改部分 diff(live→新)：live 0 条 vs 新 1 条 → 缺了 → 增补 SERVER_IP ────────┘
+</code></pre><h3 id=为什么第一次升级体现不出加回>为什么第一次升级体现不出"加回"</h3>
+<p>&ldquo;加回"这个能力来自右侧的 <strong><code>diff(live → new)</code></strong>；而第一次升级时 live 里的 <code>SERVER_IP</code> 恰好还在（和新 manifest 一致），所以这个 diff 为空、无事可做；真正发令的是左侧的 <strong><code>diff(old → new)</code></strong>——旧快照里那条有罪的"第 2 条同名 <code>SERVER_IP</code>"。也就是说：<strong>当时的 live 没有漂移，漂移的是旧快照</strong>。这正是"三路"而非"两路"的关键：<strong>只有当 live 与 new 不一致时，才会产生"加回/改正"指令；而删不删，则只看 old 与 new 的差异。</strong></p>
+<hr>
+<h2 id=五为什么---dry-runserver-也看不到patch>五、为什么 <code>--dry-run=server</code> 也看不到"patch&rdquo;</h2>
+<ul>
+<li><code>--dry-run=server</code> 只是把<strong>阶段 ① 的全量 YAML</strong> 丢给 apiserver <strong>DryRun</strong> 接口做<strong>校验</strong>。</li>
+<li>StrategicMergePatch 的计算仍在 <strong>Helm 本地完成</strong>，客户端不会把"差分"回显给你。</li>
+<li>因此你能看到的仍是"全量"而非 patch；若某项被删，全量里就<strong>直接没有</strong>，看上去就像"消失"。</li>
+</ul>
+<p>同理，<code>--post-renderer</code> 作用于阶段 ① 和 ② 之间，看到的也是全量渲染结果，同样看不到最终的 patch。</p>
+<hr>
+<h2 id=六如何亲手抓到真正的-patch>六、如何亲手抓到真正的 patch</h2>
+<h3 id=1-打开-helm-的-kube-client-调试日志>1. 打开 Helm 的 kube-client 调试日志</h3>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>helm upgrade demo ./chart -n cloud --v<span style=color:#ff79c6>=</span><span style=color:#bd93f9>6</span>
+</code></pre></div><p>日志会输出类似：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json>client.go:<span style=color:#bd93f9>693</span>: [debug] Patch Deployment <span style=color:#f1fa8c>&#34;notify&#34;</span> in namespace cloud
+I<span style=color:#bd93f9>0908</span> <span style=color:#bd93f9>10</span>:<span style=color:#bd93f9>09</span>:<span style=color:#bd93f9>0</span><span style=color:#bd93f9>8.651304</span> <span style=color:#bd93f9>1679687</span> request.go:<span style=color:#bd93f9>1212</span>] Request Body: {<span style=color:#ff79c6>&#34;spec&#34;</span>:{<span style=color:#ff79c6>&#34;replicas&#34;</span>:<span style=color:#bd93f9>2</span>,<span style=color:#ff79c6>&#34;strategy&#34;</span>:<span style=color:#ff79c6>null</span>,<span style=color:#ff79c6>&#34;template&#34;</span>:{<span style=color:#ff79c6>&#34;spec&#34;</span>:{<span style=color:#ff79c6>&#34;$setElementOrder/containers&#34;</span>:[{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;notify&#34;</span>}],<span style=color:#ff79c6>&#34;$setElementOrder/initContainers&#34;</span>:[{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;init-lib&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;init-app&#34;</span>}],<span style=color:#ff79c6>&#34;affinity&#34;</span>:{<span style=color:#ff79c6>&#34;podAntiAffinity&#34;</span>:{<span style=color:#ff79c6>&#34;requiredDuringSchedulingIgnoredDuringExecution&#34;</span>:[{<span style=color:#ff79c6>&#34;labelSelector&#34;</span>:{<span style=color:#ff79c6>&#34;matchExpressions&#34;</span>:[{<span style=color:#ff79c6>&#34;key&#34;</span>:<span style=color:#f1fa8c>&#34;app.kubernetes.io/name&#34;</span>,<span style=color:#ff79c6>&#34;operator&#34;</span>:<span style=color:#f1fa8c>&#34;In&#34;</span>,<span style=color:#ff79c6>&#34;values&#34;</span>:[<span style=color:#f1fa8c>&#34;notify&#34;</span>]}]},<span style=color:#ff79c6>&#34;topologyKey&#34;</span>:<span style=color:#f1fa8c>&#34;kubernetes.io/hostname&#34;</span>}]}},<span style=color:#ff79c6>&#34;containers&#34;</span>:[{<span style=color:#ff79c6>&#34;$setElementOrder/env&#34;</span>:[{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;EUREKA_OPTS&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;SERVER_IP&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;MIN_HEAP_SIZE&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;MAX_HEAP_SIZE&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;STACK_SIZE&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;META_SIZE&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;MAX_META_SIZE&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;JAVA_OPTS&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;REDIS_SENTINEL_NODES&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;DEBUG&#34;</span>},{<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;EXTEND_JAVA_OPTS&#34;</span>}],<span style=color:#ff79c6>&#34;env&#34;</span>:[{<span style=color:#ff79c6>&#34;$patch&#34;</span>:<span style=color:#f1fa8c>&#34;delete&#34;</span>,<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;SERVER_IP&#34;</span>}],<span style=color:#ff79c6>&#34;image&#34;</span>:<span style=color:#f1fa8c>&#34;xxx&#34;</span>,<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;notify&#34;</span>}],<span style=color:#ff79c6>&#34;initContainers&#34;</span>:[{<span style=color:#ff79c6>&#34;image&#34;</span>:<span style=color:#f1fa8c>&#34;xxx&#34;</span>,<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;init-lib&#34;</span>},{<span style=color:#ff79c6>&#34;image&#34;</span>:<span style=color:#f1fa8c>&#34;xxx&#34;</span>,<span style=color:#ff79c6>&#34;name&#34;</span>:<span style=color:#f1fa8c>&#34;init-app&#34;</span>}]}}}}
+I<span style=color:#bd93f9>0908</span> <span style=color:#bd93f9>10</span>:<span style=color:#bd93f9>09</span>:<span style=color:#bd93f9>0</span><span style=color:#bd93f9>8.651430</span> <span style=color:#bd93f9>1679687</span> round_trippers.go:<span style=color:#bd93f9>466</span>] curl -v -XPATCH  -H <span style=color:#f1fa8c>&#34;Accept: application/json&#34;</span> -H <span style=color:#f1fa8c>&#34;Content-Type: application/strategic-merge-patch+json&#34;</span> -H <span style=color:#f1fa8c>&#34;User-Agent: Helm/3.14.0&#34;</span> &#39;https:<span style=color:#6272a4>//127.0.0.1:6443/apis/apps/v1/namespaces/cloud/deployments/notify?fieldManager=helm&#39;
+</span><span style=color:#6272a4></span>I<span style=color:#bd93f9>0908</span> <span style=color:#bd93f9>10</span>:<span style=color:#bd93f9>09</span>:<span style=color:#bd93f9>0</span><span style=color:#bd93f9>8.735670</span> <span style=color:#bd93f9>1679687</span> round_trippers.go:<span style=color:#bd93f9>553</span>] PATCH https:<span style=color:#6272a4>//127.0.0.1:6443/apis/apps/v1/namespaces/cloud/deployments/notify?fieldManager=helm 200 OK in 84 milliseconds
+</span></code></pre></div><p>这里可清楚看到 Helm 发的是 <strong>PATCH</strong>（<code>strategic-merge-patch</code> Content-Type）而非全量 PUT，同时 <code>$setElementOrder/env</code> 里明确列出了 <code>SERVER_IP</code>，<code>env</code> 里则是 <code>$patch: delete</code>。</p>
+<h3 id=2-审计日志--抓包>2. 审计日志 / 抓包</h3>
+<p>开启 apiserver 的 <strong>Audit</strong> 或给 kube-apiserver 抓包，Content-Type 为 <code>application/strategic-merge-patch+json</code> 的 PATCH 体即是最终 patch。</p>
+<hr>
+<h2 id=七strategic-merge-patch--json-merge-patch--server-side-apply>七、Strategic Merge Patch / JSON Merge Patch / Server-Side Apply</h2>
+<p>Helm 的"三路合并"很容易和 Kubernetes 的另外两个 patch 机制混在一起，需要区分：</p>
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>特点</th>
+<th>Helm 中的角色</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Strategic Merge Patch</strong></td>
+<td>利用内置类型的 patch strategy / patch merge key，list 按 key 合并</td>
+<td>Helm 3 对内置资源的三路合并默认用它</td>
+</tr>
+<tr>
+<td><strong>JSON Merge Patch</strong></td>
+<td>通用、不知道字段语义，list 常常整体替换</td>
+<td>CRD/unstructured 的兜底（见第九节）</td>
+</tr>
+<tr>
+<td><strong>Server-Side Apply</strong></td>
+<td>服务端 managedFields / field ownership 模型</td>
+<td>Helm <code>--server-side</code> 选项（默认 <code>auto</code>）<a href=https://helm.sh/docs/helm/helm_upgrade>Helm upgrade docs</a></td>
+</tr>
+</tbody>
+</table>
+<p>举例区分 Strategic Merge Patch：只想改 <code>name: app</code> 容器的镜像时，它可以按 <code>name</code> 定位到该容器，而不是把整个 <code>containers</code> 数组整体替换；JSON Merge Patch 则做不到这种精确合并。</p>
+<p>排查时先确认当前 Helm 命令是否启用了 <code>--server-side apply</code>，它的字段管理模型与传统的 client-side 三路 patch 不是同一套机制。</p>
+<hr>
+<h2 id=八helm-3-与-helm-2-的关键差异>八、Helm 3 与 Helm 2 的关键差异</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Helm 2</th>
+<th>Helm 3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>补丁依据</td>
+<td>old manifest + new manifest</td>
+<td>old manifest + live state + new manifest</td>
+</tr>
+<tr>
+<td>是否感知集群实时状态</td>
+<td>否</td>
+<td>是</td>
+</tr>
+<tr>
+<td>对 out-of-band 修改</td>
+<td>可能忽略或误删</td>
+<td>尽量保留不冲突修改</td>
+</tr>
+<tr>
+<td>回滚 live drift</td>
+<td>可能失败（old 与 rollback target 无差异就"无事可做"）</td>
+<td>能看到 live drift 并生成修正 patch</td>
+</tr>
+<tr>
+<td>sidecar / webhook 注入</td>
+<td>更容易被误删</td>
+<td>更容易保留</td>
+</tr>
+</tbody>
+</table>
+<p>举例：Deployment 副本数最初是 3，有人 <code>kubectl scale --replicas=0</code>。Helm 2 在 rollback 时若 old 和 rollback target 都是 <code>replicas: 3</code>，会认为"没有差异"而不生成 patch，live 保持 0；Helm 3 看到 old=3、live=0、new=3，会生成 patch 把副本数改回 3 <a href=https://helm.sh/docs/v3/faq/changes_since_helm2>Helm FAQ</a>。Helm 3.0.0 release notes 也把"升级时应用三路 strategic merge patch"列为新特性之一 <a href=https://github.com/helm/helm/releases/tag/v3.0.0>Helm v3.0.0 release</a>。</p>
+<hr>
+<h2 id=九边界与坑crd--unstructured-资源>九、边界与坑：CRD / unstructured 资源</h2>
+<p><strong>Helm 3 的三路 strategic merge patch 主要适用于 Kubernetes 内置结构化资源，不一定同样适用于 CRD / unstructured object。</strong></p>
+<p>原因是 strategic merge patch 依赖内置类型的结构化 schema 和 Go struct tag 中的 patch strategy 信息；CRD 对 Helm 客户端来说是 unstructured object，缺少这些元数据。</p>
+<p>Helm 源码中逻辑会分支处理：对 unstructured / CRD，若启用了三路（<code>threeWayMergeForUnstructured</code> 等），使用 <code>jsonmergepatch.CreateThreeWayJSONMergePatch</code> 和 <code>types.MergePatchType</code>；否则退回普通两路 JSON merge patch <a href=https://github.com/helm/helm/blob/main/pkg/kube/client.go>Helm client.go</a>。</p>
+<p>因此不要简单假设"Helm 3 对所有资源都完全一样地三路 strategic merge"。社区长期讨论此类资源的三路支持：内置资源如 Deployment 会按预期三路合并，但 Istio VirtualService 这类 CRD 可能仍走两路 merge patch <a href=https://github.com/helm/helm/issues/9937>Helm issue #9937</a>；相关 PR 也在推进对 unstructured 与 CRD 的三路支持，但需要兼顾兼容性 <a href=https://github.com/helm/helm/pull/11650>Helm PR #11650</a>。对 CRD-heavy 的 chart，应结合当前 Helm 版本、选项、资源类型以及是否使用 server-side apply 单独验证。</p>
+<hr>
+<h2 id=十边界与坑--force----force-replace>十、边界与坑：<code>--force</code> / <code>--force-replace</code></h2>
+<p>Helm 的三路合并通常通过 PATCH 实现。如果想强制替换，官方 flag 的语义是 <strong>&ldquo;force resource updates by replacement&rdquo;</strong>（Helm 3 为 <code>--force</code>，Helm 4 为 <code>--force-replace</code>）<a href=https://helm.sh/docs/helm/helm_upgrade>Helm upgrade docs</a>。它采取<strong>替换式更新（删除后重建）</strong>，而不是"先算 patch 再合并"，因此<strong>会丢失任何在集群侧做的在线修改</strong>（webhook/controller/人工加的字段会被清掉）。</p>
+<p>这意味着：</p>
+<ul>
+<li>默认 PATCH：倾向于保留 live state 中不冲突的外部修改；</li>
+<li>force replace：更像"用 Helm 渲染结果替换对象"，容易清掉外部注入的字段。</li>
+</ul>
+<p>生产环境不要把 <code>--force*</code> 当成普通升级选项。它适合解决不可变字段变更等特殊问题，但会改变合并语义。</p>
+<hr>
+<h2 id=十一完整例子一sidecar-保留>十一、完整例子一：sidecar 保留</h2>
+<p>假设 Helm chart 原始 Deployment：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#6272a4># old / new manifest（new 只改了 image tag）</span>
+<span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>template</span>:
+    <span style=color:#ff79c6>spec</span>:
+      <span style=color:#ff79c6>containers</span>:
+        - <span style=color:#ff79c6>name</span>: app
+          <span style=color:#ff79c6>image</span>: demo:v1   <span style=color:#6272a4># new 里是 demo:v2</span>
+</code></pre></div><p>集群中经过 service mesh 注入后，live 变成：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#6272a4># live state</span>
+<span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>template</span>:
+    <span style=color:#ff79c6>spec</span>:
+      <span style=color:#ff79c6>containers</span>:
+        - <span style=color:#ff79c6>name</span>: app
+          <span style=color:#ff79c6>image</span>: demo:v1
+        - <span style=color:#ff79c6>name</span>: istio-proxy
+          <span style=color:#ff79c6>image</span>: proxy:v1
+</code></pre></div><p>Converge 后最终 live 为：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>template</span>:
+    <span style=color:#ff79c6>spec</span>:
+      <span style=color:#ff79c6>containers</span>:
+        - <span style=color:#ff79c6>name</span>: app
+          <span style=color:#ff79c6>image</span>: demo:v2      <span style=color:#6272a4># Helm 本次声明的变化</span>
+        - <span style=color:#ff79c6>name</span>: istio-proxy   <span style=color:#6272a4># live 里的外部注入，被保留</span>
+          <span style=color:#ff79c6>image</span>: proxy:v1
+</code></pre></div><p>三路合并看到：<code>app</code> 从 v1 到 v2 是 Helm 本次声明的变化；<code>istio-proxy</code> 存在于 live 而 old/new 都没有，是外部系统添加的；Deployment 的 <code>containers</code> 是按 <code>name</code> 合并的 list——于是只改镜像、保留 sidecar <a href=https://helm.sh/docs/v3/faq/changes_since_helm2>Helm FAQ</a>。</p>
+<hr>
+<h2 id=十二完整例子二手工改-replicas-被纠正>十二、完整例子二：手工改 replicas 被纠正</h2>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#6272a4># old manifest / # new manifest    # live（被人 kubectl scale 成 0）</span>
+<span style=color:#ff79c6>spec</span>:                              <span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>replicas: 3                        replicas</span>: <span style=color:#bd93f9>0</span>
+</code></pre></div><p>两路 diff 会发现 old 和 new 没有差异，因此不修改 live；三路 diff 会发现 live 与 old/new 不一致，且 <code>replicas</code> 是 Helm 声明字段，于是生成 patch 把副本数改回 3。</p>
+<p>这类场景体现三路合并的另一面：<strong>它不是盲目保留所有 live drift，而是会把 Helm 管理字段收敛回 Chart 期望状态</strong>。</p>
+<hr>
+<h2 id=十三常见误解>十三、常见误解</h2>
+<ol>
+<li>
+<p><strong>误解一：三路合并会保留所有手工修改</strong>
+不对。它通常保留"不属于 Helm 声明且不冲突"的 live 修改。如果你手工修改的是 Chart 中明确声明的字段（replicas、image、resources、某个 annotation 值），下次 upgrade 可能把它改回 values/template 渲染出的值。</p>
+</li>
+<li>
+<p><strong>误解二：三路合并等于 kubectl apply</strong>
+不完全等同。二者都涉及三路思想，但 Helm 传统 client-side patch 与 <code>kubectl apply</code>、Server-Side Apply 的字段管理模型不同；Helm 使用 <code>--server-side</code> 后语义又会变化 <a href=https://helm.sh/docs/helm/helm_upgrade>Helm upgrade docs</a>。</p>
+</li>
+<li>
+<p><strong>误解三：Helm 3 对 CRD 一定是 strategic merge patch</strong>
+不对。CRD/unstructured 缺少 strategic merge 所需的内置类型元数据，历史上可能使用普通 JSON merge patch，甚至仍是两路 merge patch <a href=https://github.com/helm/helm/issues/9937>Helm issue #9937</a>、<a href=https://github.com/helm/helm/pull/11650>Helm PR #11650</a>。</p>
+</li>
+<li>
+<p><strong>误解四：三路合并能解决所有冲突</strong>
+也不对。它只是降低了误删 live 变更的概率。如果 Helm 和其他 controller（HPA、operator、GitOps）同时管理同一字段，仍会出现"来回覆盖"或升级后被改回的问题。根本解决方式是明确字段 ownership：哪些字段由 Helm 管，哪些由其它 controller 管。</p>
+</li>
+</ol>
+<hr>
+<h2 id=十四避坑指南--生产实践建议>十四、避坑指南 / 生产实践建议</h2>
+<ol>
+<li>
+<p><strong>根本方案：数据源只留一份</strong>
+不要在 values 和模板里同时 <code>range</code> / 硬编码同名 env；用字典去重或只保留一份数据源。</p>
+</li>
+<li>
+<p><strong>模板里显式清空字段</strong>
+想把不要的 env 清掉而不是删 key，模板里写成：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml>- <span style=color:#ff79c6>name</span>: SERVER_IP
+  <span style=color:#ff79c6>value</span>: <span style=color:#ff79c6>null</span>
+</code></pre></div><p>这样 merge 会识别为"字段清空"，不会误删其它 env。</p>
+</li>
+<li>
+<p><strong>不要手工修改 Helm values 中明确声明的字段</strong>
+要长期变更 replicas、image、resources、env，应修改 values/chart 后 <code>helm upgrade</code>。</p>
+</li>
+<li>
+<p><strong>对会被 controller 改写的字段保持克制</strong>
+不建议 Helm 和 operator 同时写同一个会互搏的字段；明确 ownership 边界。</p>
+</li>
+<li>
+<p><strong>谨慎使用 <code>--force*</code></strong>
+详见第十节：它是替换语义，会清掉外部注入字段。</p>
+</li>
+<li>
+<p><strong>CRD 场景单独验证</strong>
+对 Istio、Argo Rollouts、Prometheus Operator、External Secrets 等 CRD-heavy chart，在测试环境验证 upgrade 后 live object 符合预期。</p>
+</li>
+<li>
+<p><strong>用补工具辅助排障</strong>
+结合 <code>helm get manifest</code>、<code>kubectl get -o yaml</code>、<code>helm diff</code>、<code>--dry-run=server</code>、<code>--v=6</code> 分析，patch 是运行时结合 live state 生成的，单看模板渲染往往推断不出最终 patch。</p>
+</li>
+<li>
+<p><strong>避免多个声明式工具管理同一字段</strong>
+Helm、Argo CD、Flux、kubectl apply、operator、HPA 都在写同一字段时，三路合并只能缓解，不能消除 ownership 冲突。</p>
+</li>
+</ol>
+<hr>
+<h2 id=十五一张图总结>十五、一张图总结</h2>
+<pre tabindex=0><code>┌----------------------┐
+| ① template rendering | ← --debug / --dry-run / --post-renderer 只看得到这里
+└---------┬------------┘
+          |
+          ▼
+┌----------------------┐
+| ② 3-way merge        | ← 真正决定&quot;增/删/改&quot;的黑暗阶段，无官方开关
+|   (strategic patch)  |
+└---------┬------------┘
+          |
+          ▼
+┌----------------------┐
+| ③ PATCH/PUT          | ← --v=6 可抓包；audit log 可见
+|   to kube-apiserver  |
+└----------------------┘
+</code></pre><hr>
+<h2 id=十六结语>十六、结语</h2>
+<p>Helm 的三路合并策略可以概括为：</p>
+<blockquote>
+<p>Helm 3 在升级或回滚资源时，不再只比较"上一次 Helm manifest"和"本次 Helm manifest"，而是同时读取"集群当前 live state"，基于 old、live、new 三者生成 patch。这样既能把 Helm 管理的字段收敛到 Chart 期望状态，又能尽量保留 webhook、controller 或人工添加的不冲突 live 变更。</p>
+</blockquote>
+<p>它的价值主要体现在：</p>
+<ul>
+<li>修复 Helm 2 时代忽略 live state 的问题；</li>
+<li>避免误删 sidecar、annotation、label 等外部注入内容；</li>
+<li>rollback 时能纠正 live drift；</li>
+<li>更符合 Kubernetes 多 actor 共同修改对象的现实。</li>
+</ul>
+<p>但它也有边界：CRD/unstructured 资源的处理历史上不完全等同于内置资源；<code>--force*</code>、server-side apply、多个控制器争抢字段都会改变最终行为。</p>
+<p>回到本文开头的问题：当发现"渲染有、集群无"时，九成是合并阶段把字段判为了"删除"。<strong>&ldquo;模板输出 ≠ 最终 patch&rdquo;</strong>，配合 <code>--v=6</code> 等工具，就能把"幽灵消失"的字段抓个现行。</p>
+<hr>
+<h2 id=参考资料>参考资料</h2>
+<ul>
+<li><a href=https://helm.sh/docs/v3/faq/changes_since_helm2>Helm FAQ: Changes Since Helm 2</a></li>
+<li><a href=https://helm.sh/docs/helm/helm_upgrade>helm upgrade 命令文档</a></li>
+<li><a href=https://github.com/helm/helm/blob/main/pkg/kube/client.go>Helm 源码 pkg/kube/client.go</a></li>
+<li><a href=https://github.com/helm/helm/issues/9937>Helm issue #9937：unstructured / CRD 的三路合并讨论</a></li>
+<li><a href=https://github.com/helm/helm/pull/11650>Helm PR #11650：unstructured 与 CRD 的三路 diff 支持</a></li>
+<li><a href=https://github.com/helm/helm/issues/12631>Helm issue #12631：Helm 声明式管理与其它 actor 的字段保留讨论</a></li>
+<li><a href=https://github.com/helm/helm/releases/tag/v3.0.0>Helm v3.0.0 Release Notes</a></li>
+</ul>
+</div>
+<div class=prev-next>
+</div><svg id="btt-button" class="arrow-logo" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512" onclick="scrollToTop()" title="Go to top"><path d="M177 159.7l136 136c9.4 9.4 9.4 24.6.0 33.9l-22.6 22.6c-9.4 9.4-24.6 9.4-33.9.0L160 255.9l-96.4 96.4c-9.4 9.4-24.6 9.4-33.9.0L7 329.7c-9.4-9.4-9.4-24.6.0-33.9l136-136c9.4-9.5 24.6-9.5 34-.1z"/></svg>
+<script>let backToTopButton=document.getElementById("btt-button");window.onscroll=function(){scrollFunction()};function scrollFunction(){document.body.scrollTop>20||document.documentElement.scrollTop>20?backToTopButton.style.display="block":backToTopButton.style.display="none"}function scrollToTop(){window.scrollTo(0,0)}</script>
+</div>
+<aside class=post-toc aria-label=文章目录>
+<h3 class=toc-title>目录</h3>
+<nav id=toc>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#摘要>摘要</a></li>
+<li><a href=#一现象复盘>一、现象复盘</a>
+<ul>
+<li><a href=#1-安装阶段helm-install>1. 安装阶段（helm install）</a></li>
+<li><a href=#2-疑问>2. 疑问</a></li>
+</ul>
+</li>
+<li><a href=#二helm-渲染与提交的三段流水线>二、Helm 渲染与提交的三段流水线</a></li>
+<li><a href=#三3-way-merge-到底在合并什么>三、3-way merge 到底在合并什么</a>
+<ul>
+<li><a href=#1-背景helm-为什么需要三路>1. 背景：Helm 为什么需要"三路”</a></li>
+<li><a href=#2-三路到底是哪三路>2. “三路”到底是哪三路？</a></li>
+<li><a href=#3-补丁如何生成strategic-merge-patch-与-merge-key>3. 补丁如何生成：strategic merge patch 与 merge key</a></li>
+<li><a href=#4-三路合并的行为模型>4. 三路合并的行为模型</a></li>
+</ul>
+</li>
+<li><a href=#四回到案例第一次-vs-第二次升级完整推演>四、回到案例：第一次 vs 第二次升级完整推演</a>
+<ul>
+<li><a href=#第一次升级>第一次升级</a></li>
+<li><a href=#第二次升级>第二次升级</a></li>
+<li><a href=#为什么第一次升级体现不出加回>为什么第一次升级体现不出"加回"</a></li>
+</ul>
+</li>
+<li><a href=#五为什么---dry-runserver-也看不到patch>五、为什么 <code>--dry-run=server</code> 也看不到"patch&rdquo;</a></li>
+<li><a href=#六如何亲手抓到真正的-patch>六、如何亲手抓到真正的 patch</a>
+<ul>
+<li><a href=#1-打开-helm-的-kube-client-调试日志>1. 打开 Helm 的 kube-client 调试日志</a></li>
+<li><a href=#2-审计日志--抓包>2. 审计日志 / 抓包</a></li>
+</ul>
+</li>
+<li><a href=#七strategic-merge-patch--json-merge-patch--server-side-apply>七、Strategic Merge Patch / JSON Merge Patch / Server-Side Apply</a></li>
+<li><a href=#八helm-3-与-helm-2-的关键差异>八、Helm 3 与 Helm 2 的关键差异</a></li>
+<li><a href=#九边界与坑crd--unstructured-资源>九、边界与坑：CRD / unstructured 资源</a></li>
+<li><a href=#十边界与坑--force----force-replace>十、边界与坑：<code>--force</code> / <code>--force-replace</code></a></li>
+<li><a href=#十一完整例子一sidecar-保留>十一、完整例子一：sidecar 保留</a></li>
+<li><a href=#十二完整例子二手工改-replicas-被纠正>十二、完整例子二：手工改 replicas 被纠正</a></li>
+<li><a href=#十三常见误解>十三、常见误解</a></li>
+<li><a href=#十四避坑指南--生产实践建议>十四、避坑指南 / 生产实践建议</a></li>
+<li><a href=#十五一张图总结>十五、一张图总结</a></li>
+<li><a href=#十六结语>十六、结语</a></li>
+<li><a href=#参考资料>参考资料</a></li>
+</ul>
+</nav>
+</nav>
+</aside>
+<link rel=stylesheet href=/css/toc.css>
+</main><footer class=footer>
+<span>&copy; 2025 HindungWang</span>
+<span>
+Made with &#10084;&#65039; using <a target=_blank href=https://github.com/gokarna-theme/gokarna-hugo>Gokarna</a>
+</span>
+</footer>
+</body>
+</html>

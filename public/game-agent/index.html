@@ -1,0 +1,153 @@
+<!doctype html><html lang=en><head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>:root{--accent-color:#FF4D4D;--font-size:1.1rem}</style>
+<title>Game Agent: Stray</title>
+<meta name=description content="一个可以实时对话的 Game Agent，后端由消息网关 + LLM 驱动">
+<meta name=keywords content="blog,gokarna,hugo">
+<meta property="og:url" content="https://hindungwang.github.io/game-agent/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Game Agent: Stray">
+<meta property="og:description" content="一个可以实时对话的 Game Agent，后端由消息网关 + LLM 驱动">
+<meta property="og:image" content="https://github.com/hindungWang.png">
+<meta property="og:image:secure_url" content="https://github.com/hindungWang.png">
+<meta name=twitter:card content="summary_large_image">
+<meta name=twitter:title content="Game Agent: Stray">
+<meta name=twitter:description content="一个可以实时对话的 Game Agent，后端由消息网关 + LLM 驱动">
+<meta property="twitter:domain" content="https://hindungwang.github.io/game-agent/">
+<meta property="twitter:url" content="https://hindungwang.github.io/game-agent/">
+<meta name=twitter:image content="https://github.com/hindungWang.png">
+<link rel=canonical href=https://hindungwang.github.io/game-agent/>
+<link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
+<link rel=stylesheet type=text/css href=/css/main.min.css>
+<link id=dark-theme rel=stylesheet href=/css/dark.min.css>
+<script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<link rel=icon type=image/png href=/favicon.png>
+<link rel=apple-touch-icon href=/favicon.png>
+<link rel=stylesheet href=/css/posts-nav.css>
+</head>
+<body class=page-page>
+<script>setThemeByUserPref()</script><header class=header>
+<nav class=header-nav>
+<div class=avatar>
+<a href=https://hindungwang.github.io/>
+<img src=https://github.com/hindungWang.png alt=avatar>
+</a>
+</div>
+<div class=nav-title>
+<a class=nav-brand href=https://hindungwang.github.io/>Hindung's Blog</a>
+</div>
+<div class=nav-links>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/ aria-label><span data-feather=home></span> Home </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/about aria-label><span data-feather=home></span> About </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/posts/ aria-label><span data-feather=page></span> Posts </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/game-agent/ aria-label><span data-feather=gamepad></span> Game Agent </a>
+</div>
+<div class=nav-link>
+<a href=https://github.com/hindungWang aria-label=github><span data-feather=github></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/tags/ aria-label><span data-feather=tag></span> Tags </a>
+</div>
+<div class=nav-link>
+<a href=https://buymeacoffee.com/hindung aria-label=buymeacoffee><span data-feather=coffee></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/index.xml aria-label=rss><span data-feather=rss></span> </a>
+</div>
+<span class=nav-icons-divider></span>
+<div class="nav-link dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a aria-hidden=true role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</div>
+<div class=nav-link id=hamburger-menu-toggle>
+<span class="sr-only hamburger-menu-toggle-screen-reader-target">menu</span>
+<a aria-checked=false aria-labelledby=hamburger-menu-toggle id=hamburger-menu-toggle-target role=switch>
+<span data-feather=menu></span>
+</a>
+</div>
+<ul class="nav-hamburger-list visibility-hidden">
+<li class=nav-item>
+<a href=https://hindungwang.github.io/><span data-feather=home></span> Home </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/about><span data-feather=home></span> About </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/posts/><span data-feather=page></span> Posts </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/game-agent/><span data-feather=gamepad></span> Game Agent </a>
+</li>
+<li class=nav-item>
+<a href=https://github.com/hindungWang><span data-feather=github></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/tags/><span data-feather=tag></span> Tags </a>
+</li>
+<li class=nav-item>
+<a href=https://buymeacoffee.com/hindung><span data-feather=coffee></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/index.xml><span data-feather=rss></span> </a>
+</li>
+<li class="nav-item dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main id=content>
+<div class="post container">
+<div class=post-header-section>
+<h1>Game Agent: Stray</h1>
+</div>
+<div class=post-content>
+<h2 id=这是什么>这是什么</h2>
+<p><strong>Stray</strong> 是我这段时间一直在做的<strong>微信游戏助手 Bot</strong>。它通过 Wechaty 桥接到微信，能在群里被 <code>@stray</code> 直接唤起：你问它什么游戏、想找折扣、看榜单，它都会调用后面的工具链拿到真实数据再组织成回复。</p>
+<p>核心能力：</p>
+<ul>
+<li><strong>自然语言对话 + 工具调用</strong>：消息进来走通用 Agent Loop —— LLM 判断意图，必要时调工具取数据，再整理成带 emoji 的回复；上下文超出预算自动摘要压缩、历史可以卸载，不会一问上下文就丢。</li>
+<li><strong>游戏工具链</strong>：搜索、详情（评分 / 媒体评测 / 各平台价格 / 图 / 视频）、热榜与精选折扣、Steam / PS5 / NS / Epic 各平台折扣、在玩榜、高分榜。</li>
+<li><strong>主动功能</strong>：每天 12:00 在活跃群里发一条话题暖场；愿望单降价监控（每 6 小时查一次，降价在群里提醒）；定期把群里的讨论提炼成结构化偏好事实。</li>
+<li><strong>长期记忆</strong>：SQLite 存储；分层记忆 —— 群讨论沉淀成 wiki、用户偏好画像、偏好事实增量提取。</li>
+<li><strong>Slash 命令兜底</strong>：<code>/game search ...</code>、<code>/gold</code>、<code>/lss</code>、<code>/find</code>（AI 搜索）、<code>/kfc</code> 等 20+ 快捷命令，不依赖 LLM 也能用。</li>
+</ul>
+<p>技术栈：TypeScript（ts-node）· Wechaty + wechaty-puppet-service · OpenAI 兼容 API（可切 DashScope 百炼）· SQLite · Jest。</p>
+<h2 id=在线试玩>在线试玩</h2>
+<p>直接在下面的窗口里用自然语言跟它对话——它收到的每条指令都会经过我的消息网关路由到 Agent，实时返回结果。</p>
+<blockquote>
+<p>网关尚未接入：当前窗口是<strong>本地演示模式</strong>，回复为模拟数据，可用来预览交互效果。等网关就绪后会自动切换到真实 Agent。</p>
+</blockquote>
+<div id=game-agent-chat></div>
+<link rel=stylesheet href=/css/game-agent-chat.css>
+<script src=/js/game-agent-chat.js></script>
+<h2 id=试玩提示>试玩提示</h2>
+<ul>
+<li>当前是演示模式，输入任意内容即可看到聊天交互效果。</li>
+<li>等网关接入真实 Agent 后，可以试试：<strong>帮我搜一下赛博朋克 2077</strong>、<strong>今天 Steam 有什么折扣</strong>、<strong>PS5 高分游戏排行</strong>、<strong>有什么适合双人玩的游戏推荐</strong>。</li>
+</ul>
+</div><svg id="btt-button" class="arrow-logo" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512" onclick="scrollToTop()" title="Go to top"><path d="M177 159.7l136 136c9.4 9.4 9.4 24.6.0 33.9l-22.6 22.6c-9.4 9.4-24.6 9.4-33.9.0L160 255.9l-96.4 96.4c-9.4 9.4-24.6 9.4-33.9.0L7 329.7c-9.4-9.4-9.4-24.6.0-33.9l136-136c9.4-9.5 24.6-9.5 34-.1z"/></svg>
+<script>let backToTopButton=document.getElementById("btt-button");window.onscroll=function(){scrollFunction()};function scrollFunction(){document.body.scrollTop>20||document.documentElement.scrollTop>20?backToTopButton.style.display="block":backToTopButton.style.display="none"}function scrollToTop(){window.scrollTo(0,0)}</script>
+</div>
+</main><footer class=footer>
+<span>&copy; 2026 HindungWang</span>
+<span>
+Made with &#10084;&#65039; using <a target=_blank href=https://github.com/gokarna-theme/gokarna-hugo>Gokarna</a>
+</span>
+</footer>
+</body>
+</html>

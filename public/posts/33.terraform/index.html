@@ -1,0 +1,788 @@
+<!doctype html><html lang=en><head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>:root{--accent-color:#FF4D4D;--font-size:1.1rem}</style>
+<title>Terraform技术分享</title>
+<meta name=description content="Terraform 介绍 Terraform是一个IT基础架构自动化编排工具，可以用代码来管理维护IT资源。并对配置文件进行版本控制。代码描述了云资源拓扑的基础结构，例如虚拟机、存储账户和网络接口。
+Terraform通过插件的机制，将各个云厂商的OpenAPI抽象为Provider，通过实现这个Provider插件来 …">
+<meta name=keywords content="blog,gokarna,hugo,terraform">
+<meta property="og:url" content="https://hindungwang.github.io/posts/33.terraform/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Terraform技术分享">
+<meta property="og:description" content="Terraform 介绍 Terraform是一个IT基础架构自动化编排工具，可以用代码来管理维护IT资源。并对配置文件进行版本控制。代码描述了云资源拓扑的基础结构，例如虚拟机、存储账户和网络接口。
+Terraform通过插件的机制，将各个云厂商的OpenAPI抽象为Provider，通过实现这个Provider插件来 …">
+<meta property="og:image" content="https://github.com/hindungWang.png">
+<meta property="og:image:secure_url" content="https://github.com/hindungWang.png">
+<meta name=twitter:card content="summary_large_image">
+<meta name=twitter:title content="Terraform技术分享">
+<meta name=twitter:description content="Terraform 介绍 Terraform是一个IT基础架构自动化编排工具，可以用代码来管理维护IT资源。并对配置文件进行版本控制。代码描述了云资源拓扑的基础结构，例如虚拟机、存储账户和网络接口。
+Terraform通过插件的机制，将各个云厂商的OpenAPI抽象为Provider，通过实现这个Provider插件来 …">
+<meta property="twitter:domain" content="https://hindungwang.github.io/posts/33.terraform/">
+<meta property="twitter:url" content="https://hindungwang.github.io/posts/33.terraform/">
+<meta name=twitter:image content="https://github.com/hindungWang.png">
+<link rel=canonical href=https://hindungwang.github.io/posts/33.terraform/>
+<link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
+<link rel=stylesheet type=text/css href=/css/main.min.css>
+<link id=dark-theme rel=stylesheet href=/css/dark.min.css>
+<script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<link rel=icon type=image/png href=/favicon.png>
+<link rel=apple-touch-icon href=/favicon.png>
+<link rel=stylesheet href=/css/posts-nav.css>
+</head>
+<body class=post-page>
+<script>setThemeByUserPref()</script><header class=header>
+<nav class=header-nav>
+<div class=avatar>
+<a href=https://hindungwang.github.io/>
+<img src=https://github.com/hindungWang.png alt=avatar>
+</a>
+</div>
+<div class=nav-title>
+<a class=nav-brand href=https://hindungwang.github.io/>Hindung's Blog</a>
+</div>
+<div class=nav-links>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/ aria-label><span data-feather=home></span> Home </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/about aria-label><span data-feather=home></span> About </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/posts/ aria-label><span data-feather=page></span> Posts </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/game-agent/ aria-label><span data-feather=gamepad></span> Game Agent </a>
+</div>
+<div class=nav-link>
+<a href=https://github.com/hindungWang aria-label=github><span data-feather=github></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/tags/ aria-label><span data-feather=tag></span> Tags </a>
+</div>
+<div class=nav-link>
+<a href=https://buymeacoffee.com/hindung aria-label=buymeacoffee><span data-feather=coffee></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/index.xml aria-label=rss><span data-feather=rss></span> </a>
+</div>
+<span class=nav-icons-divider></span>
+<div class="nav-link dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a aria-hidden=true role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</div>
+<div class=nav-link id=hamburger-menu-toggle>
+<span class="sr-only hamburger-menu-toggle-screen-reader-target">menu</span>
+<a aria-checked=false aria-labelledby=hamburger-menu-toggle id=hamburger-menu-toggle-target role=switch>
+<span data-feather=menu></span>
+</a>
+</div>
+<ul class="nav-hamburger-list visibility-hidden">
+<li class=nav-item>
+<a href=https://hindungwang.github.io/><span data-feather=home></span> Home </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/about><span data-feather=home></span> About </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/posts/><span data-feather=page></span> Posts </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/game-agent/><span data-feather=gamepad></span> Game Agent </a>
+</li>
+<li class=nav-item>
+<a href=https://github.com/hindungWang><span data-feather=github></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/tags/><span data-feather=tag></span> Tags </a>
+</li>
+<li class=nav-item>
+<a href=https://buymeacoffee.com/hindung><span data-feather=coffee></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/index.xml><span data-feather=rss></span> </a>
+</li>
+<li class="nav-item dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main id=content>
+<div id=reading-progress aria-hidden=true></div>
+<aside class=posts-nav aria-label=所有文章>
+<h3>文章<span class=posts-nav-count>36</span></h3>
+<ul>
+<li>
+<a href=/posts/35.kube-vip-pr/ title="给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败">给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败</a>
+</li>
+<li>
+<a href=/posts/34.helm-3-way-merge/ title="Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录">Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录</a>
+</li>
+<li class=active>
+<a href=/posts/33.terraform/ title=Terraform技术分享>Terraform技术分享</a>
+</li>
+<li>
+<a href=/posts/32.to-many-pods-created/ title=Pod不停被创建？？>Pod不停被创建？？</a>
+</li>
+<li>
+<a href=/posts/31.hight-cpu/ title="记一次节点高 CPU 高 Load 的排查经历">记一次节点高 CPU 高 Load 的排查经历</a>
+</li>
+<li>
+<a href=/posts/30.go-gc/ title="Golang GC 初探">Golang GC 初探</a>
+</li>
+<li>
+<a href=/posts/29.k8s-apimachinery-util/ title="k8s.io/apimachinery/util 包源码解读">k8s.io/apimachinery/util 包源码解读</a>
+</li>
+<li>
+<a href=/posts/28.k8s-utils/ title="Kubernetes 的 utils 包源码鉴赏">Kubernetes 的 utils 包源码鉴赏</a>
+</li>
+<li>
+<a href=/posts/24.k8s-network-policy/ title=K8s之网络策略>K8s之网络策略</a>
+</li>
+<li>
+<a href=/posts/22.k8s-cilium/ title=K8s之cilium网络插件>K8s之cilium网络插件</a>
+</li>
+<li>
+<a href=/posts/27.prometheus_test/ title=Prometheus性能压测与高可用设计>Prometheus性能压测与高可用设计</a>
+</li>
+<li>
+<a href=/posts/26.prometheus_sdk/ title="Prometheus GO SDK">Prometheus GO SDK</a>
+</li>
+<li>
+<a href=/posts/25.kube-ovn/ title=K8s之kube-ovn网络插件>K8s之kube-ovn网络插件</a>
+</li>
+<li>
+<a href=/posts/23.k8s-client/ title="K8s client-go初始化的几种方法">K8s client-go初始化的几种方法</a>
+</li>
+<li>
+<a href=/posts/18.container-1/ title=容器技术之我见>容器技术之我见</a>
+</li>
+<li>
+<a href=/posts/19.cri/ title=容器运行时>容器运行时</a>
+</li>
+<li>
+<a href=/posts/21.k8s-1/ title=Kubernetes组件>Kubernetes组件</a>
+</li>
+<li>
+<a href=/posts/17.kubectl/ title=Kubectl命令行>Kubectl命令行</a>
+</li>
+<li>
+<a href=/posts/16.calico/ title=K8s之calico网络插件东西南北流量>K8s之calico网络插件东西南北流量</a>
+</li>
+<li>
+<a href=/posts/15.iptable/ title=Iptable规则初探>Iptable规则初探</a>
+</li>
+<li>
+<a href=/posts/14.go-sync-cond/ title=Go源码解读之sync.Cond>Go源码解读之sync.Cond</a>
+</li>
+<li>
+<a href=/posts/13.go-sync-type/ title=Go源码解读之sync中的基本类型和使用场景>Go源码解读之sync中的基本类型和使用场景</a>
+</li>
+<li>
+<a href=/posts/12.deep-copy/ title=深拷贝之循环引用>深拷贝之循环引用</a>
+</li>
+<li>
+<a href=/posts/11.lru/ title="LRU 缓存机制">LRU 缓存机制</a>
+</li>
+<li>
+<a href=/posts/10.go-sync-atomic/ title=Go源码解读之sync/atomic>Go源码解读之sync/atomic</a>
+</li>
+<li>
+<a href=/posts/09.keng/ title=使用Go遇到的坑>使用Go遇到的坑</a>
+</li>
+<li>
+<a href=/posts/08.core/ title=构建属于你自己的核心力量>构建属于你自己的核心力量</a>
+</li>
+<li>
+<a href=/posts/20.go-priority-queue/ title=Golang实现优先队列>Golang实现优先队列</a>
+</li>
+<li>
+<a href=/posts/07.snowflake/ title=雪花算法>雪花算法</a>
+</li>
+<li>
+<a href=/posts/06.golang-channel/ title=Golang-channel>Golang-channel</a>
+</li>
+<li>
+<a href=/posts/05.go-lang/ title=Golang语言模型>Golang语言模型</a>
+</li>
+<li>
+<a href=/posts/04.gin/ title=初探Gin框架>初探Gin框架</a>
+</li>
+<li>
+<a href=/posts/03.golang-interface/ title=Golang-interface的底层原理浅析>Golang-interface的底层原理浅析</a>
+</li>
+<li>
+<a href=/posts/02.docker-images/ title=Docker镜像优化>Docker镜像优化</a>
+</li>
+<li>
+<a href=/posts/01.change-log/ title=部落格修改记录>部落格修改记录</a>
+</li>
+<li>
+<a href=/posts/00.markdown/ title="Hello World">Hello World</a>
+</li>
+</ul>
+</aside>
+<script>(function(){var b=document.getElementById('reading-progress'),a;if(!b)return;a=function(){var a=document.documentElement,c=a.scrollHeight-a.clientHeight;b.style.transform='scaleX('+(c>0?window.scrollY/c:0)+')'},window.addEventListener('scroll',a,{passive:!0}),window.addEventListener('resize',a),a()})()</script>
+<div class="post container">
+<div class=post-header-section>
+<h1>Terraform技术分享</h1>
+<small role=doc-subtitle></small>
+<p class=post-date>
+March 15, 2025
+</p>
+<ul class=post-tags>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/terraform>terraform</a></li>
+</ul>
+</div>
+<div class=post-content>
+<h2 id=terraform-介绍>Terraform 介绍</h2>
+<p>Terraform是一个IT基础架构<strong>自动化编排工具</strong>，可以用代码来管理维护IT资源。并对配置文件进行版本控制。代码描述了云资源拓扑的基础结构，例如虚拟机、存储账户和网络接口。</p>
+<p>Terraform通过插件的机制，将各个云厂商的OpenAPI抽象为Provider，通过实现这个Provider插件来实现对新基础架构的支持；Terraform使用HCL语言来定义、预览和部署云基础结构。
+用户只需要编写HCL，然后执行Plan预览更改，最后执行Apply部署即可。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315123445.png alt></p>
+<h3 id=简单的使用场景>简单的使用场景</h3>
+<p>某应用，为了增大吞吐率，需要对其做一个流量均衡处理，以扩大并发数、缩短延迟，所以需要使用一个负载均衡和云主机的组合，其架构如图所示，一个负载均衡，下面挂载两台云主机。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315123640.png alt></p>
+<p>手动方式：</p>
+<ul>
+<li>创建负载均衡器</li>
+<li>创建虚拟机</li>
+<li>加安全组</li>
+<li>配置安全组规则，挂载LB</li>
+<li>B端口配置、会话保持、健康检查配置</li>
+</ul>
+<p>使用 Terraform 的方式：</p>
+<ul>
+<li>编写tf，引用LB、VM模板</li>
+<li>执行apply部署</li>
+</ul>
+<h3 id=基本使用方法>基本使用方法</h3>
+<p>基本命令：</p>
+<ul>
+<li>terraform plan（预览）</li>
+<li>terraform apply （创建/更新）</li>
+<li>terraform destroy （销毁）</li>
+</ul>
+<p>使用 plan 命令可以展示当前环境的资源状态，以及将要执行的操作，如：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315124005.png alt></p>
+<p>优点：
+高度可扩展的自动化编排工具，通过Provider来支持新的基础架构。目前支持200多个基础设施提供商。
+声明式编程，使用简单的模板语言（HCL）来定义、预览和部署云基础结构。
+多云统一管理，开发者可同时管理不同云厂商的资源，也可快速方便地迁移到另外一个云厂商。</p>
+<h2 id=架构及原理>架构及原理</h2>
+<h3 id=hcl>HCL</h3>
+<p>HCL(HashiCorp Configuration Language)是HashiCorp公司构建的一种配置语言，用于编写Terraform的配置文件，也称为Terraform语言，它描述了如何管理给定的基础设施集合，具有以下特性：</p>
+<ul>
+<li>基于人的可读性设计</li>
+<li>声明式</li>
+<li>兼容json格式输入，对机器友好</li>
+<li>支持运算操作</li>
+<li>数据结构丰富</li>
+</ul>
+<p>语法开起来和NGINX的配置差不多。它以.tf文件名为结尾。
+有良好的可读性，比如右边的配置，这个resource表示一个aws vpc资源，并给他设置一个地址块；</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315124504.png alt></p>
+<p><em>Block代表某种对象的配置，如资源。Argument为一个名称分配一个值。Expresssion表示一个值，可以是字面意思，也可以是通过引用和组合其他值。</em></p>
+<p>数据结构丰富：原始类型分三类：<code>string、number、bool</code>。
+Terraform支持三种集合：
+<code>list(...)</code>：列表是一组值的连续集合，可以用下标访问内部元素，下标从0开始。
+<code>map(...)</code>：字典类型(或者叫映射类型)，代表一组键唯一的键值对，键类型必须是string，值类型任意。
+<code>set(...)</code>：集合类型，代表一组不重复的值。
+<code>object(...)</code>：对象是指一组由具有名称和类型的属性所构成的符合类型，它的schema信息由<code>{ \=\, \=\,...}</code>的形式描述。</p>
+<p>一个完整的例子：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315124633.png alt></p>
+<h3 id=terraform-flow>Terraform Flow</h3>
+<p>Terraform 核心的工作流包含三个步骤：</p>
+<ul>
+<li>Write：将基础设施写成HCL代码</li>
+<li>Plan：应用前预览更改</li>
+<li>Apply：应用到对应的基础设施</li>
+</ul>
+<p>抽象概念：</p>
+<ul>
+<li>Config：声明期望的资源状态集合，即用户编写HCL文件</li>
+<li>State：当前的资源状态集合</li>
+<li>Diff：期望状态与当前状态的差异</li>
+</ul>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315124736.png alt></p>
+<p><em>执行计划（Plan）本质上就是 Diff 格式化输出的结果，而执行编排（Apply）就是应用这个 Diff 的过程。</em></p>
+<p>当执行操作时，Terraform会解析校验HCL文件，并构建资源的依赖关系图，也就是构建一个有向无环图（DAG，Directed Acyclic Graph），并行地去创建和修改相互间没有依赖的那些资源。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315124835.png alt></p>
+<p>Terraform通过遍历该有向无环图，直到所有资源都被成功编排，并执行清理操作。
+在创建资源的过程中，存在局部并行的操作，因而可以减少了编排的时间。</p>
+<p>依赖解析的关键：</p>
+<ul>
+<li>显式声明：可以使用<code>depend_on</code>语句嵌入hcl语句中</li>
+<li>隐式依赖：例如，表达式<code>aws_instance.example[1]</code>引用<code>resource “aws_instance” “example”</code>配置中的块创建的实例之一</li>
+</ul>
+<p>在图构建的过程中，Terraform 需要对 DAG 进行若干次变换操作，进行图化简操作，例如做<code>Transitive Reduction</code>简化多余的边，减少编排成本。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315124956.png alt></p>
+<p>总体编排流程：</p>
+<p>当执行Terraform命令首次编排云上资源时：</p>
+<ul>
+<li>Terraform 首先唤醒核心进程，初始化 Backend（即状态管理组件）</li>
+<li>解析用户编写的资源定义文件，同步最新的资源状态，并与当前的资源定义作对比</li>
+<li>初次构建DAG时，资源尚未被初始化，所以资源状态为空，用户的资源实例都将作为 DAG中新增的节点被创建</li>
+</ul>
+<p>在并行构建资源时：</p>
+<ul>
+<li>并行遍历DAG</li>
+<li>当遇到Provider节点时，Terraform核心进程唤醒Provider进程</li>
+<li>将所有的编排动作依次发给Provider</li>
+<li>Provider调用OpenAPI 管理云上资源</li>
+<li>返回的结果由Terraform核心进程写回状态存储</li>
+</ul>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315125139.png alt></p>
+<p>从宏观角度来看，Terraform分为：</p>
+<ul>
+<li>Terraform CLI：Terraform命令行工具</li>
+<li>Provider： Terraform的插件，用于管理云上资源</li>
+<li>Cloud APIs： 云上的OpenAPI</li>
+</ul>
+<p>从进程的角度看，Terraform可以分为：</p>
+<ul>
+<li>Terraform Core进程，是整个程序的主进程，创建和销毁各个Provider进程</li>
+<li>Provider进程，即提供资源编排能力的进程，包括由云厂商实现的能力，和应用程序提供的能力</li>
+<li>Provisioner进程，即提供资源编排后处理操作的进程，比如执行 Shell 命令，上传文件等</li>
+</ul>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315125256.png alt></p>
+<h3 id=插件机制>插件机制</h3>
+<p>Terraform使用<code>go-plugin</code>这个工具来管理各个provider插件的生命周期：https://github.com/hashicorp/go-plugin
+本代码以GRPCPlugin为例:</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315125344.png alt></p>
+<p>Terraform采用插件机制来实现对Provider的可插拔的效果，其主要使用了go-plugin这个插件来编写。这个代码也是HashiCorp公司开源的工具，在各个产品中都有应用到这个插件的能力。
+这个插件定义了两个接口Plugin和GRPC Plugin，定义了服务端和客户端的RPC方法，插件的提供者需要实现Server方法，而插件的使用者需要实现Client方法。
+Terraform实现的是基于GRPC的插件接口。</p>
+<h4 id=关键结构体>关键结构体</h4>
+<p>Plugin.ClientConfig结构体用于舒适化一个插件客户端所需的配置信息，包含了与服务端链接的握手信息，命令行等信息。
+包含了插件路径，端口范围等等，一旦插件Client被创建这些信息都不可修改。
+Cmd结构体用于启动二进制插件的命令行，里面记录了该进程的信息。
+同时，插件的Server端也有类似的结构体用于初始化一个插件服务端进程，</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315125550.png alt></p>
+<p>Plugin.Client结构体用于负责管理一个插件应用（进程）的完整生命周期，包括创建插件进程、连接到插件进程、Dispense业务接口的实现、最后杀死进程。
+对于每个插件（二进制文件），宿主进程需要创建一个Plugin.Client实例。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315125609.png alt></p>
+<p>插件主函数必须使用plugin.Serve方法来启动一个RPC服务。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315125715.png alt></p>
+<p>ServeConfig与ClientConfig结构类似，共同拥有HandshakeConfig这个结构体，用于两端的连接前握手配置。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315125658.png alt></p>
+<p>握手的过程，其实就是对环境变量设置魔法数字：
+TF_PLUGIN_MAGIC_COOKIE=d602bf8f19cb4ca9872b2</p>
+<h4 id=进程间通信>进程间通信</h4>
+<p>RPC是远程过程调用的别名，即一个主机上的进程调用另一个主机上的进程的方法。gRPC是由Google公司开发的一套RPC框架，
+通过ProtoBuf来约定服务之间的传输信息，并支持跨语言的实现调用。</p>
+<p>定义好proto文件之后，使用命令行生成对应的代码文件：</p>
+<pre tabindex=0><code>protoc --go_out=. --go-grpc_out=. tfplugin6.proto
+</code></pre><p>在代码中引入生成的代码并实现对应的接口，既可以实现一个gRPC的服务端和客户端，
+在服务端，服务端实现这个接口并运行一个 gRPC 服务器来处理客户端调用。
+在客户端，客户端有一个存根(stub)它提供与服务器相同的方法。
+客户端应用程序可以直接调用不同机器上的服务器应用程序上的方法，就像本地调用一样。</p>
+<p>Terraform目前使用gRPC作为插件的通信协议。通过查看协议文件，可以看到Provider需要提供一些方法。
+通过实现这些方法存根，使得Terraform core能够直接调用对应的业务方法，执行插件提供的方法。
+比如校验配置信息，对资源进行增删改等操作。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315130123.png alt></p>
+<p>Terraform插件是普通的可执行程序，启动时会通过本地接口上启动gRPC服务。 Terraform Core启动插件，进行握手，然后作为 gRPC 客户端连接到指定的端口号。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315125832.png alt></p>
+<p>整个过程中，Terraform Core本身称为<em>插件客户端</em>，将插件程序本身称为<em>插件服务器</em>。这两个进程都在本地运行，服务器进程显示为客户端的子进程。 Terraform Core控制这些服务器进程的生命周期，并在不再需要它们时回收掉。</p>
+<p>一个完整的apply的生命流程:</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315130149.png alt></p>
+<h2 id=应用>应用</h2>
+<h3 id=实现一个provider>实现一个Provider</h3>
+<p>通过对go-plugin工具以及Terraform源码的了解，我们可以简单实现一个Provider。
+主程序只需plugin.Serve方法即可：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=color:#ff79c6>package</span> main
+<span style=color:#ff79c6>import</span> (
+	<span style=color:#f1fa8c>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/plugin&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hindungWang/terraform-provider-wincloud/wincloud&#34;</span>
+)
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
+	plugin.<span style=color:#50fa7b>Serve</span>(<span style=color:#ff79c6>&amp;</span>plugin.ServeOpts{
+		ProviderFunc: <span style=color:#8be9fd;font-style:italic>func</span>() <span style=color:#ff79c6>*</span>schema.Provider {
+			<span style=color:#ff79c6>return</span> wincloud.<span style=color:#50fa7b>Provider</span>()
+		},
+	})
+}
+</code></pre></div><p>data_source用于检索资源，同步云上的资源状态到本地并作为数据源，以供其他资源引用。
+通过定义data_source的Schema来定义、识别、引用和存储云上数据资源的属性。
+dataSourceVirtualMachineRead方法则是我们要实现的查询改资源的方法</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> wincloud
+<span style=color:#ff79c6>import</span> (
+	<span style=color:#f1fa8c>&#34;context&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/diag&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/clients&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/utils&#34;</span>
+)
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>dataSourceVirtualMachine</span>() <span style=color:#ff79c6>*</span>schema.Resource {
+	<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>&amp;</span>schema.Resource{
+		ReadContext: dataSourceVirtualMachineRead, <span style=color:#6272a4>// 查询
+</span><span style=color:#6272a4></span>		Schema: <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#ff79c6>*</span>schema.Schema{
+			<span style=color:#f1fa8c>&#34;uuid&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:     schema.TypeString,
+				Required: <span style=color:#ff79c6>true</span>,
+			},
+			<span style=color:#f1fa8c>&#34;name&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:     schema.TypeString,
+				Computed: <span style=color:#ff79c6>true</span>,
+			},
+			<span style=color:#f1fa8c>&#34;user_uuid&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:     schema.TypeString,
+				Computed: <span style=color:#ff79c6>true</span>,
+			},
+      <span style=color:#ff79c6>...</span>
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>dataSourceVirtualMachineRead</span>(ctx context.Context, d <span style=color:#ff79c6>*</span>schema.ResourceData, m <span style=color:#8be9fd;font-style:italic>interface</span>{}) diag.Diagnostics {
+	<span style=color:#8be9fd;font-style:italic>var</span> diags diag.Diagnostics
+	c <span style=color:#ff79c6>:=</span> m.(<span style=color:#ff79c6>*</span>clients.Client)
+	vmUuid <span style=color:#ff79c6>:=</span> d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;uuid&#34;</span>).(<span style=color:#8be9fd>string</span>)
+	vm, err <span style=color:#ff79c6>:=</span> c.<span style=color:#50fa7b>GetVirtualMachine</span>(vmUuid)
+	<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+		<span style=color:#ff79c6>return</span> diag.<span style=color:#50fa7b>FromErr</span>(err)
+	}
+	data, err <span style=color:#ff79c6>:=</span> utils.<span style=color:#50fa7b>ToMap</span>(vm, <span style=color:#f1fa8c>&#34;schema&#34;</span>)
+	<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+		diags = <span style=color:#8be9fd;font-style:italic>append</span>(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  <span style=color:#f1fa8c>&#34;Unable to set virtual machine values&#34;</span>,
+			Detail:   err.<span style=color:#50fa7b>Error</span>(),
+		})
+		<span style=color:#ff79c6>return</span> diags
+	}
+	<span style=color:#ff79c6>for</span> k, v <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> data {
+		<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>:=</span> d.<span style=color:#50fa7b>Set</span>(k, v); err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+			<span style=color:#ff79c6>return</span> diag.<span style=color:#50fa7b>FromErr</span>(err)
+		}
+	}
+	d.<span style=color:#50fa7b>SetId</span>(vmUuid)
+	<span style=color:#ff79c6>return</span> diags
+}
+</code></pre></div><p>对应的 tf 代码为：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315131633.png alt></p>
+<p>resource则是我们要创建的资源，通过定义resource的Schema来定义、识别、引用和存储云上资源的属性。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> wincloud
+<span style=color:#ff79c6>import</span> (
+	<span style=color:#f1fa8c>&#34;context&#34;</span>
+	<span style=color:#f1fa8c>&#34;strings&#34;</span>
+	<span style=color:#f1fa8c>&#34;time&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/diag&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/clients&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/types&#34;</span>
+	<span style=color:#f1fa8c>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/utils&#34;</span>
+)
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>resourceVirtualMachine</span>() <span style=color:#ff79c6>*</span>schema.Resource {
+	<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>&amp;</span>schema.Resource{
+		CreateContext: resourceVirtualMachineCreate, <span style=color:#6272a4>// 创建
+</span><span style=color:#6272a4></span>		ReadContext:   resourceVirtualMachineRead,  <span style=color:#6272a4>// 读取
+</span><span style=color:#6272a4></span>		UpdateContext: resourceVirtualMachineUpdate, <span style=color:#6272a4>// 更新
+</span><span style=color:#6272a4></span>		DeleteContext: resourceVirtualMachineDelete, <span style=color:#6272a4>// 删除
+</span><span style=color:#6272a4></span>		Schema: <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#ff79c6>*</span>schema.Schema{
+			<span style=color:#f1fa8c>&#34;last_updated&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:     schema.TypeString,
+				Optional: <span style=color:#ff79c6>true</span>,
+				Computed: <span style=color:#ff79c6>true</span>,
+			},
+			<span style=color:#f1fa8c>&#34;uuid&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:     schema.TypeString,
+				Computed: <span style=color:#ff79c6>true</span>,
+			},
+			<span style=color:#f1fa8c>&#34;name&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:     schema.TypeString,
+				Required: <span style=color:#ff79c6>true</span>,
+			},
+			<span style=color:#f1fa8c>&#34;auto_start&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:     schema.TypeBool,
+				Optional: <span style=color:#ff79c6>true</span>,
+			},
+			<span style=color:#f1fa8c>&#34;host_name&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:     schema.TypeString,
+				Required: <span style=color:#ff79c6>true</span>,
+			},
+      <span style=color:#ff79c6>...</span>
+}
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>resourceVirtualMachineCreate</span>(ctx context.Context, d <span style=color:#ff79c6>*</span>schema.ResourceData, m <span style=color:#8be9fd;font-style:italic>interface</span>{}) diag.Diagnostics {
+	c <span style=color:#ff79c6>:=</span> m.(<span style=color:#ff79c6>*</span>clients.Client)
+	vm <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>types.CreateVirtualMachineRequest{}
+	vm.Name = d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;name&#34;</span>).(<span style=color:#8be9fd>string</span>)
+	vm.AutoStart = d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;auto_start&#34;</span>).(<span style=color:#8be9fd>bool</span>)
+	vm.StoragePoolID = d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;storage_pool_id&#34;</span>).(<span style=color:#8be9fd>string</span>)
+	vm.NetworkAreaUUID = d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;network_area_uuid&#34;</span>).(<span style=color:#8be9fd>string</span>)
+	vm.CallSource = d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;call_source&#34;</span>).(<span style=color:#8be9fd>string</span>)
+	vm.MetaData = types.MetaData{
+		NetworkType:  d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;meta_data_network_type&#34;</span>).(<span style=color:#8be9fd>string</span>),
+		TempleteUUID: d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;meta_data_templete_uuid&#34;</span>).(<span style=color:#8be9fd>string</span>),
+		TempleteName: d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;meta_data_templete_name&#34;</span>).(<span style=color:#8be9fd>string</span>),
+	}
+	pas <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>([]types.PrivateNetworksArray, <span style=color:#bd93f9>0</span>)
+	ns <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>([]types.Networks, <span style=color:#bd93f9>0</span>)
+	<span style=color:#ff79c6>if</span> d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;private_networks_array&#34;</span>) <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+		private_networks_array <span style=color:#ff79c6>:=</span> d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;private_networks_array&#34;</span>).([]<span style=color:#8be9fd;font-style:italic>interface</span>{})
+		<span style=color:#ff79c6>for</span> _, item <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> private_networks_array {
+			i <span style=color:#ff79c6>:=</span> item.(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd;font-style:italic>interface</span>{})
+			pas = <span style=color:#8be9fd;font-style:italic>append</span>(pas, types.PrivateNetworksArray{
+				VpcNetworkUUID: i[<span style=color:#f1fa8c>&#34;vpc_network_uuid&#34;</span>].(<span style=color:#8be9fd>string</span>),
+			})
+		}
+	}
+	<span style=color:#ff79c6>if</span> d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;networks&#34;</span>) <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+		networks <span style=color:#ff79c6>:=</span> d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;networks&#34;</span>).([]<span style=color:#8be9fd;font-style:italic>interface</span>{})
+		<span style=color:#ff79c6>for</span> _, item <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> networks {
+			i <span style=color:#ff79c6>:=</span> item.(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd;font-style:italic>interface</span>{})
+			ns = <span style=color:#8be9fd;font-style:italic>append</span>(ns, types.Networks{
+				IP:          i[<span style=color:#f1fa8c>&#34;ip&#34;</span>].(<span style=color:#8be9fd>string</span>),
+				NetworkID:   i[<span style=color:#f1fa8c>&#34;network_id&#34;</span>].(<span style=color:#8be9fd>string</span>),
+				NetworkUUID: i[<span style=color:#f1fa8c>&#34;network_uuid&#34;</span>].(<span style=color:#8be9fd>string</span>),
+			})
+		}
+	}
+	vm.PrivateNetworksArray = pas
+	vm.Networks = ns
+	uuid, err <span style=color:#ff79c6>:=</span> c.<span style=color:#50fa7b>CreateVirtualMachines</span>(vm)
+	<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+		<span style=color:#ff79c6>return</span> diag.<span style=color:#50fa7b>FromErr</span>(err)
+	}
+	d.<span style=color:#50fa7b>SetId</span>(uuid)
+	<span style=color:#ff79c6>return</span> <span style=color:#50fa7b>resourceVirtualMachineRead</span>(ctx, d, m)
+}
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>resourceVirtualMachineRead</span>(ctx context.Context, d <span style=color:#ff79c6>*</span>schema.ResourceData, m <span style=color:#8be9fd;font-style:italic>interface</span>{}) diag.Diagnostics {
+	<span style=color:#8be9fd;font-style:italic>var</span> diags diag.Diagnostics
+	c <span style=color:#ff79c6>:=</span> m.(<span style=color:#ff79c6>*</span>clients.Client)
+	vmUuid <span style=color:#ff79c6>:=</span> d.<span style=color:#50fa7b>Id</span>()
+	<span style=color:#8be9fd;font-style:italic>var</span> loop = <span style=color:#bd93f9>0</span>
+	vm, err <span style=color:#ff79c6>:=</span> c.<span style=color:#50fa7b>GetVirtualMachine</span>(vmUuid)
+	<span style=color:#ff79c6>for</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> <span style=color:#ff79c6>&amp;&amp;</span> loop &lt; <span style=color:#bd93f9>10</span> {
+		<span style=color:#ff79c6>if</span> strings.<span style=color:#50fa7b>Contains</span>(err.<span style=color:#50fa7b>Error</span>(), <span style=color:#f1fa8c>&#34;20002&#34;</span>) {
+			vm, err = c.<span style=color:#50fa7b>GetVirtualMachine</span>(vmUuid)
+			time.<span style=color:#50fa7b>Sleep</span>(<span style=color:#bd93f9>1</span> <span style=color:#ff79c6>*</span> time.Minute)
+		} <span style=color:#ff79c6>else</span> {
+			<span style=color:#ff79c6>return</span> diag.<span style=color:#50fa7b>FromErr</span>(err)
+		}
+		loop<span style=color:#ff79c6>++</span>
+	}
+	data, err <span style=color:#ff79c6>:=</span> utils.<span style=color:#50fa7b>ToMap</span>(vm, <span style=color:#f1fa8c>&#34;schema&#34;</span>)
+	<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+		diags = <span style=color:#8be9fd;font-style:italic>append</span>(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  <span style=color:#f1fa8c>&#34;Unable to set virtual machine values&#34;</span>,
+			Detail:   err.<span style=color:#50fa7b>Error</span>(),
+		})
+		<span style=color:#ff79c6>return</span> diags
+	}
+	<span style=color:#ff79c6>for</span> k, v <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> data {
+		<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>:=</span> d.<span style=color:#50fa7b>Set</span>(k, v); err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+			<span style=color:#ff79c6>return</span> diag.<span style=color:#50fa7b>FromErr</span>(err)
+		}
+	}
+	<span style=color:#ff79c6>return</span> diags
+}
+
+</code></pre></div><p>定义好data_source和resource之后需要组合为Provider对象，提供给plugin.Serve。
+至此，Terraform core会帮我们执行从.tf语句解析到RPC调用再到Cloud API调用的完整调用链，并形成一个State用于保存当前的资源状态。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Provider</span>() <span style=color:#ff79c6>*</span>schema.Provider {
+	<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>&amp;</span>schema.Provider{
+		Schema: <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#ff79c6>*</span>schema.Schema{
+			<span style=color:#f1fa8c>&#34;username&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    <span style=color:#ff79c6>true</span>,
+				DefaultFunc: schema.<span style=color:#50fa7b>EnvDefaultFunc</span>(<span style=color:#f1fa8c>&#34;WINCLOUD_USERNAME&#34;</span>, <span style=color:#ff79c6>nil</span>),
+			},
+			<span style=color:#f1fa8c>&#34;password&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    <span style=color:#ff79c6>true</span>,
+				Sensitive:   <span style=color:#ff79c6>true</span>,
+				DefaultFunc: schema.<span style=color:#50fa7b>EnvDefaultFunc</span>(<span style=color:#f1fa8c>&#34;WINCLOUD_PASSWORD&#34;</span>, <span style=color:#ff79c6>nil</span>),
+			},
+			<span style=color:#f1fa8c>&#34;token&#34;</span>: <span style=color:#ff79c6>&amp;</span>schema.Schema{
+				Type:        schema.TypeString,
+				Optional:    <span style=color:#ff79c6>true</span>,
+				Sensitive:   <span style=color:#ff79c6>true</span>,
+				DefaultFunc: schema.<span style=color:#50fa7b>EnvDefaultFunc</span>(<span style=color:#f1fa8c>&#34;WINCLOUD_TOKEN&#34;</span>, <span style=color:#ff79c6>nil</span>),
+			},
+		},
+		ResourcesMap: <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#ff79c6>*</span>schema.Resource{
+			<span style=color:#f1fa8c>&#34;wincloud_virtualmachine&#34;</span>: <span style=color:#50fa7b>resourceVirtualMachine</span>(),
+			<span style=color:#f1fa8c>&#34;wincloud_objectstorage&#34;</span>:  <span style=color:#50fa7b>resourceObjectStorage</span>(),
+		},
+		DataSourcesMap: <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#ff79c6>*</span>schema.Resource{
+			<span style=color:#f1fa8c>&#34;wincloud_virtualmachine&#34;</span>: <span style=color:#50fa7b>dataSourceVirtualMachine</span>(),
+			<span style=color:#f1fa8c>&#34;wincloud_objectstorage&#34;</span>:  <span style=color:#50fa7b>dataSourceObjectStorage</span>(),
+		},
+		ConfigureContextFunc: providerConfigure,
+	}
+}
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>providerConfigure</span>(ctx context.Context, d <span style=color:#ff79c6>*</span>schema.ResourceData) (<span style=color:#8be9fd;font-style:italic>interface</span>{}, diag.Diagnostics) {
+	username <span style=color:#ff79c6>:=</span> d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;username&#34;</span>).(<span style=color:#8be9fd>string</span>)
+	password <span style=color:#ff79c6>:=</span> d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;password&#34;</span>).(<span style=color:#8be9fd>string</span>)
+	token <span style=color:#ff79c6>:=</span> d.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;token&#34;</span>).(<span style=color:#8be9fd>string</span>)
+	<span style=color:#6272a4>// Warning or errors can be collected in a slice type
+</span><span style=color:#6272a4></span>	<span style=color:#8be9fd;font-style:italic>var</span> diags diag.Diagnostics
+	<span style=color:#ff79c6>if</span> token <span style=color:#ff79c6>!=</span> <span style=color:#f1fa8c>&#34;&#34;</span> {
+		<span style=color:#ff79c6>return</span> clients.<span style=color:#50fa7b>NewClientWithToken</span>(token), diags
+	}
+	<span style=color:#ff79c6>if</span> username <span style=color:#ff79c6>==</span> <span style=color:#f1fa8c>&#34;&#34;</span> <span style=color:#ff79c6>||</span> password <span style=color:#ff79c6>==</span> <span style=color:#f1fa8c>&#34;&#34;</span> {
+		diags = <span style=color:#8be9fd;font-style:italic>append</span>(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  <span style=color:#f1fa8c>&#34;Unable to create Wincloud client&#34;</span>,
+			Detail:   <span style=color:#f1fa8c>&#34;No username or password&#34;</span>,
+		})
+		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>nil</span>, diags
+	}
+	c, err <span style=color:#ff79c6>:=</span> clients.<span style=color:#50fa7b>NewClient</span>(username, password)
+	<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+		diags = <span style=color:#8be9fd;font-style:italic>append</span>(diags, diag.Diagnostic{
+			Severity: diag.Error,
+			Summary:  <span style=color:#f1fa8c>&#34;Unable to create Wincloud client&#34;</span>,
+			Detail:   fmt.<span style=color:#50fa7b>Sprintf</span>(<span style=color:#f1fa8c>&#34;Unable to auth user for authenticated Wincloud client: %s&#34;</span>, err.<span style=color:#50fa7b>Error</span>()),
+		})
+		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>nil</span>, diags
+	}
+	<span style=color:#ff79c6>return</span> c, diags
+}
+</code></pre></div><p>整个过程就是将 tf 代码翻译为 cloud api 调用：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315131922.png alt></p>
+<h3 id=tf项目格式>tf项目格式</h3>
+<p>一般来说tf项目格式按照这种方式组织：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>.
+└── tf/
+        ├── versions.tf   存放版本相关的变量
+        ├── variables.tf  定义的变量
+        ├── provider.tf   依赖的Provider的信息
+        ├── vm.tf            Resource信息
+        ├── dns.tf           Resource信息
+        ├── data-sources.tf   DataSource信息
+        ├── main.tf         入口文件
+        ├── outputs.tf    输出信息
+        └── external/           脚本文件
+                 └── name-generator.py
+
+</code></pre></div><p>Terraform会遍历当前目录下所有以.tf为结尾的文件并解析，而.var结尾的文件会被当做是变量的赋值文件（类似于helm chart的Value.yaml文件）。</p>
+<p>Modle 模块是包含一组Terraform代码的文件夹。为了更好的重用我们的代码，可以把这些tf文件打包成一个模块。
+Root Model：即是执行Terraform plan/apply命令的文件夹。
+如果模块含有多个嵌入模块，那么应避免它们彼此之间的引用，由根模块负责组合它们。一个examples文件夹用来给出一个调用样例。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315132154.png alt></p>
+<p>使用模块只需要在tf文件中添加model代码块：
+module块定义了一个source参数，指定了模块的源；Terraform目前支持如下模块源：</p>
+<ul>
+<li>本地路径</li>
+<li>Terraform Registry</li>
+<li>Git仓库</li>
+<li>HTTP地址</li>
+<li>S3 buckets</li>
+<li>GCS buckets</li>
+</ul>
+<p>使用时执行：<code>terraform apply -target=module.e2_instance</code></p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315132237.png alt></p>
+<h3 id=多人协作>多人协作</h3>
+<p>由于Terraform State文件一般是明文存储在本地，因此当多人共同修改一个基础架构时就会存在资源状态的缺失等，导致生产资源泄露。为了解决状态文件的存储和共享问题，Terraform引入了远程状态存储机制： <code>Terraform Remote Backend</code></p>
+<p>分为两种：</p>
+<ul>
+<li>标准：支持远程状态存储与状态锁</li>
+<li>增强：在标准的基础上支持远程操作(在远程服务器上执行plan、apply等操作)</li>
+</ul>
+<p>目前增强型Backend只有Terraform Cloud云服务一种。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315132354.png alt></p>
+<h2 id=总结>总结</h2>
+<p>Terraform可以自动化和管理基础架构即服务 (IaaS)、平台即服务 (PaaS)，甚至软件即服务 (SaaS) 级别的功能，并在所有Provider之间并行构建所有此类资源。</p>
+<p>Terraform提供了一个插件化的方式来对接和管理不同云上的资源。具有执行计划与过程分离、统一的资源状态管理等功能，使得在编排资源的过程中具有很好的拓展性。</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>Terraform</th>
+<th>Crossplane</th>
+<th>Pulumi</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>介绍</td>
+<td>是一个命令行工具，使用HCL语言定义云厂商的资源</td>
+<td>是一个控制平面，利用k8s CRD定义各个云厂商的资源，并通过controller去实现对云厂商资源的修改</td>
+<td>可以使用熟悉的通用语言，如 Python、Go来编排基础架构，相当于把云厂商的API包装起来</td>
+</tr>
+<tr>
+<td>Github Star</td>
+<td>31.7k</td>
+<td>4.8k</td>
+<td>11.8k</td>
+</tr>
+<tr>
+<td>优点</td>
+<td>可以管理所有的基础设施包括k8s</td>
+<td>使用kubectl和yaml管理云基础设施，更符合使用k8s作为devops的场景</td>
+<td>可以使用各种编程语言实现</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td>依赖单一的状态文件，多人协作不友好</td>
+<td>依赖k8s集群的状态存储</td>
+<td>目前只支持公有云厂商sdk</td>
+</tr>
+</tbody>
+</table>
+<h2 id=参考资料>参考资料</h2>
+<ul>
+<li><a href=https://www.terraform.io/>Terraform 官方文档</a></li>
+<li><a href=https://crossplane.io/>Crossplane 官方网站</a></li>
+<li><a href=https://www.pulumi.com/>Pulumi 官方网站</a></li>
+<li><a href=https://developer.hashicorp.com/terraform/plugin>Terraform Provider Development</a></li>
+<li><a href=https://github.com/hashicorp/go-plugin>HashiCorp Go-plugin</a></li>
+</ul>
+</div>
+<div class=prev-next>
+</div><svg id="btt-button" class="arrow-logo" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512" onclick="scrollToTop()" title="Go to top"><path d="M177 159.7l136 136c9.4 9.4 9.4 24.6.0 33.9l-22.6 22.6c-9.4 9.4-24.6 9.4-33.9.0L160 255.9l-96.4 96.4c-9.4 9.4-24.6 9.4-33.9.0L7 329.7c-9.4-9.4-9.4-24.6.0-33.9l136-136c9.4-9.5 24.6-9.5 34-.1z"/></svg>
+<script>let backToTopButton=document.getElementById("btt-button");window.onscroll=function(){scrollFunction()};function scrollFunction(){document.body.scrollTop>20||document.documentElement.scrollTop>20?backToTopButton.style.display="block":backToTopButton.style.display="none"}function scrollToTop(){window.scrollTo(0,0)}</script>
+</div>
+<aside class=post-toc aria-label=文章目录>
+<h3 class=toc-title>目录</h3>
+<nav id=toc>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#terraform-介绍>Terraform 介绍</a>
+<ul>
+<li><a href=#简单的使用场景>简单的使用场景</a></li>
+<li><a href=#基本使用方法>基本使用方法</a></li>
+</ul>
+</li>
+<li><a href=#架构及原理>架构及原理</a>
+<ul>
+<li><a href=#hcl>HCL</a></li>
+<li><a href=#terraform-flow>Terraform Flow</a></li>
+<li><a href=#插件机制>插件机制</a>
+<ul>
+<li><a href=#关键结构体>关键结构体</a></li>
+<li><a href=#进程间通信>进程间通信</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href=#应用>应用</a>
+<ul>
+<li><a href=#实现一个provider>实现一个Provider</a></li>
+<li><a href=#tf项目格式>tf项目格式</a></li>
+<li><a href=#多人协作>多人协作</a></li>
+</ul>
+</li>
+<li><a href=#总结>总结</a></li>
+<li><a href=#参考资料>参考资料</a></li>
+</ul>
+</nav>
+</nav>
+</aside>
+<link rel=stylesheet href=/css/toc.css>
+</main><footer class=footer>
+<span>&copy; 2025 HindungWang</span>
+<span>
+Made with &#10084;&#65039; using <a target=_blank href=https://github.com/gokarna-theme/gokarna-hugo>Gokarna</a>
+</span>
+</footer>
+</body>
+</html>

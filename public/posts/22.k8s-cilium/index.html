@@ -1,0 +1,1089 @@
+<!doctype html><html lang=en><head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>:root{--accent-color:#FF4D4D;--font-size:1.1rem}</style>
+<title>K8s之cilium网络插件</title>
+<meta name=description content="名词术语 eBPF (Extended Berkeley Packet Filter)：是一种内核技术，它允许用户在内核中编写并注入自定义的代码片段，以扩展和改进网络和系统的功能。eBPF 最初是在 Linux 内核中引入的，但现在也在其他操作系统中得到支持。
+L2 - 数据链路层：在物理地址（如 MAC 地址）上提供 …">
+<meta name=keywords content="blog,gokarna,hugo,Kubernetes,Network">
+<meta property="og:url" content="https://hindungwang.github.io/posts/22.k8s-cilium/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="K8s之cilium网络插件">
+<meta property="og:description" content="名词术语 eBPF (Extended Berkeley Packet Filter)：是一种内核技术，它允许用户在内核中编写并注入自定义的代码片段，以扩展和改进网络和系统的功能。eBPF 最初是在 Linux 内核中引入的，但现在也在其他操作系统中得到支持。
+L2 - 数据链路层：在物理地址（如 MAC 地址）上提供 …">
+<meta property="og:image" content="https://github.com/hindungWang.png">
+<meta property="og:image:secure_url" content="https://github.com/hindungWang.png">
+<meta name=twitter:card content="summary_large_image">
+<meta name=twitter:title content="K8s之cilium网络插件">
+<meta name=twitter:description content="名词术语 eBPF (Extended Berkeley Packet Filter)：是一种内核技术，它允许用户在内核中编写并注入自定义的代码片段，以扩展和改进网络和系统的功能。eBPF 最初是在 Linux 内核中引入的，但现在也在其他操作系统中得到支持。
+L2 - 数据链路层：在物理地址（如 MAC 地址）上提供 …">
+<meta property="twitter:domain" content="https://hindungwang.github.io/posts/22.k8s-cilium/">
+<meta property="twitter:url" content="https://hindungwang.github.io/posts/22.k8s-cilium/">
+<meta name=twitter:image content="https://github.com/hindungWang.png">
+<link rel=canonical href=https://hindungwang.github.io/posts/22.k8s-cilium/>
+<link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
+<link rel=stylesheet type=text/css href=/css/main.min.css>
+<link id=dark-theme rel=stylesheet href=/css/dark.min.css>
+<script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<link rel=icon type=image/png href=/favicon.png>
+<link rel=apple-touch-icon href=/favicon.png>
+<link rel=stylesheet href=/css/posts-nav.css>
+</head>
+<body class=post-page>
+<script>setThemeByUserPref()</script><header class=header>
+<nav class=header-nav>
+<div class=avatar>
+<a href=https://hindungwang.github.io/>
+<img src=https://github.com/hindungWang.png alt=avatar>
+</a>
+</div>
+<div class=nav-title>
+<a class=nav-brand href=https://hindungwang.github.io/>Hindung's Blog</a>
+</div>
+<div class=nav-links>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/ aria-label><span data-feather=home></span> Home </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/about aria-label><span data-feather=home></span> About </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/posts/ aria-label><span data-feather=page></span> Posts </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/game-agent/ aria-label><span data-feather=gamepad></span> Game Agent </a>
+</div>
+<div class=nav-link>
+<a href=https://github.com/hindungWang aria-label=github><span data-feather=github></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/tags/ aria-label><span data-feather=tag></span> Tags </a>
+</div>
+<div class=nav-link>
+<a href=https://buymeacoffee.com/hindung aria-label=buymeacoffee><span data-feather=coffee></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/index.xml aria-label=rss><span data-feather=rss></span> </a>
+</div>
+<span class=nav-icons-divider></span>
+<div class="nav-link dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a aria-hidden=true role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</div>
+<div class=nav-link id=hamburger-menu-toggle>
+<span class="sr-only hamburger-menu-toggle-screen-reader-target">menu</span>
+<a aria-checked=false aria-labelledby=hamburger-menu-toggle id=hamburger-menu-toggle-target role=switch>
+<span data-feather=menu></span>
+</a>
+</div>
+<ul class="nav-hamburger-list visibility-hidden">
+<li class=nav-item>
+<a href=https://hindungwang.github.io/><span data-feather=home></span> Home </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/about><span data-feather=home></span> About </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/posts/><span data-feather=page></span> Posts </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/game-agent/><span data-feather=gamepad></span> Game Agent </a>
+</li>
+<li class=nav-item>
+<a href=https://github.com/hindungWang><span data-feather=github></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/tags/><span data-feather=tag></span> Tags </a>
+</li>
+<li class=nav-item>
+<a href=https://buymeacoffee.com/hindung><span data-feather=coffee></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/index.xml><span data-feather=rss></span> </a>
+</li>
+<li class="nav-item dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main id=content>
+<div id=reading-progress aria-hidden=true></div>
+<aside class=posts-nav aria-label=所有文章>
+<h3>文章<span class=posts-nav-count>36</span></h3>
+<ul>
+<li>
+<a href=/posts/35.kube-vip-pr/ title="给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败">给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败</a>
+</li>
+<li>
+<a href=/posts/34.helm-3-way-merge/ title="Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录">Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录</a>
+</li>
+<li>
+<a href=/posts/33.terraform/ title=Terraform技术分享>Terraform技术分享</a>
+</li>
+<li>
+<a href=/posts/32.to-many-pods-created/ title=Pod不停被创建？？>Pod不停被创建？？</a>
+</li>
+<li>
+<a href=/posts/31.hight-cpu/ title="记一次节点高 CPU 高 Load 的排查经历">记一次节点高 CPU 高 Load 的排查经历</a>
+</li>
+<li>
+<a href=/posts/30.go-gc/ title="Golang GC 初探">Golang GC 初探</a>
+</li>
+<li>
+<a href=/posts/29.k8s-apimachinery-util/ title="k8s.io/apimachinery/util 包源码解读">k8s.io/apimachinery/util 包源码解读</a>
+</li>
+<li>
+<a href=/posts/28.k8s-utils/ title="Kubernetes 的 utils 包源码鉴赏">Kubernetes 的 utils 包源码鉴赏</a>
+</li>
+<li>
+<a href=/posts/24.k8s-network-policy/ title=K8s之网络策略>K8s之网络策略</a>
+</li>
+<li class=active>
+<a href=/posts/22.k8s-cilium/ title=K8s之cilium网络插件>K8s之cilium网络插件</a>
+</li>
+<li>
+<a href=/posts/27.prometheus_test/ title=Prometheus性能压测与高可用设计>Prometheus性能压测与高可用设计</a>
+</li>
+<li>
+<a href=/posts/26.prometheus_sdk/ title="Prometheus GO SDK">Prometheus GO SDK</a>
+</li>
+<li>
+<a href=/posts/25.kube-ovn/ title=K8s之kube-ovn网络插件>K8s之kube-ovn网络插件</a>
+</li>
+<li>
+<a href=/posts/23.k8s-client/ title="K8s client-go初始化的几种方法">K8s client-go初始化的几种方法</a>
+</li>
+<li>
+<a href=/posts/18.container-1/ title=容器技术之我见>容器技术之我见</a>
+</li>
+<li>
+<a href=/posts/19.cri/ title=容器运行时>容器运行时</a>
+</li>
+<li>
+<a href=/posts/21.k8s-1/ title=Kubernetes组件>Kubernetes组件</a>
+</li>
+<li>
+<a href=/posts/17.kubectl/ title=Kubectl命令行>Kubectl命令行</a>
+</li>
+<li>
+<a href=/posts/16.calico/ title=K8s之calico网络插件东西南北流量>K8s之calico网络插件东西南北流量</a>
+</li>
+<li>
+<a href=/posts/15.iptable/ title=Iptable规则初探>Iptable规则初探</a>
+</li>
+<li>
+<a href=/posts/14.go-sync-cond/ title=Go源码解读之sync.Cond>Go源码解读之sync.Cond</a>
+</li>
+<li>
+<a href=/posts/13.go-sync-type/ title=Go源码解读之sync中的基本类型和使用场景>Go源码解读之sync中的基本类型和使用场景</a>
+</li>
+<li>
+<a href=/posts/12.deep-copy/ title=深拷贝之循环引用>深拷贝之循环引用</a>
+</li>
+<li>
+<a href=/posts/11.lru/ title="LRU 缓存机制">LRU 缓存机制</a>
+</li>
+<li>
+<a href=/posts/10.go-sync-atomic/ title=Go源码解读之sync/atomic>Go源码解读之sync/atomic</a>
+</li>
+<li>
+<a href=/posts/09.keng/ title=使用Go遇到的坑>使用Go遇到的坑</a>
+</li>
+<li>
+<a href=/posts/08.core/ title=构建属于你自己的核心力量>构建属于你自己的核心力量</a>
+</li>
+<li>
+<a href=/posts/20.go-priority-queue/ title=Golang实现优先队列>Golang实现优先队列</a>
+</li>
+<li>
+<a href=/posts/07.snowflake/ title=雪花算法>雪花算法</a>
+</li>
+<li>
+<a href=/posts/06.golang-channel/ title=Golang-channel>Golang-channel</a>
+</li>
+<li>
+<a href=/posts/05.go-lang/ title=Golang语言模型>Golang语言模型</a>
+</li>
+<li>
+<a href=/posts/04.gin/ title=初探Gin框架>初探Gin框架</a>
+</li>
+<li>
+<a href=/posts/03.golang-interface/ title=Golang-interface的底层原理浅析>Golang-interface的底层原理浅析</a>
+</li>
+<li>
+<a href=/posts/02.docker-images/ title=Docker镜像优化>Docker镜像优化</a>
+</li>
+<li>
+<a href=/posts/01.change-log/ title=部落格修改记录>部落格修改记录</a>
+</li>
+<li>
+<a href=/posts/00.markdown/ title="Hello World">Hello World</a>
+</li>
+</ul>
+</aside>
+<script>(function(){var b=document.getElementById('reading-progress'),a;if(!b)return;a=function(){var a=document.documentElement,c=a.scrollHeight-a.clientHeight;b.style.transform='scaleX('+(c>0?window.scrollY/c:0)+')'},window.addEventListener('scroll',a,{passive:!0}),window.addEventListener('resize',a),a()})()</script>
+<div class="post container">
+<div class=post-header-section>
+<h1>K8s之cilium网络插件</h1>
+<small role=doc-subtitle></small>
+<p class=post-date>
+November 15, 2023
+</p>
+<ul class=post-tags>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/kubernetes>Kubernetes</a></li>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/network>Network</a></li>
+</ul>
+</div>
+<div class=post-content>
+<h2 id=名词术语>名词术语</h2>
+<p><strong>eBPF (Extended Berkeley Packet Filter)</strong>：是一种内核技术，它允许用户在内核中编写并注入自定义的代码片段，以扩展和改进网络和系统的功能。eBPF 最初是在 Linux 内核中引入的，但现在也在其他操作系统中得到支持。</p>
+<p><strong>L2 - 数据链路层</strong>：在物理地址（如 MAC 地址）上提供数据传输。例如，以太网、Wi-Fi 和 PPP（点对点协议）都在这一层工作。</p>
+<p><strong>L3 - 网络层</strong>：负责数据包的发送和路由，包括 IP 地址处理和路由器工作。例如，IP（互联网协议）就工作在这一层。</p>
+<p><strong>L4 - 传输层</strong>：负责端到端的消息传输和错误恢复。例如，TCP（传输控制协议）和 UDP（用户数据报协议）工作在这一层。</p>
+<p><strong>L7 - 应用层</strong>：为应用程序提供网络服务。例如，HTTP、FTP、SMTP 等协议工作在这一层。</p>
+<p><strong>Label</strong>：标签是定位大的资源集合的一种通用、灵活的方法。Cilium中很多地方使用标签和标签选择器实现。</p>
+<p><strong>Endpoint</strong>：通过为容器分配IP，Cilium让它在网络上可见。多个应容器可能具有相同IP，典型的例子是Pod中的容器。任何享有同一IP的容器，在Cilium的术语里面，叫做端点。</p>
+<p><strong>Identity</strong>：任何端点都被分配身份标识（Identity），身份标识通过端点的标签确定，并且具有集群范围内的标识符（数字ID）。端点被分配的身份标识，和它的安全相关标签匹配，也就是说，具有相同安全相关标签的所有端点，共享同一身份标识。</p>
+<p><strong>XDP（eXpress Data Path）</strong>：即快速数据路径，XDP是Linux网络处理流程中的一个eBPF钩子，能够挂载eBPF程序，它能够在网络数据包到达网卡驱动层时对其进行处理，具有非常优秀的数据面处理性能，打通了Linux网络处理的高速公路。</p>
+<h2 id=概述>概述</h2>
+<p><strong>Cilium</strong> 是一个开源软件，用于在 Kubernetes 集群中提供和管理网络连接和安全策略。它使用 eBPF (Extended Berkeley Packet Filter) 技术，eBPF完全在内核中运行，因此改变Cilium的安全策略时不需要程序代码、容器配置的任何变更，以用于创建安全、可扩展和高效的网络和监控解决方案。</p>
+<p><strong>Hubble</strong> 是一个基于 Cilium 和 eBPF 构建的开源网络观察工具，用于提供和可视化深度网络洞察。Hubble 可以观察、监视和理解 Kubernetes 集群中的网络流量。如：服务依赖和通信关系图、网络监控和报警、应用程序监控、安全可观察性。</p>
+<h3 id=架构>架构</h3>
+<p>整体的架构图：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/cilium-arch-1024x912.png alt></p>
+<h4 id=cilium>Cilium</h4>
+<h5 id=cilium-agent>cilium-agent</h5>
+<p>cilium-agent在每个 Kubernetes 节点上运行，负责实现和管理网络策略和网络连接。管理所有eBPF程序，控制所有网络访问。</p>
+<ul>
+<li>
+<p><strong>网络策略实施</strong>：Cilium Agent 读取 Kubernetes 中定义的网络策略，然后使用 eBPF技术在内核级别实施这些策略。这些策略可以包括允许或阻止特定的网络连接，或者对网络流量进行限速等。</p>
+</li>
+<li>
+<p><strong>网络连接管理</strong>：Cilium Agent 负责管理从 Pod 到其他 Pod、服务或外部网络的连接。这包括路由、负载均衡、NAT（网络地址转换）等。</p>
+</li>
+<li>
+<p><strong>服务发现</strong>：Cilium Agent 可以与 Kubernetes API 服务器通信，自动发现新的服务和端点，并更新网络策略和连接。</p>
+</li>
+<li>
+<p><strong>IPAM</strong>：Cilium Agent 包含一个 IP 地址管理（IPAM）模块，用于分配和回收 Pod IP 地址。</p>
+</li>
+<li>
+<p><strong>监控和故障排除</strong>：Cilium Agent 提供丰富的监控和故障排除功能，包括流量跟踪、日志记录和性能指标。</p>
+</li>
+</ul>
+<p>Cilium Agent 的所有功能都是透明的，不需要更改应用程序的代码或容器的配置。这使得 Cilium 可以在任何支持 eBPF 的环境中运行，包括标准的 Linux 发行版、云服务和裸机服务器。</p>
+<h5 id=cilium-cli>cilium-cli</h5>
+<p>cilium-cli(二进制文件叫cilium)和cilium-agent一起安装，它和cilium-agent的REST API交互，从而探测本地agent的状态。CLI也提供了直接访问eBPF map的工具。</p>
+<h5 id=cilium-operator>cilium-operator</h5>
+<p>Cilium Operator 是 Cilium 网络项目的一个重要组件，它主要负责执行那些跨节点的、全局性的操作，以及一些长期运行的后台任务。Cilium Operator 的设计理念是将那些不需要在每个节点上都运行的任务抽取出来，这样可以减轻 Cilium Agent 的负担，提高整个系统的效率和可扩展性。</p>
+<ul>
+<li>
+<p><strong>全局 IPAM 管理</strong>：Cilium Operator 负责管理全局的 IP 地址池，为新的 Pods 分配 IP 地址，以及回收不再使用的 IP 地址。这个任务需要跨节点进行，因为 IP 地址是全局唯一的资源。</p>
+</li>
+<li>
+<p><strong>节点注册和注销</strong>：当新的节点加入或离开集群时，Cilium Operator 会更新 Cilium 网络的配置，以确保网络连接和策略的正确性。</p>
+</li>
+<li>
+<p><strong>服务和端点的同步</strong>：Cilium Operator 负责将 Kubernetes 的服务和端点信息同步到 Cilium 网络，以便 Cilium Agent 可以正确地路由和负载均衡网络流量。</p>
+</li>
+<li>
+<p><strong>垃圾回收</strong>：Cilium Operator 还负责清理那些不再使用的资源，例如过期的 IP 地址、旧的连接状态等。这是一个长期运行的后台任务，可以在全局范围内进行。</p>
+</li>
+</ul>
+<p>目前（v1.14.3）包含的CRD：</p>
+<ul>
+<li>
+<p><strong>CiliumCIDRGroups</strong>：允许用户定义 IP 地址或 CIDR（无类别域间路由）的组，然后在网络策略中引用这些组。这样可以更方便地管理和控制网络流量。</p>
+</li>
+<li>
+<p><strong>CiliumClusterwideNetworkPolicies</strong>：扩展了 Kubernetes 的网络策略，增加了一些新的选项和特性，例如更细粒度的流量控制、基于身份的访问控制等。这个 CRD 是集群范围的，适用于所有的命名空间。</p>
+</li>
+<li>
+<p><strong>CiliumEndpoints</strong>：表示 Cilium 网络中的端点，包括 Pod、服务等。每个 CiliumEndpoint 对象都包含了端点的网络策略、状态、统计信息等。</p>
+</li>
+<li>
+<p><strong>CiliumExternalWorkloads</strong>：将非 Kubernetes 工作负载（例如虚拟机或物理服务器）注册到 Cilium 网络，这样就可以用同样的网络策略和 IPAM 管理这些工作负载。</p>
+</li>
+<li>
+<p><strong>CiliumIdentities</strong>：表示 Cilium 的安全身份，这是 Cilium 实现基于身份的访问控制的基础。</p>
+</li>
+<li>
+<p><strong>CiliumL2AnnouncementPolicies</strong>：配置 Cilium 的二层网络公告策略，例如 ARP（地址解析协议）或 NDP（邻居发现协议）。</p>
+</li>
+<li>
+<p><strong>CiliumLoadBalancerIPPools</strong>：管理 Cilium 的负载均衡 IP 地址池，这些 IP 地址用于服务的外部访问。</p>
+</li>
+<li>
+<p><strong>CiliumNetworkPolicies</strong>：扩展了 Kubernetes 的网络策略，增加了一些新的选项和特性，例如更细粒度的流量控制、基于身份的访问控制等。</p>
+</li>
+<li>
+<p><strong>CiliumNodeConfigs</strong>：配置 Cilium Agent 在特定节点上的行为，例如网络策略、路由、IPAM 策略等。</p>
+</li>
+<li>
+<p><strong>CiliumNodes</strong>：表示 Cilium 网络中的节点，包括节点的 IP 地址、路由、状态等。</p>
+</li>
+<li>
+<p><strong>CiliumPodIPPools</strong>：管理 Cilium 的 Pod IP 地址池，这些 IP 地址用于 Pod 的网络连接。</p>
+</li>
+</ul>
+<p>Cilium Operator 通常在 Kubernetes 集群中以单例或高可用模式运行，它与 Kubernetes API 服务器、Cilium Agent 以及其他 Kubernetes 组件紧密协作，共同维护 Cilium 网络的健康和性能。即使operator暂时不可用，集群仍然能正常运作一段时间，但是有可能会导致一些异常。</p>
+<h5 id=cilium-cni>cilium-cni</h5>
+<p>和其他cni一样，实现了k8s的网络插件接口。cilium-cni和当前节点上的Cilium API交互，触发必要的datapath配置，以提供容器网络、LB、网络策略。</p>
+<h4 id=hubble>Hubble</h4>
+<h5 id=hubble-server>hubble-server</h5>
+<p>Hubble 服务通常作为 Cilium Agent 的一部分运行在每个 Kubernetes 节点上，收集和处理该节点上的网络流量数据。可以通过 Cilium Agent 的 API 访问 Hubble 的数据和功能。</p>
+<h5 id=hubble-relay>hubble-relay</h5>
+<p>hubble-relay是一个独立组件，能够连接到所有Server，通过Server的gRPC API，获取全集群的可观察性数据。这些数据又通过一个API来暴露出去。</p>
+<h5 id=hubble-ui>hubble-ui</h5>
+<p>hubble提供了一个图形化的界面，用于展示和分析网络数据。</p>
+<h5 id=hubble-cli>hubble-cli</h5>
+<p>hubble是一个命令行工具，能够连接到gRPC API、hubble-relay、本地server，来获取flow events。</p>
+<h4 id=数据存储>数据存储</h4>
+<p>Cilium需要一个数据存储，用来在Agent之间传播状态。</p>
+<ul>
+<li>K8S CRD：默认数据存储。</li>
+<li>KV Store：外部键值存储，可以提供更好的性能。支持etcd和consul。</li>
+</ul>
+<h3 id=cilium带来的收益>cilium带来的收益</h3>
+<h4 id=网络性能>网络性能</h4>
+<p><strong>解决大规模集群iptable的瓶颈</strong>：传统的Linux网络安全机制，例如iptables，基于IP地址、TCP/UDP端口进行过滤。在容器化架构下IP地址会很快变化，这会导致ACL规则、LB表需要不断的、加速（随着业务规模扩大）更新。由于IP地址不稳定，给实现精准可观察性也带来了挑战。</p>
+<p><strong>网络策略增强</strong>：拓展k8s原生网络策略能力，包括隔离、过滤、安全访问等功能。</p>
+<p><strong>简单的容器网络</strong>：Cilium支持一个简单的、扁平的L3网络，能够跨越多个集群，连接所有容器。通过使用host scope的IP分配器，IP分配被保持简单，每个主机可以独立进行分配分配，不需要相互协作。</p>
+<p><strong>负载均衡</strong>：Cilium实现了分布式的负载均衡，可以完全代替kube-proxy。LB基于eBPF实现，使用高效的、可无限扩容的哈希表来存储信息。对于南北向负载均衡，Cilium作了最大化性能的优化。支持XDP、DSR（Direct Server Return，LB仅仅修改转发封包的目标MAC地址）。</p>
+<p><strong>带宽管理</strong>：Cilium利用eBPF实现高效的基于EDT（Earliest Departure Time）的egress限速。</p>
+<h4 id=网络监控和可视化>网络监控和可视化</h4>
+<p><strong>网络流量可视化</strong>：收集并可视化集群中的网络流量，帮助理解流量模式和行为。</p>
+<p><strong>服务地图</strong>：生成服务间通信的地图，帮助理解服务如何相互关联和互动。</p>
+<p><strong>安全策略可视化</strong>：显示安全策略如何影响网络流量，帮助理解和调整安全策略。</p>
+<p><strong>性能指标</strong>：收集和显示网络性能指标，如延迟、数据包丢失等，帮助监控和优化网络性能。</p>
+<p><strong>故障排除</strong>：通过提供详细的网络流量日志和历史数据，Hubble 可以帮助诊断和解决网络问题。</p>
+<h2 id=安装要求>安装要求</h2>
+<p>Cilium 的安装要求:</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>要求</th>
+<th style=text-align:right>版本</th>
+<th style=text-align:center>是否在容器中</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>Linux kernel</td>
+<td style=text-align:right>>= 4.19.57 or >= 4.18 on RHel7</td>
+<td style=text-align:center>否</td>
+</tr>
+<tr>
+<td style=text-align:left>Key-Value store (etcd)</td>
+<td style=text-align:right>>= 3.1.0</td>
+<td style=text-align:center>否</td>
+</tr>
+<tr>
+<td style=text-align:left>clang+LLVM</td>
+<td style=text-align:right>>= 10.0</td>
+<td style=text-align:center>是</td>
+</tr>
+</tbody>
+</table>
+<p><strong>注：eBPF Host-Routing功能需要Linux kernel >= 5.10</strong></p>
+<h2 id=安装和配置>安装和配置</h2>
+<h3 id=cilium-安装的步骤和方法>Cilium 安装的步骤和方法</h3>
+<p>采用手动安装的方式：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#6272a4># 安装cilium-cli</span>
+wget https://github.com/cilium/cilium-cli/releases/download/v0.15.0/cilium-linux-amd64.tar.gz
+tar zvxfC /usr/bin/cilium-linux-amd64.tar.gz
+<span style=color:#6272a4># 安装cilium chart</span>
+helm repo add cilium https://helm.cilium.io
+helm repo update
+helm install cilium cilium/cilium  --namespace cilium  --kubeconfig config --create-namespace
+<span style=color:#6272a4># 升级</span>
+helm upgrade --install cilium charts/cilium/1.14.3   <span style=color:#f1fa8c>\
+</span><span style=color:#f1fa8c></span>  --namespace cilium  <span style=color:#f1fa8c>\
+</span><span style=color:#f1fa8c></span>  --kubeconfig config <span style=color:#f1fa8c>\
+</span><span style=color:#f1fa8c></span>  --create-namespace  
+</code></pre></div><p>检查安装：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>cilium  status --wait --namespace cilium
+cilium connectivity <span style=color:#8be9fd;font-style:italic>test</span> -n cilium  --curl-image cilium/alpine-curl:v1.7.0 --json-mock-image cilium/json-mock:v1.3.5 --performance-image cilium/network-perf:a816f935930cb2b40ba43230643da4d5751a5711  --dns-test-server-image rancher/mirrored-coredns-coredns:1.9.0
+</code></pre></div><h3 id=网络策略负载均衡和其他高级功能>网络策略、负载均衡和其他高级功能</h3>
+<h4 id=ipam>IPAM</h4>
+<p>IPAM负责分配和管理网络端点（容器或其它）的IP地址。支持几种方法：</p>
+<ul>
+<li>
+<p>kubernetes，使用Kubernetes自带的host-scope IPAM。<strong>地址分配委托给每个节点进行</strong>，Pod的CIDR存在每个v1.Node.Spec中</p>
+</li>
+<li>
+<p>cluster-pool，这是默认的IPAM mode，Cilium在 v2.CiliumNode中存储Pod的CIDR，并在<strong>每个节点上使用host-scope的分配器来分配IP地址</strong>。</p>
+</li>
+<li>
+<p>cilium Multi-Pool IPAM (Beta)，<strong>使用Cilium的CiliumPodIPPool自定义资源给Pod分配IP</strong>。</p>
+</li>
+</ul>
+<h4 id=网络策略>网络策略</h4>
+<p>K8S标准的NetworkPolicy，可以用来指定L3/L4 ingress策略，以及受限的egress策略。CiliumNetworkPolicy同k8s自身的NetworkPolicy实现一样，默认全通，规则的生效是所见即所得，根据实际情况对规则进行Merge。Cilium网络策略支持L7层，扩展了原生策略的能力。</p>
+<p>如：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: <span style=color:#f1fa8c>&#34;cilium.io/v2&#34;</span>
+<span style=color:#ff79c6>kind</span>: CiliumNetworkPolicy
+<span style=color:#ff79c6>metadata</span>:
+  <span style=color:#ff79c6>name</span>: example
+<span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>endpointSelector</span>:  <span style=color:#6272a4># 作用的对象集合</span>
+    <span style=color:#ff79c6>matchLabels</span>:
+      <span style=color:#ff79c6>a</span>: b
+  <span style=color:#ff79c6>ingress</span>:          <span style=color:#6272a4># 入方向</span>
+  - <span style=color:#ff79c6>fromEndpoints</span>:  <span style=color:#6272a4># 从哪里来</span>
+    - <span style=color:#ff79c6>matchLabels</span>:
+        <span style=color:#ff79c6>c</span>: d
+  ...
+  <span style=color:#ff79c6>egress</span>:           <span style=color:#6272a4># 出方向</span>
+  - <span style=color:#ff79c6>toEndpoints</span>:    <span style=color:#6272a4># 到哪里去</span>
+    - <span style=color:#ff79c6>matchLabels</span>:
+        <span style=color:#ff79c6>e</span>: f
+  ...
+</code></pre></div><h5 id=l3策略>L3策略</h5>
+<p><strong>基于端点标签</strong>：示例说明<strong>只允许</strong>从标签为 <code>app=app1</code> 的端点通信到标签为 <code>app=nginx</code> 的终端点。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: <span style=color:#f1fa8c>&#34;cilium.io/v2&#34;</span>
+<span style=color:#ff79c6>kind</span>: CiliumNetworkPolicy
+<span style=color:#ff79c6>metadata</span>:
+  <span style=color:#ff79c6>name</span>: l3-rule-allow-app1-to-nginx
+<span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>endpointSelector</span>:
+    <span style=color:#ff79c6>matchLabels</span>:
+      <span style=color:#ff79c6>app</span>: nginx
+  <span style=color:#ff79c6>ingress</span>:
+  - <span style=color:#ff79c6>fromEndpoints</span>:
+    - <span style=color:#ff79c6>matchLabels</span>:
+        <span style=color:#ff79c6>app</span>: app1
+</code></pre></div><p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/p1.png alt></p>
+<p><strong>基于svc（理解上有点问题）</strong>：示例说明<strong>允许</strong>所有标签为<code>app=app1</code>的终端点与kubernetes命名空间<code>default</code>下的服务<code>nginx</code>的所有端点通信。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: <span style=color:#f1fa8c>&#34;cilium.io/v2&#34;</span>
+<span style=color:#ff79c6>kind</span>: CiliumNetworkPolicy
+<span style=color:#ff79c6>metadata</span>:
+  <span style=color:#ff79c6>name</span>: l3-rule-allow-app1-to-nginx-svc
+<span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>endpointSelector</span>:
+    <span style=color:#ff79c6>matchLabels</span>:
+      <span style=color:#ff79c6>app</span>: app1
+  <span style=color:#ff79c6>egress</span>:
+  - <span style=color:#ff79c6>toServices</span>:
+    - <span style=color:#ff79c6>k8sService</span>:
+        <span style=color:#ff79c6>serviceName</span>: nginx
+        <span style=color:#ff79c6>namespace</span>: default
+</code></pre></div><p>预期：app1通nginx，实际：居然是app1不通，app2通</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/p2.png alt></p>
+<p><strong>基于实体身份标识</strong>：示例说明<strong>允许</strong><code>app=app1</code>的端点到本地主机的所有通信，到其他的主机则拒绝。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: <span style=color:#f1fa8c>&#34;cilium.io/v2&#34;</span>
+<span style=color:#ff79c6>kind</span>: CiliumNetworkPolicy
+<span style=color:#ff79c6>metadata</span>:
+  <span style=color:#ff79c6>name</span>: <span style=color:#f1fa8c>&#34;app1-to-host&#34;</span>
+<span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>endpointSelector</span>:
+    <span style=color:#ff79c6>matchLabels</span>:
+      <span style=color:#ff79c6>app</span>: app1
+  <span style=color:#ff79c6>egress</span>:
+    - <span style=color:#ff79c6>toEntities</span>:
+      - host
+</code></pre></div><p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/p3.png alt></p>
+<p>除了host，还包括一些内置的实体身份：remote-node、kube-apiserver、ingress等等。</p>
+<p>除了以上几种，还有基于 DNS，IP/CIDR等方式。</p>
+<h5 id=l4策略>L4策略</h5>
+<p>限制端口上TCP连接：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: <span style=color:#f1fa8c>&#34;cilium.io/v2&#34;</span>
+<span style=color:#ff79c6>kind</span>: CiliumNetworkPolicy
+<span style=color:#ff79c6>metadata</span>:
+  <span style=color:#ff79c6>name</span>: <span style=color:#f1fa8c>&#34;l4-rule&#34;</span>
+<span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>endpointSelector</span>:
+    <span style=color:#ff79c6>matchLabels</span>:
+      <span style=color:#ff79c6>app</span>: app1
+  <span style=color:#ff79c6>egress</span>:
+    - <span style=color:#ff79c6>toPorts</span>:
+      - <span style=color:#ff79c6>ports</span>:
+        - <span style=color:#ff79c6>port</span>: <span style=color:#f1fa8c>&#34;80&#34;</span>
+          <span style=color:#ff79c6>protocol</span>: TCP
+</code></pre></div><p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/p4.png alt></p>
+<h5 id=l7策略>L7策略</h5>
+<p><strong>基于HTTP（包括gRPC）</strong></p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/nginx-rules.png alt></p>
+<p>除此之外，还支持Kafka（beta）。</p>
+<h4 id=负载均衡>负载均衡</h4>
+<p>我们启用了替换kube-proxy功能，因此节点上可以完全去掉kube-proxy组件，并且可以在cilium观察服务：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>root@master01:/home/cilium# cilium service list
+ID   Frontend                Service Type   Backend
+<span style=color:#bd93f9>3</span>    10.43.0.1:443           ClusterIP      <span style=color:#8be9fd;font-style:italic>1</span> <span style=color:#ff79c6>=</span>&gt; 192.168.101.181:6443 <span style=color:#ff79c6>(</span>active<span style=color:#ff79c6>)</span>
+<span style=color:#bd93f9>4</span>    10.43.78.28:80          ClusterIP      <span style=color:#8be9fd;font-style:italic>1</span> <span style=color:#ff79c6>=</span>&gt; 10.42.0.142:8080 <span style=color:#ff79c6>(</span>active<span style=color:#ff79c6>)</span>
+<span style=color:#bd93f9>5</span>    10.43.95.36:443         ClusterIP      <span style=color:#8be9fd;font-style:italic>1</span> <span style=color:#ff79c6>=</span>&gt; 10.42.1.148:8443 <span style=color:#ff79c6>(</span>active<span style=color:#ff79c6>)</span>
+                                            <span style=color:#8be9fd;font-style:italic>2</span> <span style=color:#ff79c6>=</span>&gt; 10.42.0.248:8443 <span style=color:#ff79c6>(</span>active<span style=color:#ff79c6>)</span>
+<span style=color:#bd93f9>6</span>    10.43.0.10:53           ClusterIP      <span style=color:#8be9fd;font-style:italic>1</span> <span style=color:#ff79c6>=</span>&gt; 10.42.1.81:53 <span style=color:#ff79c6>(</span>active<span style=color:#ff79c6>)</span>
+                                            <span style=color:#8be9fd;font-style:italic>2</span> <span style=color:#ff79c6>=</span>&gt; 10.42.0.165:53 <span style=color:#ff79c6>(</span>active<span style=color:#ff79c6>)</span>
+<span style=color:#bd93f9>7</span>    10.43.0.10:9153         ClusterIP      <span style=color:#8be9fd;font-style:italic>1</span> <span style=color:#ff79c6>=</span>&gt; 10.42.1.81:9153 <span style=color:#ff79c6>(</span>active<span style=color:#ff79c6>)</span>
+                                            <span style=color:#8be9fd;font-style:italic>2</span> <span style=color:#ff79c6>=</span>&gt; 10.42.0.165:9153 <span style=color:#ff79c6>(</span>active<span style=color:#ff79c6>)</span>
+<span style=color:#bd93f9>8</span>    10.43.166.103:443       ClusterIP      <span style=color:#8be9fd;font-style:italic>1</span> <span style=color:#ff79c6>=</span>&gt; 10.42.0.123:4443 <span style=color:#ff79c6>(</span>active<span style=color:#ff79c6>)</span>
+</code></pre></div><h4 id=集群网络>集群网络</h4>
+<p>Cluster Mesh将网络数据路径延伸到多个集群，支持以下特性：</p>
+<ul>
+<li>实现所有集群的Pod之间相互连通，不管使用直接路由还是隧道模式。不需要额外的网关节点或代理</li>
+<li>支持全局服务，可以在所有集群访问，支持跨集群的服务发现和负载均衡</li>
+<li>支持全局性的安全策略，跨集群网络策略</li>
+<li>支持跨集群边界通信的透明加密</li>
+<li>集群外工作负载，可以将外部工作负载（例如VM）加入到K8S集群，并且应用安全策略</li>
+</ul>
+<p>应用场景：</p>
+<ul>
+<li>
+<p>高可用
+两个（位于不同Region或AZ的）集群组成高可用，当一个集群的后端服务（不是整个AZ不可用）出现故障时，可以failover到另外一个集群的对等物。</p>
+</li>
+<li>
+<p>共享服务
+最初的K8S用法是，倾向于创建巨大的、多租户的集群。而现在，更场景的用法是为每个租户创建独立的集群，甚至为不同类型的服务（例如安全级别不同）创建独立的集群。尽管如此，仍然有一些服务具有共享特征，不适合在每个集群中都部署一份。这类服务包括：日志、监控、DNS、密钥管理，等等。</p>
+</li>
+</ul>
+<p>使用集群网格，可以将共享服务独立部署在一个集群中，租户集群可以访问其中的全局服务。</p>
+<h4 id=nodeport-xdp加速>NodePort XDP加速</h4>
+<p>对于LoadBalancer/NodePort/其它具有ExternalIP的服务，如果外部流量入群节点上没有服务后端，则入群节点需要将请求转发给其它节点。</p>
+<p>开启方法：</p>
+<pre tabindex=0><code>helm install cilium ./cilium \
+    --namespace cilium \
+    --set routingMode=native \
+    --set kubeProxyReplacement=true \
+    --set loadBalancer.acceleration=native \
+    --set loadBalancer.mode=hybrid \
+    --set k8sServiceHost=${API_SERVER_IP} \
+    --set k8sServicePort=${API_SERVER_PORT}
+</code></pre><p>检查是否生效：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>cilium status --verbose 
+KubeProxyReplacement Details:
+  ...
+  XDP Acceleration:       Native  <span style=color:#6272a4># 表示已开启XDP</span>
+  ...
+</code></pre></div><p>测试结果：</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>flow</th>
+<th style=text-align:left>sender</th>
+<th style=text-align:left>receiver</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>k8s节点之间(基准)</td>
+<td style=text-align:left>11.5 Gbits/sec</td>
+<td style=text-align:left>11.5 Gbits/sec</td>
+</tr>
+</tbody>
+</table>
+<p>kube-ovn:</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>flow</th>
+<th style=text-align:left>sender</th>
+<th style=text-align:left>receiver</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>pod到Service，同节点</td>
+<td style=text-align:left>15.1 Gbits/sec</td>
+<td style=text-align:left>15.1 Gbits/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>pod到Service，不同节点</td>
+<td style=text-align:left>1.29 Gbits/sec</td>
+<td style=text-align:left>1.28 Gbits/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>外部节点到Service-nodeport，同节点</td>
+<td style=text-align:left>9.76 Gbits/sec</td>
+<td style=text-align:left>9.71 Gbits/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>外部节点到Service-nodeport，不同节点</td>
+<td style=text-align:left>1.06 Gbits/sec</td>
+<td style=text-align:left>1.05 Gbits/sec</td>
+</tr>
+</tbody>
+</table>
+<p>cilium XDP:</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>flow</th>
+<th style=text-align:left>sender</th>
+<th style=text-align:left>receiver</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>pod到Service，同节点</td>
+<td style=text-align:left>28.4 Gbits/sec</td>
+<td style=text-align:left>28.3 Gbits/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>pod到Service，不同节点</td>
+<td style=text-align:left>11.0 Gbits/sec</td>
+<td style=text-align:left>10.9 Gbits/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>外部节点到Service-nodeport，同节点</td>
+<td style=text-align:left>9.88 Gbits/sec</td>
+<td style=text-align:left>9.84 Gbits/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>外部节点到Service-nodeport，不同节点</td>
+<td style=text-align:left>8.23 Gbits/sec</td>
+<td style=text-align:left>8.19 Gbits/sec</td>
+</tr>
+</tbody>
+</table>
+<p>从结果上看，cilium XDP相比kube-ovn在各方面都要强，而且对于跨界点的性能上也比较接近虚拟层的性能。</p>
+<p>限制：内核版本需要大于等于5.2，需要网卡支持本地XDP的驱动程序。</p>
+<h4 id=带宽限速>带宽限速</h4>
+<p>利用Cilium的带宽管理器，可以有效的在EDT（Earliest Departure Time）、eBPF的帮助下，管理每个Pod的带宽占用。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: apps/v1
+<span style=color:#ff79c6>kind</span>: Deployment
+<span style=color:#ff79c6>metadata</span>:
+  <span style=color:#ff79c6>name</span>: qperf
+  <span style=color:#ff79c6>namespace</span>: default
+  <span style=color:#ff79c6>labels</span>:
+    <span style=color:#ff79c6>app</span>: qperf
+<span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>replicas</span>: <span style=color:#bd93f9>4</span>
+  <span style=color:#ff79c6>selector</span>:
+    <span style=color:#ff79c6>matchLabels</span>:
+      <span style=color:#ff79c6>app</span>: qperf
+  <span style=color:#ff79c6>template</span>:
+    <span style=color:#ff79c6>metadata</span>:
+      <span style=color:#ff79c6>creationTimestamp</span>: <span style=color:#ff79c6>null</span>
+      <span style=color:#ff79c6>labels</span>:
+        <span style=color:#ff79c6>app</span>: qperf
+      <span style=color:#ff79c6>annotations</span>:
+        <span style=color:#ff79c6>kubernetes.io/egress-bandwidth</span>: 10M <span style=color:#6272a4># 使用方法</span>
+    <span style=color:#ff79c6>spec</span>:
+      <span style=color:#ff79c6>containers</span>:
+        - <span style=color:#ff79c6>name</span>: qperf
+          <span style=color:#ff79c6>image</span>: hxd/qperf
+</code></pre></div><p>结果：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>/ <span style=color:#6272a4># qperf -t 60  10.42.1.69 -ub -oo msg_size:4K -vu tcp_bw</span>
+tcp_bw:
+    <span style=color:#8be9fd;font-style:italic>bw</span>        <span style=color:#ff79c6>=</span>  9.6 Mb/sec
+    <span style=color:#8be9fd;font-style:italic>msg_size</span>  <span style=color:#ff79c6>=</span>    <span style=color:#bd93f9>4</span> KiB <span style=color:#ff79c6>(</span>4,096<span style=color:#ff79c6>)</span>
+    <span style=color:#8be9fd;font-style:italic>time</span>      <span style=color:#ff79c6>=</span>   <span style=color:#bd93f9>60</span> sec
+</code></pre></div><h4 id=bgp>BGP</h4>
+<p>IPv6 BIG TCP，Kernel >= 5.19</p>
+<p>IPv4 BIG TCP，Kernel >= 6.3</p>
+<p>与IPv6 BIG TCP类似，IPv4 BIG TCP允许网络堆栈准备更大的GSO（传输）和GRO（接收）数据包，以减少堆栈遍历的次数，从而提高性能和延迟。减少了CPU负载，并帮助实现更高的速度（即100Gbit/s及以上）。</p>
+<p>此外还有一些新特性：BBR Pods 拥塞控制、巨型帧MTU&mldr;&mldr;</p>
+<h2 id=rke-支持>RKE 支持</h2>
+<p>RKE目前不支持选择安装 Cilium 网络插件。支持的话需要修改rke代码。</p>
+<p>可以将网络设置为none，然后使用helm安装。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>network</span>:
+  <span style=color:#ff79c6>plugin</span>: none
+</code></pre></div><p>此外，如果需要启用替换kube-proxy，需要在rke安装时，跳过部署kube-proxy（有可能导致部署失败），或者手动docker stop kube-proxy。</p>
+<h2 id=cni-对比>CNI 对比</h2>
+<p>Cilium 与其他常见的 Kubernetes 网络插件进行对比，总体矩阵：</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>项目/插件</th>
+<th style=text-align:left>Flannel</th>
+<th style=text-align:left>Calico</th>
+<th style=text-align:left>Cilium</th>
+<th style=text-align:left>Canal</th>
+<th style=text-align:left>Kube-OVN</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>部署模式</td>
+<td style=text-align:left>DaemonSet</td>
+<td style=text-align:left>DaemonSet</td>
+<td style=text-align:left>DaemonSet</td>
+<td style=text-align:left>DaemonSet</td>
+<td style=text-align:left>DaemonSet,Deployment</td>
+</tr>
+<tr>
+<td style=text-align:left>封装和路由</td>
+<td style=text-align:left>VxLAN</td>
+<td style=text-align:left>IPinIP,BGP,eBPF</td>
+<td style=text-align:left>BGP,VxLAN,eBPF,geneve</td>
+<td style=text-align:left>VxLAN</td>
+<td style=text-align:left>VxLAN,geneve,OVS</td>
+</tr>
+<tr>
+<td style=text-align:left>网络策略支持</td>
+<td style=text-align:left>No</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>Yes</td>
+</tr>
+<tr>
+<td style=text-align:left>使用的数据存储</td>
+<td style=text-align:left>etcd</td>
+<td style=text-align:left>etcd</td>
+<td style=text-align:left>etcd</td>
+<td style=text-align:left>etcd</td>
+<td style=text-align:left>OVN,etcd</td>
+</tr>
+<tr>
+<td style=text-align:left>加密</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>Yes</td>
+</tr>
+<tr>
+<td style=text-align:left>集群互联</td>
+<td style=text-align:left>No</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>No</td>
+<td style=text-align:left>Yes</td>
+</tr>
+<tr>
+<td style=text-align:left>带宽管理</td>
+<td style=text-align:left>No</td>
+<td style=text-align:left>No</td>
+<td style=text-align:left>Yes</td>
+<td style=text-align:left>No</td>
+<td style=text-align:left>Yes</td>
+</tr>
+<tr>
+<td style=text-align:left>Github Starts</td>
+<td style=text-align:left>8.3k</td>
+<td style=text-align:left>5.1k</td>
+<td style=text-align:left>16.9k</td>
+<td style=text-align:left>500</td>
+<td style=text-align:left>1.7k</td>
+</tr>
+</tbody>
+</table>
+<h3 id=粗略测试结果>粗略测试结果</h3>
+<p>环境信息：</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>节点</th>
+<th style=text-align:left>cpu</th>
+<th style=text-align:left>内存</th>
+<th style=text-align:left>ISO</th>
+<th style=text-align:left>内核版本</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>master01</td>
+<td style=text-align:left>8 vCore</td>
+<td style=text-align:left>16 Gib</td>
+<td style=text-align:left>xxx-xxx-V9.3.0-x86_64-20230926.iso</td>
+<td style=text-align:left>5.10.0</td>
+</tr>
+<tr>
+<td style=text-align:left>worker01</td>
+<td style=text-align:left>8 vCore</td>
+<td style=text-align:left>16 Gib</td>
+<td style=text-align:left>xxx-xx-V9.3.0-x86_64-20230926.iso</td>
+<td style=text-align:left>5.10.0</td>
+</tr>
+</tbody>
+</table>
+<p>使用以下命令进行测试：
+<code>qperf -t 60 server-ip -ub -oo msg_size:4K -vu tcp_lat tcp_bw udp_lat udp_bw</code></p>
+<p>结果：</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>Flow</th>
+<th style=text-align:left>tcp_lat</th>
+<th style=text-align:left>udp_lat</th>
+<th style=text-align:left>tcp_bw</th>
+<th style=text-align:left>udp_send_bw</th>
+<th style=text-align:left>udp_recv_bw</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>node-to-node</td>
+<td style=text-align:left>66.9 us</td>
+<td style=text-align:left>101 us</td>
+<td style=text-align:left>11.9 Gb/sec</td>
+<td style=text-align:left>2.62 Gb/sec</td>
+<td style=text-align:left>2.6 Gb/sec</td>
+</tr>
+</tbody>
+</table>
+<p>kube-ovn(geneve overlay)：</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>Flow</th>
+<th style=text-align:left>tcp_lat</th>
+<th style=text-align:left>udp_lat</th>
+<th style=text-align:left>tcp_bw</th>
+<th style=text-align:left>udp_send_bw</th>
+<th style=text-align:left>udp_recv_bw</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>pod-to-pod(同集群同节点)</td>
+<td style=text-align:left>28.5 us</td>
+<td style=text-align:left>31.2 us</td>
+<td style=text-align:left>2.64 Gb/sec</td>
+<td style=text-align:left>1.83 Gb/sec</td>
+<td style=text-align:left>1.81 Gb/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>pod-to-pod(同集群不同节点)</td>
+<td style=text-align:left>108 us</td>
+<td style=text-align:left>102 us</td>
+<td style=text-align:left>1.76 Gb/sec</td>
+<td style=text-align:left>1.72 Gb/sec</td>
+<td style=text-align:left>1.65 Gb/sec</td>
+</tr>
+</tbody>
+</table>
+<p>cilium(Default vxlan overlay):</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>Flow</th>
+<th style=text-align:left>tcp_lat</th>
+<th style=text-align:left>udp_lat</th>
+<th style=text-align:left>tcp_bw</th>
+<th style=text-align:left>udp_send_bw</th>
+<th style=text-align:left>udp_recv_bw</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>pod-to-pod(同集群同节点)</td>
+<td style=text-align:left>25.5 us</td>
+<td style=text-align:left>29.2 us</td>
+<td style=text-align:left>2.68 Gb/sec</td>
+<td style=text-align:left>1.79 Gb/sec</td>
+<td style=text-align:left>1.79 Gb/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>pod-to-pod(同集群不同节点)</td>
+<td style=text-align:left>94.8 us</td>
+<td style=text-align:left>91.7 us</td>
+<td style=text-align:left>1.97 Gb/sec</td>
+<td style=text-align:left>1.7 Gb/sec</td>
+<td style=text-align:left>1.68 Gb/sec</td>
+</tr>
+</tbody>
+</table>
+<p>cilium(eBPF Host-Routing):</p>
+<table>
+<thead>
+<tr>
+<th style=text-align:left>Flow</th>
+<th style=text-align:left>tcp_lat</th>
+<th style=text-align:left>udp_lat</th>
+<th style=text-align:left>tcp_bw</th>
+<th style=text-align:left>udp_send_bw</th>
+<th style=text-align:left>udp_recv_bw</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style=text-align:left>pod-to-pod(同集群同节点)</td>
+<td style=text-align:left>25 us</td>
+<td style=text-align:left>42 us</td>
+<td style=text-align:left>3.03 Gb/sec</td>
+<td style=text-align:left>2.14 Gb/sec</td>
+<td style=text-align:left>2.13 Gb/sec</td>
+</tr>
+<tr>
+<td style=text-align:left>pod-to-pod(同集群不同节点)</td>
+<td style=text-align:left><strong>75.8 us</strong></td>
+<td style=text-align:left><strong>97 us</strong></td>
+<td style=text-align:left><strong>11.2 Gb/sec</strong></td>
+<td style=text-align:left><strong>2.46 Gb/sec</strong></td>
+<td style=text-align:left><strong>2.45 Gb/sec</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id=友商解决方案>友商解决方案</h2>
+<p><strong>私有云</strong>：</p>
+<p>Rancher、K3s：默认使用Flannel网络，也可以安装Calico等第三方网络插件。未集成网络流量可视化。</p>
+<p>kubesphere：优先Calico 和 Flannel。其他插件也适用（例如 Cilium 和 Kube-OVN 等），但未经充分测试。未集成网络流量可视化。</p>
+<p>博云：Fabric（OVS自研），Calico。从官方用户手册以及用户文档都没有涉及到cilium，门户上也没有cilium相关的功能。</p>
+<p>浪潮云海容器云：支持包含Flannel、Calico、Weave等多种Kubernetes网络插件。</p>
+<p>Daocloud：Calico、Cilium、Multus-underlay、Aliyun CNI，未集成网络流量可视化。</p>
+<p><strong>公有云</strong>：</p>
+<p>青云QKE：Hostnic（自研），Flannel、Calico。</p>
+<p>阿里云ACK：Terway（自研），Flannel。</p>
+<p>腾讯云TKE：GlobalRouter、VPC-CNI 和 Cilium-Overlay均为自研定制。</p>
+<p>华为云：Canal、Yangtse均为自研定制。</p>
+<p>天翼云：Cilium。</p>
+<p>深信服：Cilium。</p>
+<h2 id=性能和可观测性>性能和可观测性</h2>
+<p>Cilium自带了Prometheus指标，因此只需要开启监控功能即可采集观察丰富的网络指标。</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/metrics.png alt></p>
+<h2 id=社区支持和文档>社区支持和文档</h2>
+<p>到目前为止，Cilium 的社区活跃度非常高，Github Stars 16.9k。GitHub 仓库有大量的贡献者和活跃的提交，还有大量的开放和已解决的问题。此外，Cilium 还有一个活跃的 Slack 频道，用户可以在那里提问和交流。Cilium 也有定期的社区会议，讨论项目的发展和未来的计划。从这些角度看，Cilium 的社区支持水平非常高。</p>
+<p>Cilium 的官方文档非常详细，涵盖了安装、配置、使用和扩展 Cilium 的各个方面。文档中还包含了大量的示例和教程，可以帮助用户理解和使用 Cilium。</p>
+<h2 id=虚拟化支持>虚拟化支持</h2>
+<p>对于k8s+kubevirt+cilium的场景，cilium除了给pod/vm提供网络功能外，还支持XDP等功能。</p>
+<p>virtio_net开启XDP依赖的内核版本 >= 4.10，并且可能需要开启multiqueue模式，在virtio类型的虚拟机上部署，正常启动XDP：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#6272a4># ethtool -i eth0</span>
+driver: virtio_net
+...
+<span style=color:#6272a4># cilium status</span>
+...
+KubeProxyReplacement:    True   <span style=color:#ff79c6>[</span>eth0 192.168.242.27 <span style=color:#ff79c6>(</span>Direct Routing<span style=color:#ff79c6>)]</span>
+...
+KubeProxyReplacement Details:
+  Status:                 True
+  XDP Acceleration:       Native
+...
+</code></pre></div><p><a href=https://github.com/xdp-project/xdp-tutorial/issues/277>https://github.com/xdp-project/xdp-tutorial/issues/277</a></p>
+<p><a href=https://kubevirt.io/user-guide/virtual_machines/interfaces_and_networks/#virtio-net-multiqueue>https://kubevirt.io/user-guide/virtual_machines/interfaces_and_networks/#virtio-net-multiqueue</a></p>
+<h2 id=总结和结论>总结和结论</h2>
+<p><strong>优点</strong>：</p>
+<ol>
+<li>
+<p><strong>基于 BPF 的性能优化</strong>：Cilium 使用 eBPF（扩展的伯克利包过滤器）技术，可以在内核级别提供高效的数据包处理和路由能力，从而提高性能。</p>
+</li>
+<li>
+<p><strong>基于身份的安全策略</strong>：Cilium 不仅支持基于 IP 地址的网络策略，还支持基于 Pod 或服务身份的网络策略，这可以提供更细粒度和更灵活的访问控制。</p>
+</li>
+<li>
+<p><strong>网络可视化</strong>：Cilium 的子项目 Hubble 提供了丰富的网络可视化和监控功能，可以帮助理解和排查网络问题。</p>
+</li>
+<li>
+<p><strong>多协议支持</strong>：Cilium 支持多种网络协议，包括 IPv4、IPv6、TCP、UDP 和 HTTP，可以满足不同的网络需求。</p>
+</li>
+<li>
+<p><strong>集成和扩展性</strong>：Cilium 可以与 Kubernetes、Istio、Envoy 等项目集成，提供更完善的网络和服务网格功能。Cilium 还支持自定义资源定义（CRD），可以扩展 Kubernetes 的 API。</p>
+</li>
+</ol>
+<p><strong>限制</strong>：</p>
+<ol>
+<li>
+<p><strong>学习曲线</strong>：Cilium 使用了一些高级的网络和安全技术，如 eBPF、CRD 等，对于新手来说可能有一定的学习曲线。</p>
+</li>
+<li>
+<p><strong>依赖 Linux 内核版本</strong>：Cilium 的一些功能依赖于特定版本的 Linux 内核，如果内核版本过低，可能无法使用这些功能。</p>
+</li>
+</ol>
+<p><strong>适用场景</strong>：</p>
+<ol>
+<li>
+<p><strong>Kubernetes 网络</strong>：Cilium 可以作为 Kubernetes 的 CNI 插件，提供 Pod 网络和服务网络。</p>
+</li>
+<li>
+<p><strong>服务网格</strong>：Cilium 可以与 Istio、Envoy 等服务网格项目集成，提供更高级的服务网络功能。</p>
+</li>
+<li>
+<p><strong>网络安全</strong>：Cilium 提供了基于身份的网络策略和访问控制，可以用于保护 Kubernetes 集群的网络安全。</p>
+</li>
+<li>
+<p><strong>网络监控和排查</strong>：Cilium 的 Hubble 可以提供丰富的网络可视化和监控功能，帮助理解和排查网络问题。</p>
+</li>
+</ol>
+<p>总的来说，Cilium 是一个非常值得考虑的选项，特别是对于需要高性能、高安全性和高可视化的 Kubernetes 环境。而且在社区也有很多采用cilium的厂商，是主流的方向。</p>
+<h2 id=参考链接>参考链接</h2>
+<p><a href=https://github.com/cilium/cilium>https://github.com/cilium/cilium</a></p>
+<p><a href=https://docs.cilium.io/en/latest/overview/component-overview/>https://docs.cilium.io/en/latest/overview/component-overview/</a></p>
+<p><a href=https://docs.cilium.io/en/latest/operations/system_requirements/#admin-system-reqs>https://docs.cilium.io/en/latest/operations/system_requirements/#admin-system-reqs</a></p>
+<p><a href=https://blog.gmem.cc/cilium>https://blog.gmem.cc/cilium</a></p>
+<p><a href=https://rke.docs.rancher.com/config-options/add-ons/network-plugins>https://rke.docs.rancher.com/config-options/add-ons/network-plugins</a></p>
+<p><a href=https://doc.crds.dev/github.com/cilium/cilium@1.14.3>https://doc.crds.dev/github.com/cilium/cilium@1.14.3</a></p>
+<h2 id=问题>问题</h2>
+<h3 id=部署>部署</h3>
+<ul>
+<li>
+<p><strong>nsenter: cannot open /hostproc/1/ns/cgroup</strong>: No such file or directory 内核版本不符合要求，升级到符合的版本</p>
+</li>
+<li>
+<p><strong>CiliumNode: error: allocator not configured for the requested cidr 10.0.1.0/24</strong> 由于安装时已指定cluster-cidr为10.42.0.0/16，但是在第一安装cilium时，默认的配置是：clusterPoolIPv4PodCIDRList: [&ldquo;10.0.0.0/8&rdquo;]，卸载cilium也不会删除掉已经安装的CRD和CR资源，因此重新安装也会有这个报错。卸载时把CRD全部清理解决。</p>
+</li>
+</ul>
+</div>
+<div class=prev-next>
+</div><svg id="btt-button" class="arrow-logo" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512" onclick="scrollToTop()" title="Go to top"><path d="M177 159.7l136 136c9.4 9.4 9.4 24.6.0 33.9l-22.6 22.6c-9.4 9.4-24.6 9.4-33.9.0L160 255.9l-96.4 96.4c-9.4 9.4-24.6 9.4-33.9.0L7 329.7c-9.4-9.4-9.4-24.6.0-33.9l136-136c9.4-9.5 24.6-9.5 34-.1z"/></svg>
+<script>let backToTopButton=document.getElementById("btt-button");window.onscroll=function(){scrollFunction()};function scrollFunction(){document.body.scrollTop>20||document.documentElement.scrollTop>20?backToTopButton.style.display="block":backToTopButton.style.display="none"}function scrollToTop(){window.scrollTo(0,0)}</script>
+</div>
+<aside class=post-toc aria-label=文章目录>
+<h3 class=toc-title>目录</h3>
+<nav id=toc>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#名词术语>名词术语</a></li>
+<li><a href=#概述>概述</a>
+<ul>
+<li><a href=#架构>架构</a>
+<ul>
+<li><a href=#cilium>Cilium</a></li>
+<li><a href=#hubble>Hubble</a></li>
+<li><a href=#数据存储>数据存储</a></li>
+</ul>
+</li>
+<li><a href=#cilium带来的收益>cilium带来的收益</a>
+<ul>
+<li><a href=#网络性能>网络性能</a></li>
+<li><a href=#网络监控和可视化>网络监控和可视化</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href=#安装要求>安装要求</a></li>
+<li><a href=#安装和配置>安装和配置</a>
+<ul>
+<li><a href=#cilium-安装的步骤和方法>Cilium 安装的步骤和方法</a></li>
+<li><a href=#网络策略负载均衡和其他高级功能>网络策略、负载均衡和其他高级功能</a>
+<ul>
+<li><a href=#ipam>IPAM</a></li>
+<li><a href=#网络策略>网络策略</a></li>
+<li><a href=#负载均衡>负载均衡</a></li>
+<li><a href=#集群网络>集群网络</a></li>
+<li><a href=#nodeport-xdp加速>NodePort XDP加速</a></li>
+<li><a href=#带宽限速>带宽限速</a></li>
+<li><a href=#bgp>BGP</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href=#rke-支持>RKE 支持</a></li>
+<li><a href=#cni-对比>CNI 对比</a>
+<ul>
+<li><a href=#粗略测试结果>粗略测试结果</a></li>
+</ul>
+</li>
+<li><a href=#友商解决方案>友商解决方案</a></li>
+<li><a href=#性能和可观测性>性能和可观测性</a></li>
+<li><a href=#社区支持和文档>社区支持和文档</a></li>
+<li><a href=#虚拟化支持>虚拟化支持</a></li>
+<li><a href=#总结和结论>总结和结论</a></li>
+<li><a href=#参考链接>参考链接</a></li>
+<li><a href=#问题>问题</a>
+<ul>
+<li><a href=#部署>部署</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+</nav>
+</aside>
+<link rel=stylesheet href=/css/toc.css>
+</main><footer class=footer>
+<span>&copy; 2023 HindungWang</span>
+<span>
+Made with &#10084;&#65039; using <a target=_blank href=https://github.com/gokarna-theme/gokarna-hugo>Gokarna</a>
+</span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,1121 @@
+<!doctype html><html lang=en><head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>:root{--accent-color:#FF4D4D;--font-size:1.1rem}</style>
+<title>Prometheus性能压测与高可用设计</title>
+<meta name=description content="压一压Prometheus">
+<meta name=keywords content="blog,gokarna,hugo,Prometheus">
+<meta property="og:url" content="https://hindungwang.github.io/posts/27.prometheus_test/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Prometheus性能压测与高可用设计">
+<meta property="og:description" content="压一压Prometheus">
+<meta property="og:image" content="https://github.com/hindungWang.png">
+<meta property="og:image:secure_url" content="https://github.com/hindungWang.png">
+<meta name=twitter:card content="summary_large_image">
+<meta name=twitter:title content="Prometheus性能压测与高可用设计">
+<meta name=twitter:description content="压一压Prometheus">
+<meta property="twitter:domain" content="https://hindungwang.github.io/posts/27.prometheus_test/">
+<meta property="twitter:url" content="https://hindungwang.github.io/posts/27.prometheus_test/">
+<meta name=twitter:image content="https://github.com/hindungWang.png">
+<link rel=canonical href=https://hindungwang.github.io/posts/27.prometheus_test/>
+<link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
+<link rel=stylesheet type=text/css href=/css/main.min.css>
+<link id=dark-theme rel=stylesheet href=/css/dark.min.css>
+<script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<link rel=icon type=image/png href=/favicon.png>
+<link rel=apple-touch-icon href=/favicon.png>
+<link rel=stylesheet href=/css/posts-nav.css>
+</head>
+<body class=post-page>
+<script>setThemeByUserPref()</script><header class=header>
+<nav class=header-nav>
+<div class=avatar>
+<a href=https://hindungwang.github.io/>
+<img src=https://github.com/hindungWang.png alt=avatar>
+</a>
+</div>
+<div class=nav-title>
+<a class=nav-brand href=https://hindungwang.github.io/>Hindung's Blog</a>
+</div>
+<div class=nav-links>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/ aria-label><span data-feather=home></span> Home </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/about aria-label><span data-feather=home></span> About </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/posts/ aria-label><span data-feather=page></span> Posts </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/game-agent/ aria-label><span data-feather=gamepad></span> Game Agent </a>
+</div>
+<div class=nav-link>
+<a href=https://github.com/hindungWang aria-label=github><span data-feather=github></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/tags/ aria-label><span data-feather=tag></span> Tags </a>
+</div>
+<div class=nav-link>
+<a href=https://buymeacoffee.com/hindung aria-label=buymeacoffee><span data-feather=coffee></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/index.xml aria-label=rss><span data-feather=rss></span> </a>
+</div>
+<span class=nav-icons-divider></span>
+<div class="nav-link dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a aria-hidden=true role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</div>
+<div class=nav-link id=hamburger-menu-toggle>
+<span class="sr-only hamburger-menu-toggle-screen-reader-target">menu</span>
+<a aria-checked=false aria-labelledby=hamburger-menu-toggle id=hamburger-menu-toggle-target role=switch>
+<span data-feather=menu></span>
+</a>
+</div>
+<ul class="nav-hamburger-list visibility-hidden">
+<li class=nav-item>
+<a href=https://hindungwang.github.io/><span data-feather=home></span> Home </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/about><span data-feather=home></span> About </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/posts/><span data-feather=page></span> Posts </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/game-agent/><span data-feather=gamepad></span> Game Agent </a>
+</li>
+<li class=nav-item>
+<a href=https://github.com/hindungWang><span data-feather=github></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/tags/><span data-feather=tag></span> Tags </a>
+</li>
+<li class=nav-item>
+<a href=https://buymeacoffee.com/hindung><span data-feather=coffee></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/index.xml><span data-feather=rss></span> </a>
+</li>
+<li class="nav-item dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main id=content>
+<div id=reading-progress aria-hidden=true></div>
+<aside class=posts-nav aria-label=所有文章>
+<h3>文章<span class=posts-nav-count>36</span></h3>
+<ul>
+<li>
+<a href=/posts/35.kube-vip-pr/ title="给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败">给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败</a>
+</li>
+<li>
+<a href=/posts/34.helm-3-way-merge/ title="Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录">Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录</a>
+</li>
+<li>
+<a href=/posts/33.terraform/ title=Terraform技术分享>Terraform技术分享</a>
+</li>
+<li>
+<a href=/posts/32.to-many-pods-created/ title=Pod不停被创建？？>Pod不停被创建？？</a>
+</li>
+<li>
+<a href=/posts/31.hight-cpu/ title="记一次节点高 CPU 高 Load 的排查经历">记一次节点高 CPU 高 Load 的排查经历</a>
+</li>
+<li>
+<a href=/posts/30.go-gc/ title="Golang GC 初探">Golang GC 初探</a>
+</li>
+<li>
+<a href=/posts/29.k8s-apimachinery-util/ title="k8s.io/apimachinery/util 包源码解读">k8s.io/apimachinery/util 包源码解读</a>
+</li>
+<li>
+<a href=/posts/28.k8s-utils/ title="Kubernetes 的 utils 包源码鉴赏">Kubernetes 的 utils 包源码鉴赏</a>
+</li>
+<li>
+<a href=/posts/24.k8s-network-policy/ title=K8s之网络策略>K8s之网络策略</a>
+</li>
+<li>
+<a href=/posts/22.k8s-cilium/ title=K8s之cilium网络插件>K8s之cilium网络插件</a>
+</li>
+<li class=active>
+<a href=/posts/27.prometheus_test/ title=Prometheus性能压测与高可用设计>Prometheus性能压测与高可用设计</a>
+</li>
+<li>
+<a href=/posts/26.prometheus_sdk/ title="Prometheus GO SDK">Prometheus GO SDK</a>
+</li>
+<li>
+<a href=/posts/25.kube-ovn/ title=K8s之kube-ovn网络插件>K8s之kube-ovn网络插件</a>
+</li>
+<li>
+<a href=/posts/23.k8s-client/ title="K8s client-go初始化的几种方法">K8s client-go初始化的几种方法</a>
+</li>
+<li>
+<a href=/posts/18.container-1/ title=容器技术之我见>容器技术之我见</a>
+</li>
+<li>
+<a href=/posts/19.cri/ title=容器运行时>容器运行时</a>
+</li>
+<li>
+<a href=/posts/21.k8s-1/ title=Kubernetes组件>Kubernetes组件</a>
+</li>
+<li>
+<a href=/posts/17.kubectl/ title=Kubectl命令行>Kubectl命令行</a>
+</li>
+<li>
+<a href=/posts/16.calico/ title=K8s之calico网络插件东西南北流量>K8s之calico网络插件东西南北流量</a>
+</li>
+<li>
+<a href=/posts/15.iptable/ title=Iptable规则初探>Iptable规则初探</a>
+</li>
+<li>
+<a href=/posts/14.go-sync-cond/ title=Go源码解读之sync.Cond>Go源码解读之sync.Cond</a>
+</li>
+<li>
+<a href=/posts/13.go-sync-type/ title=Go源码解读之sync中的基本类型和使用场景>Go源码解读之sync中的基本类型和使用场景</a>
+</li>
+<li>
+<a href=/posts/12.deep-copy/ title=深拷贝之循环引用>深拷贝之循环引用</a>
+</li>
+<li>
+<a href=/posts/11.lru/ title="LRU 缓存机制">LRU 缓存机制</a>
+</li>
+<li>
+<a href=/posts/10.go-sync-atomic/ title=Go源码解读之sync/atomic>Go源码解读之sync/atomic</a>
+</li>
+<li>
+<a href=/posts/09.keng/ title=使用Go遇到的坑>使用Go遇到的坑</a>
+</li>
+<li>
+<a href=/posts/08.core/ title=构建属于你自己的核心力量>构建属于你自己的核心力量</a>
+</li>
+<li>
+<a href=/posts/20.go-priority-queue/ title=Golang实现优先队列>Golang实现优先队列</a>
+</li>
+<li>
+<a href=/posts/07.snowflake/ title=雪花算法>雪花算法</a>
+</li>
+<li>
+<a href=/posts/06.golang-channel/ title=Golang-channel>Golang-channel</a>
+</li>
+<li>
+<a href=/posts/05.go-lang/ title=Golang语言模型>Golang语言模型</a>
+</li>
+<li>
+<a href=/posts/04.gin/ title=初探Gin框架>初探Gin框架</a>
+</li>
+<li>
+<a href=/posts/03.golang-interface/ title=Golang-interface的底层原理浅析>Golang-interface的底层原理浅析</a>
+</li>
+<li>
+<a href=/posts/02.docker-images/ title=Docker镜像优化>Docker镜像优化</a>
+</li>
+<li>
+<a href=/posts/01.change-log/ title=部落格修改记录>部落格修改记录</a>
+</li>
+<li>
+<a href=/posts/00.markdown/ title="Hello World">Hello World</a>
+</li>
+</ul>
+</aside>
+<script>(function(){var b=document.getElementById('reading-progress'),a;if(!b)return;a=function(){var a=document.documentElement,c=a.scrollHeight-a.clientHeight;b.style.transform='scaleX('+(c>0?window.scrollY/c:0)+')'},window.addEventListener('scroll',a,{passive:!0}),window.addEventListener('resize',a),a()})()</script>
+<div class="post container">
+<div class=post-header-section>
+<h1>Prometheus性能压测与高可用设计</h1>
+<small role=doc-subtitle>压一压Prometheus</small>
+<p class=post-date>
+September 1, 2023
+</p>
+<ul class=post-tags>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/prometheus>Prometheus</a></li>
+</ul>
+</div>
+<div class=post-content>
+<h1 id=prometheus性能压测与高可用设计>Prometheus性能压测与高可用设计</h1>
+<h2 id=prometheus原理>Prometheus原理</h2>
+<h3 id=名词>名词</h3>
+<p><strong>Series（系列）</strong> 是指具有相同标签集的一组时间序列。它们是根据标签的组合唯一确定的。<code>&lt;指标名称>{&lt;标签键>=&lt;标签值>, ...}</code>，如：</p>
+<pre tabindex=0><code>|&lt;------------------------Series--------------------------&gt;|
+avalanche_metric_0_0{cycle_id=&quot;0&quot;,label_key_0=&quot;label_val_0&quot;} 18
+</code></pre><p><strong>Sample（样本）</strong> 是指一个数据点，它包含了一个时间戳和相应的数值。样本是 Prometheus 时间序列数据的基本单位。每个样本都与一个唯一的时间序列(Series)标识符相关联，该标识符由一组键值对（标签）唯一确定。这些标签可以用来标识和区分不同的时间序列。<code>&lt;时间戳> &lt;数值></code>，如：</p>
+<pre tabindex=0><code>|&lt;------------------------------Series--------------------&gt;|&lt;--时间戳-&gt;|&lt;值&gt;
+avalanche_metric_0_0{cycle_id=&quot;0&quot;,label_key_0=&quot;label_val_0&quot;} @125465645  2   -&gt; 一个Sample
+                                                             @125465646  5
+                                                             ...
+</code></pre><h2 id=prometheus缺点>Prometheus缺点</h2>
+<p>原生Prometheus并不支持高可用，也不能做横向扩缩容，当集群规模较大时，单一Prometheus会出现性能瓶颈，无法正常采集数据。</p>
+<p>在集群场景下 单一Prometheus只能查询本地的指标，而不能跨区域查询，因此需要一个统一的管理。</p>
+<h2 id=单节点prometheus性能压测>单节点Prometheus性能压测</h2>
+<h3 id=压测环境>压测环境</h3>
+<p>garden v3.2 3节点环境:</p>
+<table>
+<thead>
+<tr>
+<th>节点</th>
+<th>CPU(Core)</th>
+<th>Memory(GiB)</th>
+<th>存储</th>
+<th>IOPS</th>
+<th>写速率(1MB)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>master01</td>
+<td>8</td>
+<td>16GiB</td>
+<td>280GiB</td>
+<td>261</td>
+<td>10.6 MB/s</td>
+</tr>
+<tr>
+<td>master02</td>
+<td>8</td>
+<td>24GiB</td>
+<td>280GiB</td>
+<td>238</td>
+<td>9.6 MB/s</td>
+</tr>
+<tr>
+<td>master03(Prometheus所在节点)</td>
+<td>8</td>
+<td>24GiB</td>
+<td>280GiB</td>
+<td>274</td>
+<td>9.5 MB/s</td>
+</tr>
+</tbody>
+</table>
+<p>组件版本：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>prometheus</td>
+<td>v2.15.2</td>
+</tr>
+<tr>
+<td>thanos</td>
+<td>v0.32.1</td>
+</tr>
+<tr>
+<td>grafana</td>
+<td>v10.1.0</td>
+</tr>
+<tr>
+<td>prometheus-config-reloader</td>
+<td>v0.35.0</td>
+</tr>
+<tr>
+<td>avalanche</td>
+<td>v0.4.0</td>
+</tr>
+</tbody>
+</table>
+<p>avalanche是一个Prometheus压测工具，可以生成特定series个数的merics。</p>
+<p>target数量可以根据ServiceMonitor进行模拟。</p>
+<p>同理也可以模拟ServiceDiscovery的个数。</p>
+<h3 id=观测方法>观测方法</h3>
+<p>使用Grafana对接Prometheus数据源，引用社区看板，并且使用garden集群自带的监控观察Prometheus的内存和cpu使用率，以及所在节点数据：</p>
+<ul>
+<li>内存+cpu</li>
+<li>所在节点监控</li>
+<li>Prometheus自身看板</li>
+</ul>
+<p>全天监控结果(中断部分为节点 down 机)：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/2.png alt=2.png></p>
+<h3 id=压测方法>压测方法</h3>
+<p>了解Prometheus原理之后主要需要探究以下内容：</p>
+<ul>
+<li>k8s环境下Service Discovery（服务发现）个数与负载的关系</li>
+<li>target数目对负载的关系</li>
+<li>series规模和负载的关系</li>
+</ul>
+<h4 id=服务发现相关性>服务发现相关性</h4>
+<p>数据结果：</p>
+<p>sd与endpoint比例：1:1 (0/1 active targets)</p>
+<table>
+<thead>
+<tr>
+<th>sd数量</th>
+<th>CPU(Core)</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>50</td>
+<td>0.0068</td>
+<td>67.9MiB</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.0054</td>
+<td>83.8MiB</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.0131</td>
+<td>120MiB</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.0061</td>
+<td>249MiB</td>
+</tr>
+<tr>
+<td>3000</td>
+<td>0.0312</td>
+<td>620MiB</td>
+</tr>
+<tr>
+<td>5000</td>
+<td>0.0569</td>
+<td>2.46GiB</td>
+</tr>
+</tbody>
+</table>
+<p><strong>5000个sd时prometheus-config-reloader不停重启，导致Prometheus重启，无法观测</strong></p>
+<p>sd与endpoint比例：1:51 (0/51 active targets)</p>
+<table>
+<thead>
+<tr>
+<th>sd数量</th>
+<th>CPU(Core)</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>50</td>
+<td>0.0093</td>
+<td>104MiB</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.0439</td>
+<td>113MiB</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.0060</td>
+<td>210MiB</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.0772</td>
+<td>398MiB</td>
+</tr>
+<tr>
+<td>3000</td>
+<td>0.2570</td>
+<td>5.04GiB</td>
+</tr>
+</tbody>
+</table>
+<p>sd与endpoint比例：1:101 (1/101 active targets)</p>
+<table>
+<thead>
+<tr>
+<th>sd数量</th>
+<th>CPU(Core)</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>50</td>
+<td>0.0189</td>
+<td>171MiB</td>
+</tr>
+<tr>
+<td>100</td>
+<td>0.0499</td>
+<td>130MiB</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.0829</td>
+<td>1.09GiB</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.0917</td>
+<td>601MiB</td>
+</tr>
+<tr>
+<td>3000</td>
+<td>0.101</td>
+<td>8.58GiB</td>
+</tr>
+</tbody>
+</table>
+<p>sd与endpoint比例成正比(与卡中心问题场景差不多):</p>
+<table>
+<thead>
+<tr>
+<th>sd数量</th>
+<th>CPU(Core)</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>50</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>100</td>
+<td>-</td>
+<td>-</td>
+</tr>
+<tr>
+<td>400</td>
+<td>0.2950</td>
+<td>2.52GiB</td>
+</tr>
+<tr>
+<td>800</td>
+<td>0.1670</td>
+<td>3.32GiB</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>0.1500</td>
+<td>6.10GiB</td>
+</tr>
+<tr>
+<td>1500</td>
+<td>2.55</td>
+<td>12.0GiB</td>
+</tr>
+<tr>
+<td>3000</td>
+<td>down</td>
+<td>down</td>
+</tr>
+</tbody>
+</table>
+<p><strong>3000个sd时节点挂了，无法正常观测</strong></p>
+<p>总结：sd个数与target组合不当可能会导致内存和cpu暴涨，所以使用servicemonitor进行target设置时，应该避免过多的sd配置，可以将同一个sd配置合并成为一个。</p>
+<p>相关issue：</p>
+<ul>
+<li><a href=https://github.com/prometheus/prometheus/issues/8392>https://github.com/prometheus/prometheus/issues/8392</a></li>
+<li><a href=https://github.com/prometheus/prometheus/issues/8014>https://github.com/prometheus/prometheus/issues/8014</a></li>
+</ul>
+<h4 id=target相关性>target相关性</h4>
+<p>这里将sd合并成一个，观察target，数据结果：</p>
+<table>
+<thead>
+<tr>
+<th>target</th>
+<th>CPU(Core)</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1k</td>
+<td>0.0238</td>
+<td>250MiB</td>
+</tr>
+<tr>
+<td>3k</td>
+<td>0.0734</td>
+<td>516MiB</td>
+</tr>
+<tr>
+<td>5k</td>
+<td>0.0925</td>
+<td>1.45GiB</td>
+</tr>
+<tr>
+<td>1w</td>
+<td>0.194</td>
+<td>2.79GiB</td>
+</tr>
+<tr>
+<td>5w</td>
+<td>0.870</td>
+<td>10.8GiB</td>
+</tr>
+</tbody>
+</table>
+<p>总结：target数量影响负载不大，一般不会成为瓶颈，一般来说5k target已经是很巨大的集群规模了</p>
+<h4 id=series相关性>series相关性</h4>
+<p>数据结果：</p>
+<table>
+<thead>
+<tr>
+<th>series</th>
+<th>CPU(Core)</th>
+<th>Memory</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1k</td>
+<td>0.0046</td>
+<td>73.2MiB</td>
+</tr>
+<tr>
+<td>1w</td>
+<td>0.0062</td>
+<td>90MiB</td>
+</tr>
+<tr>
+<td>10w</td>
+<td>0.0101</td>
+<td>275MiB</td>
+</tr>
+<tr>
+<td>100w</td>
+<td>0.0615</td>
+<td>2.27GiB</td>
+</tr>
+<tr>
+<td>300w</td>
+<td>0.5490</td>
+<td>8.29GiB</td>
+</tr>
+<tr>
+<td>500w</td>
+<td>down</td>
+<td>down</td>
+</tr>
+<tr>
+<td>1000w</td>
+<td>-</td>
+<td>-</td>
+</tr>
+</tbody>
+</table>
+<p>总结：500w时内存暴增；大约 500 个节点以上集群的指标会出现内存增大</p>
+<p><em>注：目前在开发环境，三个节点的k8s集群总共有180k series，预计每个节点约60k series</em></p>
+<h2 id=thanos高可用方案以及性能压测>Thanos高可用方案以及性能压测</h2>
+<h3 id=thanos原理>Thanos原理</h3>
+<p>Thanos核心原理就是采用数据冗余的方式，部署多个Prometheus实例，然后将Prometheus产生的数据打散（或者说备份）至每个组件，最后使用ObjectStorage存储起来。
+查询时，使用Query组件遍历其他组件将数据清理、合并、打分等操作提供给Query-Frontend。</p>
+<p>组件及其功能：<a href=https://thanos.io/tip/thanos/getting-started.md/#get-thanos>https://thanos.io/tip/thanos/getting-started.md/#get-thanos</a></p>
+<h3 id=thanos部署以及测试准备>Thanos部署以及测试准备</h3>
+<ul>
+<li>Prometheus使用prometheus-operator部署</li>
+<li>Thanos使用thanos chart包部署</li>
+</ul>
+<p>架构如下：</p>
+<p><em>Receiver模式</em></p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/receive.png alt></p>
+<p><em>Sidecar模式</em></p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar.png alt></p>
+<h2 id=receiver模式>Receiver模式</h2>
+<h3 id=压测方法-1>压测方法</h3>
+<h4 id=100w-series>100w series</h4>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/100w.png alt></p>
+<h4 id=200w-series>200w series</h4>
+<p><strong>3个节点都挂了</strong>，部分数据：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/200w.png alt></p>
+<h4 id=磁盘使用情况>磁盘使用情况</h4>
+<p>100w series，观察结果：</p>
+<pre tabindex=0><code>*********Thu Sep  7 02:18:48 UTC 2023*********
+21.7M   ./wal/checkpoint.00000097
+2.0G    ./wal  # 预写文件
+499.8M  ./chunks_head  # 内存映射
+190.0M  ./01H9NQ489F8DSPAMZ903ZF75Q2/chunks
+337.7M  ./01H9NQ489F8DSPAMZ903ZF75Q2       # 归档的块
+176.0M  ./01H9P4PYA1RSA377DA7S420F58/chunks
+323.4M  ./01H9P4PYA1RSA377DA7S420F58
+158.6M  ./01H9PBJNJ70FD49RKJ5MGRWYKA/chunks
+306.0M  ./01H9PBJNJ70FD49RKJ5MGRWYKA
+490.7M  ./01H9PBR3G3WZ2WP57GM0CTYH3R/chunks
+676.1M  ./01H9PBR3G3WZ2WP57GM0CTYH3R
+154.2M  ./01H9PJEDATJYD2R84YHD3GCXNT/chunks
+301.5M  ./01H9PJEDATJYD2R84YHD3GCXNT
+4.4G    .
+</code></pre><p>minio上的存储：</p>
+<pre tabindex=0><code>[root@master01 minio_5]# du -sh thanos/
+4.9G    thanos/
+</code></pre><p>主要变化的是./wal文件，类似 01H9NQ489F8DSPAMZ903ZF75Q2 这样的文件夹是用于存储已归档的数据块的。</p>
+<p>每个文件夹都代表一个数据块，其中包含一段时间范围内的时间序列数据。Prometheus默认按2小时一个block进行存储。</p>
+<p>因此可以算出每个块的平均大小是<code>(337.7+323.4+306.0+676.1+301.5)/5 = 388.94MB</code></p>
+<p><em>也就是100w series，采集频率30s，每两小时大概产生400MB的存储</em></p>
+<h3 id=高可用测试>高可用测试</h3>
+<h4 id=随机down一个节点>随机down一个节点</h4>
+<p>stop master02 观察grafana是否还有实时数据：</p>
+<pre tabindex=0><code># kubectl get node -owide
+NAME       STATUS     ROLES                      AGE   VERSION   INTERNAL-IP       EXTERNAL-IP   OS-IMAGE                KERNEL-VERSION           CONTAINER-RUNTIME
+master01   Ready      controlplane,etcd,worker   98d   v1.23.6   192.168.231.112   &lt;none&gt;        CentOS Linux 7 (Core)   3.10.0-1160.el7.x86_64   docker://20.10.5
+master02   NotReady   controlplane,etcd,worker   98d   v1.23.6   192.168.231.113   &lt;none&gt;        CentOS Linux 7 (Core)   3.10.0-1160.el7.x86_64   docker://20.10.5
+master03   Ready      controlplane,etcd,worker   98d   v1.23.6   192.168.231.114   &lt;none&gt;        CentOS Linux 7 (Core)   3.10.0-1160.el7.x86_64   docker://20.10.5
+</code></pre><p>节点监控：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/down-master02-node.png alt></p>
+<p>Prometheus监控：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/down-master02-pro.png alt></p>
+<p>Thanos组件监控：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/down.png alt></p>
+<h4 id=总结>总结</h4>
+<p>停掉一个节点也能保持监控不断，就不必说随机停掉一个POD的结果了，因此，正常情况下Receiver模式能够很好做到HA。</p>
+<p>历史数据出现缺失是因为挂掉的节点正好存储了那一部分的数据，没来得及存储到minio，但是不影响最新的数据，等节点启动会恢复该段数据。（可以引入compactor组件解决）</p>
+<p>这是最接近无状态的方法，远程写入具有其他风险和后果，即使崩溃，也会在积极情况下丢失几秒钟的指标数据。</p>
+<p><em>但是使用Receiver模式占用的资源很大，组件多，从监控上看整个HA大概需要30+GiB内存和3+Core CPU</em></p>
+<h2 id=sidecar模式>Sidecar模式</h2>
+<h3 id=压测方法-2>压测方法</h3>
+<h4 id=100w-series-1>100w series</h4>
+<p>资源使用情况：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-100w.png alt></p>
+<p><em>相比Receiver模式，Sidecar模式使用更少的组件，因此占用资源更少</em></p>
+<h4 id=200w-series-1>200w series</h4>
+<p>资源使用情况：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-200w.png alt></p>
+<h4 id=300w-series>300w series</h4>
+<p>资源使用情况：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-300w.png alt></p>
+<p><em>由于查询走的是Thanos的Query，因此也很快P99在300ms以内</em></p>
+<h4 id=400w-series>400w series</h4>
+<p>资源使用情况：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-400w.png alt></p>
+<h4 id=500w-series>500w series</h4>
+<p>节点挂了，只获得部分数据：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-500w.png alt></p>
+<p><em>单节点测试时500w series同样会有这样的问题</em></p>
+<h3 id=高可用测试-1>高可用测试</h3>
+<h4 id=随机down一个节点-1>随机down一个节点</h4>
+<p>上面压测将mater02打挂了，但是监控依然在：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-down-master02-node.png alt></p>
+<p>其他组件监控：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-down-api-server.png alt></p>
+<h4 id=总结-1>总结</h4>
+<p>这并不意味着Prometheus可以完全无状态，因为如果崩溃并重新启动，将会丢失约2小时的指标数据，因此强烈建议为Prometheus提供持久磁盘。</p>
+<p><em>Sidecar模式组件少，占用的资源也相对较少，因此持久化存储+Sidecar模式是一个很好的选择</em></p>
+<p>从100w series数据结果也可以看出，receiver模式由于加载了remote-write模块，对应的内存和cpu占用比较多。而sidecar模式则不会有这些开销。</p>
+<h2 id=alertmaneger-ha>Alertmaneger HA</h2>
+<p>由于Alermanager集群可以做到告警消息的去重(Gossip协议)，因此可以直接对接到多个Prometheus实例，这样就能使用原生的PrometheusRule进行告警规则管理。</p>
+<p>Thanos提供了一个Ruler组件，用来实现与PrometheusRule相同的功能。因此对于这个集成，两种方案各有利弊：</p>
+<ul>
+<li>使用PrometheusRule可以与目前现有的业务逻辑相匹配，不用改动太多，但是由于规则是作用在Prometheus本身，因此一般只具有2h的数据（也满足了告警实时要求），对于一些特殊的告警如需要查询多个区域或者很长时间范围的情况就不支持；</li>
+<li>Thanos Ruler可以统一管理各个Prometheus产生的数据并且对接到Alertmanger，缺点就是引入新的组件，维护成本增加</li>
+</ul>
+<h3 id=alermanager压力测试>Alermanager压力测试</h3>
+<h4 id=1w-alerts>1w+ alerts</h4>
+<p>创建1w+ PrometheusRule，观察alertmanager资源使用情况：</p>
+<table>
+<thead>
+<tr>
+<th>Time</th>
+<th>Pod</th>
+<th>CPU Usage</th>
+<th>CPU Limits</th>
+<th>Memory Usage</th>
+<th>Memory Limits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>00:12.5</td>
+<td>alertmanager-prometheus-stack-kube-prom-alertmanager-1</td>
+<td>0.02</td>
+<td>1.2</td>
+<td>67.41 MiB</td>
+<td>1.05 GiB</td>
+</tr>
+<tr>
+<td>00:12.5</td>
+<td>alertmanager-prometheus-stack-kube-prom-alertmanager-0</td>
+<td>0.03</td>
+<td>1.2</td>
+<td>106.27 MiB</td>
+<td>1.05 GiB</td>
+</tr>
+<tr>
+<td>00:12.5</td>
+<td>prometheus-prometheus-stack-kube-prom-prometheus-0</td>
+<td>0.36</td>
+<td>2.2</td>
+<td>1.94 GiB</td>
+<td>20.05 GiB</td>
+</tr>
+<tr>
+<td>00:12.5</td>
+<td>prometheus-prometheus-stack-kube-prom-prometheus-1</td>
+<td>0.28</td>
+<td>2.2</td>
+<td>1.90 GiB</td>
+<td>20.05 GiB</td>
+</tr>
+</tbody>
+</table>
+<h4 id=3w-alerts>3w+ alerts</h4>
+<table>
+<thead>
+<tr>
+<th>&ldquo;Time&rdquo;</th>
+<th>&ldquo;Pod&rdquo;</th>
+<th>&ldquo;CPU Usage&rdquo;</th>
+<th>&ldquo;CPU Limits&rdquo;</th>
+<th>&ldquo;Memory Usage&rdquo;</th>
+<th>&ldquo;Memory Limits&rdquo;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2023-09-08 17:08:14.251</td>
+<td>alertmanager-prometheus-stack-kube-prom-alertmanager-1</td>
+<td>0.11</td>
+<td>1.20</td>
+<td>231.50 MiB</td>
+<td>1.05 GiB</td>
+</tr>
+<tr>
+<td>2023-09-08 17:08:14.251</td>
+<td>alertmanager-prometheus-stack-kube-prom-alertmanager-0</td>
+<td>0.15</td>
+<td>1.20</td>
+<td>245.08 MiB</td>
+<td>1.05 GiB</td>
+</tr>
+<tr>
+<td>2023-09-08 17:08:14.251</td>
+<td>prometheus-prometheus-stack-kube-prom-prometheus-0</td>
+<td>0.49</td>
+<td>2.20</td>
+<td>2.05 GiB</td>
+<td>20.05 GiB</td>
+</tr>
+<tr>
+<td>2023-09-08 17:08:14.251</td>
+<td>prometheus-prometheus-stack-kube-prom-prometheus-1</td>
+<td>0.66</td>
+<td>2.20</td>
+<td>1.98 GiB</td>
+<td>20.05 GiB</td>
+</tr>
+</tbody>
+</table>
+<h4 id=10w-alerts>10w+ alerts</h4>
+<table>
+<thead>
+<tr>
+<th>&ldquo;Time&rdquo;</th>
+<th>&ldquo;Pod&rdquo;</th>
+<th>&ldquo;CPU Usage&rdquo;</th>
+<th>&ldquo;CPU Limits&rdquo;</th>
+<th>&ldquo;Memory Usage&rdquo;</th>
+<th>&ldquo;Memory Limits&rdquo;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2023-09-08 17:50:30.813</td>
+<td>alertmanager-prometheus-stack-kube-prom-alertmanager-1</td>
+<td>0.78</td>
+<td>2.20</td>
+<td>1021.53 MiB</td>
+<td>5.05 GiB</td>
+</tr>
+<tr>
+<td>2023-09-08 17:50:30.813</td>
+<td>alertmanager-prometheus-stack-kube-prom-alertmanager-0</td>
+<td>1.26</td>
+<td>2.20</td>
+<td>1.15 GiB</td>
+<td>5.05 GiB</td>
+</tr>
+<tr>
+<td>2023-09-08 17:50:30.813</td>
+<td>prometheus-prometheus-stack-kube-prom-prometheus-0</td>
+<td>1.97</td>
+<td>2.20</td>
+<td>3.64 GiB</td>
+<td>20.05 GiB</td>
+</tr>
+<tr>
+<td>2023-09-08 17:50:30.813</td>
+<td>prometheus-prometheus-stack-kube-prom-prometheus-1</td>
+<td>1.86</td>
+<td>2.20</td>
+<td>3.49 GiB</td>
+<td>20.05 GiB</td>
+</tr>
+</tbody>
+</table>
+<p><em>占用的cpu比较多</em></p>
+<h4 id=20w-alerts>20w+ alerts</h4>
+<table>
+<thead>
+<tr>
+<th>&ldquo;Time&rdquo;</th>
+<th>&ldquo;Pod&rdquo;</th>
+<th>&ldquo;CPU Usage&rdquo;</th>
+<th>&ldquo;CPU Limits&rdquo;</th>
+<th>&ldquo;Memory Usage&rdquo;</th>
+<th>&ldquo;Memory Limits&rdquo;</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2023-09-08 17:58:46.609</td>
+<td>alertmanager-prometheus-stack-kube-prom-alertmanager-1</td>
+<td>1.63</td>
+<td>2.20</td>
+<td>1.68 GiB</td>
+<td>5.05 GiB</td>
+</tr>
+<tr>
+<td>2023-09-08 17:58:46.609</td>
+<td>alertmanager-prometheus-stack-kube-prom-alertmanager-0</td>
+<td>1.67</td>
+<td>2.20</td>
+<td>1.68 GiB</td>
+<td>5.05 GiB</td>
+</tr>
+<tr>
+<td>2023-09-08 17:58:46.609</td>
+<td>prometheus-prometheus-stack-kube-prom-prometheus-0</td>
+<td>2.00</td>
+<td>2.20</td>
+<td>4.19 GiB</td>
+<td>20.05 GiB</td>
+</tr>
+<tr>
+<td>2023-09-08 17:58:46.609</td>
+<td>prometheus-prometheus-stack-kube-prom-prometheus-1</td>
+<td>2.00</td>
+<td>2.20</td>
+<td>4.43 GiB</td>
+<td>20.05 GiB</td>
+</tr>
+</tbody>
+</table>
+<p><em>Prometheus的cpu已经打满了，故查询很慢</em></p>
+<h2 id=参考文档>参考文档</h2>
+<p><a href="http://39.105.137.222:8089/?p=2967">http://39.105.137.222:8089/?p=2967</a></p>
+<p><a href=https://mp.weixin.qq.com/s/U3-1bZUoim4zkB4RZbfNQg>https://mp.weixin.qq.com/s/U3-1bZUoim4zkB4RZbfNQg</a></p>
+<p><a href=https://mp.weixin.qq.com/s/DBJ0F3g2Y5EhS02D7k2n5w>https://mp.weixin.qq.com/s/DBJ0F3g2Y5EhS02D7k2n5w</a></p>
+<p><a href=https://yasongxu.gitbook.io/container-monitor/yi-.-kai-yuan-fang-an/di-2-zhang-prometheus/thanos>https://yasongxu.gitbook.io/container-monitor/yi-.-kai-yuan-fang-an/di-2-zhang-prometheus/thanos</a></p>
+<p><a href=https://thanos.io/tip/thanos/getting-started.md/#get-thanos>https://thanos.io/tip/thanos/getting-started.md/#get-thanos</a></p>
+<h3 id=涉及到的脚本>涉及到的脚本</h3>
+<p>生成svc脚本：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#ff79c6>#!/bin/bash
+</span><span style=color:#ff79c6></span>
+<span style=color:#8be9fd;font-style:italic>filename</span><span style=color:#ff79c6>=</span><span style=color:#f1fa8c>&#34;svcs.yaml&#34;</span>
+
+cat <span style=color:#f1fa8c>&lt;&lt;EOF &gt; $filename
+</span><span style=color:#f1fa8c>
+</span><span style=color:#f1fa8c>EOF</span>
+
+<span style=color:#ff79c6>for</span> <span style=color:#ff79c6>((</span><span style=color:#8be9fd;font-style:italic>i</span><span style=color:#ff79c6>=</span>10001; i&lt;<span style=color:#ff79c6>=</span>50000; i++<span style=color:#ff79c6>))</span>
+<span style=color:#ff79c6>do</span>
+    <span style=color:#8be9fd;font-style:italic>name</span><span style=color:#ff79c6>=</span><span style=color:#f1fa8c>&#34;hxd-sd-</span><span style=color:#8be9fd;font-style:italic>$i</span><span style=color:#f1fa8c>&#34;</span>
+
+    cat <span style=color:#f1fa8c>&lt;&lt;EOF &gt;&gt; $filename
+</span><span style=color:#f1fa8c>---
+</span><span style=color:#f1fa8c>apiVersion: v1
+</span><span style=color:#f1fa8c>kind: Service
+</span><span style=color:#f1fa8c>metadata:
+</span><span style=color:#f1fa8c>  name: $name
+</span><span style=color:#f1fa8c>  namespace: hxd-test
+</span><span style=color:#f1fa8c>  labels:
+</span><span style=color:#f1fa8c>    app: hxd-test-sd
+</span><span style=color:#f1fa8c>spec:
+</span><span style=color:#f1fa8c>  ports:
+</span><span style=color:#f1fa8c>    - name: http
+</span><span style=color:#f1fa8c>      protocol: TCP
+</span><span style=color:#f1fa8c>      port: 80
+</span><span style=color:#f1fa8c>      targetPort: 9001
+</span><span style=color:#f1fa8c>  selector:
+</span><span style=color:#f1fa8c>    app: avalanche
+</span><span style=color:#f1fa8c>EOF</span>
+
+    <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#34;Added SVC: </span><span style=color:#8be9fd;font-style:italic>$name</span><span style=color:#f1fa8c>&#34;</span>
+<span style=color:#ff79c6>done</span>
+
+<span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#34;Generated </span><span style=color:#8be9fd;font-style:italic>$filename</span><span style=color:#f1fa8c>&#34;</span>
+</code></pre></div><p>生成servicemonitor脚本:</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#ff79c6>#!/bin/bash
+</span><span style=color:#ff79c6></span>
+<span style=color:#8be9fd;font-style:italic>filename</span><span style=color:#ff79c6>=</span><span style=color:#f1fa8c>&#34;service-monitors.yaml&#34;</span>
+
+cat <span style=color:#f1fa8c>&lt;&lt;EOF &gt; $filename
+</span><span style=color:#f1fa8c>
+</span><span style=color:#f1fa8c>EOF</span>
+
+<span style=color:#ff79c6>for</span> <span style=color:#ff79c6>((</span><span style=color:#8be9fd;font-style:italic>i</span><span style=color:#ff79c6>=</span>1; i&lt;<span style=color:#ff79c6>=</span>1; i++<span style=color:#ff79c6>))</span>
+<span style=color:#ff79c6>do</span>
+    <span style=color:#8be9fd;font-style:italic>name</span><span style=color:#ff79c6>=</span><span style=color:#f1fa8c>&#34;hxd-sd-</span><span style=color:#8be9fd;font-style:italic>$i</span><span style=color:#f1fa8c>&#34;</span>
+
+    cat <span style=color:#f1fa8c>&lt;&lt;EOF &gt;&gt; $filename
+</span><span style=color:#f1fa8c>---
+</span><span style=color:#f1fa8c>apiVersion: monitoring.coreos.com/v1
+</span><span style=color:#f1fa8c>kind: ServiceMonitor
+</span><span style=color:#f1fa8c>metadata:
+</span><span style=color:#f1fa8c>  labels:
+</span><span style=color:#f1fa8c>    release: hxd-prometheus
+</span><span style=color:#f1fa8c>  name: $name
+</span><span style=color:#f1fa8c>  namespace: hxd-test
+</span><span style=color:#f1fa8c>spec:
+</span><span style=color:#f1fa8c>  endpoints:
+</span><span style=color:#f1fa8c>    - path: /metrics
+</span><span style=color:#f1fa8c>      port: http
+</span><span style=color:#f1fa8c>  namespaceSelector:
+</span><span style=color:#f1fa8c>    matchNames:
+</span><span style=color:#f1fa8c>      - hxd-test
+</span><span style=color:#f1fa8c>  selector:
+</span><span style=color:#f1fa8c>    matchLabels:
+</span><span style=color:#f1fa8c>      app: hxd-test-sd
+</span><span style=color:#f1fa8c>EOF</span>
+
+    <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#34;Added ServiceMonitor: </span><span style=color:#8be9fd;font-style:italic>$name</span><span style=color:#f1fa8c>&#34;</span>
+<span style=color:#ff79c6>done</span>
+
+<span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#34;Generated </span><span style=color:#8be9fd;font-style:italic>$filename</span><span style=color:#f1fa8c>&#34;</span>
+</code></pre></div><p>avalanche部署，每个实例产生100w series：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: apps/v1
+<span style=color:#ff79c6>kind</span>: Deployment
+<span style=color:#ff79c6>metadata</span>:
+  <span style=color:#ff79c6>name</span>: avalanche
+  <span style=color:#ff79c6>namespace</span>: hxd-test
+  <span style=color:#ff79c6>labels</span>:
+    <span style=color:#ff79c6>app</span>: avalanche
+<span style=color:#ff79c6>spec</span>:
+  <span style=color:#ff79c6>replicas</span>: <span style=color:#bd93f9>1</span>
+  <span style=color:#ff79c6>selector</span>:
+    <span style=color:#ff79c6>matchLabels</span>:
+      <span style=color:#ff79c6>app</span>: avalanche
+  <span style=color:#ff79c6>template</span>:
+    <span style=color:#ff79c6>metadata</span>:
+      <span style=color:#ff79c6>creationTimestamp</span>: <span style=color:#ff79c6>null</span>
+      <span style=color:#ff79c6>labels</span>:
+        <span style=color:#ff79c6>app</span>: avalanche
+    <span style=color:#ff79c6>spec</span>:
+      <span style=color:#ff79c6>containers</span>:
+        - <span style=color:#ff79c6>name</span>: avalanche
+          <span style=color:#ff79c6>image</span>: hxd/avalanche:main
+          <span style=color:#ff79c6>args</span>:
+            - <span style=color:#f1fa8c>&#39;--metric-count=10000&#39;</span>
+            - <span style=color:#f1fa8c>&#39;--label-count=1&#39;</span>
+            - <span style=color:#f1fa8c>&#39;--series-count=100&#39;</span>
+            - <span style=color:#f1fa8c>&#39;--value-interval=300000&#39;</span>
+            - <span style=color:#f1fa8c>&#39;--series-interval=300000&#39;</span>
+            - <span style=color:#f1fa8c>&#39;--metric-interval=300000&#39;</span>
+          <span style=color:#ff79c6>ports</span>:
+            - <span style=color:#ff79c6>name</span>: metrics
+              <span style=color:#ff79c6>containerPort</span>: <span style=color:#bd93f9>9001</span>
+              <span style=color:#ff79c6>protocol</span>: TCP
+</code></pre></div><p>磁盘相关命令：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>docker run --rm -v <span style=color:#f1fa8c>&#34;/home:/data/dist-test&#34;</span> bitnami/net-tools:v1.1 fio --rw<span style=color:#ff79c6>=</span>write --ioengine<span style=color:#ff79c6>=</span>sync --fdatasync<span style=color:#ff79c6>=</span><span style=color:#bd93f9>1</span> --directory<span style=color:#ff79c6>=</span>/data/dist-test --size<span style=color:#ff79c6>=</span>22m --bs<span style=color:#ff79c6>=</span><span style=color:#bd93f9>2300</span> --name<span style=color:#ff79c6>=</span>mytest
+
+dd <span style=color:#ff79c6>if</span><span style=color:#ff79c6>=</span>/dev/zero <span style=color:#8be9fd;font-style:italic>of</span><span style=color:#ff79c6>=</span>/home/random.dd <span style=color:#8be9fd;font-style:italic>bs</span><span style=color:#ff79c6>=</span>1M <span style=color:#8be9fd;font-style:italic>count</span><span style=color:#ff79c6>=</span><span style=color:#bd93f9>1024</span> <span style=color:#8be9fd;font-style:italic>oflag</span><span style=color:#ff79c6>=</span>direct <span style=color:#8be9fd;font-style:italic>iflag</span><span style=color:#ff79c6>=</span>nocache
+</code></pre></div>
+</div>
+<div class=prev-next>
+</div><svg id="btt-button" class="arrow-logo" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512" onclick="scrollToTop()" title="Go to top"><path d="M177 159.7l136 136c9.4 9.4 9.4 24.6.0 33.9l-22.6 22.6c-9.4 9.4-24.6 9.4-33.9.0L160 255.9l-96.4 96.4c-9.4 9.4-24.6 9.4-33.9.0L7 329.7c-9.4-9.4-9.4-24.6.0-33.9l136-136c9.4-9.5 24.6-9.5 34-.1z"/></svg>
+<script>let backToTopButton=document.getElementById("btt-button");window.onscroll=function(){scrollFunction()};function scrollFunction(){document.body.scrollTop>20||document.documentElement.scrollTop>20?backToTopButton.style.display="block":backToTopButton.style.display="none"}function scrollToTop(){window.scrollTo(0,0)}</script>
+</div>
+<aside class=post-toc aria-label=文章目录>
+<h3 class=toc-title>目录</h3>
+<nav id=toc>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#prometheus原理>Prometheus原理</a>
+<ul>
+<li><a href=#名词>名词</a></li>
+</ul>
+</li>
+<li><a href=#prometheus缺点>Prometheus缺点</a></li>
+<li><a href=#单节点prometheus性能压测>单节点Prometheus性能压测</a>
+<ul>
+<li><a href=#压测环境>压测环境</a></li>
+<li><a href=#观测方法>观测方法</a></li>
+<li><a href=#压测方法>压测方法</a>
+<ul>
+<li><a href=#服务发现相关性>服务发现相关性</a></li>
+<li><a href=#target相关性>target相关性</a></li>
+<li><a href=#series相关性>series相关性</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href=#thanos高可用方案以及性能压测>Thanos高可用方案以及性能压测</a>
+<ul>
+<li><a href=#thanos原理>Thanos原理</a></li>
+<li><a href=#thanos部署以及测试准备>Thanos部署以及测试准备</a></li>
+</ul>
+</li>
+<li><a href=#receiver模式>Receiver模式</a>
+<ul>
+<li><a href=#压测方法-1>压测方法</a>
+<ul>
+<li><a href=#100w-series>100w series</a></li>
+<li><a href=#200w-series>200w series</a></li>
+<li><a href=#磁盘使用情况>磁盘使用情况</a></li>
+</ul>
+</li>
+<li><a href=#高可用测试>高可用测试</a>
+<ul>
+<li><a href=#随机down一个节点>随机down一个节点</a></li>
+<li><a href=#总结>总结</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href=#sidecar模式>Sidecar模式</a>
+<ul>
+<li><a href=#压测方法-2>压测方法</a>
+<ul>
+<li><a href=#100w-series-1>100w series</a></li>
+<li><a href=#200w-series-1>200w series</a></li>
+<li><a href=#300w-series>300w series</a></li>
+<li><a href=#400w-series>400w series</a></li>
+<li><a href=#500w-series>500w series</a></li>
+</ul>
+</li>
+<li><a href=#高可用测试-1>高可用测试</a>
+<ul>
+<li><a href=#随机down一个节点-1>随机down一个节点</a></li>
+<li><a href=#总结-1>总结</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href=#alertmaneger-ha>Alertmaneger HA</a>
+<ul>
+<li><a href=#alermanager压力测试>Alermanager压力测试</a>
+<ul>
+<li><a href=#1w-alerts>1w+ alerts</a></li>
+<li><a href=#3w-alerts>3w+ alerts</a></li>
+<li><a href=#10w-alerts>10w+ alerts</a></li>
+<li><a href=#20w-alerts>20w+ alerts</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href=#参考文档>参考文档</a>
+<ul>
+<li><a href=#涉及到的脚本>涉及到的脚本</a></li>
+</ul>
+</li>
+</ul>
+</nav>
+</nav>
+</aside>
+<link rel=stylesheet href=/css/toc.css>
+</main><footer class=footer>
+<span>&copy; 2023 HindungWang</span>
+<span>
+Made with &#10084;&#65039; using <a target=_blank href=https://github.com/gokarna-theme/gokarna-hugo>Gokarna</a>
+</span>
+</footer>
+</body>
+</html>

@@ -21,6 +21,7 @@ title = "Hindung's Blog"
   CustomHeadHTML = """
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="stylesheet" href="/css/posts-nav.css" />
   """
 
   socialIcons = [
@@ -84,7 +85,7 @@ title = "Hindung's Blog"
 
 [markup]
   [markup.tableOfContents]
-    startLevel = 1
+    startLevel = 2
     endLevel = 4
     ordered = false
 

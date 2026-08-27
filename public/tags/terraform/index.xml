@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>terraform on Hindung's Blog</title><link>https://hindungwang.github.io/tags/terraform/</link><description>Recent content in terraform on Hindung's Blog</description><generator>Hugo -- gohugo.io</generator><language>cn-zh</language><lastBuildDate>Sat, 15 Mar 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://hindungwang.github.io/tags/terraform/index.xml" rel="self" type="application/rss+xml"/><item><title>Terraform技术分享</title><link>https://hindungwang.github.io/posts/33.terraform/</link><pubDate>Sat, 15 Mar 2025 00:00:00 +0000</pubDate><guid>https://hindungwang.github.io/posts/33.terraform/</guid><description>Terraform 介绍 Terraform是一个IT基础架构自动化编排工具，可以用代码来管理维护IT资源。并对配置文件进行版本控制。代码描述了云资源拓扑的基础结构，例如虚拟机、存储账户和网络接口。
+Terraform通过插件的机制，将各个云厂商的OpenAPI抽象为Provider，通过实现这个Provider插件来实现对新基础架构的支持；Terraform使用HCL语言来定义、预览和部署云基础结构。 用户只需要编写HCL，然后执行Plan预览更改，最后执行Apply部署即可。
+简单的使用场景 某应用，为了增大吞吐率，需要对其做一个流量均衡处理，以扩大并发数、缩短延迟，所以需要使用一个负载均衡和云主机的组合，其架构如图所示，一个负载均衡，下面挂载两台云主机。
+手动方式：
+创建负载均衡器 创建虚拟机 加安全组 配置安全组规则，挂载LB B端口配置、会话保持、健康检查配置 使用 Terraform 的方式：
+编写tf，引用LB、VM模板 执行apply部署 基本使用方法 基本命令：
+terraform plan（预览） terraform apply （创建/更新） terraform destroy （销毁） 使用 plan 命令可以展示当前环境的资源状态，以及将要执行的操作，如：
+优点： 高度可扩展的自动化编排工具，通过Provider来支持新的基础架构。目前支持200多个基础设施提供商。 声明式编程，使用简单的模板语言（HCL）来定义、预览和部署云基础结构。 多云统一管理，开发者可同时管理不同云厂商的资源，也可快速方便地迁移到另外一个云厂商。
+架构及原理 HCL HCL(HashiCorp Configuration Language)是HashiCorp公司构建的一种配置语言，用于编写Terraform的配置文件，也称为Terraform语言，它描述了如何管理给定的基础设施集合，具有以下特性：
+基于人的可读性设计 声明式 兼容json格式输入，对机器友好 支持运算操作 数据结构丰富 语法开起来和NGINX的配置差不多。它以.tf文件名为结尾。 有良好的可读性，比如右边的配置，这个resource表示一个aws vpc资源，并给他设置一个地址块；
+Block代表某种对象的配置，如资源。Argument为一个名称分配一个值。Expresssion表示一个值，可以是字面意思，也可以是通过引用和组合其他值。
+数据结构丰富：原始类型分三类：string、number、bool。 Terraform支持三种集合： list(...)：列表是一组值的连续集合，可以用下标访问内部元素，下标从0开始。 map(...)：字典类型(或者叫映射类型)，代表一组键唯一的键值对，键类型必须是string，值类型任意。 set(...)：集合类型，代表一组不重复的值。 object(...)：对象是指一组由具有名称和类型的属性所构成的符合类型，它的schema信息由{ \=\, \=\,...}的形式描述。
+一个完整的例子： Terraform Flow Terraform 核心的工作流包含三个步骤：</description></item></channel></rss>

@@ -1,0 +1,132 @@
+/* Game Agent 首页演示卡片 —— 贴合 gokarna 主题 */
+#game-agent-teaser {
+  --gact-bg: #ffffff;
+  --gact-border: #dddddd;
+  --gact-header: #272822;
+  --gact-header-text: #ffffff;
+  --gact-bubble-agent: #ffffff;
+  --gact-border-soft: #f0f0f0;
+  --gact-muted: #8a8f98;
+  --gact-accent: var(--accent-color, #FF4D4D);
+  --gact-shadow: rgb(220 220 220) 0px 1px 5px;
+
+  max-width: 640px;
+  margin: 22px auto;
+  border: 1px solid var(--gact-border);
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--gact-bg);
+  box-shadow: var(--gact-shadow);
+  font-family: "Lato", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "PingFang SC", "Microsoft YaHei", sans-serif;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+#game-agent-teaser:hover {
+  box-shadow: rgb(0 0 0 / 0.12) 0px 8px 28px;
+  transform: translateY(-2px);
+}
+
+#game-agent-teaser.gact-dark {
+  --gact-bg: rgb(34, 39, 46);
+  --gact-border: #2d333b;
+  --gact-header: #2d333b;
+  --gact-header-text: #ffffff;
+  --gact-bubble-agent: #2d333b;
+  --gact-border-soft: #353b45;
+  --gact-muted: #646464;
+  --gact-shadow: rgb(0 0 0 / 0.35) 0px 4px 18px;
+}
+
+/* 头部 */
+.gact-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  background: var(--gact-header);
+  color: var(--gact-header-text);
+}
+.gact-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gact-accent), #272822);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.gact-meta { min-width: 0; flex: 1; }
+.gact-name { font-weight: 700; font-size: 14.5px; }
+.gact-status {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: rgba(255, 255, 255, 0.72); margin-top: 2px;
+}
+.gact-status::before {
+  content: "";
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #3fb950; animation: gact-pulse 1.6s infinite;
+}
+@keyframes gact-pulse {
+  0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+}
+.gact-badge {
+  font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  color: var(--gact-accent);
+  border: 1px solid currentColor;
+  border-radius: 999px; padding: 2px 8px;
+}
+
+/* 演示消息区 */
+.gact-body {
+  min-height: 208px;
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.gact-msg {
+  max-width: 84%;
+  padding: 9px 13px;
+  border-radius: 12px;
+  font-size: 13.5px; line-height: 1.55;
+  white-space: pre-wrap; word-break: break-word;
+}
+.gact-msg.user {
+  align-self: flex-end;
+  background: var(--gact-accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+.gact-msg.agent {
+  align-self: flex-start;
+  background: var(--gact-bubble-agent);
+  color: #24292f;
+  border: 1px solid var(--gact-border-soft);
+  border-bottom-left-radius: 4px;
+}
+#game-agent-teaser.gact-dark .gact-msg.agent { color: #e6e6e6; }
+.gact-msg .gact-caret {
+  display: inline-block; width: 7px; height: 14px;
+  background: var(--gact-muted);
+  vertical-align: text-bottom; margin-left: 2px;
+  animation: gact-blink 0.9s steps(1) infinite;
+}
+@keyframes gact-blink { 50% { opacity: 0; } }
+
+/* CTA */
+.gact-cta {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 12px;
+  font-size: 14px; font-weight: 700;
+  color: #fff;
+  background: var(--gact-accent);
+  transition: filter 0.15s;
+}
+#game-agent-teaser:hover .gact-cta { filter: brightness(0.94); }
+.gact-arrow { transition: transform 0.2s; }
+#game-agent-teaser:hover .gact-arrow { transform: translateX(4px); }
+
+@media (max-width: 480px) {
+  #game-agent-teaser { margin: 16px auto; border-radius: 13px; }
+  .gact-msg { max-width: 92%; }
+}

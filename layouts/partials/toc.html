@@ -1,0 +1,9 @@
+{{ if .Params.ShowTableOfContents }}
+<aside class="post-toc" aria-label="文章目录">
+    <h3 class="toc-title">目录</h3>
+    <nav id="toc">
+        {{ .TableOfContents }}
+    </nav>
+</aside>
+<link rel="stylesheet" href="{{ "/css/toc.css" | relURL }}">
+{{ end }}

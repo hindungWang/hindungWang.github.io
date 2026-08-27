@@ -1,0 +1,669 @@
+<!doctype html><html lang=en><head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>:root{--accent-color:#FF4D4D;--font-size:1.1rem}</style>
+<title>Golang语言模型</title>
+<meta name=description content="Golang基本类型">
+<meta name=keywords content="blog,gokarna,hugo,Go">
+<meta property="og:url" content="https://hindungwang.github.io/posts/05.go-lang/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Golang语言模型">
+<meta property="og:description" content="Golang基本类型">
+<meta property="og:image" content="https://github.com/hindungWang.png">
+<meta property="og:image:secure_url" content="https://github.com/hindungWang.png">
+<meta name=twitter:card content="summary_large_image">
+<meta name=twitter:title content="Golang语言模型">
+<meta name=twitter:description content="Golang基本类型">
+<meta property="twitter:domain" content="https://hindungwang.github.io/posts/05.go-lang/">
+<meta property="twitter:url" content="https://hindungwang.github.io/posts/05.go-lang/">
+<meta name=twitter:image content="https://github.com/hindungWang.png">
+<link rel=canonical href=https://hindungwang.github.io/posts/05.go-lang/>
+<link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
+<link rel=stylesheet type=text/css href=/css/main.min.css>
+<link id=dark-theme rel=stylesheet href=/css/dark.min.css>
+<script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<link rel=icon type=image/png href=/favicon.png>
+<link rel=apple-touch-icon href=/favicon.png>
+<link rel=stylesheet href=/css/posts-nav.css>
+</head>
+<body class=post-page>
+<script>setThemeByUserPref()</script><header class=header>
+<nav class=header-nav>
+<div class=avatar>
+<a href=https://hindungwang.github.io/>
+<img src=https://github.com/hindungWang.png alt=avatar>
+</a>
+</div>
+<div class=nav-title>
+<a class=nav-brand href=https://hindungwang.github.io/>Hindung's Blog</a>
+</div>
+<div class=nav-links>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/ aria-label><span data-feather=home></span> Home </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/about aria-label><span data-feather=home></span> About </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/posts/ aria-label><span data-feather=page></span> Posts </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/game-agent/ aria-label><span data-feather=gamepad></span> Game Agent </a>
+</div>
+<div class=nav-link>
+<a href=https://github.com/hindungWang aria-label=github><span data-feather=github></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/tags/ aria-label><span data-feather=tag></span> Tags </a>
+</div>
+<div class=nav-link>
+<a href=https://buymeacoffee.com/hindung aria-label=buymeacoffee><span data-feather=coffee></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/index.xml aria-label=rss><span data-feather=rss></span> </a>
+</div>
+<span class=nav-icons-divider></span>
+<div class="nav-link dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a aria-hidden=true role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</div>
+<div class=nav-link id=hamburger-menu-toggle>
+<span class="sr-only hamburger-menu-toggle-screen-reader-target">menu</span>
+<a aria-checked=false aria-labelledby=hamburger-menu-toggle id=hamburger-menu-toggle-target role=switch>
+<span data-feather=menu></span>
+</a>
+</div>
+<ul class="nav-hamburger-list visibility-hidden">
+<li class=nav-item>
+<a href=https://hindungwang.github.io/><span data-feather=home></span> Home </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/about><span data-feather=home></span> About </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/posts/><span data-feather=page></span> Posts </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/game-agent/><span data-feather=gamepad></span> Game Agent </a>
+</li>
+<li class=nav-item>
+<a href=https://github.com/hindungWang><span data-feather=github></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/tags/><span data-feather=tag></span> Tags </a>
+</li>
+<li class=nav-item>
+<a href=https://buymeacoffee.com/hindung><span data-feather=coffee></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/index.xml><span data-feather=rss></span> </a>
+</li>
+<li class="nav-item dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main id=content>
+<div id=reading-progress aria-hidden=true></div>
+<aside class=posts-nav aria-label=所有文章>
+<h3>文章<span class=posts-nav-count>36</span></h3>
+<ul>
+<li>
+<a href=/posts/35.kube-vip-pr/ title="给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败">给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败</a>
+</li>
+<li>
+<a href=/posts/34.helm-3-way-merge/ title="Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录">Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录</a>
+</li>
+<li>
+<a href=/posts/33.terraform/ title=Terraform技术分享>Terraform技术分享</a>
+</li>
+<li>
+<a href=/posts/32.to-many-pods-created/ title=Pod不停被创建？？>Pod不停被创建？？</a>
+</li>
+<li>
+<a href=/posts/31.hight-cpu/ title="记一次节点高 CPU 高 Load 的排查经历">记一次节点高 CPU 高 Load 的排查经历</a>
+</li>
+<li>
+<a href=/posts/30.go-gc/ title="Golang GC 初探">Golang GC 初探</a>
+</li>
+<li>
+<a href=/posts/29.k8s-apimachinery-util/ title="k8s.io/apimachinery/util 包源码解读">k8s.io/apimachinery/util 包源码解读</a>
+</li>
+<li>
+<a href=/posts/28.k8s-utils/ title="Kubernetes 的 utils 包源码鉴赏">Kubernetes 的 utils 包源码鉴赏</a>
+</li>
+<li>
+<a href=/posts/24.k8s-network-policy/ title=K8s之网络策略>K8s之网络策略</a>
+</li>
+<li>
+<a href=/posts/22.k8s-cilium/ title=K8s之cilium网络插件>K8s之cilium网络插件</a>
+</li>
+<li>
+<a href=/posts/27.prometheus_test/ title=Prometheus性能压测与高可用设计>Prometheus性能压测与高可用设计</a>
+</li>
+<li>
+<a href=/posts/26.prometheus_sdk/ title="Prometheus GO SDK">Prometheus GO SDK</a>
+</li>
+<li>
+<a href=/posts/25.kube-ovn/ title=K8s之kube-ovn网络插件>K8s之kube-ovn网络插件</a>
+</li>
+<li>
+<a href=/posts/23.k8s-client/ title="K8s client-go初始化的几种方法">K8s client-go初始化的几种方法</a>
+</li>
+<li>
+<a href=/posts/18.container-1/ title=容器技术之我见>容器技术之我见</a>
+</li>
+<li>
+<a href=/posts/19.cri/ title=容器运行时>容器运行时</a>
+</li>
+<li>
+<a href=/posts/21.k8s-1/ title=Kubernetes组件>Kubernetes组件</a>
+</li>
+<li>
+<a href=/posts/17.kubectl/ title=Kubectl命令行>Kubectl命令行</a>
+</li>
+<li>
+<a href=/posts/16.calico/ title=K8s之calico网络插件东西南北流量>K8s之calico网络插件东西南北流量</a>
+</li>
+<li>
+<a href=/posts/15.iptable/ title=Iptable规则初探>Iptable规则初探</a>
+</li>
+<li>
+<a href=/posts/14.go-sync-cond/ title=Go源码解读之sync.Cond>Go源码解读之sync.Cond</a>
+</li>
+<li>
+<a href=/posts/13.go-sync-type/ title=Go源码解读之sync中的基本类型和使用场景>Go源码解读之sync中的基本类型和使用场景</a>
+</li>
+<li>
+<a href=/posts/12.deep-copy/ title=深拷贝之循环引用>深拷贝之循环引用</a>
+</li>
+<li>
+<a href=/posts/11.lru/ title="LRU 缓存机制">LRU 缓存机制</a>
+</li>
+<li>
+<a href=/posts/10.go-sync-atomic/ title=Go源码解读之sync/atomic>Go源码解读之sync/atomic</a>
+</li>
+<li>
+<a href=/posts/09.keng/ title=使用Go遇到的坑>使用Go遇到的坑</a>
+</li>
+<li>
+<a href=/posts/08.core/ title=构建属于你自己的核心力量>构建属于你自己的核心力量</a>
+</li>
+<li>
+<a href=/posts/20.go-priority-queue/ title=Golang实现优先队列>Golang实现优先队列</a>
+</li>
+<li>
+<a href=/posts/07.snowflake/ title=雪花算法>雪花算法</a>
+</li>
+<li>
+<a href=/posts/06.golang-channel/ title=Golang-channel>Golang-channel</a>
+</li>
+<li class=active>
+<a href=/posts/05.go-lang/ title=Golang语言模型>Golang语言模型</a>
+</li>
+<li>
+<a href=/posts/04.gin/ title=初探Gin框架>初探Gin框架</a>
+</li>
+<li>
+<a href=/posts/03.golang-interface/ title=Golang-interface的底层原理浅析>Golang-interface的底层原理浅析</a>
+</li>
+<li>
+<a href=/posts/02.docker-images/ title=Docker镜像优化>Docker镜像优化</a>
+</li>
+<li>
+<a href=/posts/01.change-log/ title=部落格修改记录>部落格修改记录</a>
+</li>
+<li>
+<a href=/posts/00.markdown/ title="Hello World">Hello World</a>
+</li>
+</ul>
+</aside>
+<script>(function(){var b=document.getElementById('reading-progress'),a;if(!b)return;a=function(){var a=document.documentElement,c=a.scrollHeight-a.clientHeight;b.style.transform='scaleX('+(c>0?window.scrollY/c:0)+')'},window.addEventListener('scroll',a,{passive:!0}),window.addEventListener('resize',a),a()})()</script>
+<div class="post container">
+<div class=post-header-section>
+<h1>Golang语言模型</h1>
+<small role=doc-subtitle>Golang基本类型</small>
+<p class=post-date>
+July 26, 2020
+</p>
+<ul class=post-tags>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/go>Go</a></li>
+</ul>
+</div>
+<div class=post-content>
+<h2 id=前言>前言</h2>
+<p>这篇笔记主要记录一下学习Go见到的各种数据类型，从数据类型在内存的分布上看了解其中的原理，主要包括：</p>
+<ul>
+<li>基本类型（int, string, uint, int8, int16, byte, rune, unitptr, float32, float64, complex64, complex128, bool等）</li>
+<li>数组和slice的内存模型（string是特殊的slice）</li>
+<li>指针的内存模型及unitptr与unsafe.Pointer、普通指针 *T的区别</li>
+<li>map的内存模型</li>
+<li>struct的内存模型和字节对齐</li>
+<li>channel、goroutine的内存模型以后单独记录</li>
+<li>interface的内存模型已经在第一篇笔记里</li>
+</ul>
+<p>Go的内存模型与C语言很像，所以了解C语言应该很容易理解Go的内存模型。</p>
+<h3 id=基本类型的内存模型>基本类型的内存模型</h3>
+<p>Go语言有18种基本的数据结构：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd>bool</span>    <span style=color:#8be9fd>string</span>  <span style=color:#8be9fd>rune</span>      <span style=color:#8be9fd>byte</span>        <span style=color:#8be9fd>int</span>         <span style=color:#8be9fd>uint</span>
+<span style=color:#8be9fd>int8</span>    <span style=color:#8be9fd>uint8</span>   <span style=color:#8be9fd>int16</span>     <span style=color:#8be9fd>uint16</span>      <span style=color:#8be9fd>int32</span>       <span style=color:#8be9fd>uint32</span>  
+<span style=color:#8be9fd>int64</span>   <span style=color:#8be9fd>uint64</span>  <span style=color:#8be9fd>float32</span>   <span style=color:#8be9fd>float64</span>     <span style=color:#8be9fd>complex64</span>   <span style=color:#8be9fd>complex128</span>
+</code></pre></div><p>其中string和bool类型比较特殊，这个后面讨论。</p>
+<p>然后 byte 类型是uint8的别名，rune是int32的别名。</p>
+<p>平台相关的数据类型有：</p>
+<ul>
+<li>uint：int32 或者是 int64，看机子类型</li>
+<li>uintptr：足够表示指针大小的无符号整数类型</li>
+</ul>
+<p>这些基本类型在内存中的表示如：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gaddk6zal0j205g02n0q0.jpg alt=1577585835.jpg></p>
+<h3 id=数组和切片>数组和切片</h3>
+<h4 id=数组>数组</h4>
+<p>对于数组来说，如：<code>var arr = [5]byte{1,2,3,4,5}</code></p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gaddpwa2bvj208x02rwe9.jpg alt=1577586159(https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gaddpwa2bvj208x02rwe9.jpg).jpg></p>
+<p>对于arr这个[5]byte类型，他的内存就是5个连续的字节, 一个数组的定义同时包括了长度和类型。
+比如：<code>var a [4]int</code>，那么就表示声明了一个类型是数组，元素类型是int，长度是4。这里需要注意的是Go语言的数组和C语言的不一样，C语言的数组是一个指针，指向数组的一个元素。但是在Go语言里面数组就是一个普通的值类型。而不是一个指向数组内存起始位置的指针，也不能和同类型的指针进行转化。</p>
+<p>所以[4]int和[5]int表示两种完全不同的类型。</p>
+<h4 id=切片>切片</h4>
+<p>在之前的一些<a href=https://mangoqiqi.github.io/2018/09/09/golang/>golang基础</a>里已经有一些切片类型的简单使用方法了，这里就来探究一下切片的底层数据结构和实现。</p>
+<p>切片是对数组中一段数据的引用。在内存中它有三段数据组成：一个指向数据头的指针、切片的长度、切片的容量。长度是索引操作的上界，如：x[i] 。容量是切片操作的上界，如：x[i:j]。</p>
+<p>比如我通过s := make([]byte, 5)当容量参数被忽略时，它默认为指定的长度，创建的切片内存如下：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-text data-lang=text> s := make([]int, 5) 
+┌───┬───┬───┬───┬───┐
+│ 0 │ 0 │ 0 │ 0 │ 0 │
+└───┴───┴───┴───┴───┘
+</code></pre></div><p>如果我们通过修改切片引用的数据区域和大小，s = s[2:4], 那么就变成了如下的结构</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-text data-lang=text>   s := make([]int, 5) 
+  ┌───┬───┬───┬───┬───┐
+  │ 0 │ 0 │ 0 │ 0 │ 0 │
+  └───┴───┴───┴───┴───┘
+    0   1   2   3   4  
+                       
+          ┌───┬───┐    
+s         │ 0 │ 0 │    
+          └───┴───┘    
+</code></pre></div><p>我们通过下面的代码可以很快弄清楚slice的内存模型</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> sliceA <span style=color:#8be9fd;font-style:italic>struct</span> {
+    ptr unsafe.Pointer
+    len <span style=color:#8be9fd>int</span>
+    cap <span style=color:#8be9fd>int</span>
+}
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
+    a <span style=color:#ff79c6>:=</span> [<span style=color:#bd93f9>5</span>]<span style=color:#8be9fd>byte</span>{<span style=color:#bd93f9>0</span>}
+    fmt.<span style=color:#50fa7b>Println</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>a))
+
+    s <span style=color:#ff79c6>:=</span> a[:]
+    ptr <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span>sliceA)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>s))
+    fmt.<span style=color:#50fa7b>Println</span>(ptr)
+
+    s = s[<span style=color:#bd93f9>2</span>:<span style=color:#bd93f9>4</span>]
+    ptr = <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span>sliceA)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>s))
+    fmt.<span style=color:#50fa7b>Println</span>(ptr)
+}
+输出结果如下：
+<span style=color:#bd93f9>0xc042038448</span>
+{<span style=color:#bd93f9>0xc042038448</span> <span style=color:#bd93f9>5</span> <span style=color:#bd93f9>5</span>}
+{<span style=color:#bd93f9>0xc04203844a</span> <span style=color:#bd93f9>2</span> <span style=color:#bd93f9>3</span>}
+</code></pre></div><p>0xc04203844a - 0xc042038448 = 2， 刚好是偏移了两个byte。</p>
+<p>从上面的内存模型来看，如果两个数组相互赋值，那么将会触发数组全量拷贝的动作，但是如果是传递切片，那么将只需要永远申请固定大小的切片对象就可以了，底层的数组通过引用传递。</p>
+<h4 id=切片的内存增长>切片的内存增长</h4>
+<p>从内存模型来看，切片就是引用了一个固定的数组， 一个切片的容量受到起始索引和底层数组容量的限制。Go语言提供了内置的copy和append函数来增长切片的容量，那么调用这些函数以后切片的内存会发生什么变化呢？</p>
+<p>copy和append这两个是内置函数，是看不到go源码实现，可能使用C/C++/汇编实现的：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#8be9fd;font-style:italic>copy</span>(dst, src []Type) <span style=color:#8be9fd>int</span>
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#8be9fd;font-style:italic>append</span>(slice []Type, elems <span style=color:#ff79c6>...</span>Type) []Type
+</code></pre></div><p><em>copy方法</em></p>
+<p>copy方法并不会修改slice的内存模型，仅仅是将某个slice的内容拷贝到另外一个slice中去。底层的实现在runtime\slice.go中，这个方法比较简单，就不赘述了。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>slicecopy</span>(to, fm slice, width <span style=color:#8be9fd>uintptr</span>) <span style=color:#8be9fd>int</span>
+</code></pre></div><p><em>append方法</em></p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> sliceA <span style=color:#8be9fd;font-style:italic>struct</span> {
+    ptr unsafe.Pointer
+    len <span style=color:#8be9fd>int</span>
+    cap <span style=color:#8be9fd>int</span>
+}
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
+    a <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>([]<span style=color:#8be9fd>int</span>, <span style=color:#bd93f9>1</span>)
+    ptr <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span>sliceA)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>a))
+    fmt.<span style=color:#50fa7b>Println</span>(ptr)
+    <span style=color:#6272a4>// a == []int{0}
+</span><span style=color:#6272a4></span>    a = <span style=color:#8be9fd;font-style:italic>append</span>(a, <span style=color:#bd93f9>1</span>, <span style=color:#bd93f9>2</span>, <span style=color:#bd93f9>3</span>)
+    <span style=color:#6272a4>// a == []int{0, 1, 2, 3}
+</span><span style=color:#6272a4></span>    ptr = <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span>sliceA)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>a))
+    fmt.<span style=color:#50fa7b>Println</span>(ptr)
+}
+
+输出结果是：
+{<span style=color:#bd93f9>0xc04203a448</span> <span style=color:#bd93f9>1</span> <span style=color:#bd93f9>1</span>}
+{<span style=color:#bd93f9>0xc0420369e0</span> <span style=color:#bd93f9>4</span> <span style=color:#bd93f9>4</span>}
+
+</code></pre></div><p>那么从上面可以看出，append方法其实重新生成了一个新的数组，然后返回的切片引用了这个新的数组，那我们来重点看一下append方法的实现，为了简单点，写出下面的代码，然后生成汇编：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
+    b <span style=color:#ff79c6>:=</span> []<span style=color:#8be9fd>byte</span>{<span style=color:#f1fa8c>&#39;a&#39;</span>}
+    b = <span style=color:#8be9fd;font-style:italic>append</span>(b, <span style=color:#f1fa8c>&#39;b&#39;</span>)
+    fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#8be9fd;font-style:italic>string</span>(b), <span style=color:#8be9fd;font-style:italic>cap</span>(b))  <span style=color:#6272a4>// output : ab 8
+</span><span style=color:#6272a4></span>}
+</code></pre></div><p>从下面的汇编可以得到两个信息：
+runtime.growslice是用来实现slice增长的函数
+cap函数的实现仅仅是调用b.cap这个成员</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#f1fa8c>&#34;&#34;</span>.main STEXT size=<span style=color:#bd93f9>348</span> args=<span style=color:#bd93f9>0x0</span> locals=<span style=color:#bd93f9>0x80</span>
+	<span style=color:#ff79c6>...</span>
+	<span style=color:#bd93f9>0x0036</span> <span style=color:#bd93f9>00054</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	LEAQ	<span style=color:#8be9fd;font-style:italic>type</span>.<span style=color:#8be9fd;font-style:italic>uint8</span>(SB), AX
+	<span style=color:#bd93f9>0x003d</span> <span style=color:#bd93f9>00061</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	PCDATA	$<span style=color:#bd93f9>2</span>, $<span style=color:#bd93f9>0</span>
+	<span style=color:#bd93f9>0x003d</span> <span style=color:#bd93f9>00061</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVQ	AX, (SP)
+	<span style=color:#bd93f9>0x0041</span> <span style=color:#bd93f9>00065</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	PCDATA	$<span style=color:#bd93f9>2</span>, $<span style=color:#bd93f9>1</span>
+	<span style=color:#bd93f9>0x0041</span> <span style=color:#bd93f9>00065</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	LEAQ	<span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_9<span style=color:#ff79c6>+</span><span style=color:#bd93f9>71</span>(SP), AX
+	<span style=color:#bd93f9>0x0046</span> <span style=color:#bd93f9>00070</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	PCDATA	$<span style=color:#bd93f9>2</span>, $<span style=color:#bd93f9>0</span>
+	<span style=color:#bd93f9>0x0046</span> <span style=color:#bd93f9>00070</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVQ	AX, <span style=color:#bd93f9>8</span>(SP)
+	<span style=color:#bd93f9>0x004b</span> <span style=color:#bd93f9>00075</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVQ	$<span style=color:#bd93f9>1</span>, <span style=color:#bd93f9>16</span>(SP)
+	<span style=color:#bd93f9>0x0054</span> <span style=color:#bd93f9>000</span><span style=color:#bd93f9>84</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVQ	$<span style=color:#bd93f9>1</span>, <span style=color:#bd93f9>24</span>(SP)
+	<span style=color:#bd93f9>0x005d</span> <span style=color:#bd93f9>000</span><span style=color:#bd93f9>93</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVQ	$<span style=color:#bd93f9>2</span>, <span style=color:#bd93f9>32</span>(SP)
+	<span style=color:#bd93f9>0x0066</span> <span style=color:#bd93f9>00102</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	CALL	runtime.<span style=color:#50fa7b>growslice</span>(SB)  <span style=color:#6272a4>// 实现slice增长
+</span><span style=color:#6272a4></span>	<span style=color:#bd93f9>0x006b</span> <span style=color:#bd93f9>00107</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	PCDATA	$<span style=color:#bd93f9>2</span>, $<span style=color:#bd93f9>1</span>
+	<span style=color:#bd93f9>0x006b</span> <span style=color:#bd93f9>00107</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVQ	<span style=color:#bd93f9>40</span>(SP), AX
+	<span style=color:#bd93f9>0x0070</span> <span style=color:#bd93f9>00112</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVQ	<span style=color:#bd93f9>48</span>(SP), CX
+	<span style=color:#bd93f9>0x0075</span> <span style=color:#bd93f9>00117</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVQ	<span style=color:#bd93f9>56</span>(SP), DX
+	<span style=color:#bd93f9>0x007a</span> <span style=color:#bd93f9>00122</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVQ	DX, <span style=color:#f1fa8c>&#34;&#34;</span>.b.cap<span style=color:#ff79c6>+</span><span style=color:#bd93f9>72</span>(SP)
+	<span style=color:#bd93f9>0x007f</span> <span style=color:#bd93f9>00127</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	MOVB	$<span style=color:#bd93f9>98</span>, <span style=color:#bd93f9>1</span>(AX)
+	<span style=color:#bd93f9>0x0083</span> <span style=color:#bd93f9>00131</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	MOVQ	$<span style=color:#bd93f9>0</span>, (SP)
+	<span style=color:#bd93f9>0x008b</span> <span style=color:#bd93f9>0013</span><span style=color:#bd93f9>9</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	PCDATA	$<span style=color:#bd93f9>2</span>, $<span style=color:#bd93f9>0</span>
+	<span style=color:#bd93f9>0x008b</span> <span style=color:#bd93f9>0013</span><span style=color:#bd93f9>9</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	MOVQ	AX, <span style=color:#bd93f9>8</span>(SP)
+	<span style=color:#bd93f9>0x0090</span> <span style=color:#bd93f9>00144</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>9</span>)	LEAQ	<span style=color:#bd93f9>1</span>(CX), AX
+	<span style=color:#bd93f9>0x0094</span> <span style=color:#bd93f9>0014</span><span style=color:#bd93f9>8</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	MOVQ	AX, <span style=color:#bd93f9>16</span>(SP)
+	<span style=color:#bd93f9>0x0099</span> <span style=color:#bd93f9>00153</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	MOVQ	DX, <span style=color:#bd93f9>24</span>(SP)
+	<span style=color:#bd93f9>0x009e</span> <span style=color:#bd93f9>0015</span><span style=color:#bd93f9>8</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	CALL	runtime.<span style=color:#50fa7b>slicebytetostring</span>(SB)
+	<span style=color:#bd93f9>0x00a3</span> <span style=color:#bd93f9>00163</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	MOVQ	<span style=color:#bd93f9>40</span>(SP), AX
+	<span style=color:#bd93f9>0x00a8</span> <span style=color:#bd93f9>0016</span><span style=color:#bd93f9>8</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	PCDATA	$<span style=color:#bd93f9>2</span>, $<span style=color:#bd93f9>2</span>
+	<span style=color:#bd93f9>0x00a8</span> <span style=color:#bd93f9>0016</span><span style=color:#bd93f9>8</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	MOVQ	<span style=color:#bd93f9>32</span>(SP), CX
+	<span style=color:#bd93f9>0x00ad</span> <span style=color:#bd93f9>00173</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	PCDATA	$<span style=color:#bd93f9>2</span>, $<span style=color:#bd93f9>0</span>
+	<span style=color:#bd93f9>0x00ad</span> <span style=color:#bd93f9>00173</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	MOVQ	CX, (SP)
+	<span style=color:#bd93f9>0x00b1</span> <span style=color:#bd93f9>00177</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	MOVQ	AX, <span style=color:#bd93f9>8</span>(SP)
+	<span style=color:#bd93f9>0x00b6</span> <span style=color:#bd93f9>001</span><span style=color:#bd93f9>82</span> (goslice.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>10</span>)	CALL	runtime.<span style=color:#50fa7b>convTstring</span>(SB)
+<span style=color:#ff79c6>...</span>
+</code></pre></div><p>growslice的实现：src\runtime\slice.go</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>growslice</span>(et <span style=color:#ff79c6>*</span>_type, old slice, cap <span style=color:#8be9fd>int</span>) slice {
+    newcap <span style=color:#ff79c6>:=</span> old.cap
+    doublecap <span style=color:#ff79c6>:=</span> newcap <span style=color:#ff79c6>+</span> newcap
+    <span style=color:#ff79c6>if</span> cap &gt; doublecap {                 <span style=color:#6272a4>// 如果新的大小是当前大小2倍以上，则大小增长为新大小
+</span><span style=color:#6272a4></span>        newcap = cap
+    } <span style=color:#ff79c6>else</span> {
+        <span style=color:#ff79c6>if</span> old.len &lt; <span style=color:#bd93f9>1024</span> {              <span style=color:#6272a4>// 如果当前大小小于1024，按每次2倍增长
+</span><span style=color:#6272a4></span>            newcap = doublecap
+        } <span style=color:#ff79c6>else</span> {                         <span style=color:#6272a4>// 否则每次按当前大小1/4增长，直到增长的大小超过或等于新大小
+</span><span style=color:#6272a4></span>            <span style=color:#ff79c6>for</span> newcap &lt; cap {
+                newcap <span style=color:#ff79c6>+=</span> newcap <span style=color:#ff79c6>/</span> <span style=color:#bd93f9>4</span>
+            }
+        }
+    }
+    <span style=color:#ff79c6>......</span>
+    <span style=color:#8be9fd;font-style:italic>var</span> p unsafe.Pointer
+    <span style=color:#ff79c6>if</span> et.kind<span style=color:#ff79c6>&amp;</span>kindNoPointers <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
+        p = <span style=color:#50fa7b>mallocgc</span>(capmem, <span style=color:#ff79c6>nil</span>, <span style=color:#ff79c6>false</span>)
+        <span style=color:#50fa7b>memmove</span>(p, old.array, lenmem)
+        <span style=color:#6272a4>// The append() that calls growslice is going to overwrite from old.len to cap (which will be the new length).
+</span><span style=color:#6272a4></span>        <span style=color:#6272a4>// Only clear the part that will not be overwritten.
+</span><span style=color:#6272a4></span>        <span style=color:#50fa7b>memclrNoHeapPointers</span>(<span style=color:#50fa7b>add</span>(p, newlenmem), capmem<span style=color:#ff79c6>-</span>newlenmem)
+    } <span style=color:#ff79c6>else</span> {
+        <span style=color:#6272a4>// Note: can&#39;t use rawmem (which avoids zeroing of memory), because then GC can scan uninitialized memory.
+</span><span style=color:#6272a4></span>        p = <span style=color:#50fa7b>mallocgc</span>(capmem, et, <span style=color:#ff79c6>true</span>)
+        <span style=color:#ff79c6>if</span> !writeBarrier.enabled {
+            <span style=color:#50fa7b>memmove</span>(p, old.array, lenmem)
+        } <span style=color:#ff79c6>else</span> {
+            <span style=color:#ff79c6>for</span> i <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>uintptr</span>(<span style=color:#bd93f9>0</span>); i &lt; lenmem; i <span style=color:#ff79c6>+=</span> et.size {
+                <span style=color:#50fa7b>typedmemmove</span>(et, <span style=color:#50fa7b>add</span>(p, i), <span style=color:#50fa7b>add</span>(old.array, i))
+            }
+        }
+    }
+
+    <span style=color:#ff79c6>return</span> slice{p, old.len, newcap}
+}
+
+</code></pre></div><p>具体实现的代码就不说了，其实就是判断cap，生成一个新的数组，将old的元素拷贝到新的slice中去。
+扩容规则上面的代码已经说明了：</p>
+<p>如果新的大小是当前大小2倍以上，则大小增长为新大小，
+否则循环以下操作：如果当前大小小于1024，按每次2倍增长，否则每次按当前大小1/4增长。直到增长的大小超过或等于新大小。</p>
+<p>在runtime\slice.go中，我们可以看到</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> slice <span style=color:#8be9fd;font-style:italic>struct</span> {
+    array unsafe.Pointer
+    len   <span style=color:#8be9fd>int</span>
+    cap   <span style=color:#8be9fd>int</span>
+}
+
+</code></pre></div><p>这个也是Go语言内部的slice数据结构，和我们前面定义的是一致的，slice的make，copy，grow等函数都在这个文件中实现</p>
+<p><em>字符串</em></p>
+<p>字符串在内存中其实表示成了这么一个数据结构
+这个定义是在runtime\string.go中定义的</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go>    <span style=color:#8be9fd;font-style:italic>type</span> stringStruct <span style=color:#8be9fd;font-style:italic>struct</span> {
+        str unsafe.Pointer
+        len <span style=color:#8be9fd>int</span>
+    }
+    s <span style=color:#ff79c6>:=</span> <span style=color:#f1fa8c>&#34;hello&#34;</span>
+    ptr <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span>stringStruct)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>s))
+    fmt.<span style=color:#50fa7b>Println</span>(ptr)
+
+    t <span style=color:#ff79c6>:=</span> s[:<span style=color:#bd93f9>3</span>]
+    ptr = <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span>stringStruct)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>t))
+    fmt.<span style=color:#50fa7b>Println</span>(ptr)
+
+    t = s[<span style=color:#bd93f9>2</span>:<span style=color:#bd93f9>3</span>]
+    ptr = <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span>stringStruct)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>t))
+    fmt.<span style=color:#50fa7b>Println</span>(ptr)
+</code></pre></div><p>从上面的代码可以输出如下的结果：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go>{<span style=color:#bd93f9>0x4b1cbe</span> <span style=color:#bd93f9>5</span>}
+{<span style=color:#bd93f9>0x4b1cbe</span> <span style=color:#bd93f9>3</span>}
+{<span style=color:#bd93f9>0x4b1cc0</span> <span style=color:#bd93f9>1</span>}
+</code></pre></div><p>所以说，字符串也是一种特殊的切片，但是是没有容量，只有长度属性。</p>
+<h2 id=map的实现>map的实现</h2>
+<p>Go语言的map并不是像C++的map一样用二叉树实现的，而是典型Hash实现的。</p>
+<p>定义一个map：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>var</span> Map <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd>string</span>        <span style=color:#6272a4>// 只是定义，没有分配空间，不能使用
+</span><span style=color:#6272a4></span>Map = <span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd>string</span>)    <span style=color:#6272a4>// 分配空间
+</span><span style=color:#6272a4></span>cMap <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd>string</span>)  <span style=color:#6272a4>// 也可以这样
+</span></code></pre></div><p>在src\runtime\map.go里面可以找到具体的实现：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> hmap <span style=color:#8be9fd;font-style:italic>struct</span> {
+	count     <span style=color:#8be9fd>int</span>              <span style=color:#6272a4>// count 用于记录当前哈希表元素数量，这个字段让我们不再需要去遍历整个哈希表来获取长度
+</span><span style=color:#6272a4></span>	flags     <span style=color:#8be9fd>uint8</span>            <span style=color:#6272a4>// 
+</span><span style=color:#6272a4></span>	B         <span style=color:#8be9fd>uint8</span>            <span style=color:#6272a4>// 表示了当前哈希表持有的 buckets 数量，但是因为哈希表的扩容是以 2 倍数进行的，所以这里会使用对数来存储，我们可以简单理解成 len(buckets) == 2^B
+</span><span style=color:#6272a4></span>	noverflow <span style=color:#8be9fd>uint16</span>           <span style=color:#6272a4>// 
+</span><span style=color:#6272a4></span>	hash0     <span style=color:#8be9fd>uint32</span>           <span style=color:#6272a4>// 哈希种子，这个值会在调用哈希函数的时候作为参数传进去，它的主要作用就是为哈希函数的结果引入一定的随机性
+</span><span style=color:#6272a4></span>
+	buckets    unsafe.Pointer  <span style=color:#6272a4>// 
+</span><span style=color:#6272a4></span>	oldbuckets unsafe.Pointer  <span style=color:#6272a4>// 哈希在扩容时用于保存之前 buckets 的字段，它的大小都是当前 buckets 的一半；
+</span><span style=color:#6272a4></span>	nevacuate  <span style=color:#8be9fd>uintptr</span>         <span style=color:#6272a4>// 
+</span><span style=color:#6272a4></span>
+	extra <span style=color:#ff79c6>*</span>mapextra            <span style=color:#6272a4>// 
+</span><span style=color:#6272a4></span>}
+</code></pre></div><p>go语言的map其实就是一个bucket的数组，这个数组的大小永远是2的次幂。
+具体的实现可以在这里看到：<a href=https://draveness.me/golang/docs/part2-foundation/ch03-datastructure/golang-hashmap/>https://draveness.me/golang/docs/part2-foundation/ch03-datastructure/golang-hashmap/</a></p>
+<h2 id=struct结构体>struct结构体</h2>
+<p>Go语言里面的结构体内存模型和C语言里面一样的，都是连续的内存，如果是指针，那么就通过指针跳转</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-GO data-lang=GO><span style=color:#8be9fd;font-style:italic>type</span> Point <span style=color:#8be9fd;font-style:italic>struct</span> {
+    X <span style=color:#8be9fd>int</span>
+    Y <span style=color:#8be9fd>int</span> 
+}
+</code></pre></div><p>那么内存模型就是：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gadflnr12fj203t039dfl.jpg alt=1577590070(https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gadflnr12fj203t039dfl.jpg).jpg></p>
+<h3 id=struct的字节对齐>struct的字节对齐</h3>
+<p>在64位系统上面，Go语言的字节是8直接对齐，如果不足的，就补充padding。
+这里有详细的描述：<a href=http://www.geeksforgeeks.org/structure-member-alignment-padding-and-data-packing/>http://www.geeksforgeeks.org/structure-member-alignment-padding-and-data-packing/</a></p>
+<p>下面有一个简单的例子：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> Example <span style=color:#8be9fd;font-style:italic>struct</span> {
+    BoolValue <span style=color:#8be9fd>bool</span>          <span style=color:#6272a4>// 1 byte
+</span><span style=color:#6272a4></span>    IntValue <span style=color:#8be9fd>int16</span>          <span style=color:#6272a4>// 2 byte
+</span><span style=color:#6272a4></span>    FloatValue <span style=color:#8be9fd>float32</span>      <span style=color:#6272a4>// 4 byte
+</span><span style=color:#6272a4></span>}
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
+    example <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>Example{
+        BoolValue:  <span style=color:#ff79c6>true</span>,
+        IntValue:   <span style=color:#bd93f9>10</span>,
+        FloatValue: <span style=color:#bd93f9>3.141592</span>,
+    }
+
+    alignmentBoundary <span style=color:#ff79c6>:=</span> unsafe.<span style=color:#50fa7b>Alignof</span>(example)
+
+    sizeBool <span style=color:#ff79c6>:=</span> unsafe.<span style=color:#50fa7b>Sizeof</span>(example.BoolValue)
+    offsetBool <span style=color:#ff79c6>:=</span> unsafe.<span style=color:#50fa7b>Offsetof</span>(example.BoolValue)
+
+    sizeInt <span style=color:#ff79c6>:=</span> unsafe.<span style=color:#50fa7b>Sizeof</span>(example.IntValue)
+    offsetInt <span style=color:#ff79c6>:=</span> unsafe.<span style=color:#50fa7b>Offsetof</span>(example.IntValue)
+
+    sizeFloat <span style=color:#ff79c6>:=</span> unsafe.<span style=color:#50fa7b>Sizeof</span>(example.FloatValue)
+    offsetFloat <span style=color:#ff79c6>:=</span> unsafe.<span style=color:#50fa7b>Offsetof</span>(example.FloatValue)
+
+    fmt.<span style=color:#50fa7b>Printf</span>(<span style=color:#f1fa8c>&#34;size Example: %d\n&#34;</span>, unsafe.<span style=color:#50fa7b>Sizeof</span>(example))
+
+    fmt.<span style=color:#50fa7b>Printf</span>(<span style=color:#f1fa8c>&#34;Alignment Boundary: %d\n&#34;</span>, alignmentBoundary)
+
+    fmt.<span style=color:#50fa7b>Printf</span>(<span style=color:#f1fa8c>&#34;BoolValue = Size: %d Offset: %d Addr: %v\n&#34;</span>,
+        sizeBool, offsetBool, <span style=color:#ff79c6>&amp;</span>example.BoolValue)
+
+    fmt.<span style=color:#50fa7b>Printf</span>(<span style=color:#f1fa8c>&#34;IntValue = Size: %d Offset: %d Addr: %v\n&#34;</span>,
+        sizeInt, offsetInt, <span style=color:#ff79c6>&amp;</span>example.IntValue)
+
+    fmt.<span style=color:#50fa7b>Printf</span>(<span style=color:#f1fa8c>&#34;FloatValue = Size: %d Offset: %d Addr: %v\n&#34;</span>,
+        sizeFloat, offsetFloat, <span style=color:#ff79c6>&amp;</span>example.FloatValue)
+}
+</code></pre></div><p>输出结果如下：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go>size Example: <span style=color:#bd93f9>8</span>
+Alignment Boundary: <span style=color:#bd93f9>8</span>
+BoolValue = Size: <span style=color:#bd93f9>1</span> Offset: <span style=color:#bd93f9>0</span> Addr: <span style=color:#bd93f9>0xc04200a230</span>
+IntValue = Size: <span style=color:#bd93f9>2</span> Offset: <span style=color:#bd93f9>2</span> Addr: <span style=color:#bd93f9>0xc04200a232</span>
+FloatValue = Size: <span style=color:#bd93f9>4</span> Offset: <span style=color:#bd93f9>4</span> Addr: <span style=color:#bd93f9>0xc04200a234</span>
+</code></pre></div><p>可以看出在64位机器是按照8字节对齐的，并且bool的后面增加了一个字节的padding</p>
+<h2 id=make和new>make和new</h2>
+<p>在Go语言里面有两种方式来创建数据结构：new和make</p>
+<p>切片、map和通道，使用make，
+数组、结构体和所有的值类型，使用new，
+因为new仅仅是分配内存，但是make还包括了初始化，
+因为slice，map和channel在底层实现的时候并不是一个简单的值，而是一个数据结构，并且这个数据结构中要初始化以后才能使用。并且make不是返回指针，而是返回一个<em>类型</em>。</p>
+<p>对于切片，使用new和make的区别：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> sliceA <span style=color:#8be9fd;font-style:italic>struct</span> {
+    ptr unsafe.Pointer
+    len <span style=color:#8be9fd>int</span>
+    cap <span style=color:#8be9fd>int</span>
+}
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
+    p <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>new</span>([]<span style=color:#8be9fd>int</span>)
+    ptr <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span>sliceA)(unsafe.<span style=color:#50fa7b>Pointer</span>(p))
+    fmt.<span style=color:#50fa7b>Println</span>(ptr)
+
+    q <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>([]<span style=color:#8be9fd>int</span>, <span style=color:#bd93f9>0</span>)
+    ptr = <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span>sliceA)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>q))
+    fmt.<span style=color:#50fa7b>Println</span>(ptr)
+}
+<span style=color:#6272a4>// ouput:
+</span><span style=color:#6272a4></span>{&lt;<span style=color:#ff79c6>nil</span>&gt; <span style=color:#bd93f9>0</span> <span style=color:#bd93f9>0</span>}
+{<span style=color:#bd93f9>0x5811b0</span> <span style=color:#bd93f9>0</span> <span style=color:#bd93f9>0</span>}
+</code></pre></div><p>我们来看一下slice的make做了啥：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>makeslice</span>(et <span style=color:#ff79c6>*</span>_type, len, cap <span style=color:#8be9fd>int</span>) unsafe.Pointer {
+	mem, overflow <span style=color:#ff79c6>:=</span> math.<span style=color:#50fa7b>MulUintptr</span>(et.size, <span style=color:#8be9fd;font-style:italic>uintptr</span>(cap))
+	<span style=color:#ff79c6>if</span> overflow <span style=color:#ff79c6>||</span> mem &gt; maxAlloc <span style=color:#ff79c6>||</span> len &lt; <span style=color:#bd93f9>0</span> <span style=color:#ff79c6>||</span> len &gt; cap {
+		<span style=color:#6272a4>// NOTE: Produce a &#39;len out of range&#39; error instead of a
+</span><span style=color:#6272a4></span>		<span style=color:#6272a4>// &#39;cap out of range&#39; error when someone does make([]T, bignumber).
+</span><span style=color:#6272a4></span>		<span style=color:#6272a4>// &#39;cap out of range&#39; is true too, but since the cap is only being
+</span><span style=color:#6272a4></span>		<span style=color:#6272a4>// supplied implicitly, saying len is clearer.
+</span><span style=color:#6272a4></span>		<span style=color:#6272a4>// See golang.org/issue/4085.
+</span><span style=color:#6272a4></span>		mem, overflow <span style=color:#ff79c6>:=</span> math.<span style=color:#50fa7b>MulUintptr</span>(et.size, <span style=color:#8be9fd;font-style:italic>uintptr</span>(len))
+		<span style=color:#ff79c6>if</span> overflow <span style=color:#ff79c6>||</span> mem &gt; maxAlloc <span style=color:#ff79c6>||</span> len &lt; <span style=color:#bd93f9>0</span> {
+			<span style=color:#50fa7b>panicmakeslicelen</span>()
+		}
+		<span style=color:#50fa7b>panicmakeslicecap</span>()
+	}
+
+	<span style=color:#ff79c6>return</span> <span style=color:#50fa7b>mallocgc</span>(mem, et, <span style=color:#ff79c6>true</span>)
+}
+</code></pre></div><p>从上面来看，最重要就是通过mallocgc来申请了一个数组。</p>
+<p>通过查看汇编代码就可以看出make底层是调用哪个函数了:</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>makemap</span>(t <span style=color:#ff79c6>*</span>maptype, hint <span style=color:#8be9fd>int</span>, h <span style=color:#ff79c6>*</span>hmap) <span style=color:#ff79c6>*</span>hmap {
+	mem, overflow <span style=color:#ff79c6>:=</span> math.<span style=color:#50fa7b>MulUintptr</span>(<span style=color:#8be9fd;font-style:italic>uintptr</span>(hint), t.bucket.size)
+	<span style=color:#ff79c6>if</span> overflow <span style=color:#ff79c6>||</span> mem &gt; maxAlloc {
+		hint = <span style=color:#bd93f9>0</span>
+	}
+
+	<span style=color:#6272a4>// initialize Hmap
+</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>if</span> h <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
+		h = <span style=color:#8be9fd;font-style:italic>new</span>(hmap)
+	}
+	h.hash0 = <span style=color:#50fa7b>fastrand</span>()
+
+	<span style=color:#6272a4>// Find the size parameter B which will hold the requested # of elements.
+</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// For hint &lt; 0 overLoadFactor returns false since hint &lt; bucketCnt.
+</span><span style=color:#6272a4></span>	B <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>uint8</span>(<span style=color:#bd93f9>0</span>)
+	<span style=color:#ff79c6>for</span> <span style=color:#50fa7b>overLoadFactor</span>(hint, B) {
+		B<span style=color:#ff79c6>++</span>
+	}
+	h.B = B
+
+	<span style=color:#6272a4>// allocate initial hash table
+</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// if B == 0, the buckets field is allocated lazily later (in mapassign)
+</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// If hint is large zeroing this memory could take a while.
+</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>if</span> h.B <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
+		<span style=color:#8be9fd;font-style:italic>var</span> nextOverflow <span style=color:#ff79c6>*</span>bmap
+		h.buckets, nextOverflow = <span style=color:#50fa7b>makeBucketArray</span>(t, h.B, <span style=color:#ff79c6>nil</span>)
+		<span style=color:#ff79c6>if</span> nextOverflow <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+			h.extra = <span style=color:#8be9fd;font-style:italic>new</span>(mapextra)
+			h.extra.nextOverflow = nextOverflow
+		}
+	}
+
+	<span style=color:#ff79c6>return</span> h
+}
+</code></pre></div><p>从上面看，map初始化最重要的就是创建buckets。</p>
+<h2 id=总结>总结</h2>
+<p>整体来说，Go语言的对象内存模型比C++要简单的多并且与C很像，毕竟没有继承，虚函数，多重继承等等，了解这些内存模型，对于平时使用这些类型时可以少踩坑是有帮助的。</p>
+<p><em><strong>参考链接：</strong></em></p>
+<p><a href=https://skyao.io/learning-go/grammar/type/basic.html>https://skyao.io/learning-go/grammar/type/basic.html</a></p>
+<p><a href=https://studygolang.com/articles/9169>https://studygolang.com/articles/9169</a></p>
+<p><a href=https://juejin.im/post/5ceffeddf265da1bc8540df5>使用map实现set</a></p>
+</div>
+<div class=prev-next>
+</div><svg id="btt-button" class="arrow-logo" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512" onclick="scrollToTop()" title="Go to top"><path d="M177 159.7l136 136c9.4 9.4 9.4 24.6.0 33.9l-22.6 22.6c-9.4 9.4-24.6 9.4-33.9.0L160 255.9l-96.4 96.4c-9.4 9.4-24.6 9.4-33.9.0L7 329.7c-9.4-9.4-9.4-24.6.0-33.9l136-136c9.4-9.5 24.6-9.5 34-.1z"/></svg>
+<script>let backToTopButton=document.getElementById("btt-button");window.onscroll=function(){scrollFunction()};function scrollFunction(){document.body.scrollTop>20||document.documentElement.scrollTop>20?backToTopButton.style.display="block":backToTopButton.style.display="none"}function scrollToTop(){window.scrollTo(0,0)}</script>
+</div>
+<aside class=post-toc aria-label=文章目录>
+<h3 class=toc-title>目录</h3>
+<nav id=toc>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#前言>前言</a>
+<ul>
+<li><a href=#基本类型的内存模型>基本类型的内存模型</a></li>
+<li><a href=#数组和切片>数组和切片</a>
+<ul>
+<li><a href=#数组>数组</a></li>
+<li><a href=#切片>切片</a></li>
+<li><a href=#切片的内存增长>切片的内存增长</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href=#map的实现>map的实现</a></li>
+<li><a href=#struct结构体>struct结构体</a>
+<ul>
+<li><a href=#struct的字节对齐>struct的字节对齐</a></li>
+</ul>
+</li>
+<li><a href=#make和new>make和new</a></li>
+<li><a href=#总结>总结</a></li>
+</ul>
+</nav>
+</nav>
+</aside>
+<link rel=stylesheet href=/css/toc.css>
+</main><footer class=footer>
+<span>&copy; 2020 HindungWang</span>
+<span>
+Made with &#10084;&#65039; using <a target=_blank href=https://github.com/gokarna-theme/gokarna-hugo>Gokarna</a>
+</span>
+</footer>
+</body>
+</html>

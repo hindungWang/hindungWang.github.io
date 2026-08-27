@@ -1,0 +1,542 @@
+<!doctype html><html lang=en><head>
+<meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1">
+<style>:root{--accent-color:#FF4D4D;--font-size:1.1rem}</style>
+<title>深拷贝之循环引用</title>
+<meta name=description content="深拷贝之循环引用问题">
+<meta name=keywords content="blog,gokarna,hugo,LeetCode,Go">
+<meta property="og:url" content="https://hindungwang.github.io/posts/12.deep-copy/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="深拷贝之循环引用">
+<meta property="og:description" content="深拷贝之循环引用问题">
+<meta property="og:image" content="https://github.com/hindungWang.png">
+<meta property="og:image:secure_url" content="https://github.com/hindungWang.png">
+<meta name=twitter:card content="summary_large_image">
+<meta name=twitter:title content="深拷贝之循环引用">
+<meta name=twitter:description content="深拷贝之循环引用问题">
+<meta property="twitter:domain" content="https://hindungwang.github.io/posts/12.deep-copy/">
+<meta property="twitter:url" content="https://hindungwang.github.io/posts/12.deep-copy/">
+<meta name=twitter:image content="https://github.com/hindungWang.png">
+<link rel=canonical href=https://hindungwang.github.io/posts/12.deep-copy/>
+<link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
+<link rel=stylesheet type=text/css href=/css/main.min.css>
+<link id=dark-theme rel=stylesheet href=/css/dark.min.css>
+<script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<link rel=icon type=image/png href=/favicon.png>
+<link rel=apple-touch-icon href=/favicon.png>
+<link rel=stylesheet href=/css/posts-nav.css>
+</head>
+<body class=post-page>
+<script>setThemeByUserPref()</script><header class=header>
+<nav class=header-nav>
+<div class=avatar>
+<a href=https://hindungwang.github.io/>
+<img src=https://github.com/hindungWang.png alt=avatar>
+</a>
+</div>
+<div class=nav-title>
+<a class=nav-brand href=https://hindungwang.github.io/>Hindung's Blog</a>
+</div>
+<div class=nav-links>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/ aria-label><span data-feather=home></span> Home </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/about aria-label><span data-feather=home></span> About </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/posts/ aria-label><span data-feather=page></span> Posts </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/game-agent/ aria-label><span data-feather=gamepad></span> Game Agent </a>
+</div>
+<div class=nav-link>
+<a href=https://github.com/hindungWang aria-label=github><span data-feather=github></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/tags/ aria-label><span data-feather=tag></span> Tags </a>
+</div>
+<div class=nav-link>
+<a href=https://buymeacoffee.com/hindung aria-label=buymeacoffee><span data-feather=coffee></span> </a>
+</div>
+<div class=nav-link>
+<a href=https://hindungwang.github.io/index.xml aria-label=rss><span data-feather=rss></span> </a>
+</div>
+<span class=nav-icons-divider></span>
+<div class="nav-link dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a aria-hidden=true role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</div>
+<div class=nav-link id=hamburger-menu-toggle>
+<span class="sr-only hamburger-menu-toggle-screen-reader-target">menu</span>
+<a aria-checked=false aria-labelledby=hamburger-menu-toggle id=hamburger-menu-toggle-target role=switch>
+<span data-feather=menu></span>
+</a>
+</div>
+<ul class="nav-hamburger-list visibility-hidden">
+<li class=nav-item>
+<a href=https://hindungwang.github.io/><span data-feather=home></span> Home </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/about><span data-feather=home></span> About </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/posts/><span data-feather=page></span> Posts </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/game-agent/><span data-feather=gamepad></span> Game Agent </a>
+</li>
+<li class=nav-item>
+<a href=https://github.com/hindungWang><span data-feather=github></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/tags/><span data-feather=tag></span> Tags </a>
+</li>
+<li class=nav-item>
+<a href=https://buymeacoffee.com/hindung><span data-feather=coffee></span> </a>
+</li>
+<li class=nav-item>
+<a href=https://hindungwang.github.io/index.xml><span data-feather=rss></span> </a>
+</li>
+<li class="nav-item dark-theme-toggle">
+<span class="sr-only dark-theme-toggle-screen-reader-target">theme</span>
+<a role=switch>
+<span class=theme-toggle-icon data-feather=moon></span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+</header>
+<main id=content>
+<div id=reading-progress aria-hidden=true></div>
+<aside class=posts-nav aria-label=所有文章>
+<h3>文章<span class=posts-nav-count>36</span></h3>
+<ul>
+<li>
+<a href=/posts/35.kube-vip-pr/ title="给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败">给 kube-vip 提交的第一个 PR：修复 ECMP 默认路由导致默认网关接口探测失败</a>
+</li>
+<li>
+<a href=/posts/34.helm-3-way-merge/ title="Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录">Helm 升级“丢”环境变量？一次彻底的三路合并踩坑实录</a>
+</li>
+<li>
+<a href=/posts/33.terraform/ title=Terraform技术分享>Terraform技术分享</a>
+</li>
+<li>
+<a href=/posts/32.to-many-pods-created/ title=Pod不停被创建？？>Pod不停被创建？？</a>
+</li>
+<li>
+<a href=/posts/31.hight-cpu/ title="记一次节点高 CPU 高 Load 的排查经历">记一次节点高 CPU 高 Load 的排查经历</a>
+</li>
+<li>
+<a href=/posts/30.go-gc/ title="Golang GC 初探">Golang GC 初探</a>
+</li>
+<li>
+<a href=/posts/29.k8s-apimachinery-util/ title="k8s.io/apimachinery/util 包源码解读">k8s.io/apimachinery/util 包源码解读</a>
+</li>
+<li>
+<a href=/posts/28.k8s-utils/ title="Kubernetes 的 utils 包源码鉴赏">Kubernetes 的 utils 包源码鉴赏</a>
+</li>
+<li>
+<a href=/posts/24.k8s-network-policy/ title=K8s之网络策略>K8s之网络策略</a>
+</li>
+<li>
+<a href=/posts/22.k8s-cilium/ title=K8s之cilium网络插件>K8s之cilium网络插件</a>
+</li>
+<li>
+<a href=/posts/27.prometheus_test/ title=Prometheus性能压测与高可用设计>Prometheus性能压测与高可用设计</a>
+</li>
+<li>
+<a href=/posts/26.prometheus_sdk/ title="Prometheus GO SDK">Prometheus GO SDK</a>
+</li>
+<li>
+<a href=/posts/25.kube-ovn/ title=K8s之kube-ovn网络插件>K8s之kube-ovn网络插件</a>
+</li>
+<li>
+<a href=/posts/23.k8s-client/ title="K8s client-go初始化的几种方法">K8s client-go初始化的几种方法</a>
+</li>
+<li>
+<a href=/posts/18.container-1/ title=容器技术之我见>容器技术之我见</a>
+</li>
+<li>
+<a href=/posts/19.cri/ title=容器运行时>容器运行时</a>
+</li>
+<li>
+<a href=/posts/21.k8s-1/ title=Kubernetes组件>Kubernetes组件</a>
+</li>
+<li>
+<a href=/posts/17.kubectl/ title=Kubectl命令行>Kubectl命令行</a>
+</li>
+<li>
+<a href=/posts/16.calico/ title=K8s之calico网络插件东西南北流量>K8s之calico网络插件东西南北流量</a>
+</li>
+<li>
+<a href=/posts/15.iptable/ title=Iptable规则初探>Iptable规则初探</a>
+</li>
+<li>
+<a href=/posts/14.go-sync-cond/ title=Go源码解读之sync.Cond>Go源码解读之sync.Cond</a>
+</li>
+<li>
+<a href=/posts/13.go-sync-type/ title=Go源码解读之sync中的基本类型和使用场景>Go源码解读之sync中的基本类型和使用场景</a>
+</li>
+<li class=active>
+<a href=/posts/12.deep-copy/ title=深拷贝之循环引用>深拷贝之循环引用</a>
+</li>
+<li>
+<a href=/posts/11.lru/ title="LRU 缓存机制">LRU 缓存机制</a>
+</li>
+<li>
+<a href=/posts/10.go-sync-atomic/ title=Go源码解读之sync/atomic>Go源码解读之sync/atomic</a>
+</li>
+<li>
+<a href=/posts/09.keng/ title=使用Go遇到的坑>使用Go遇到的坑</a>
+</li>
+<li>
+<a href=/posts/08.core/ title=构建属于你自己的核心力量>构建属于你自己的核心力量</a>
+</li>
+<li>
+<a href=/posts/20.go-priority-queue/ title=Golang实现优先队列>Golang实现优先队列</a>
+</li>
+<li>
+<a href=/posts/07.snowflake/ title=雪花算法>雪花算法</a>
+</li>
+<li>
+<a href=/posts/06.golang-channel/ title=Golang-channel>Golang-channel</a>
+</li>
+<li>
+<a href=/posts/05.go-lang/ title=Golang语言模型>Golang语言模型</a>
+</li>
+<li>
+<a href=/posts/04.gin/ title=初探Gin框架>初探Gin框架</a>
+</li>
+<li>
+<a href=/posts/03.golang-interface/ title=Golang-interface的底层原理浅析>Golang-interface的底层原理浅析</a>
+</li>
+<li>
+<a href=/posts/02.docker-images/ title=Docker镜像优化>Docker镜像优化</a>
+</li>
+<li>
+<a href=/posts/01.change-log/ title=部落格修改记录>部落格修改记录</a>
+</li>
+<li>
+<a href=/posts/00.markdown/ title="Hello World">Hello World</a>
+</li>
+</ul>
+</aside>
+<script>(function(){var b=document.getElementById('reading-progress'),a;if(!b)return;a=function(){var a=document.documentElement,c=a.scrollHeight-a.clientHeight;b.style.transform='scaleX('+(c>0?window.scrollY/c:0)+')'},window.addEventListener('scroll',a,{passive:!0}),window.addEventListener('resize',a),a()})()</script>
+<div class="post container">
+<div class=post-header-section>
+<h1>深拷贝之循环引用</h1>
+<small role=doc-subtitle>深拷贝之循环引用问题</small>
+<p class=post-date>
+May 8, 2021
+</p>
+<ul class=post-tags>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/leetcode>LeetCode</a></li>
+<li class=post-tag><a href=https://hindungwang.github.io/tags/go>Go</a></li>
+</ul>
+</div>
+<div class=post-content>
+<h2 id=题目>题目</h2>
+<p>实现如下结构体的深拷贝。</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>type</span> Node <span style=color:#8be9fd;font-style:italic>struct</span> {
+	Data <span style=color:#8be9fd>int</span>
+	Fields []<span style=color:#ff79c6>*</span>Node
+}
+</code></pre></div><p>即指针指向的内存也需要Copy一份。</p>
+<h2 id=解析>解析</h2>
+<p>观察结构体，由于Fields字段里存放的是指向Node结构体的指针切片，深拷贝时要考虑循环引用的问题，如：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>struct</span> a :
+  data: <span style=color:#bd93f9>1</span>
+  fields: b, c
+<span style=color:#8be9fd;font-style:italic>struct</span> b:
+  data: <span style=color:#bd93f9>2</span>
+  fields: c
+<span style=color:#8be9fd;font-style:italic>struct</span> c:
+  data: <span style=color:#bd93f9>3</span>
+  fields: a  <span style=color:#6272a4>// 这里循环引用了a， c-&gt;a-&gt;b, c-&gt;a
+</span></code></pre></div><p>可以考虑使用<code>map[*Node]*Node</code>来判断是否有环的情况，即用<code>map[src] = dst</code>来保存拷贝过的节点。</p>
+<h2 id=代码>代码</h2>
+<p>代码如下：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> main
+
+<span style=color:#ff79c6>import</span> (
+	<span style=color:#f1fa8c>&#34;go/ast&#34;</span>
+	<span style=color:#f1fa8c>&#34;go/token&#34;</span>
+)
+
+<span style=color:#8be9fd;font-style:italic>type</span> Node <span style=color:#8be9fd;font-style:italic>struct</span> {
+	Data <span style=color:#8be9fd>int</span>
+	Fields []<span style=color:#ff79c6>*</span>Node
+}
+
+<span style=color:#6272a4>// deep copy
+</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>var</span> M <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#ff79c6>*</span>Node]<span style=color:#ff79c6>*</span>Node
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Dup</span>(src <span style=color:#ff79c6>*</span>Node) <span style=color:#ff79c6>*</span>Node {
+	<span style=color:#ff79c6>if</span> src <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
+		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>nil</span>
+	}
+	node <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>Node{
+		Data: src.Data,
+		Fields: <span style=color:#ff79c6>nil</span>,
+	}
+	M[src] = node
+	fields <span style=color:#ff79c6>:=</span> []<span style=color:#ff79c6>*</span>Node{}<span style=color:#6272a4>//make([]*Node, len(src.Fields))
+</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>for</span> i<span style=color:#ff79c6>:=</span><span style=color:#bd93f9>0</span>;i&lt;<span style=color:#8be9fd;font-style:italic>len</span>(src.Fields);i<span style=color:#ff79c6>++</span> {
+		<span style=color:#8be9fd;font-style:italic>var</span> tmp <span style=color:#ff79c6>*</span>Node
+		<span style=color:#ff79c6>if</span> src.Fields[i] <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+			<span style=color:#6272a4>// if exist, is loop
+</span><span style=color:#6272a4></span>			<span style=color:#ff79c6>if</span> addr, ok <span style=color:#ff79c6>:=</span> M[src.Fields[i]]; ok {
+				tmp = addr
+			} <span style=color:#ff79c6>else</span> {
+				tmp = <span style=color:#50fa7b>Dup</span>(src.Fields[i])
+			}
+		}
+		<span style=color:#ff79c6>if</span> tmp <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+			fields = <span style=color:#8be9fd;font-style:italic>append</span>(fields, tmp)
+		}
+	}
+	node.Fields = fields
+	<span style=color:#ff79c6>return</span> node
+}
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>()  {
+	M = <span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#ff79c6>*</span>Node]<span style=color:#ff79c6>*</span>Node)
+
+	a1 <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>Node{
+		Data:   <span style=color:#bd93f9>1</span>,
+		Fields: <span style=color:#ff79c6>nil</span>,
+	}
+	a2 <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>Node{
+		Data:   <span style=color:#bd93f9>2</span>,
+		Fields: <span style=color:#ff79c6>nil</span>,
+	}
+	a3 <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>Node{
+		Data:   <span style=color:#bd93f9>3</span>,
+		Fields: []<span style=color:#ff79c6>*</span>Node{a1, a2},
+	}
+	a1.Fields = <span style=color:#8be9fd;font-style:italic>append</span>(a1.Fields, a3)
+	da3 <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>Dup</span>(a3)
+    <span style=color:#6272a4>// print ast tree
+</span><span style=color:#6272a4></span>	_ = ast.<span style=color:#50fa7b>Print</span>(token.<span style=color:#50fa7b>NewFileSet</span>(),a3)
+	_ = ast.<span style=color:#50fa7b>Print</span>(token.<span style=color:#50fa7b>NewFileSet</span>(),da3)
+}
+</code></pre></div><p>输出如下：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>    <span style=color:#6272a4>// a3
+</span><span style=color:#6272a4></span>     <span style=color:#bd93f9>0</span>  <span style=color:#ff79c6>*</span>main.Node {
+     <span style=color:#bd93f9>1</span>  .  Data: <span style=color:#bd93f9>3</span>
+     <span style=color:#bd93f9>2</span>  .  Fields: []<span style=color:#ff79c6>*</span>main.<span style=color:#50fa7b>Node</span> (len = <span style=color:#bd93f9>2</span>) {
+     <span style=color:#bd93f9>3</span>  .  .  <span style=color:#bd93f9>0</span>: <span style=color:#ff79c6>*</span>main.Node {
+     <span style=color:#bd93f9>4</span>  .  .  .  Data: <span style=color:#bd93f9>1</span>
+     <span style=color:#bd93f9>5</span>  .  .  .  Fields: []<span style=color:#ff79c6>*</span>main.<span style=color:#50fa7b>Node</span> (len = <span style=color:#bd93f9>1</span>) {
+     <span style=color:#bd93f9>6</span>  .  .  .  .  <span style=color:#bd93f9>0</span>: <span style=color:#ff79c6>*</span>(obj @ <span style=color:#bd93f9>0</span>) <span style=color:#6272a4>// 指向了0行的obj
+</span><span style=color:#6272a4></span>     <span style=color:#bd93f9>7</span>  .  .  .  }
+     <span style=color:#bd93f9>8</span>  .  .  }
+     <span style=color:#bd93f9>9</span>  .  .  <span style=color:#bd93f9>1</span>: <span style=color:#ff79c6>*</span>main.Node {
+    <span style=color:#bd93f9>10</span>  .  .  .  Data: <span style=color:#bd93f9>2</span>
+    <span style=color:#bd93f9>11</span>  .  .  }
+    <span style=color:#bd93f9>12</span>  .  }
+    <span style=color:#bd93f9>13</span>  }
+    <span style=color:#6272a4>// da3
+</span><span style=color:#6272a4></span>     <span style=color:#bd93f9>0</span>  <span style=color:#ff79c6>*</span>main.Node {
+     <span style=color:#bd93f9>1</span>  .  Data: <span style=color:#bd93f9>3</span>
+     <span style=color:#bd93f9>2</span>  .  Fields: []<span style=color:#ff79c6>*</span>main.<span style=color:#50fa7b>Node</span> (len = <span style=color:#bd93f9>2</span>) {
+     <span style=color:#bd93f9>3</span>  .  .  <span style=color:#bd93f9>0</span>: <span style=color:#ff79c6>*</span>main.Node {
+     <span style=color:#bd93f9>4</span>  .  .  .  Data: <span style=color:#bd93f9>1</span>
+     <span style=color:#bd93f9>5</span>  .  .  .  Fields: []<span style=color:#ff79c6>*</span>main.<span style=color:#50fa7b>Node</span> (len = <span style=color:#bd93f9>1</span>) {
+     <span style=color:#bd93f9>6</span>  .  .  .  .  <span style=color:#bd93f9>0</span>: <span style=color:#ff79c6>*</span>(obj @ <span style=color:#bd93f9>0</span>)  <span style=color:#6272a4>// 同样指向了0行的obj
+</span><span style=color:#6272a4></span>     <span style=color:#bd93f9>7</span>  .  .  .  }
+     <span style=color:#bd93f9>8</span>  .  .  }
+     <span style=color:#bd93f9>9</span>  .  .  <span style=color:#bd93f9>1</span>: <span style=color:#ff79c6>*</span>main.Node {
+    <span style=color:#bd93f9>10</span>  .  .  .  Data: <span style=color:#bd93f9>2</span>
+    <span style=color:#bd93f9>11</span>  .  .  .  Fields: []<span style=color:#ff79c6>*</span>main.<span style=color:#50fa7b>Node</span> (len = <span style=color:#bd93f9>0</span>) {}
+    <span style=color:#bd93f9>12</span>  .  .  }
+    <span style=color:#bd93f9>13</span>  .  }
+    <span style=color:#bd93f9>14</span>  }
+</code></pre></div><p>再来调试看看运行时的地址情况：
+a3的信息如下：
+<img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gqb4iv6rl9j20iw0fr3z4.jpg alt=bd51ff320eef1f13f01579625118d58.png></p>
+<p>da3的信息如下：</p>
+<p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gqb4k98ajbj20kf0ij753.jpg alt=55bb9aa7a950f59e1bf2d73719fe209.png></p>
+<p>可以看到，da3里面的地址与a3均不一样，但是值信息是一样的。</p>
+<h2 id=这个算法的问题>这个算法的问题</h2>
+<p>核心思路（<code>map[*Node]*Node</code> 记忆化）是对的，环和共享引用都能正确处理，但代码本身有三个问题：</p>
+<h3 id=问题一nil-元素会被丢弃>问题一：nil 元素会被丢弃</h3>
+<p><code>Fields</code> 中值为 <code>nil</code> 的槽位会被 <code>if tmp != nil { fields = append(fields, tmp) }</code> 直接过滤掉，导致拷贝后的切片长度变短、下标错位。实测 <code>src len=4, dst len=2</code>，语义被破坏。代码里 <code>//make([]*Node, len(src.Fields))</code> 那行注释其实已经把正确解法写在旁边了。</p>
+<h3 id=问题二全局-map-的脏数据风险>问题二：全局 map 的脏数据风险</h3>
+<p><code>M</code> 是包级变量，每次调用前必须手动 <code>make</code>；一旦忘记初始化，或者同一个 map 被连续用于两次 <code>Dup</code> 调用，上一次调用留下的映射就会污染下一次拷贝。另外 <code>Dup</code> 顶部没有查 <code>M[src]</code>，对已经拷贝过的源不会复用已有结果。</p>
+<h3 id=问题三递归深度>问题三：递归深度</h3>
+<p>深层链表（几万层）会直接栈溢出，这个问题在深拷贝的递归写法里普遍存在。</p>
+<h2 id=优化方向>优化方向</h2>
+<h3 id=方向一保留-nil-槽位--map-局部化>方向一：保留 nil 槽位 + map 局部化</h3>
+<p>两个问题一起修：预分配切片按槽位赋值（不丢 nil），map 在 <code>Dup</code> 内部创建（无全局脏数据）：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>// deep copy
+</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Dup</span>(src <span style=color:#ff79c6>*</span>Node) <span style=color:#ff79c6>*</span>Node {
+	<span style=color:#ff79c6>return</span> <span style=color:#50fa7b>dup</span>(src, <span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#ff79c6>*</span>Node]<span style=color:#ff79c6>*</span>Node))
+}
+
+<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>dup</span>(src <span style=color:#ff79c6>*</span>Node, M <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#ff79c6>*</span>Node]<span style=color:#ff79c6>*</span>Node) <span style=color:#ff79c6>*</span>Node {
+	<span style=color:#ff79c6>if</span> src <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
+		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>nil</span>
+	}
+	node <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>Node{Data: src.Data}
+	M[src] = node
+	fields <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>([]<span style=color:#ff79c6>*</span>Node, <span style=color:#8be9fd;font-style:italic>len</span>(src.Fields)) <span style=color:#6272a4>// 预分配，保留 nil 槽位
+</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>for</span> i <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> src.Fields {
+		<span style=color:#ff79c6>if</span> src.Fields[i] <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
+			<span style=color:#ff79c6>continue</span>
+		}
+		<span style=color:#ff79c6>if</span> addr, ok <span style=color:#ff79c6>:=</span> M[src.Fields[i]]; ok { <span style=color:#6272a4>// 环或共享引用，直接复用
+</span><span style=color:#6272a4></span>			fields[i] = addr
+		} <span style=color:#ff79c6>else</span> {
+			fields[i] = <span style=color:#50fa7b>dup</span>(src.Fields[i], M)
+		}
+	}
+	node.Fields = fields
+	<span style=color:#ff79c6>return</span> node
+}
+</code></pre></div><h3 id=方向二迭代化避免栈溢出>方向二：迭代化，避免栈溢出</h3>
+<p>把递归改成显式栈的迭代写法，深链也能平稳跑完：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>DupIter</span>(src <span style=color:#ff79c6>*</span>Node) <span style=color:#ff79c6>*</span>Node {
+	<span style=color:#ff79c6>if</span> src <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
+		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>nil</span>
+	}
+	M <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#ff79c6>*</span>Node]<span style=color:#ff79c6>*</span>Node{src: {Data: src.Data}}
+	stack <span style=color:#ff79c6>:=</span> []<span style=color:#ff79c6>*</span>Node{src}
+	<span style=color:#ff79c6>for</span> <span style=color:#8be9fd;font-style:italic>len</span>(stack) &gt; <span style=color:#bd93f9>0</span> {
+		s <span style=color:#ff79c6>:=</span> stack[<span style=color:#8be9fd;font-style:italic>len</span>(stack)<span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>]
+		stack = stack[:<span style=color:#8be9fd;font-style:italic>len</span>(stack)<span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>]
+		d <span style=color:#ff79c6>:=</span> M[s]
+		d.Fields = <span style=color:#8be9fd;font-style:italic>make</span>([]<span style=color:#ff79c6>*</span>Node, <span style=color:#8be9fd;font-style:italic>len</span>(s.Fields))
+		<span style=color:#ff79c6>for</span> i <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> s.Fields {
+			<span style=color:#ff79c6>if</span> s.Fields[i] <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
+				<span style=color:#ff79c6>continue</span>
+			}
+			<span style=color:#ff79c6>if</span> dd, ok <span style=color:#ff79c6>:=</span> M[s.Fields[i]]; ok {
+				d.Fields[i] = dd
+			} <span style=color:#ff79c6>else</span> {
+				nd <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>Node{Data: s.Fields[i].Data}
+				M[s.Fields[i]] = nd
+				d.Fields[i] = nd
+				stack = <span style=color:#8be9fd;font-style:italic>append</span>(stack, s.Fields[i])
+			}
+		}
+	}
+	<span style=color:#ff79c6>return</span> M[src]
+}
+</code></pre></div><p>实测 1 万层纯链也能顺利完成，且环、共享引用、nil 槽位的行为都与修正版一致。</p>
+<h3 id=方向三泛化到任意类型>方向三：泛化到任意类型</h3>
+<p>对于任意含环的数据结构，可以把 <code>map[*Node]*Node</code> 换成 <code>map[unsafe.Pointer]reflect.Value</code>，用反射写一个通用的记忆化深拷贝。序列化类的库都不行——见下一节。</p>
+<h2 id=其他方法为什么不行>其他方法为什么不行</h2>
+<ul>
+<li><strong>JSON</strong> (<code>encoding/json</code>)：遇环直接报 <code>encountered a cycle</code> 错误，无法完成。</li>
+<li><strong>gob</strong> (<code>encoding/gob</code>)：看起来能处理共享指针，但实测对环会<strong>无限递归直接栈溢出</strong>（Go 1.22 验证），不可用。</li>
+<li><strong>反射库</strong>（如 <code>mohae/deepcopy</code>）：同样不处理环，遇到时也是递归爆栈。</li>
+</ul>
+<p>所以对含环结构，<code>map</code> 记忆化这条路是绕不开的。</p>
+<h2 id=对比-k8s-的-deepcopy-gen>对比 k8s 的 deepcopy-gen</h2>
+<p>Kubernetes 用 <code>k8s.io/code-generator</code> 自动生成 <code>zz_generated.deepcopy.go</code>，每个类型生成 <code>DeepCopyInto(out *T)</code> 与 <code>DeepCopy() *T</code> 两个方法。有意思的是：<strong>它完全不做循环引用处理</strong>，靠的是约定而不是算法。</p>
+<p>生成的模式是纯递归，没有任何记忆化：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>// *out = *in 先整体浅拷贝
+</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> (in <span style=color:#ff79c6>*</span>Affinity) <span style=color:#50fa7b>DeepCopyInto</span>(out <span style=color:#ff79c6>*</span>Affinity) {
+	<span style=color:#ff79c6>*</span>out = <span style=color:#ff79c6>*</span>in
+	<span style=color:#ff79c6>if</span> in.NodeAffinity <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {          <span style=color:#6272a4>// 指针字段：新建 + 递归
+</span><span style=color:#6272a4></span>		in, out <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>in.NodeAffinity, <span style=color:#ff79c6>&amp;</span>out.NodeAffinity
+		<span style=color:#ff79c6>*</span>out = <span style=color:#8be9fd;font-style:italic>new</span>(NodeAffinity)
+		(<span style=color:#ff79c6>*</span>in).<span style=color:#50fa7b>DeepCopyInto</span>(<span style=color:#ff79c6>*</span>out)
+	}
+	<span style=color:#ff79c6>return</span>
+}
+</code></pre></div><p>对指针切片（对应本例的 <code>Fields []*Node</code>）生成的是：</p>
+<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>if</span> in.Fields <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
+	in, out <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>in.Fields, <span style=color:#ff79c6>&amp;</span>out.Fields
+	<span style=color:#ff79c6>*</span>out = <span style=color:#8be9fd;font-style:italic>make</span>([]<span style=color:#ff79c6>*</span>Node, <span style=color:#8be9fd;font-style:italic>len</span>(<span style=color:#ff79c6>*</span>in))       <span style=color:#6272a4>// 预分配，按槽位赋值
+</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>for</span> i <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> <span style=color:#ff79c6>*</span>in {
+		<span style=color:#ff79c6>if</span> (<span style=color:#ff79c6>*</span>in)[i] <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {              <span style=color:#6272a4>// 显式判空，nil 槽位被保留
+</span><span style=color:#6272a4></span>			(<span style=color:#ff79c6>*</span>out)[i] = <span style=color:#8be9fd;font-style:italic>new</span>(Node)
+			(<span style=color:#ff79c6>*</span>in)[i].<span style=color:#50fa7b>DeepCopyInto</span>((<span style=color:#ff79c6>*</span>out)[i])
+		}
+	}
+}
+</code></pre></div><p>为什么不需要防环？因为 <strong>k8s API 对象被约定为树 / DAG，禁止指针环</strong>——需要引用别的对象的字段（如 <code>ObjectReference</code>、<code>SecretReference</code>）存的都是 name 这类字符串而非指针，物理上无法成环。反过来看：</p>
+<ul>
+<li>若真喂一个环进去，<code>DeepCopyInto</code> 会无限递归直接爆栈；</li>
+<li><strong>共享引用也不保留</strong>：同一节点被多个字段引用时会被重复复制成两份（k8s 的语义里这没有问题，<code>DeepCopy()</code> 本就要做隔离）。</li>
+</ul>
+<p>对比总结：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>本文算法</th>
+<th>k8s deepcopy-gen</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>环检测</td>
+<td>map 记忆化</td>
+<td>无（约定无环）</td>
+</tr>
+<tr>
+<td>共享引用</td>
+<td>保留（复用同一份拷贝）</td>
+<td>不保留（重复复制）</td>
+</tr>
+<tr>
+<td>nil 槽位</td>
+<td>原版丢失 / 修正版保留</td>
+<td>保留（按槽位赋值）</td>
+</tr>
+<tr>
+<td>拷贝方式</td>
+<td>运行时递归 / 迭代</td>
+<td>静态生成代码，零反射开销</td>
+</tr>
+</tbody>
+</table>
+<p>顺带一提：k8s 生成器 <code>make(len)</code> 预分配 + 显式判空、按槽位赋值的写法，恰好就是本文「优化方向一」的处理方式——这也是深拷贝这一类题里最容易踩的坑。</p>
+</div>
+<div class=prev-next>
+</div><svg id="btt-button" class="arrow-logo" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512" onclick="scrollToTop()" title="Go to top"><path d="M177 159.7l136 136c9.4 9.4 9.4 24.6.0 33.9l-22.6 22.6c-9.4 9.4-24.6 9.4-33.9.0L160 255.9l-96.4 96.4c-9.4 9.4-24.6 9.4-33.9.0L7 329.7c-9.4-9.4-9.4-24.6.0-33.9l136-136c9.4-9.5 24.6-9.5 34-.1z"/></svg>
+<script>let backToTopButton=document.getElementById("btt-button");window.onscroll=function(){scrollFunction()};function scrollFunction(){document.body.scrollTop>20||document.documentElement.scrollTop>20?backToTopButton.style.display="block":backToTopButton.style.display="none"}function scrollToTop(){window.scrollTo(0,0)}</script>
+</div>
+<aside class=post-toc aria-label=文章目录>
+<h3 class=toc-title>目录</h3>
+<nav id=toc>
+<nav id=TableOfContents>
+<ul>
+<li><a href=#题目>题目</a></li>
+<li><a href=#解析>解析</a></li>
+<li><a href=#代码>代码</a></li>
+<li><a href=#这个算法的问题>这个算法的问题</a>
+<ul>
+<li><a href=#问题一nil-元素会被丢弃>问题一：nil 元素会被丢弃</a></li>
+<li><a href=#问题二全局-map-的脏数据风险>问题二：全局 map 的脏数据风险</a></li>
+<li><a href=#问题三递归深度>问题三：递归深度</a></li>
+</ul>
+</li>
+<li><a href=#优化方向>优化方向</a>
+<ul>
+<li><a href=#方向一保留-nil-槽位--map-局部化>方向一：保留 nil 槽位 + map 局部化</a></li>
+<li><a href=#方向二迭代化避免栈溢出>方向二：迭代化，避免栈溢出</a></li>
+<li><a href=#方向三泛化到任意类型>方向三：泛化到任意类型</a></li>
+</ul>
+</li>
+<li><a href=#其他方法为什么不行>其他方法为什么不行</a></li>
+<li><a href=#对比-k8s-的-deepcopy-gen>对比 k8s 的 deepcopy-gen</a></li>
+</ul>
+</nav>
+</nav>
+</aside>
+<link rel=stylesheet href=/css/toc.css>
+</main><footer class=footer>
+<span>&copy; 2021 HindungWang</span>
+<span>
+Made with &#10084;&#65039; using <a target=_blank href=https://github.com/gokarna-theme/gokarna-hugo>Gokarna</a>
+</span>
+</footer>
+</body>
+</html>

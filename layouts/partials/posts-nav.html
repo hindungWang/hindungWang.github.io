@@ -1,5 +1,6 @@
+<div id="reading-progress" aria-hidden="true"></div>
 <aside class="posts-nav" aria-label="所有文章">
-  <h3>文章</h3>
+  <h3>文章<span class="posts-nav-count">{{ len (where .Site.RegularPages "Type" "post") }}</span></h3>
   <ul>
     {{ $posts := where .Site.RegularPages "Type" "post" }}
     {{ range $posts.ByDate.Reverse }}
@@ -9,4 +10,17 @@
     {{ end }}
   </ul>
 </aside>
-<link rel="stylesheet" href="{{ "/css/posts-nav.css" | relURL }}">
+<script>
+  (function () {
+    var bar = document.getElementById('reading-progress');
+    if (!bar) return;
+    var update = function () {
+      var doc = document.documentElement;
+      var total = doc.scrollHeight - doc.clientHeight;
+      bar.style.transform = 'scaleX(' + (total > 0 ? window.scrollY / total : 0) + ')';
+    };
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+</script>
