@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/09.keng/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -239,140 +239,140 @@ April 1, 2021
 </div>
 <div class=post-content>
 <h2 id=for-range-语句中的值传递问题>for range 语句中的值传递问题</h2>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> main
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> main
 
-<span style=color:#ff79c6>import</span> <span style=color:#f1fa8c>&#34;fmt&#34;</span>
+<span style=color:#000;font-weight:700>import</span> <span style=color:#d14>&#34;fmt&#34;</span>
 
-<span style=color:#8be9fd;font-style:italic>var</span> pow = []<span style=color:#8be9fd>int</span>{<span style=color:#bd93f9>1</span>, <span style=color:#bd93f9>2</span>, <span style=color:#bd93f9>4</span>}
+<span style=color:#000;font-weight:700>var</span> pow = []<span style=color:#458;font-weight:700>int</span>{<span style=color:#099>1</span>, <span style=color:#099>2</span>, <span style=color:#099>4</span>}
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
-	<span style=color:#ff79c6>for</span> _, v <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> pow {
-		v<span style=color:#ff79c6>++</span>
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>() {
+	<span style=color:#000;font-weight:700>for</span> _, v <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> pow {
+		v<span style=color:#000;font-weight:700>++</span>
 	}
-	<span style=color:#ff79c6>for</span> _, v <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> pow {
-		fmt.<span style=color:#50fa7b>Println</span>(v)
+	<span style=color:#000;font-weight:700>for</span> _, v <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> pow {
+		fmt.<span style=color:#900;font-weight:700>Println</span>(v)
 	}
 }
-<span style=color:#6272a4>//out put : 1  2  4
+<span style=color:#998;font-style:italic>//out put : 1  2  4
 </span></code></pre></div><p>原因：for range创建了每个元素的副本，而不是直接返回每个元素的引用。</p>
 <h2 id=ipv4与ipv6格式问题>IPv4与IPv6格式问题 </h2>
 <p>Go中IPv4的长度和IPv6的长度是一样的，都是16Byte存储，故不能使用len()函数去区别:</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>
-conn, err <span style=color:#ff79c6>:=</span> net.<span style=color:#50fa7b>Dial</span>(<span style=color:#f1fa8c>&#34;udp&#34;</span>, <span style=color:#f1fa8c>&#34;8.9.10.11:2342&#34;</span>)
-<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-    fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#f1fa8c>&#34;Error&#34;</span>, err)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>
+conn, err <span style=color:#000;font-weight:700>:=</span> net.<span style=color:#900;font-weight:700>Dial</span>(<span style=color:#d14>&#34;udp&#34;</span>, <span style=color:#d14>&#34;8.9.10.11:2342&#34;</span>)
+<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+    fmt.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#d14>&#34;Error&#34;</span>, err)
 }
 
-localaddr <span style=color:#ff79c6>:=</span> conn.<span style=color:#50fa7b>LocalAddr</span>()
+localaddr <span style=color:#000;font-weight:700>:=</span> conn.<span style=color:#900;font-weight:700>LocalAddr</span>()
 
-addr, _ <span style=color:#ff79c6>:=</span> net.<span style=color:#50fa7b>ResolveUDPAddr</span>(<span style=color:#f1fa8c>&#34;udp&#34;</span>, localaddr.<span style=color:#50fa7b>String</span>())
+addr, _ <span style=color:#000;font-weight:700>:=</span> net.<span style=color:#900;font-weight:700>ResolveUDPAddr</span>(<span style=color:#d14>&#34;udp&#34;</span>, localaddr.<span style=color:#900;font-weight:700>String</span>())
 
-ip <span style=color:#ff79c6>:=</span> addr.IP
+ip <span style=color:#000;font-weight:700>:=</span> addr.IP
 
-fmt.<span style=color:#50fa7b>Println</span>(ip)
-fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#8be9fd;font-style:italic>len</span>(ip))
+fmt.<span style=color:#900;font-weight:700>Println</span>(ip)
+fmt.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#0086b3>len</span>(ip))
 </code></pre></div><p>详情请点击链接：<a href=https://stackoverflow.com/questions/22751035/golang-distinguish-ipv4-ipv6>golang-distinguish-ipv4-ipv6</a></p>
 <h2 id=transport使用不当导致不能共享tcp连接池进而导致tcp连接过多>transport使用不当导致不能共享tcp连接池，进而导致tcp连接过多</h2>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>// 初始化一个 http.Client
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>getClient</span>() <span style=color:#ff79c6>*</span>http.Client  {
-	<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>&amp;</span>http.Client{
-		Transport:     <span style=color:#ff79c6>&amp;</span>http.Transport{  <span style=color:#6272a4>// 自定义 Transport
-</span><span style=color:#6272a4></span>			TLSClientConfig:        <span style=color:#ff79c6>&amp;</span>tls.Config{InsecureSkipVerify: <span style=color:#ff79c6>true</span>},
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// 初始化一个 http.Client
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>getClient</span>() <span style=color:#000;font-weight:700>*</span>http.Client  {
+	<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>&amp;</span>http.Client{
+		Transport:     <span style=color:#000;font-weight:700>&amp;</span>http.Transport{  <span style=color:#998;font-style:italic>// 自定义 Transport
+</span><span style=color:#998;font-style:italic></span>			TLSClientConfig:        <span style=color:#000;font-weight:700>&amp;</span>tls.Config{InsecureSkipVerify: <span style=color:#000;font-weight:700>true</span>},
 		},
-		Timeout:       <span style=color:#bd93f9>5</span> <span style=color:#ff79c6>*</span> time.Second,
+		Timeout:       <span style=color:#099>5</span> <span style=color:#000;font-weight:700>*</span> time.Second,
 	}
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Post</span>(url <span style=color:#8be9fd>string</span>) ([]<span style=color:#8be9fd>byte</span>, <span style=color:#8be9fd>error</span>) {
-	client <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>getClient</span>()
-	req, err <span style=color:#ff79c6>:=</span> http.<span style=color:#50fa7b>NewRequest</span>(<span style=color:#f1fa8c>&#34;POST&#34;</span>, url, strings.<span style=color:#50fa7b>NewReader</span>(<span style=color:#f1fa8c>&#34;test&#34;</span>))
-	<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>nil</span>, err
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Post</span>(url <span style=color:#458;font-weight:700>string</span>) ([]<span style=color:#458;font-weight:700>byte</span>, <span style=color:#458;font-weight:700>error</span>) {
+	client <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>getClient</span>()
+	req, err <span style=color:#000;font-weight:700>:=</span> http.<span style=color:#900;font-weight:700>NewRequest</span>(<span style=color:#d14>&#34;POST&#34;</span>, url, strings.<span style=color:#900;font-weight:700>NewReader</span>(<span style=color:#d14>&#34;test&#34;</span>))
+	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, err
 	}
-	httpRet, err <span style=color:#ff79c6>:=</span> client.<span style=color:#50fa7b>Do</span>(req)
-	<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>nil</span>, err
+	httpRet, err <span style=color:#000;font-weight:700>:=</span> client.<span style=color:#900;font-weight:700>Do</span>(req)
+	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, err
 	}
-	<span style=color:#ff79c6>defer</span> httpRet.Body.<span style=color:#50fa7b>Close</span>()
-	<span style=color:#8be9fd;font-style:italic>var</span> body []<span style=color:#8be9fd>byte</span>
-	body, err = ioutil.<span style=color:#50fa7b>ReadAll</span>(httpRet.Body)
-	<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>nil</span>, err
+	<span style=color:#000;font-weight:700>defer</span> httpRet.Body.<span style=color:#900;font-weight:700>Close</span>()
+	<span style=color:#000;font-weight:700>var</span> body []<span style=color:#458;font-weight:700>byte</span>
+	body, err = ioutil.<span style=color:#900;font-weight:700>ReadAll</span>(httpRet.Body)
+	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, err
 	}
-	<span style=color:#ff79c6>return</span> body, <span style=color:#ff79c6>nil</span>
+	<span style=color:#000;font-weight:700>return</span> body, <span style=color:#000;font-weight:700>nil</span>
 }
 </code></pre></div><p>代码存在问题：1、每次发请求都会创建一次连接；2、请求结束后没有及时释放连接；3、导致tcp连接暴涨</p>
 <p>原因：实例化transport时没有处理连接池问题，导致每次初始化都会使用新的连接。如果没有默认transport，实例化的client会使用一个default的transport，并且已经实现了池化。</p>
 <p>此外，如果请求的body没有完全读出，将会导致tcp连接不能服用。</p>
 <h2 id=野生goroutine没有recover导致整个程序退出>野生goroutine没有recover导致整个程序退出</h2>
 <p>使用gin时虽然会有上层的recover会对panic异常做兜底，但是对于自己定义的goroutine如果没有做recover就会导致整个程序垮掉：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>r.<span style=color:#50fa7b>GET</span>(<span style=color:#f1fa8c>&#34;/panic1&#34;</span>, <span style=color:#8be9fd;font-style:italic>func</span> (c <span style=color:#ff79c6>*</span>gin.Context) {
-		<span style=color:#8be9fd;font-style:italic>var</span> s <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int</span>
-		fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#ff79c6>*</span>s)  <span style=color:#6272a4>// 制造空指针panic，这里会被gin上层的recover兜住，不会整个程序退出
-</span><span style=color:#6272a4></span>	})
-r.<span style=color:#50fa7b>GET</span>(<span style=color:#f1fa8c>&#34;/panic2&#34;</span>, <span style=color:#8be9fd;font-style:italic>func</span> (c <span style=color:#ff79c6>*</span>gin.Context) {
-		<span style=color:#6272a4>// 野生 goroutine
-</span><span style=color:#6272a4></span>        <span style=color:#ff79c6>go</span> <span style=color:#8be9fd;font-style:italic>func</span>() {
-			<span style=color:#8be9fd;font-style:italic>var</span> s <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int</span>
-			fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#ff79c6>*</span>s)  <span style=color:#6272a4>// 这里会导致panic，整个程序退出
-</span><span style=color:#6272a4></span>		}()
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>r.<span style=color:#900;font-weight:700>GET</span>(<span style=color:#d14>&#34;/panic1&#34;</span>, <span style=color:#000;font-weight:700>func</span> (c <span style=color:#000;font-weight:700>*</span>gin.Context) {
+		<span style=color:#000;font-weight:700>var</span> s <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int</span>
+		fmt.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#000;font-weight:700>*</span>s)  <span style=color:#998;font-style:italic>// 制造空指针panic，这里会被gin上层的recover兜住，不会整个程序退出
+</span><span style=color:#998;font-style:italic></span>	})
+r.<span style=color:#900;font-weight:700>GET</span>(<span style=color:#d14>&#34;/panic2&#34;</span>, <span style=color:#000;font-weight:700>func</span> (c <span style=color:#000;font-weight:700>*</span>gin.Context) {
+		<span style=color:#998;font-style:italic>// 野生 goroutine
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#000;font-weight:700>go</span> <span style=color:#000;font-weight:700>func</span>() {
+			<span style=color:#000;font-weight:700>var</span> s <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int</span>
+			fmt.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#000;font-weight:700>*</span>s)  <span style=color:#998;font-style:italic>// 这里会导致panic，整个程序退出
+</span><span style=color:#998;font-style:italic></span>		}()
 	})
 
-<span style=color:#6272a4>// 应该这样
-</span><span style=color:#6272a4></span>r.<span style=color:#50fa7b>GET</span>(<span style=color:#f1fa8c>&#34;/panic3&#34;</span>, <span style=color:#8be9fd;font-style:italic>func</span> (c <span style=color:#ff79c6>*</span>gin.Context) {
-		<span style=color:#6272a4>// 野生 goroutine
-</span><span style=color:#6272a4></span>        <span style=color:#ff79c6>go</span> <span style=color:#8be9fd;font-style:italic>func</span>() {
-			<span style=color:#6272a4>// 定义recover兜住panic
-</span><span style=color:#6272a4></span>			<span style=color:#ff79c6>defer</span> <span style=color:#8be9fd;font-style:italic>func</span>() {
-				<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>recover</span>(); err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-					fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#f1fa8c>&#34;recover success&#34;</span>)
+<span style=color:#998;font-style:italic>// 应该这样
+</span><span style=color:#998;font-style:italic></span>r.<span style=color:#900;font-weight:700>GET</span>(<span style=color:#d14>&#34;/panic3&#34;</span>, <span style=color:#000;font-weight:700>func</span> (c <span style=color:#000;font-weight:700>*</span>gin.Context) {
+		<span style=color:#998;font-style:italic>// 野生 goroutine
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#000;font-weight:700>go</span> <span style=color:#000;font-weight:700>func</span>() {
+			<span style=color:#998;font-style:italic>// 定义recover兜住panic
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#000;font-weight:700>defer</span> <span style=color:#000;font-weight:700>func</span>() {
+				<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>recover</span>(); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+					fmt.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#d14>&#34;recover success&#34;</span>)
 				}
 			}
-			<span style=color:#8be9fd;font-style:italic>var</span> s <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int</span>
-			fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#ff79c6>*</span>s)  <span style=color:#6272a4>// 这里会导致panic，不会整个程序退出
-</span><span style=color:#6272a4></span>		}()
+			<span style=color:#000;font-weight:700>var</span> s <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int</span>
+			fmt.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#000;font-weight:700>*</span>s)  <span style=color:#998;font-style:italic>// 这里会导致panic，不会整个程序退出
+</span><span style=color:#998;font-style:italic></span>		}()
 	})
 </code></pre></div><h2 id=内存复用导致map-key重复>内存复用导致Map Key重复</h2>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> main
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> main
 
-<span style=color:#ff79c6>import</span> (
-	<span style=color:#f1fa8c>&#34;fmt&#34;</span>
-	<span style=color:#f1fa8c>&#34;unsafe&#34;</span>
+<span style=color:#000;font-weight:700>import</span> (
+	<span style=color:#d14>&#34;fmt&#34;</span>
+	<span style=color:#d14>&#34;unsafe&#34;</span>
 )
 
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>(){
-	m <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd>int</span>)
-	<span style=color:#ff79c6>for</span> i <span style=color:#ff79c6>:=</span> <span style=color:#bd93f9>0</span>; i &lt; <span style=color:#bd93f9>10</span>; i<span style=color:#ff79c6>++</span>{
-		<span style=color:#6272a4>//fmt.Printf(&#34;i=%d\n&#34;, i)
-</span><span style=color:#6272a4></span>		b <span style=color:#ff79c6>:=</span> []<span style=color:#8be9fd;font-style:italic>byte</span>(<span style=color:#f1fa8c>&#34;id2&#34;</span>)
-		<span style=color:#6272a4>// 字面值为 id2，map计算 hash 时使用该字面值，即 b 的内容 &#34;id2&#34;
-</span><span style=color:#6272a4></span>		<span style=color:#6272a4>// 从而 ，每次计算的是 hash(&#34;id2&#34;)，但实际内存中的值是 &#34;id1&#34;，
-</span><span style=color:#6272a4></span>		<span style=color:#6272a4>// 从而每次 hash都会分配不同的桶存储 k/v，但实际 k 的值为 &#34;id1&#34;
-</span><span style=color:#6272a4></span>		<span style=color:#6272a4>// *str 直接指向 b 的内存，再转成 *string，再取值
-</span><span style=color:#6272a4></span>		str <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span><span style=color:#8be9fd>string</span>)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>b))
-		m[str]<span style=color:#ff79c6>++</span>
-		b[<span style=color:#bd93f9>2</span>] = <span style=color:#f1fa8c>&#39;1&#39;</span>  <span style=color:#6272a4>// 修改指向的内存的值，变为 id1
-</span><span style=color:#6272a4></span>	}
-	b <span style=color:#ff79c6>:=</span> []<span style=color:#8be9fd;font-style:italic>byte</span>(<span style=color:#f1fa8c>&#34;id2&#34;</span>)
-	str <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>*</span>(<span style=color:#ff79c6>*</span><span style=color:#8be9fd>string</span>)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>b))
-	fmt.<span style=color:#50fa7b>Println</span>(m, <span style=color:#8be9fd;font-style:italic>len</span>(m), m[<span style=color:#f1fa8c>&#34;id2&#34;</span>], m[<span style=color:#f1fa8c>&#34;id1&#34;</span>], m[str])
-	<span style=color:#6272a4>// out put
-</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// map[id1:1 id1:1 id1:1 id1:1 id1:1 id1:1 id1:1 id1:1 id1:1 id1:1] 10 0 0 0
-</span><span style=color:#6272a4></span>}
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>(){
+	m <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#458;font-weight:700>int</span>)
+	<span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>:=</span> <span style=color:#099>0</span>; i &lt; <span style=color:#099>10</span>; i<span style=color:#000;font-weight:700>++</span>{
+		<span style=color:#998;font-style:italic>//fmt.Printf(&#34;i=%d\n&#34;, i)
+</span><span style=color:#998;font-style:italic></span>		b <span style=color:#000;font-weight:700>:=</span> []<span style=color:#0086b3>byte</span>(<span style=color:#d14>&#34;id2&#34;</span>)
+		<span style=color:#998;font-style:italic>// 字面值为 id2，map计算 hash 时使用该字面值，即 b 的内容 &#34;id2&#34;
+</span><span style=color:#998;font-style:italic></span>		<span style=color:#998;font-style:italic>// 从而 ，每次计算的是 hash(&#34;id2&#34;)，但实际内存中的值是 &#34;id1&#34;，
+</span><span style=color:#998;font-style:italic></span>		<span style=color:#998;font-style:italic>// 从而每次 hash都会分配不同的桶存储 k/v，但实际 k 的值为 &#34;id1&#34;
+</span><span style=color:#998;font-style:italic></span>		<span style=color:#998;font-style:italic>// *str 直接指向 b 的内存，再转成 *string，再取值
+</span><span style=color:#998;font-style:italic></span>		str <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>*</span>(<span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>string</span>)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(<span style=color:#000;font-weight:700>&amp;</span>b))
+		m[str]<span style=color:#000;font-weight:700>++</span>
+		b[<span style=color:#099>2</span>] = <span style=color:#d14>&#39;1&#39;</span>  <span style=color:#998;font-style:italic>// 修改指向的内存的值，变为 id1
+</span><span style=color:#998;font-style:italic></span>	}
+	b <span style=color:#000;font-weight:700>:=</span> []<span style=color:#0086b3>byte</span>(<span style=color:#d14>&#34;id2&#34;</span>)
+	str <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>*</span>(<span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>string</span>)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(<span style=color:#000;font-weight:700>&amp;</span>b))
+	fmt.<span style=color:#900;font-weight:700>Println</span>(m, <span style=color:#0086b3>len</span>(m), m[<span style=color:#d14>&#34;id2&#34;</span>], m[<span style=color:#d14>&#34;id1&#34;</span>], m[str])
+	<span style=color:#998;font-style:italic>// out put
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// map[id1:1 id1:1 id1:1 id1:1 id1:1 id1:1 id1:1 id1:1 id1:1 id1:1] 10 0 0 0
+</span><span style=color:#998;font-style:italic></span>}
 </code></pre></div><p>在一些高性能的http服务框架中，如<code>fasthttp</code>，由于为了性能，减少重复的内存分配，很多地方会用到内存的复用，即采用了<code>unsafe.Pointer</code>来实现指向相同的内存空间，从而导致以上的问题。</p>
 <h2 id=timeadddate方法加减月份>time.AddDate()方法加减月份</h2>
 <p>在使用go官方包获取上个月份获取下个月份时，可能会直接这样获取：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>TestXxx</span>(t <span style=color:#ff79c6>*</span>testing.T) {
-	this, err <span style=color:#ff79c6>:=</span> time.<span style=color:#50fa7b>Parse</span>(time.RFC3339, <span style=color:#f1fa8c>&#34;2023-03-30T15:04:05Z&#34;</span>)
-	<span style=color:#ff79c6>if</span> err <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-		t.<span style=color:#50fa7b>Fatal</span>(err)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>TestXxx</span>(t <span style=color:#000;font-weight:700>*</span>testing.T) {
+	this, err <span style=color:#000;font-weight:700>:=</span> time.<span style=color:#900;font-weight:700>Parse</span>(time.RFC3339, <span style=color:#d14>&#34;2023-03-30T15:04:05Z&#34;</span>)
+	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+		t.<span style=color:#900;font-weight:700>Fatal</span>(err)
 	}
-	t.<span style=color:#50fa7b>Log</span>(this.<span style=color:#50fa7b>AddDate</span>(<span style=color:#bd93f9>0</span>, <span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>, <span style=color:#bd93f9>0</span>)) <span style=color:#6272a4>// output: 2023-03-02 15:04:05 +0000 UTC
-</span><span style=color:#6272a4></span>}
+	t.<span style=color:#900;font-weight:700>Log</span>(this.<span style=color:#900;font-weight:700>AddDate</span>(<span style=color:#099>0</span>, <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>, <span style=color:#099>0</span>)) <span style=color:#998;font-style:italic>// output: 2023-03-02 15:04:05 +0000 UTC
+</span><span style=color:#998;font-style:italic></span>}
 </code></pre></div><p>由于day没有改变，所以month-1后得到2月30号，规范化成了3月2号。具体可以看AddDate源码。</p>
 <p>一个可行的解决办法是：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>t.<span style=color:#50fa7b>Log</span>(this.<span style=color:#50fa7b>AddDate</span>(<span style=color:#bd93f9>0</span>, <span style=color:#bd93f9>0</span>, <span style=color:#ff79c6>-</span>this.<span style=color:#50fa7b>Day</span>())) <span style=color:#6272a4>// output: 2023-02-28 15:04:05 +0000 UTC
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>t.<span style=color:#900;font-weight:700>Log</span>(this.<span style=color:#900;font-weight:700>AddDate</span>(<span style=color:#099>0</span>, <span style=color:#099>0</span>, <span style=color:#000;font-weight:700>-</span>this.<span style=color:#900;font-weight:700>Day</span>())) <span style=color:#998;font-style:italic>// output: 2023-02-28 15:04:05 +0000 UTC
 </span></code></pre></div><p>建议：</p>
 <ul>
 <li>不要直接使用AddDate(0, +-x, 0)方法计算加减月份</li>

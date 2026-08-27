@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/02.docker-images/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -335,67 +335,67 @@ July 23, 2020
 <h2 id=常用镜像缩小方法>常用镜像缩小方法</h2>
 <h3 id=在哪层引入就在哪层清理>在哪层引入，就在哪层清理</h3>
 <p>众所周知，<code>Dockerfile</code>每个指令都会叠加新的一层文件系统，由于<code>docker</code>镜像这种叠加的文件系统，也就是说在构建镜像时，前面一层的文件对于本层来说是只读的，从而不能够在本层文件系统去清理上一层引入的文件，虽然可以删除掉对应的文件或文件夹，但是镜像体积并没有减少：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#ff79c6>WORKDIR</span><span style=color:#f1fa8c> /usr/src</span>
-<span style=color:#ff79c6>RUN</span> git clone http://xxx.git <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> <span style=color:#8be9fd;font-style:italic>cd</span> ./xxx <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> ./bootstrap.sh <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> ./configure --enable-core-pgsql-support <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> make <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> make install      <span style=color:#6272a4>#这一层引入文件</span>
-
-<span style=color:#ff79c6>RUN</span> rm -rf /usr/src/*      <span style=color:#6272a4>#在这一层清理，达不到体积减小的目的，反而增加层数</span>
-</code></pre></div><p>应该这样：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#ff79c6>WORKDIR</span><span style=color:#f1fa8c> /usr/src</span>
-<span style=color:#ff79c6>RUN</span> git clone http://xxx.git <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> <span style=color:#8be9fd;font-style:italic>cd</span> ./xxx <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> ./bootstrap.sh <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> ./configure --enable-core-pgsql-support <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> make <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> make install <span style=color:#f1fa8c>\ </span>     
-    <span style=color:#ff79c6>&amp;&amp;</span> rm -rf /usr/src/*      <span style=color:#6272a4># 在哪层引入，就在哪层清理</span>
-</code></pre></div><p>此外，如果在<code>ADD</code>，<code>COPY</code>指令中添加了多余的文件，此后在其他层删除掉改文件或文件夹虽然文件删除了，但是镜像大小是不变或增加的：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#ff79c6>FROM</span><span style=color:#f1fa8c> busybox</span>
-<span style=color:#ff79c6>ADD</span> . /root        <span style=color:#6272a4># busytest0 157MB</span>
-<span style=color:#ff79c6>RUN</span> rm -rf /root   <span style=color:#6272a4># busytest1 157MB</span>
-</code></pre></div><p>另外，在使用包管理工具的时候经常要安装各种工具，安装时应该将所有要安装的工具写在一起并且加以清理，甚至可以卸载掉：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#ff79c6>RUN</span> apt-get update <span style=color:#ff79c6>&amp;&amp;</span> apt-get install -y autoconf automake bison <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    build-essential fail2ban gawk git-core groff groff-base <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> apt-get autoclean <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> rm -rf /var/lib/apt/lists/*
-</code></pre></div><h3 id=合并run中的命令>合并RUN中的命令</h3>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#000;font-weight:700>WORKDIR</span><span style=color:#d14> /usr/src</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> git clone http://xxx.git <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>cd</span> ./xxx <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> ./bootstrap.sh <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> ./configure --enable-core-pgsql-support <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> make <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> make install      <span style=color:#998;font-style:italic>#这一层引入文件</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> rm -rf /usr/src/*      <span style=color:#998;font-style:italic>#在这一层清理，达不到体积减小的目的，反而增加层数</span><span style=color:#a61717;background-color:#e3d2d2>
+</span></code></pre></div><p>应该这样：</p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#000;font-weight:700>WORKDIR</span><span style=color:#d14> /usr/src</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> git clone http://xxx.git <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>cd</span> ./xxx <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> ./bootstrap.sh <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> ./configure --enable-core-pgsql-support <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> make <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> make install <span style=color:#d14>\ </span>     <span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> rm -rf /usr/src/*      <span style=color:#998;font-style:italic># 在哪层引入，就在哪层清理</span><span style=color:#a61717;background-color:#e3d2d2>
+</span></code></pre></div><p>此外，如果在<code>ADD</code>，<code>COPY</code>指令中添加了多余的文件，此后在其他层删除掉改文件或文件夹虽然文件删除了，但是镜像大小是不变或增加的：</p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#000;font-weight:700>FROM</span><span style=color:#d14> busybox</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>ADD</span> . /root        <span style=color:#998;font-style:italic># busytest0 157MB</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> rm -rf /root   <span style=color:#998;font-style:italic># busytest1 157MB</span><span style=color:#a61717;background-color:#e3d2d2>
+</span></code></pre></div><p>另外，在使用包管理工具的时候经常要安装各种工具，安装时应该将所有要安装的工具写在一起并且加以清理，甚至可以卸载掉：</p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#000;font-weight:700>RUN</span> apt-get update <span style=color:#000;font-weight:700>&amp;&amp;</span> apt-get install -y autoconf automake bison <span style=color:#d14>\
+</span><span style=color:#d14></span>    build-essential fail2ban gawk git-core groff groff-base <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> apt-get autoclean <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> rm -rf /var/lib/apt/lists/*<span style=color:#a61717;background-color:#e3d2d2>
+</span></code></pre></div><h3 id=合并run中的命令>合并RUN中的命令</h3>
 <p>多个<code>RUN</code>指令会增加很多层镜像，应该尽量把能合在一起写的<code>shell</code>写在同一个<code>RUN</code>指令里：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#ff79c6>RUN</span> apt-get update <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> ln -snf /usr/share/zoneinfo/<span style=color:#8be9fd;font-style:italic>$TZ</span> /etc/localtime <span style=color:#ff79c6>&amp;&amp;</span> <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#8be9fd;font-style:italic>$TZ</span> &gt; /etc/timezone <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> apt-get install tzdata <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> apt-get clean <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> apt-get autoclean <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-</code></pre></div><p>而不是：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#ff79c6>RUN</span> apt-get update 
-<span style=color:#ff79c6>RUN</span> ln -snf /usr/share/zoneinfo/<span style=color:#8be9fd;font-style:italic>$TZ</span> /etc/localtime 
-<span style=color:#ff79c6>RUN</span> <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#8be9fd;font-style:italic>$TZ</span> &gt; /etc/timezone 
-<span style=color:#ff79c6>RUN</span> apt-get install tzdata 
-<span style=color:#ff79c6>RUN</span> apt-get clean 
-<span style=color:#ff79c6>RUN</span> apt-get autoclean
-</code></pre></div><h3 id=分阶段构建>分阶段构建</h3>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#000;font-weight:700>RUN</span> apt-get update <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> ln -snf /usr/share/zoneinfo/<span style=color:teal>$TZ</span> /etc/localtime <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>echo</span> <span style=color:teal>$TZ</span> &gt; /etc/timezone <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> apt-get install tzdata <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> apt-get clean <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> apt-get autoclean <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*<span style=color:#a61717;background-color:#e3d2d2>
+</span></code></pre></div><p>而不是：</p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#000;font-weight:700>RUN</span> apt-get update <span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> ln -snf /usr/share/zoneinfo/<span style=color:teal>$TZ</span> /etc/localtime <span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> <span style=color:#0086b3>echo</span> <span style=color:teal>$TZ</span> &gt; /etc/timezone <span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> apt-get install tzdata <span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> apt-get clean <span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> apt-get autoclean<span style=color:#a61717;background-color:#e3d2d2>
+</span></code></pre></div><h3 id=分阶段构建>分阶段构建</h3>
 <p>有些应用，如<code>go</code>构建的可执行文件，可以不需要依赖构建他的系统而运行的程序，就适合进行分步构建，也就是一个阶段编译，一个阶段用于执行程序。分步构建很大程度上能减少镜像的体积。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#ff79c6>FROM</span><span style=color:#f1fa8c> golang</span>
-<span style=color:#ff79c6>COPY</span> hello.go .
-<span style=color:#ff79c6>RUN</span> go build hello.go
-<span style=color:#ff79c6>FROM</span><span style=color:#f1fa8c> scratch</span>
-<span style=color:#ff79c6>COPY</span> --from<span style=color:#ff79c6>=</span><span style=color:#bd93f9>0</span> /go/hello .
-<span style=color:#ff79c6>CMD</span> [<span style=color:#f1fa8c>&#34;./hello&#34;</span>]
-</code></pre></div><p>分阶段构建有时候对一些<code>C</code>程序和大型的<code>Go</code>程序来说，凡是有依赖动态运行库的程序进行分阶段构建就很头疼，因为复制过来的可执行文件可能需要某个动态库的支持。</p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#000;font-weight:700>FROM</span><span style=color:#d14> golang</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>COPY</span> hello.go .<span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> go build hello.go<span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>FROM</span><span style=color:#d14> scratch</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>COPY</span> --from<span style=color:#000;font-weight:700>=</span><span style=color:#099>0</span> /go/hello .<span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>CMD</span> [<span style=color:#d14>&#34;./hello&#34;</span>]<span style=color:#a61717;background-color:#e3d2d2>
+</span></code></pre></div><p>分阶段构建有时候对一些<code>C</code>程序和大型的<code>Go</code>程序来说，凡是有依赖动态运行库的程序进行分阶段构建就很头疼，因为复制过来的可执行文件可能需要某个动态库的支持。</p>
 <p>与之相对的解决办法是：静态编译或者复制动态库。</p>
 <p>静态编译是一个不错的方法，但是如果某种原因不适合静态编译，比如分阶段编译等等，这就需要拷贝库文件了。</p>
 <p>就像某些程序，编译出来的可执行文件只有十几<code>kb</code>，其他的都是以动态库的形势存在，那么怎么寻找应用对应的依赖库呢？</p>
 <p>使用<code>ldd</code>命令，该命令可以查询对应的库文件：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=color:#6272a4># ldd /usr/local/freeswitch/bin/freeswitch</span>
-        linux-vdso.so.1 <span style=color:#ff79c6>=</span>&gt;  <span style=color:#ff79c6>(</span>0x00007ffd0bb61000<span style=color:#ff79c6>)</span>
-        libfreeswitch.so.1 <span style=color:#ff79c6>=</span>&gt; /usr/local/freeswitch/lib/libfreeswitch.so.1 <span style=color:#ff79c6>(</span>0x00007f0fa2a1d000<span style=color:#ff79c6>)</span>
-        libpthread.so.0 <span style=color:#ff79c6>=</span>&gt; /lib/x86_64-linux-gnu/libpthread.so.0 <span style=color:#ff79c6>(</span>0x00007f0fa27f3000<span style=color:#ff79c6>)</span>
-        libc.so.6 <span style=color:#ff79c6>=</span>&gt; /lib/x86_64-linux-gnu/libc.so.6 <span style=color:#ff79c6>(</span>0x00007f0fa2429000<span style=color:#ff79c6>)</span>
-        libuuid.so.1 <span style=color:#ff79c6>=</span>&gt; /lib/x86_64-linux-gnu/libuuid.so.1 <span style=color:#ff79c6>(</span>0x00007f0fa2223000<span style=color:#ff79c6>)</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=color:#998;font-style:italic># ldd /usr/local/freeswitch/bin/freeswitch</span>
+        linux-vdso.so.1 <span style=color:#000;font-weight:700>=</span>&gt;  <span style=color:#000;font-weight:700>(</span>0x00007ffd0bb61000<span style=color:#000;font-weight:700>)</span>
+        libfreeswitch.so.1 <span style=color:#000;font-weight:700>=</span>&gt; /usr/local/freeswitch/lib/libfreeswitch.so.1 <span style=color:#000;font-weight:700>(</span>0x00007f0fa2a1d000<span style=color:#000;font-weight:700>)</span>
+        libpthread.so.0 <span style=color:#000;font-weight:700>=</span>&gt; /lib/x86_64-linux-gnu/libpthread.so.0 <span style=color:#000;font-weight:700>(</span>0x00007f0fa27f3000<span style=color:#000;font-weight:700>)</span>
+        libc.so.6 <span style=color:#000;font-weight:700>=</span>&gt; /lib/x86_64-linux-gnu/libc.so.6 <span style=color:#000;font-weight:700>(</span>0x00007f0fa2429000<span style=color:#000;font-weight:700>)</span>
+        libuuid.so.1 <span style=color:#000;font-weight:700>=</span>&gt; /lib/x86_64-linux-gnu/libuuid.so.1 <span style=color:#000;font-weight:700>(</span>0x00007f0fa2223000<span style=color:#000;font-weight:700>)</span>
         ...
 </code></pre></div><p>将这些对应的库文件复制到镜像之后需要执行<code>ldconfig</code>命令，任何改动库文件的操作都应该执行该命令。</p>
 <p>复制动态库文件可能会导致后续维护变得困难，并且可能存在未知的隐患。</p>
@@ -407,69 +407,69 @@ July 23, 2020
 <h2 id=常用的工具>常用的工具</h2>
 <h3 id=docker-history命令>docker history命令</h3>
 <p><code>docker</code>自带了简单的镜像分析命令，直接执行<code>docker history &lt;IMAGE ID></code> 或者 <code>docker history REPOSITORY:TAG</code>就行：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=color:#ff79c6>[</span>root@RqInternTest3 freeswitch-container<span style=color:#ff79c6>]</span><span style=color:#6272a4># docker history dda43e8b9e21</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=color:#000;font-weight:700>[</span>root@RqInternTest3 freeswitch-container<span style=color:#000;font-weight:700>]</span><span style=color:#998;font-style:italic># docker history dda43e8b9e21</span>
 IMAGE               CREATED             CREATED BY                                      SIZE                COMMENT
-dda43e8b9e21        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop)  CMD [&#34;/usr/local/freeswit…   0B</span>
-76f11898568d        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop)  EXPOSE 64535-65535/udp       0B</span>
-124e52a5fdb8        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop)  EXPOSE 8021/tcp              0B</span>
-d05fa7854fa3        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop)  EXPOSE 5066/tcp 7443/tcp     0B</span>
-fae9a2737d1b        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop)  EXPOSE 5060/tcp 5060/udp …   0B</span>
-d817769a9e83        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c ldconfig                             81.5kB
-e4347f4a3f7f        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop) ADD file:305fb1821e6c9f4f7…   19.5kB</span>
-7fa9aac435b0        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop) ADD file:ef5aa87255557ffc9…   340B</span>
-2872fc32f715        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop) ADD file:aa24cd419ee5ea6ca…   249B</span>
-681ea1a83b9b        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c chmod +x /etc/init.d/freeswitch  …   7.28kB
-b3af584e7595        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop) ADD file:e450d50f8d60a1861…   5.76kB</span>
-8c2e2a5f2de4        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop) COPY dir:8ecfbdecc9f674459…   417MB</span>
-9a2938106462        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop) COPY dir:1ddadc455338c149f…   112MB</span>
-d03606f65563        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop) COPY dir:cd305b7f15031b530…   20.4MB</span>
-3e21911eea87        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c <span style=color:#6272a4>#(nop) COPY --chown=freeswitch:da…   410MB</span>
-6ce315566979        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c useradd -r -g daemon freeswitch      329kB
-b7c170867677        <span style=color:#bd93f9>9</span> hours ago         /bin/sh -c apt-get update     <span style=color:#ff79c6>&amp;&amp;</span> ln -snf /us…   2.76MB
-9a800e72f239        <span style=color:#bd93f9>10</span> hours ago        /bin/sh -c <span style=color:#6272a4>#(nop)  ENV TZ=Asia/Shanghai         0B</span>
-77be327e4b63        <span style=color:#bd93f9>4</span> weeks ago         /bin/sh -c <span style=color:#6272a4>#(nop)  CMD [&#34;/bin/bash&#34;]            0B</span>
-&lt;missing&gt;           <span style=color:#bd93f9>4</span> weeks ago         /bin/sh -c mkdir -p /run/systemd <span style=color:#ff79c6>&amp;&amp;</span> <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#39;do…   7B
-</span><span style=color:#f1fa8c>&lt;missing&gt;           4 weeks ago         /bin/sh -c set -xe   &amp;&amp; echo &#39;</span><span style=color:#6272a4>#!/bin/sh&#39; &gt; /…   745B</span>
-&lt;missing&gt;           <span style=color:#bd93f9>4</span> weeks ago         /bin/sh -c rm -rf /var/lib/apt/lists/*          0B
-&lt;missing&gt;           <span style=color:#bd93f9>4</span> weeks ago         /bin/sh -c <span style=color:#6272a4>#(nop) ADD file:1f70668251e2e58ce…   124MB</span>
+dda43e8b9e21        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop)  CMD [&#34;/usr/local/freeswit…   0B</span>
+76f11898568d        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop)  EXPOSE 64535-65535/udp       0B</span>
+124e52a5fdb8        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop)  EXPOSE 8021/tcp              0B</span>
+d05fa7854fa3        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop)  EXPOSE 5066/tcp 7443/tcp     0B</span>
+fae9a2737d1b        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop)  EXPOSE 5060/tcp 5060/udp …   0B</span>
+d817769a9e83        <span style=color:#099>9</span> hours ago         /bin/sh -c ldconfig                             81.5kB
+e4347f4a3f7f        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop) ADD file:305fb1821e6c9f4f7…   19.5kB</span>
+7fa9aac435b0        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop) ADD file:ef5aa87255557ffc9…   340B</span>
+2872fc32f715        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop) ADD file:aa24cd419ee5ea6ca…   249B</span>
+681ea1a83b9b        <span style=color:#099>9</span> hours ago         /bin/sh -c chmod +x /etc/init.d/freeswitch  …   7.28kB
+b3af584e7595        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop) ADD file:e450d50f8d60a1861…   5.76kB</span>
+8c2e2a5f2de4        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop) COPY dir:8ecfbdecc9f674459…   417MB</span>
+9a2938106462        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop) COPY dir:1ddadc455338c149f…   112MB</span>
+d03606f65563        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop) COPY dir:cd305b7f15031b530…   20.4MB</span>
+3e21911eea87        <span style=color:#099>9</span> hours ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop) COPY --chown=freeswitch:da…   410MB</span>
+6ce315566979        <span style=color:#099>9</span> hours ago         /bin/sh -c useradd -r -g daemon freeswitch      329kB
+b7c170867677        <span style=color:#099>9</span> hours ago         /bin/sh -c apt-get update     <span style=color:#000;font-weight:700>&amp;&amp;</span> ln -snf /us…   2.76MB
+9a800e72f239        <span style=color:#099>10</span> hours ago        /bin/sh -c <span style=color:#998;font-style:italic>#(nop)  ENV TZ=Asia/Shanghai         0B</span>
+77be327e4b63        <span style=color:#099>4</span> weeks ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop)  CMD [&#34;/bin/bash&#34;]            0B</span>
+&lt;missing&gt;           <span style=color:#099>4</span> weeks ago         /bin/sh -c mkdir -p /run/systemd <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>echo</span> <span style=color:#d14>&#39;do…   7B
+</span><span style=color:#d14>&lt;missing&gt;           4 weeks ago         /bin/sh -c set -xe   &amp;&amp; echo &#39;</span><span style=color:#998;font-style:italic>#!/bin/sh&#39; &gt; /…   745B</span>
+&lt;missing&gt;           <span style=color:#099>4</span> weeks ago         /bin/sh -c rm -rf /var/lib/apt/lists/*          0B
+&lt;missing&gt;           <span style=color:#099>4</span> weeks ago         /bin/sh -c <span style=color:#998;font-style:italic>#(nop) ADD file:1f70668251e2e58ce…   124MB</span>
 </code></pre></div><h3 id=dive分析镜像工具>dive分析镜像工具</h3>
 <p>可以看出每一层所添加的大小，并针对大的层进行优化。</p>
 <p>分析镜像还有一个很有用的工具<code>dive</code>：</p>
 <p>下载安装<code>dive</code>：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=color:#6272a4># wget https://github.com/wagoodman/dive/releases/download/v0.9.2/dive_0.9.2_linux_amd64.tar.gz</span>
-<span style=color:#6272a4># tar -zvxf dive_0.9.2_linux_amd64.tar.gz</span>
-<span style=color:#6272a4># cp dive /usr/bin</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell><span style=color:#998;font-style:italic># wget https://github.com/wagoodman/dive/releases/download/v0.9.2/dive_0.9.2_linux_amd64.tar.gz</span>
+<span style=color:#998;font-style:italic># tar -zvxf dive_0.9.2_linux_amd64.tar.gz</span>
+<span style=color:#998;font-style:italic># cp dive /usr/bin</span>
 </code></pre></div><p>使用：<code>dive &lt;IMAGE ID></code> 或者 <code>dive REPOSITORY:TAG</code></p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>┃ ● Layers ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │ Current Layer Contents ├──────────────────────────────────
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>┃ ● Layers ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │ Current Layer Contents ├──────────────────────────────────
 Cmp   Size  Command                                          Permission     UID:GID       Size  Filetree
     5.2 MB  FROM d970df9dd8bab4b                             drwxr-xr-x         0:0     1.0 MB  ├── bin
-                                                             -rwxr-xr-x         0:0     1.0 MB  │   ├── <span style=color:#ff79c6>[</span>
-│ Layer Details ├─────────────────────────────────────────── -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── <span style=color:#ff79c6>[[</span> → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── acpid → bin/<span style=color:#ff79c6>[</span>
-Tags:   <span style=color:#ff79c6>(</span>unavailable<span style=color:#ff79c6>)</span>                                        -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── add-shell → bin/<span style=color:#ff79c6>[</span>
-Id:     d970df9dd8bab4b7a604d73763aee9e732d107cf3b02000ca193 -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── addgroup → bin/<span style=color:#ff79c6>[</span>
-712fe48a460f                                                 -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── adduser → bin/<span style=color:#ff79c6>[</span>
-Digest: sha256:8a9aa5c55905476e9412fcf0e18942123b239333aafc4 -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── adjtimex → bin/<span style=color:#ff79c6>[</span>
-d7b3656faf67b980b41                                          -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── ar → bin/<span style=color:#ff79c6>[</span>
-Command:                                                     -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── arch → bin/<span style=color:#ff79c6>[</span>
-<span style=color:#6272a4>#(nop) ADD file:d5fc1686f667af49c2cb01970701b62eeb9c818d2d4e -rwxr-xr-x         0:0        0 B  │   ├── arp → bin/[</span>
-8f967993dab1de737f28 in /                                    -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── arping → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── ash → bin/<span style=color:#ff79c6>[</span>
-│ Image Details ├─────────────────────────────────────────── -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── awk → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── base64 → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── basename → bin/<span style=color:#ff79c6>[</span>
-Total Image size: 5.2 MB                                     -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── bc → bin/<span style=color:#ff79c6>[</span>
-Potential wasted space: <span style=color:#bd93f9>0</span> B                                  -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── beep → bin/<span style=color:#ff79c6>[</span>
-Image efficiency score: <span style=color:#bd93f9>100</span> %                                -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── blkdiscard → bin/
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── blkid → bin/<span style=color:#ff79c6>[</span>
-Count   Total Space  Path                                    -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── blockdev → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── bootchartd → bin/
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── brctl → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── bunzip2 → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── busybox → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── bzcat → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── bzip2 → bin/<span style=color:#ff79c6>[</span>
-                                                             -rwxr-xr-x         0:0        <span style=color:#bd93f9>0</span> B  │   ├── cal → bin/<span style=color:#ff79c6>[</span>
+                                                             -rwxr-xr-x         0:0     1.0 MB  │   ├── <span style=color:#000;font-weight:700>[</span>
+│ Layer Details ├─────────────────────────────────────────── -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── <span style=color:#000;font-weight:700>[[</span> → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── acpid → bin/<span style=color:#000;font-weight:700>[</span>
+Tags:   <span style=color:#000;font-weight:700>(</span>unavailable<span style=color:#000;font-weight:700>)</span>                                        -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── add-shell → bin/<span style=color:#000;font-weight:700>[</span>
+Id:     d970df9dd8bab4b7a604d73763aee9e732d107cf3b02000ca193 -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── addgroup → bin/<span style=color:#000;font-weight:700>[</span>
+712fe48a460f                                                 -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── adduser → bin/<span style=color:#000;font-weight:700>[</span>
+Digest: sha256:8a9aa5c55905476e9412fcf0e18942123b239333aafc4 -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── adjtimex → bin/<span style=color:#000;font-weight:700>[</span>
+d7b3656faf67b980b41                                          -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── ar → bin/<span style=color:#000;font-weight:700>[</span>
+Command:                                                     -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── arch → bin/<span style=color:#000;font-weight:700>[</span>
+<span style=color:#998;font-style:italic>#(nop) ADD file:d5fc1686f667af49c2cb01970701b62eeb9c818d2d4e -rwxr-xr-x         0:0        0 B  │   ├── arp → bin/[</span>
+8f967993dab1de737f28 in /                                    -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── arping → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── ash → bin/<span style=color:#000;font-weight:700>[</span>
+│ Image Details ├─────────────────────────────────────────── -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── awk → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── base64 → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── basename → bin/<span style=color:#000;font-weight:700>[</span>
+Total Image size: 5.2 MB                                     -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── bc → bin/<span style=color:#000;font-weight:700>[</span>
+Potential wasted space: <span style=color:#099>0</span> B                                  -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── beep → bin/<span style=color:#000;font-weight:700>[</span>
+Image efficiency score: <span style=color:#099>100</span> %                                -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── blkdiscard → bin/
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── blkid → bin/<span style=color:#000;font-weight:700>[</span>
+Count   Total Space  Path                                    -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── blockdev → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── bootchartd → bin/
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── brctl → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── bunzip2 → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── busybox → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── bzcat → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── bzip2 → bin/<span style=color:#000;font-weight:700>[</span>
+                                                             -rwxr-xr-x         0:0        <span style=color:#099>0</span> B  │   ├── cal → bin/<span style=color:#000;font-weight:700>[</span>
 
 </code></pre></div><p>可以非常清晰的看到每一层添加的镜像大小以及文件的变化，通过右边的<code>Content</code>可以观察到文件夹的变化。</p>
 <h2 id=各种基础镜像的构建>各种基础镜像的构建</h2>
@@ -624,45 +624,45 @@ Count   Total Space  Path                                    -rwxr-xr-x         
 <p>也可以使用编程语言对应的基础镜像，适合分步构建完成之后在其上运行或者在对应的基础镜像中编译。</p>
 <h3 id=各个基础镜像换源>各个基础镜像换源</h3>
 <p><em><strong>CentOS yum源</strong></em></p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
 wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-6.repo
 </code></pre></div><p><em><strong>Ubuntu apt源</strong></em>
 清华源：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#f1fa8c>&#39;s http://.*.ubuntu.com http://mirrors.tuna.tsinghua.edu.cn g&#39;</span> /etc/apt/sources.list
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#d14>&#39;s http://.*.ubuntu.com http://mirrors.tuna.tsinghua.edu.cn g&#39;</span> /etc/apt/sources.list
 </code></pre></div><p>阿里云源：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#f1fa8c>&#39;s http://.*.ubuntu.com http://mirrors.aliyun.com g&#39;</span> /etc/apt/sources.list
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#d14>&#39;s http://.*.ubuntu.com http://mirrors.aliyun.com g&#39;</span> /etc/apt/sources.list
 </code></pre></div><p><em><strong>Debian apt源</strong></em></p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#f1fa8c>&#39;s http://.*.debian.org http://mirrors.aliyun.com g&#39;</span> /etc/apt/sources.list.d/debian.sources
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#d14>&#39;s http://.*.debian.org http://mirrors.aliyun.com g&#39;</span> /etc/apt/sources.list.d/debian.sources
 </code></pre></div><p><em><strong>Alphine apk源</strong></em></p>
 <p>阿里源：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#f1fa8c>&#39;s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g&#39;</span> /etc/apk/repositories
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#d14>&#39;s/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g&#39;</span> /etc/apk/repositories
 </code></pre></div><p>科大源：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#f1fa8c>&#39;s/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g&#39;</span> /etc/apk/repositories
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>sed -i <span style=color:#d14>&#39;s/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g&#39;</span> /etc/apk/repositories
 </code></pre></div><h3 id=各个基础镜像设置时区方法>各个基础镜像设置时区方法</h3>
 <p><em><strong>Ubuntu</strong></em></p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#ff79c6>FROM</span><span style=color:#f1fa8c> ubuntu:16.04</span>
-
-<span style=color:#ff79c6>ENV</span> <span style=color:#8be9fd;font-style:italic>TZ</span><span style=color:#ff79c6>=</span>Asia/Shanghai
-<span style=color:#ff79c6>RUN</span> apt-get update <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> ln -snf /usr/share/zoneinfo/<span style=color:#8be9fd;font-style:italic>$TZ</span> /etc/localtime <span style=color:#ff79c6>&amp;&amp;</span> <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#8be9fd;font-style:italic>$TZ</span> &gt; /etc/timezone <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> apt-get install tzdata <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> apt-get clean <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> apt-get autoclean <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-</code></pre></div><p><em><strong>CentOS</strong></em></p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>ENV <span style=color:#8be9fd;font-style:italic>TimeZone</span><span style=color:#ff79c6>=</span>Asia/Shanghai   
-RUN ln -snf /usr/share/zoneinfo/<span style=color:#8be9fd;font-style:italic>$TimeZone</span> /etc/localtime <span style=color:#ff79c6>&amp;&amp;</span> <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#8be9fd;font-style:italic>$TimeZone</span> &gt; /etc/timezone
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Dockerfile data-lang=Dockerfile><span style=color:#000;font-weight:700>FROM</span><span style=color:#d14> ubuntu:16.04</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>ENV</span> <span style=color:teal>TZ</span><span style=color:#000;font-weight:700>=</span>Asia/Shanghai<span style=color:#a61717;background-color:#e3d2d2>
+</span><span style=color:#a61717;background-color:#e3d2d2></span><span style=color:#000;font-weight:700>RUN</span> apt-get update <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> ln -snf /usr/share/zoneinfo/<span style=color:teal>$TZ</span> /etc/localtime <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>echo</span> <span style=color:teal>$TZ</span> &gt; /etc/timezone <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> apt-get install tzdata <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> apt-get clean <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> apt-get autoclean <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*<span style=color:#a61717;background-color:#e3d2d2>
+</span></code></pre></div><p><em><strong>CentOS</strong></em></p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>ENV <span style=color:teal>TimeZone</span><span style=color:#000;font-weight:700>=</span>Asia/Shanghai   
+RUN ln -snf /usr/share/zoneinfo/<span style=color:teal>$TimeZone</span> /etc/localtime <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>echo</span> <span style=color:teal>$TimeZone</span> &gt; /etc/timezone
 </code></pre></div><p><em><strong>Debian</strong></em></p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>ENV <span style=color:#8be9fd;font-style:italic>TZ</span><span style=color:#ff79c6>=</span>Asia/Shanghai
-RUN ln -snf /usr/share/zoneinfo/<span style=color:#8be9fd;font-style:italic>$TZ</span> /etc/localtime <span style=color:#ff79c6>&amp;&amp;</span> <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#8be9fd;font-style:italic>$TZ</span> &gt; /etc/timezone
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>ENV <span style=color:teal>TZ</span><span style=color:#000;font-weight:700>=</span>Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/<span style=color:teal>$TZ</span> /etc/localtime <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>echo</span> <span style=color:teal>$TZ</span> &gt; /etc/timezone
 </code></pre></div><p><em><strong>Alphine</strong></em></p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>RUN apk add tzdata <span style=color:#ff79c6>&amp;&amp;</span> cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#34;Asia/Shanghai&#34;</span> &gt; /etc/timezone <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> apk del tzdata
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>RUN apk add tzdata <span style=color:#000;font-weight:700>&amp;&amp;</span> cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>echo</span> <span style=color:#d14>&#34;Asia/Shanghai&#34;</span> &gt; /etc/timezone <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> apk del tzdata
 </code></pre></div><h3 id=把日志文件输出到标准输出流>把日志文件输出到标准输出流</h3>
 <p>有时候我们写的程序不是以标准输出到控制台的方式来打印日志，而是存在某个日志文件，这就造成容器跑起来之后<code>docker logs</code>命令查看不到日志，这是因为<code>docker</code>容器只接管标准输出流和标准错误流，因此还需要重定向到<code>stdout</code>和<code>stderr</code>：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>RUN ln -sf /dev/stdout /var/log/nginx/access.log <span style=color:#f1fa8c>\
-</span><span style=color:#f1fa8c></span>    <span style=color:#ff79c6>&amp;&amp;</span> ln -sf /dev/stderr /var/log/nginx/error.log
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>RUN ln -sf /dev/stdout /var/log/nginx/access.log <span style=color:#d14>\
+</span><span style=color:#d14></span>    <span style=color:#000;font-weight:700>&amp;&amp;</span> ln -sf /dev/stderr /var/log/nginx/error.log
 </code></pre></div>
 </div>
 <div class=prev-next>

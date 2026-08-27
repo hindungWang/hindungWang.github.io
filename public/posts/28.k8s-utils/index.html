@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/28.k8s-utils/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -244,25 +244,25 @@ June 4, 2024
 <p>这写包可以通过单元测试完全执行，具有完整的单元测试覆盖率，稳定或向后兼容的 API，具有完整的 godocs，以及很少依赖的特点。是一个很好的Go 项目的例子。</p>
 <h1 id=项目结构>项目结构</h1>
 <p>如下图所示：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>├── buffer                     <span style=color:#6272a4># 增长环形缓冲区，是一种数据结构，2 倍增长</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>├── buffer                     <span style=color:#998;font-style:italic># 增长环形缓冲区，是一种数据结构，2 倍增长</span>
 │   ├── ring_growing.go
 │   └── ring_growing_test.go
-├── clock                      <span style=color:#6272a4># 创建出特定偏移量的时间</span>
+├── clock                      <span style=color:#998;font-style:italic># 创建出特定偏移量的时间</span>
 │   ├── README.md
 │   ├── clock.go
 │   └── testing
-├── cpuset                     <span style=color:#6272a4># CPU集合的数据结构</span>
+├── cpuset                     <span style=color:#998;font-style:italic># CPU集合的数据结构</span>
 │   ├── OWNERS
 │   ├── cpuset.go
 │   └── cpuset_test.go
-├── diff                       <span style=color:#6272a4># 各种数据结构的diff，字符串、结构体等</span>
+├── diff                       <span style=color:#998;font-style:italic># 各种数据结构的diff，字符串、结构体等</span>
 │   ├── diff.go
 │   └── diff_test.go
-├── env                        <span style=color:#6272a4># 对环境变量 GET、SET 的封装</span>
+├── env                        <span style=color:#998;font-style:italic># 对环境变量 GET、SET 的封装</span>
 │   ├── doc.go
 │   ├── env.go
 │   └── env_test.go
-├── <span style=color:#8be9fd;font-style:italic>exec</span>                       <span style=color:#6272a4># os/exec 包的封装</span>
+├── <span style=color:#0086b3>exec</span>                       <span style=color:#998;font-style:italic># os/exec 包的封装</span>
 │   ├── README.md
 │   ├── doc.go
 │   ├── exec.go
@@ -273,10 +273,10 @@ June 4, 2024
 │   ├── stdiopipe_test.go
 │   ├── testdata
 │   └── testing
-├── field                     <span style=color:#6272a4># 元素在结构中的路径，AST 树的路径</span>
+├── field                     <span style=color:#998;font-style:italic># 元素在结构中的路径，AST 树的路径</span>
 │   ├── path.go
 │   └── path_test.go
-├── inotify                   <span style=color:#6272a4># 监听文件描述符的包</span>
+├── inotify                   <span style=color:#998;font-style:italic># 监听文件描述符的包</span>
 │   ├── LICENSE
 │   ├── PATENTS
 │   ├── README.md
@@ -284,24 +284,24 @@ June 4, 2024
 │   ├── inotify_linux.go
 │   ├── inotify_linux_test.go
 │   └── inotify_others.go
-├── integer                   <span style=color:#6272a4># 整数比较、取整等</span>
+├── integer                   <span style=color:#998;font-style:italic># 整数比较、取整等</span>
 │   ├── integer.go
 │   └── integer_test.go
-├── internal                  <span style=color:#6272a4># 内部包，lru 实现，ip 地址解析等</span>
+├── internal                  <span style=color:#998;font-style:italic># 内部包，lru 实现，ip 地址解析等</span>
 │   └── third_party
-├── io                        <span style=color:#6272a4># 一致性读取文件，如果没更新则返回，否则再读几次</span>
+├── io                        <span style=color:#998;font-style:italic># 一致性读取文件，如果没更新则返回，否则再读几次</span>
 │   ├── README.md
 │   ├── read.go
 │   └── read_test.go
-├── keymutex                  <span style=color:#6272a4># 哈希锁，每个资源或资源的一部分都有一个独立的锁</span>
+├── keymutex                  <span style=color:#998;font-style:italic># 哈希锁，每个资源或资源的一部分都有一个独立的锁</span>
 │   ├── hashed.go
 │   ├── keymutex.go
 │   └── keymutex_test.go
-├── lru                       <span style=color:#6272a4># LRU算法</span>
+├── lru                       <span style=color:#998;font-style:italic># LRU算法</span>
 │   ├── lru.go
 │   └── lru_test.go
-├── mount                     <span style=color:#6272a4># 文件系统挂载相关的操作，移到了 github.com/kubernetes/mount-utils 包</span>
-├── net                       <span style=color:#6272a4># IP、端口相关的操作</span>
+├── mount                     <span style=color:#998;font-style:italic># 文件系统挂载相关的操作，移到了 github.com/kubernetes/mount-utils 包</span>
+├── net                       <span style=color:#998;font-style:italic># IP、端口相关的操作</span>
 │   ├── ebtables
 │   ├── ipfamily.go
 │   ├── ipfamily_test.go
@@ -312,16 +312,16 @@ June 4, 2024
 │   ├── parse.go
 │   ├── port.go
 │   └── port_test.go
-├── nsenter                   <span style=color:#6272a4># nsenter 命令行的封装</span>
+├── nsenter                   <span style=color:#998;font-style:italic># nsenter 命令行的封装</span>
 │   ├── OWNERS
 │   ├── README.md
 │   ├── nsenter.go
 │   ├── nsenter_test.go
 │   └── nsenter_unsupported.go
-├── path                      <span style=color:#6272a4># 文件、文件夹的一些操作</span>
+├── path                      <span style=color:#998;font-style:italic># 文件、文件夹的一些操作</span>
 │   ├── file.go
 │   └── file_test.go
-├── pointer                  <span style=color:#6272a4># 取指针、比较等</span>
+├── pointer                  <span style=color:#998;font-style:italic># 取指针、比较等</span>
 │   ├── OWNERS
 │   ├── README.md
 │   ├── pointer.go
@@ -334,22 +334,22 @@ June 4, 2024
 ├── semantic
 │   ├── deep_equal.go
 │   └── deep_equal_test.go
-├── <span style=color:#8be9fd;font-style:italic>set</span>                      <span style=color:#6272a4># 集合相关</span>
+├── <span style=color:#0086b3>set</span>                      <span style=color:#998;font-style:italic># 集合相关</span>
 │   ├── OWNERS
 │   ├── ordered.go
 │   ├── set.go
 │   ├── set_go_1.20.go
 │   ├── set_go_1.21.go
 │   └── set_test.go
-├── strings                 <span style=color:#6272a4># 常用的字符串操作</span>
-│   ├── escape.go           <span style=color:#6272a4># / 装换成 ～</span>
+├── strings                 <span style=color:#998;font-style:italic># 常用的字符串操作</span>
+│   ├── escape.go           <span style=color:#998;font-style:italic># / 装换成 ～</span>
 │   ├── escape_test.go
-│   ├── line_delimiter.go    <span style=color:#6272a4># 添加 ｜｜</span>
+│   ├── line_delimiter.go    <span style=color:#998;font-style:italic># 添加 ｜｜</span>
 │   ├── line_delimiter_test.go
-│   ├── slices               <span style=color:#6272a4># 字符数组比较、过滤等</span>
+│   ├── slices               <span style=color:#998;font-style:italic># 字符数组比较、过滤等</span>
 │   ├── strings.go
 │   └── strings_test.go
-├── temp                     <span style=color:#6272a4># 临时文件/文件夹</span>
+├── temp                     <span style=color:#998;font-style:italic># 临时文件/文件夹</span>
 │   ├── README.md
 │   ├── dir.go
 │   ├── dir_test.go

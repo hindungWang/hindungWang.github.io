@@ -23,11 +23,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/31.hight-cpu/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -287,9 +287,9 @@ September 3, 2024
 <p>经过对比，异常节点所在的物理机 CPU 架构为 2 个 NUMA 架构，而异常的节点为单个 NUMA。重新对异常虚拟机绑定 NUMA 之后启动虚拟机，问题并没有解决。</p>
 <p>由于从观察上看，占用最多的进程是 k3s，又开始怀疑是不是 k3s中 etcd、containerd 占用过多 IO 导致。</p>
 <p>遂开始分析 k3s 进程。启动 k3s 的 debug，然后获取 pprof：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>curl -insecure <span style=color:#f1fa8c>&#39;https://localhost:6443/debug/pprof/profile?seconds=10&#39;</span> &gt; profile.pprof
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>curl -insecure <span style=color:#d14>&#39;https://localhost:6443/debug/pprof/profile?seconds=10&#39;</span> &gt; profile.pprof
 </code></pre></div><p>使用 go 工具进行分析：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>go tool pprof -http<span style=color:#ff79c6>=</span>:8080 profile.pprof
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>go tool pprof -http<span style=color:#000;font-weight:700>=</span>:8080 profile.pprof
 </code></pre></div><p>分析 top cpu 使用的函数，以及火焰图：
 <img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/2024-09-03-image-3.png alt>
 <img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/2024-09-03-image-4.png alt></p>

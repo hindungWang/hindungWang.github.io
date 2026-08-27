@@ -1,0 +1,212 @@
+:root {
+  --dark-primary-color: 34, 39, 46;
+  --dark-secondary-color: #2d333b;
+  --dark-tertiary-color: #646464;
+  --dark-text-color: white;
+}
+
+html {
+  background-color: rgb(var(--dark-primary-color));
+  color: var(--dark-text-color);
+  fill: var(--dark-text-color);
+}
+
+.header {
+  background-color: rgba(var(--dark-primary-color), 0.95);
+}
+
+.nav-hamburger-list {
+  background: rgba(var(--dark-primary-color), 1);
+}
+
+.nav-links .nav-icons-divider {
+  color: var(--dark-secondary-color);
+}
+
+a:hover .feather-moon {
+  fill: white;
+  color: white;
+}
+
+.gk-social-icons-list .gk-social-icon,
+.gk-social-icons-list .gk-social-icon a:visited  {
+  fill: var(--dark-text-color);
+}
+
+.gk-social-icons-list .gk-social-icon a:hover {
+  fill: var(--accent-color);
+}
+
+.post-tags .post-tag:hover {
+  background-color: var(--dark-text-color);
+  color: rgb(var(--dark-primary-color));
+}
+
+.tags-list .post-tags .post-tag a .tag-posts-count {
+  background-color: var(--dark-secondary-color);
+}
+
+.tags-list .post-tags .post-tag:hover a .tag-posts-count {
+  background-color: var(--dark-text-color);
+  color: rgb(var(--dark-primary-color));
+}
+
+.footer {
+  border-top-color: var(--dark-header-bg-color);
+}
+
+blockquote {
+  color: darkgrey;
+  border-left-color: var(--dark-secondary-color);
+}
+
+hr {
+  color: var(--dark-tertiary-color);
+}
+
+table thead {
+  background-color: var(--dark-secondary-color);
+}
+
+table td,
+table th {
+  border-bottom-color: var(--dark-secondary-color);
+}
+
+code,
+pre {
+  background-color: var(--dark-secondary-color) !important;
+}
+
+:not(pre) > code {
+  background-color: var(--dark-tertiary-color) !important;
+  color: var(--dark-text-color);
+}
+
+.header-shadow {
+  box-shadow: rgb(33, 38, 45) 0px -1px 0px 0px inset;
+}
+
+.arrow-logo {
+  background-color: var(--dark-secondary-color);
+}
+
+/* TODO: Check if this is needed or not */
+/*
+img,
+video {
+  filter: hue-rotate(180deg) contrast(100%) invert(100%);
+  -webkit-filter: hue-rotate(180deg) contrast(100%) invert(100%);
+}
+*/
+
+/* ================================================================
+   Medium 风格 · 深色模式下的文章页覆盖
+   （本文件由主题的深浅色开关随 dark.css 一起切换；
+    变量定义在 :root 且加载顺序晚于 posts-nav.css，可覆盖浅色值）
+   ================================================================ */
+:root {
+  --md-text: #EDEDED;
+  --md-muted: #8B8B8B;
+  --md-hairline: rgba(255, 255, 255, 0.12);
+  --md-code-bg: #242424;
+  --md-accent: #3EA13E;
+}
+
+/* 正文容器：Medium 深色配色 */
+body.post-page .post.container,
+body.post-page .post.container a {
+  color: var(--md-text) !important;
+}
+
+body.post-page .post-header-section {
+  border-bottom-color: var(--md-hairline) !important;
+}
+body.post-page .post [role="doc-subtitle"],
+body.post-page .post .post-date,
+body.post-page .toc-title,
+body.post-page .posts-nav h3 {
+  color: var(--md-muted) !important;
+}
+body.post-page .post-tags .post-tag a {
+  color: var(--md-muted) !important;
+}
+body.post-page .post-tags .post-tag a:hover {
+  color: var(--md-text) !important;
+}
+
+/* 正文链接：Medium 风格下划线 */
+body.post-page .post-content a {
+  color: var(--md-text) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.3) !important;
+}
+body.post-page .post-content a:hover {
+  border-bottom-color: var(--md-text) !important;
+}
+
+/* 代码块：扁平深灰 */
+body.post-page .post-content pre {
+  background: var(--md-code-bg) !important;
+  color: #E6E6E6 !important;
+}
+/* 深色模式下语法着色统一压平为单色（Medium 式 monochrome） */
+body.post-page .post-content .highlight pre span {
+  color: #E6E6E6 !important;
+}
+body.post-page .post-content :not(pre) > code {
+  background: var(--md-code-bg) !important;
+  color: #E6E6E6 !important;
+}
+
+/* 标题 */
+body.post-page .post-content h1,
+body.post-page .post-content h2,
+body.post-page .post-content h3,
+body.post-page .post-content h4 {
+  color: var(--md-text) !important;
+}
+
+/* 引用 */
+body.post-page .post-content blockquote {
+  color: var(--md-text) !important;
+  border-left-color: rgba(255, 255, 255, 0.25) !important;
+  background: transparent !important;
+}
+
+/* 表格 */
+body.post-page .post-content table {
+  border-color: var(--md-hairline) !important;
+}
+body.post-page .post-content table thead {
+  background: rgba(255, 255, 255, 0.05) !important;
+}
+body.post-page .post-content table th,
+body.post-page .post-content table td {
+  border-bottom-color: var(--md-hairline) !important;
+}
+
+/* 分割线 */
+body.post-page .post-content hr {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent) !important;
+}
+
+/* 侧栏 */
+body.post-page .posts-nav a,
+body.post-page .post-toc a {
+  color: var(--md-text) !important;
+}
+body.post-page .posts-nav a:hover,
+body.post-page .post-toc a:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+body.post-page .posts-nav li.active a,
+body.post-page .post-toc a.active {
+  color: var(--md-accent) !important;
+  border-left-color: var(--md-accent) !important;
+  background: rgba(62, 161, 62, 0.12) !important;
+}
+
+/* 阅读进度条 */
+#reading-progress {
+  background: var(--md-accent) !important;
+}

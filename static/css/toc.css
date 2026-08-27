@@ -1,5 +1,5 @@
 /* ================================================================
-   右侧目录（post 页）
+   右侧目录（post 页）· Medium 极简风格
    sticky 跟随滚动，与左侧栏对称，正文始终居中
    ================================================================ */
 
@@ -18,13 +18,14 @@
 }
 
 .toc-title {
+  font-family: var(--md-font-sans, -apple-system, "PingFang SC", sans-serif);
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  opacity: 0.45;
-  margin: 2px 0 12px;
-  padding-left: 10px;
+  color: var(--md-muted, #6B6B6B);
+  margin: 2px 0 14px;
+  padding-left: 12px;
 }
 
 /* 覆盖主题中 #toc 的 fixed 定位 */
@@ -50,37 +51,38 @@
 
 .post-toc nav#toc a {
   display: block;
-  padding: 4px 10px;
-  color: inherit;
+  font-family: var(--md-font-sans, -apple-system, "PingFang SC", sans-serif);
+  padding: 4px 12px;
+  color: var(--md-text, #242424);
   text-decoration: none;
   border-left: 2px solid transparent;
-  border-radius: 0 7px 7px 0;
+  border-radius: 0 6px 6px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  opacity: 0.68;
+  opacity: 0.6;
   transition: background 0.15s, color 0.15s, opacity 0.15s;
 }
 .post-toc nav#toc a:hover {
-  background: rgba(127, 127, 127, 0.12);
+  background: rgba(0, 0, 0, 0.05);
   opacity: 1;
 }
 .post-toc nav#toc a.active {
-  color: var(--accent-color, #FF4D4D);
-  border-left-color: var(--accent-color, #FF4D4D);
-  background: rgba(255, 77, 77, 0.07);
+  color: var(--md-accent, #1A8917);
+  border-left-color: var(--md-accent, #1A8917);
+  background: none;
   opacity: 1;
   font-weight: 600;
 }
 
 /* 层级缩进（覆盖主题 level-1..4，startLevel=2 时 h2 为顶层） */
 .post-toc nav#toc a.level-1,
-.post-toc nav#toc a.level-2 { padding-left: 10px; }
-.post-toc nav#toc a.level-3 { padding-left: 24px; }
-.post-toc nav#toc a.level-4 { padding-left: 38px; }
+.post-toc nav#toc a.level-2 { padding-left: 12px; }
+.post-toc nav#toc a.level-3 { padding-left: 26px; }
+.post-toc nav#toc a.level-4 { padding-left: 40px; }
 
 .post-toc::-webkit-scrollbar { width: 6px; }
 .post-toc::-webkit-scrollbar-thumb {
-  background: rgba(127, 127, 127, 0.3);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 3px;
 }

@@ -26,11 +26,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/24.k8s-network-policy/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -284,151 +284,151 @@ November 15, 2023
 <p>如果使用flannel等不支持网络策略的插件，即使创建NetworkPolicy也无法生效。</p>
 <h2 id=kube-ovn>kube-ovn</h2>
 <p>kube-ovn支持使用k8s原生网络策略，没有自己实现，因此使用方法即为原生NetworkPolicy。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: networking.k8s.io/v1 <span style=color:#6272a4># k8s原生资源</span>
-<span style=color:#ff79c6>kind</span>: NetworkPolicy
-<span style=color:#ff79c6>metadata</span>:
-  <span style=color:#ff79c6>name</span>: test-network-policy
-  <span style=color:#ff79c6>namespace</span>: default
-<span style=color:#ff79c6>spec</span>:
-  <span style=color:#ff79c6>podSelector</span>:    <span style=color:#6272a4># 作用的对象集合</span>
-    <span style=color:#ff79c6>matchLabels</span>:  <span style=color:#6272a4># 通过标签选择对应的POD</span>
-      <span style=color:#ff79c6>xxx</span>: xxx
-  <span style=color:#ff79c6>policyTypes</span>:    <span style=color:#6272a4># 生效的策略，不填默认是Ingress</span>
-    - Ingress
-    - Egress
-  <span style=color:#ff79c6>ingress</span>:        <span style=color:#6272a4># 入方向的策略</span>
-    - <span style=color:#ff79c6>from</span>:       <span style=color:#6272a4># 从哪个集合来</span>
-      ports：     <span style=color:#6272a4># 端口或者端口范围</span>
-  <span style=color:#ff79c6>egress</span>:         <span style=color:#6272a4># 出方向的策略 </span>
-    - <span style=color:#ff79c6>to</span>:         <span style=color:#6272a4># 到哪个集合去</span>
-      ports：     <span style=color:#6272a4># 端口或者端口范围</span>
-</code></pre></div><p><code>to</code>和<code>from</code>支持一些选择器：</p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>networking.k8s.io/v1<span style=color:#bbb> </span><span style=color:#998;font-style:italic># k8s原生资源</span><span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>NetworkPolicy<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>test-network-policy<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>podSelector</span>:<span style=color:#bbb>    </span><span style=color:#998;font-style:italic># 作用的对象集合</span><span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>  </span><span style=color:#998;font-style:italic># 通过标签选择对应的POD</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>xxx</span>:<span style=color:#bbb> </span>xxx<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>policyTypes</span>:<span style=color:#bbb>    </span><span style=color:#998;font-style:italic># 生效的策略，不填默认是Ingress</span><span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- Ingress<span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- Egress<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>ingress</span>:<span style=color:#bbb>        </span><span style=color:#998;font-style:italic># 入方向的策略</span><span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- <span style=color:navy>from</span>:<span style=color:#bbb>       </span><span style=color:#998;font-style:italic># 从哪个集合来</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span>ports：    <span style=color:#bbb> </span><span style=color:#998;font-style:italic># 端口或者端口范围</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>egress</span>:<span style=color:#bbb>         </span><span style=color:#998;font-style:italic># 出方向的策略 </span><span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- <span style=color:navy>to</span>:<span style=color:#bbb>         </span><span style=color:#998;font-style:italic># 到哪个集合去</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span>ports：    <span style=color:#bbb> </span><span style=color:#998;font-style:italic># 端口或者端口范围</span><span style=color:#bbb>
+</span></code></pre></div><p><code>to</code>和<code>from</code>支持一些选择器：</p>
 <ul>
 <li>podSelector：Pod选择</li>
 <li>namespaceSelector：命名空间选择</li>
 <li>ipBlock：ip地址范围</li>
 </ul>
 <p>如：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml>    <span style=color:#ff79c6>ingress</span>: 
-    - <span style=color:#ff79c6>from</span>:
-        - <span style=color:#ff79c6>namespaceSelector</span>:
-            <span style=color:#ff79c6>matchLabels</span>:
-              <span style=color:#ff79c6>user</span>: alice
-        - <span style=color:#ff79c6>podSelector</span>:
-            <span style=color:#ff79c6>matchLabels</span>:
-               <span style=color:#ff79c6>role</span>: client
-        - <span style=color:#ff79c6>ipBlock</span>:
-            <span style=color:#ff79c6>cidr</span>: <span style=color:#bd93f9>172.17.0.0</span>/16
-            <span style=color:#ff79c6>except</span>: <span style=color:#6272a4># 排除</span>
-            - <span style=color:#bd93f9>172.17.1.0</span>/24
-</code></pre></div><p>默认情况下，规则的生效是<code>只允许</code>策略，规则声明则允许，规则外的默认阻塞。即：<code>只允许</code>从含有<code>user: alice</code>标签的命名空间中含有<code>role: client</code>标签的pod并且ip为<code>172.17.0.0/16</code>且不能在<code>172.17.1.0/24</code>范围内的流量<code>进来</code>。</p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>    </span><span style=color:navy>ingress</span>:<span style=color:#bbb> 
+</span><span style=color:#bbb>    </span>- <span style=color:navy>from</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>        </span>- <span style=color:navy>namespaceSelector</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>            </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>              </span><span style=color:navy>user</span>:<span style=color:#bbb> </span>alice<span style=color:#bbb>
+</span><span style=color:#bbb>        </span>- <span style=color:navy>podSelector</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>            </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>               </span><span style=color:navy>role</span>:<span style=color:#bbb> </span>client<span style=color:#bbb>
+</span><span style=color:#bbb>        </span>- <span style=color:navy>ipBlock</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>            </span><span style=color:navy>cidr</span>:<span style=color:#bbb> </span><span style=color:#099>172.17.0.0</span>/16<span style=color:#bbb>
+</span><span style=color:#bbb>            </span><span style=color:navy>except</span>:<span style=color:#bbb> </span><span style=color:#998;font-style:italic># 排除</span><span style=color:#bbb>
+</span><span style=color:#bbb>            </span>- <span style=color:#099>172.17.1.0</span>/24<span style=color:#bbb>
+</span></code></pre></div><p>默认情况下，规则的生效是<code>只允许</code>策略，规则声明则允许，规则外的默认阻塞。即：<code>只允许</code>从含有<code>user: alice</code>标签的命名空间中含有<code>role: client</code>标签的pod并且ip为<code>172.17.0.0/16</code>且不能在<code>172.17.1.0/24</code>范围内的流量<code>进来</code>。</p>
 <h3 id=默认策略>默认策略</h3>
 <p>默认情况下，如果名字空间中不存在任何策略，则所有进出该名字空间中 Pod 的流量都被允许。</p>
 <h3 id=更改默认策略>更改默认策略</h3>
 <h4 id=默认拒绝所有入站和所有出站流量>默认拒绝所有入站和所有出站流量</h4>
 <p>拒绝default命名空间下的所有流量：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: networking.k8s.io/v1
-<span style=color:#ff79c6>kind</span>: NetworkPolicy
-<span style=color:#ff79c6>metadata</span>:
-  <span style=color:#ff79c6>name</span>: default-deny-all
-  <span style=color:#ff79c6>namespace</span>: default
-<span style=color:#ff79c6>spec</span>:
-  <span style=color:#ff79c6>podSelector</span>: {}
-  <span style=color:#ff79c6>policyTypes</span>:
-  - Ingress
-  - Egress
-</code></pre></div><h2 id=calico>calico</h2>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>networking.k8s.io/v1<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>NetworkPolicy<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>default-deny-all<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>podSelector</span>:<span style=color:#bbb> </span>{}<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>policyTypes</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span>- Ingress<span style=color:#bbb>
+</span><span style=color:#bbb>  </span>- Egress<span style=color:#bbb>
+</span></code></pre></div><h2 id=calico>calico</h2>
 <p>calico也支持原生策略，此外还实现了自己的<code>networkPolicy.crd.projectcalico.org</code>和<code>globalNetworkPolicy.crd.projectcalico.org</code>。增加了一些特性：策略排序/优先级、拒绝规则和更灵活的匹配规则。也拓展了原生策略只能作用于pod的限制。</p>
 <h3 id=networkpolicy>NetworkPolicy</h3>
 <p>calico实现的网络策略如下：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: projectcalico.org/v3
-<span style=color:#ff79c6>kind</span>: NetworkPolicy
-<span style=color:#ff79c6>metadata</span>:
-  <span style=color:#ff79c6>name</span>: allow-tcp-6379
-  <span style=color:#ff79c6>namespace</span>: production
-<span style=color:#ff79c6>spec</span>:
-  <span style=color:#ff79c6>order</span>: <span style=color:#bd93f9>1</span>                      <span style=color:#6272a4># 顺序或优先级，越大优先级越低，不填默认无限大，可选 </span>
-  <span style=color:#ff79c6>selector</span>: role == &#39;database&#39;  <span style=color:#6272a4># 标签选择器（calico自己实现的），策略作用的对象集合</span>
-  <span style=color:#ff79c6>serviceAccountSelector</span>:       <span style=color:#6272a4># 基于服务账户选择Pod，可选 </span>
-  <span style=color:#ff79c6>types</span>:                        <span style=color:#6272a4># 策略类型</span>
-    - Ingress
-    - Egress
-  <span style=color:#ff79c6>ingress</span>:                      <span style=color:#6272a4># 入方向</span>
-    - <span style=color:#ff79c6>action</span>: Allow
-      <span style=color:#ff79c6>ipVersion</span>: <span style=color:#bd93f9>4</span>              <span style=color:#6272a4># ipv4或6</span>
-      <span style=color:#ff79c6>metadata</span>:                 <span style=color:#6272a4># 备注信息</span>
-        <span style=color:#ff79c6>annotations</span>:
-          <span style=color:#ff79c6>xxx</span>: xxx
-      <span style=color:#ff79c6>http</span>:                     <span style=color:#6272a4># L7规则，需要启用istio</span>
-        <span style=color:#ff79c6>methods</span>:                <span style=color:#6272a4># http方法</span>
-        <span style=color:#ff79c6>paths</span>:                  <span style=color:#6272a4># uri路径</span>
-          - <span style=color:#ff79c6>prefix</span>:             <span style=color:#6272a4># 前缀匹配</span>
-          - <span style=color:#ff79c6>exact</span>:              <span style=color:#6272a4># 精确匹配</span>
-      <span style=color:#ff79c6>protocol</span>: TCP             <span style=color:#6272a4># 允许的协议&#34;TCP&#34;, &#34;UDP&#34;, &#34;ICMP&#34;, &#34;ICMPv6&#34;, &#34;SCTP&#34;, &#34;UDPLite&#34;</span>
-      <span style=color:#ff79c6>notProtocol</span>:              <span style=color:#6272a4># 不允许的协议</span>
-      <span style=color:#ff79c6>icmp</span>:                     <span style=color:#6272a4># 允许的icmp</span>
-        <span style=color:#ff79c6>code</span>:                   <span style=color:#6272a4># 匹配特定的ICMP代码。如果指定了，还必须指定Type值。这是由Calico用于执行规则的内核iptables防火墙所强加的技术限制</span>
-        <span style=color:#ff79c6>type</span>:                   <span style=color:#6272a4># 匹配特定的ICMP类型。例如，值为8表示ICMP Echo请求（即ping）</span>
-      <span style=color:#ff79c6>notICMP</span>:                  <span style=color:#6272a4># 不允许的icmp</span>
-        <span style=color:#ff79c6>code</span>: 
-        <span style=color:#ff79c6>type</span>: 
-      <span style=color:#ff79c6>source</span>:                   <span style=color:#6272a4># 源实体，即允许从哪些端点进来</span>
-        <span style=color:#ff79c6>selector</span>:                 <span style=color:#6272a4># 标签选择器</span>
-        <span style=color:#ff79c6>notSelector</span>:              <span style=color:#6272a4># 不选择，与selector相反</span>
-        <span style=color:#ff79c6>nets</span>:                     <span style=color:#6272a4># 仅适用于源IP地址（或目的IP地址）在任何给定子网中的流量</span>
-        <span style=color:#ff79c6>notNets</span>:                  <span style=color:#6272a4># 与nets相反 </span>
-        <span style=color:#ff79c6>namespaceSelector</span>:        <span style=color:#6272a4># 命名空间选择</span>
-        <span style=color:#ff79c6>ports</span>:                    <span style=color:#6272a4># 选择的端点</span>
-        <span style=color:#ff79c6>notPorts</span>:                 <span style=color:#6272a4># 不选择的端点</span>
-        <span style=color:#ff79c6>serviceAccounts</span>:          <span style=color:#6272a4># 通过服务账号选择pod</span>
-      <span style=color:#ff79c6>destination</span>:              <span style=color:#6272a4># 目的实体，允许去到的地方，结构和source一样</span>
-        <span style=color:#ff79c6>ports</span>:
-          - <span style=color:#bd93f9>6379</span>
-  <span style=color:#ff79c6>egress</span>:                       <span style=color:#6272a4># 出方向，结构和ingress一样</span>
-    - <span style=color:#ff79c6>action</span>: Allow
-</code></pre></div><p>例子表示：</p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>projectcalico.org/v3<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>NetworkPolicy<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>allow-tcp-6379<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>production<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>order</span>:<span style=color:#bbb> </span><span style=color:#099>1</span><span style=color:#bbb>                      </span><span style=color:#998;font-style:italic># 顺序或优先级，越大优先级越低，不填默认无限大，可选 </span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>selector</span>:<span style=color:#bbb> </span>role == &#39;database&#39; <span style=color:#bbb> </span><span style=color:#998;font-style:italic># 标签选择器（calico自己实现的），策略作用的对象集合</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>serviceAccountSelector</span>:<span style=color:#bbb>       </span><span style=color:#998;font-style:italic># 基于服务账户选择Pod，可选 </span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>types</span>:<span style=color:#bbb>                        </span><span style=color:#998;font-style:italic># 策略类型</span><span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- Ingress<span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- Egress<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>ingress</span>:<span style=color:#bbb>                      </span><span style=color:#998;font-style:italic># 入方向</span><span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- <span style=color:navy>action</span>:<span style=color:#bbb> </span>Allow<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>ipVersion</span>:<span style=color:#bbb> </span><span style=color:#099>4</span><span style=color:#bbb>              </span><span style=color:#998;font-style:italic># ipv4或6</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>metadata</span>:<span style=color:#bbb>                 </span><span style=color:#998;font-style:italic># 备注信息</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>annotations</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>          </span><span style=color:navy>xxx</span>:<span style=color:#bbb> </span>xxx<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>http</span>:<span style=color:#bbb>                     </span><span style=color:#998;font-style:italic># L7规则，需要启用istio</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>methods</span>:<span style=color:#bbb>                </span><span style=color:#998;font-style:italic># http方法</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>paths</span>:<span style=color:#bbb>                  </span><span style=color:#998;font-style:italic># uri路径</span><span style=color:#bbb>
+</span><span style=color:#bbb>          </span>- <span style=color:navy>prefix</span>:<span style=color:#bbb>             </span><span style=color:#998;font-style:italic># 前缀匹配</span><span style=color:#bbb>
+</span><span style=color:#bbb>          </span>- <span style=color:navy>exact</span>:<span style=color:#bbb>              </span><span style=color:#998;font-style:italic># 精确匹配</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>protocol</span>:<span style=color:#bbb> </span>TCP            <span style=color:#bbb> </span><span style=color:#998;font-style:italic># 允许的协议&#34;TCP&#34;, &#34;UDP&#34;, &#34;ICMP&#34;, &#34;ICMPv6&#34;, &#34;SCTP&#34;, &#34;UDPLite&#34;</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>notProtocol</span>:<span style=color:#bbb>              </span><span style=color:#998;font-style:italic># 不允许的协议</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>icmp</span>:<span style=color:#bbb>                     </span><span style=color:#998;font-style:italic># 允许的icmp</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>code</span>:<span style=color:#bbb>                   </span><span style=color:#998;font-style:italic># 匹配特定的ICMP代码。如果指定了，还必须指定Type值。这是由Calico用于执行规则的内核iptables防火墙所强加的技术限制</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>type</span>:<span style=color:#bbb>                   </span><span style=color:#998;font-style:italic># 匹配特定的ICMP类型。例如，值为8表示ICMP Echo请求（即ping）</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>notICMP</span>:<span style=color:#bbb>                  </span><span style=color:#998;font-style:italic># 不允许的icmp</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>code</span>:<span style=color:#bbb> 
+</span><span style=color:#bbb>        </span><span style=color:navy>type</span>:<span style=color:#bbb> 
+</span><span style=color:#bbb>      </span><span style=color:navy>source</span>:<span style=color:#bbb>                   </span><span style=color:#998;font-style:italic># 源实体，即允许从哪些端点进来</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>selector</span>:<span style=color:#bbb>                 </span><span style=color:#998;font-style:italic># 标签选择器</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>notSelector</span>:<span style=color:#bbb>              </span><span style=color:#998;font-style:italic># 不选择，与selector相反</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>nets</span>:<span style=color:#bbb>                     </span><span style=color:#998;font-style:italic># 仅适用于源IP地址（或目的IP地址）在任何给定子网中的流量</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>notNets</span>:<span style=color:#bbb>                  </span><span style=color:#998;font-style:italic># 与nets相反 </span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>namespaceSelector</span>:<span style=color:#bbb>        </span><span style=color:#998;font-style:italic># 命名空间选择</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>ports</span>:<span style=color:#bbb>                    </span><span style=color:#998;font-style:italic># 选择的端点</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>notPorts</span>:<span style=color:#bbb>                 </span><span style=color:#998;font-style:italic># 不选择的端点</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>serviceAccounts</span>:<span style=color:#bbb>          </span><span style=color:#998;font-style:italic># 通过服务账号选择pod</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>destination</span>:<span style=color:#bbb>              </span><span style=color:#998;font-style:italic># 目的实体，允许去到的地方，结构和source一样</span><span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>ports</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>          </span>- <span style=color:#099>6379</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>egress</span>:<span style=color:#bbb>                       </span><span style=color:#998;font-style:italic># 出方向，结构和ingress一样</span><span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- <span style=color:navy>action</span>:<span style=color:#bbb> </span>Allow<span style=color:#bbb>
+</span></code></pre></div><p>例子表示：</p>
 <p>对于标签为<code>role == 'database'</code>的Pod：</p>
 <ul>
 <li>入方向：允许标签为<code>role == 'frontend'</code>的Pod使用tcp访问6379端口</li>
 <li>出方向：允许所有流量，即允许<code>role == 'database'</code>的Pod访问外部所有流量</li>
 </ul>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: projectcalico.org/v3
-<span style=color:#ff79c6>kind</span>: NetworkPolicy
-<span style=color:#ff79c6>metadata</span>:
-  <span style=color:#ff79c6>name</span>: allow-tcp-6379
-  <span style=color:#ff79c6>namespace</span>: production
-<span style=color:#ff79c6>spec</span>:
-  <span style=color:#ff79c6>selector</span>: role == &#39;database&#39;
-  <span style=color:#ff79c6>types</span>:
-    - Ingress
-    - Egress
-  <span style=color:#ff79c6>ingress</span>:
-    - <span style=color:#ff79c6>action</span>: Allow
-      <span style=color:#ff79c6>metadata</span>:
-        <span style=color:#ff79c6>annotations</span>:
-          <span style=color:#ff79c6>from</span>: frontend
-          <span style=color:#ff79c6>to</span>: database
-      <span style=color:#ff79c6>protocol</span>: TCP
-      <span style=color:#ff79c6>source</span>:
-        <span style=color:#ff79c6>selector</span>: role == &#39;frontend&#39;
-      <span style=color:#ff79c6>destination</span>:
-        <span style=color:#ff79c6>ports</span>:
-          - <span style=color:#bd93f9>6379</span>
-  <span style=color:#ff79c6>egress</span>:
-    - <span style=color:#ff79c6>action</span>: Allow
-</code></pre></div><h3 id=globalnetworkpolicy>GlobalNetworkPolicy</h3>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>projectcalico.org/v3<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>NetworkPolicy<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>allow-tcp-6379<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>production<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>selector</span>:<span style=color:#bbb> </span>role == &#39;database&#39;<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>types</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- Ingress<span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- Egress<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>ingress</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- <span style=color:navy>action</span>:<span style=color:#bbb> </span>Allow<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>metadata</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>annotations</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>          </span><span style=color:navy>from</span>:<span style=color:#bbb> </span>frontend<span style=color:#bbb>
+</span><span style=color:#bbb>          </span><span style=color:navy>to</span>:<span style=color:#bbb> </span>database<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>protocol</span>:<span style=color:#bbb> </span>TCP<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>source</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>selector</span>:<span style=color:#bbb> </span>role == &#39;frontend&#39;<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>destination</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>ports</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>          </span>- <span style=color:#099>6379</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>egress</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>    </span>- <span style=color:navy>action</span>:<span style=color:#bbb> </span>Allow<span style=color:#bbb>
+</span></code></pre></div><h3 id=globalnetworkpolicy>GlobalNetworkPolicy</h3>
 <p>全局网络策略资源（GlobalNetworkPolicy）表示一组有序规则，这些规则适用于匹配标签选择器的一组端点。区别于NetworkPolicy，GlobalNetworkPolicy是集群级别的。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: projectcalico.org/v3
-<span style=color:#ff79c6>kind</span>: NetworkPolicy
-<span style=color:#ff79c6>metadata</span>:
-  <span style=color:#ff79c6>name</span>: allow-tcp-6379
-  <span style=color:#ff79c6>namespace</span>: production
-<span style=color:#ff79c6>spec</span>:
-  <span style=color:#ff79c6>applyOnForward</span>: <span style=color:#ff79c6>false</span>  <span style=color:#6272a4># 转发相关的策略</span>
-  <span style=color:#ff79c6>preDNAT</span>: <span style=color:#ff79c6>false</span>         <span style=color:#6272a4># 代理相关的策略</span>
-  <span style=color:#ff79c6>doNotTrack</span>: <span style=color:#ff79c6>false</span>      <span style=color:#6272a4># 在连接跟踪之前应用策略中的规则，并且不应跟踪这些规则允许的数据包</span>
-  <span style=color:#6272a4># 其他字段和NetworkPolicy一致</span>
-</code></pre></div><h2 id=cilium>cilium</h2>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>projectcalico.org/v3<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>NetworkPolicy<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>allow-tcp-6379<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>production<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>applyOnForward</span>:<span style=color:#bbb> </span><span style=color:#000;font-weight:700>false</span><span style=color:#bbb>  </span><span style=color:#998;font-style:italic># 转发相关的策略</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>preDNAT</span>:<span style=color:#bbb> </span><span style=color:#000;font-weight:700>false</span><span style=color:#bbb>         </span><span style=color:#998;font-style:italic># 代理相关的策略</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>doNotTrack</span>:<span style=color:#bbb> </span><span style=color:#000;font-weight:700>false</span><span style=color:#bbb>      </span><span style=color:#998;font-style:italic># 在连接跟踪之前应用策略中的规则，并且不应跟踪这些规则允许的数据包</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:#998;font-style:italic># 其他字段和NetworkPolicy一致</span><span style=color:#bbb>
+</span></code></pre></div><h2 id=cilium>cilium</h2>
 <p>cilium除了支持原生网络策略之外，还支持L7策略。</p>
 <p>详见cilium文档。</p>
 <h2 id=参考文档>参考文档</h2>

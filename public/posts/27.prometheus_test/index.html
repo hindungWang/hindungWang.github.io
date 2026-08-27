@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/27.prometheus_test/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -907,116 +907,116 @@ master03   Ready      controlplane,etcd,worker   98d   v1.23.6   192.168.231.114
 <p><a href=https://thanos.io/tip/thanos/getting-started.md/#get-thanos>https://thanos.io/tip/thanos/getting-started.md/#get-thanos</a></p>
 <h3 id=涉及到的脚本>涉及到的脚本</h3>
 <p>生成svc脚本：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#ff79c6>#!/bin/bash
-</span><span style=color:#ff79c6></span>
-<span style=color:#8be9fd;font-style:italic>filename</span><span style=color:#ff79c6>=</span><span style=color:#f1fa8c>&#34;svcs.yaml&#34;</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#999;font-weight:700;font-style:italic>#!/bin/bash
+</span><span style=color:#999;font-weight:700;font-style:italic></span>
+<span style=color:teal>filename</span><span style=color:#000;font-weight:700>=</span><span style=color:#d14>&#34;svcs.yaml&#34;</span>
 
-cat <span style=color:#f1fa8c>&lt;&lt;EOF &gt; $filename
-</span><span style=color:#f1fa8c>
-</span><span style=color:#f1fa8c>EOF</span>
+cat <span style=color:#d14>&lt;&lt;EOF &gt; $filename
+</span><span style=color:#d14>
+</span><span style=color:#d14>EOF</span>
 
-<span style=color:#ff79c6>for</span> <span style=color:#ff79c6>((</span><span style=color:#8be9fd;font-style:italic>i</span><span style=color:#ff79c6>=</span>10001; i&lt;<span style=color:#ff79c6>=</span>50000; i++<span style=color:#ff79c6>))</span>
-<span style=color:#ff79c6>do</span>
-    <span style=color:#8be9fd;font-style:italic>name</span><span style=color:#ff79c6>=</span><span style=color:#f1fa8c>&#34;hxd-sd-</span><span style=color:#8be9fd;font-style:italic>$i</span><span style=color:#f1fa8c>&#34;</span>
+<span style=color:#000;font-weight:700>for</span> <span style=color:#000;font-weight:700>((</span><span style=color:teal>i</span><span style=color:#000;font-weight:700>=</span>10001; i&lt;<span style=color:#000;font-weight:700>=</span>50000; i++<span style=color:#000;font-weight:700>))</span>
+<span style=color:#000;font-weight:700>do</span>
+    <span style=color:teal>name</span><span style=color:#000;font-weight:700>=</span><span style=color:#d14>&#34;hxd-sd-</span><span style=color:teal>$i</span><span style=color:#d14>&#34;</span>
 
-    cat <span style=color:#f1fa8c>&lt;&lt;EOF &gt;&gt; $filename
-</span><span style=color:#f1fa8c>---
-</span><span style=color:#f1fa8c>apiVersion: v1
-</span><span style=color:#f1fa8c>kind: Service
-</span><span style=color:#f1fa8c>metadata:
-</span><span style=color:#f1fa8c>  name: $name
-</span><span style=color:#f1fa8c>  namespace: hxd-test
-</span><span style=color:#f1fa8c>  labels:
-</span><span style=color:#f1fa8c>    app: hxd-test-sd
-</span><span style=color:#f1fa8c>spec:
-</span><span style=color:#f1fa8c>  ports:
-</span><span style=color:#f1fa8c>    - name: http
-</span><span style=color:#f1fa8c>      protocol: TCP
-</span><span style=color:#f1fa8c>      port: 80
-</span><span style=color:#f1fa8c>      targetPort: 9001
-</span><span style=color:#f1fa8c>  selector:
-</span><span style=color:#f1fa8c>    app: avalanche
-</span><span style=color:#f1fa8c>EOF</span>
+    cat <span style=color:#d14>&lt;&lt;EOF &gt;&gt; $filename
+</span><span style=color:#d14>---
+</span><span style=color:#d14>apiVersion: v1
+</span><span style=color:#d14>kind: Service
+</span><span style=color:#d14>metadata:
+</span><span style=color:#d14>  name: $name
+</span><span style=color:#d14>  namespace: hxd-test
+</span><span style=color:#d14>  labels:
+</span><span style=color:#d14>    app: hxd-test-sd
+</span><span style=color:#d14>spec:
+</span><span style=color:#d14>  ports:
+</span><span style=color:#d14>    - name: http
+</span><span style=color:#d14>      protocol: TCP
+</span><span style=color:#d14>      port: 80
+</span><span style=color:#d14>      targetPort: 9001
+</span><span style=color:#d14>  selector:
+</span><span style=color:#d14>    app: avalanche
+</span><span style=color:#d14>EOF</span>
 
-    <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#34;Added SVC: </span><span style=color:#8be9fd;font-style:italic>$name</span><span style=color:#f1fa8c>&#34;</span>
-<span style=color:#ff79c6>done</span>
+    <span style=color:#0086b3>echo</span> <span style=color:#d14>&#34;Added SVC: </span><span style=color:teal>$name</span><span style=color:#d14>&#34;</span>
+<span style=color:#000;font-weight:700>done</span>
 
-<span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#34;Generated </span><span style=color:#8be9fd;font-style:italic>$filename</span><span style=color:#f1fa8c>&#34;</span>
+<span style=color:#0086b3>echo</span> <span style=color:#d14>&#34;Generated </span><span style=color:teal>$filename</span><span style=color:#d14>&#34;</span>
 </code></pre></div><p>生成servicemonitor脚本:</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#ff79c6>#!/bin/bash
-</span><span style=color:#ff79c6></span>
-<span style=color:#8be9fd;font-style:italic>filename</span><span style=color:#ff79c6>=</span><span style=color:#f1fa8c>&#34;service-monitors.yaml&#34;</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#999;font-weight:700;font-style:italic>#!/bin/bash
+</span><span style=color:#999;font-weight:700;font-style:italic></span>
+<span style=color:teal>filename</span><span style=color:#000;font-weight:700>=</span><span style=color:#d14>&#34;service-monitors.yaml&#34;</span>
 
-cat <span style=color:#f1fa8c>&lt;&lt;EOF &gt; $filename
-</span><span style=color:#f1fa8c>
-</span><span style=color:#f1fa8c>EOF</span>
+cat <span style=color:#d14>&lt;&lt;EOF &gt; $filename
+</span><span style=color:#d14>
+</span><span style=color:#d14>EOF</span>
 
-<span style=color:#ff79c6>for</span> <span style=color:#ff79c6>((</span><span style=color:#8be9fd;font-style:italic>i</span><span style=color:#ff79c6>=</span>1; i&lt;<span style=color:#ff79c6>=</span>1; i++<span style=color:#ff79c6>))</span>
-<span style=color:#ff79c6>do</span>
-    <span style=color:#8be9fd;font-style:italic>name</span><span style=color:#ff79c6>=</span><span style=color:#f1fa8c>&#34;hxd-sd-</span><span style=color:#8be9fd;font-style:italic>$i</span><span style=color:#f1fa8c>&#34;</span>
+<span style=color:#000;font-weight:700>for</span> <span style=color:#000;font-weight:700>((</span><span style=color:teal>i</span><span style=color:#000;font-weight:700>=</span>1; i&lt;<span style=color:#000;font-weight:700>=</span>1; i++<span style=color:#000;font-weight:700>))</span>
+<span style=color:#000;font-weight:700>do</span>
+    <span style=color:teal>name</span><span style=color:#000;font-weight:700>=</span><span style=color:#d14>&#34;hxd-sd-</span><span style=color:teal>$i</span><span style=color:#d14>&#34;</span>
 
-    cat <span style=color:#f1fa8c>&lt;&lt;EOF &gt;&gt; $filename
-</span><span style=color:#f1fa8c>---
-</span><span style=color:#f1fa8c>apiVersion: monitoring.coreos.com/v1
-</span><span style=color:#f1fa8c>kind: ServiceMonitor
-</span><span style=color:#f1fa8c>metadata:
-</span><span style=color:#f1fa8c>  labels:
-</span><span style=color:#f1fa8c>    release: hxd-prometheus
-</span><span style=color:#f1fa8c>  name: $name
-</span><span style=color:#f1fa8c>  namespace: hxd-test
-</span><span style=color:#f1fa8c>spec:
-</span><span style=color:#f1fa8c>  endpoints:
-</span><span style=color:#f1fa8c>    - path: /metrics
-</span><span style=color:#f1fa8c>      port: http
-</span><span style=color:#f1fa8c>  namespaceSelector:
-</span><span style=color:#f1fa8c>    matchNames:
-</span><span style=color:#f1fa8c>      - hxd-test
-</span><span style=color:#f1fa8c>  selector:
-</span><span style=color:#f1fa8c>    matchLabels:
-</span><span style=color:#f1fa8c>      app: hxd-test-sd
-</span><span style=color:#f1fa8c>EOF</span>
+    cat <span style=color:#d14>&lt;&lt;EOF &gt;&gt; $filename
+</span><span style=color:#d14>---
+</span><span style=color:#d14>apiVersion: monitoring.coreos.com/v1
+</span><span style=color:#d14>kind: ServiceMonitor
+</span><span style=color:#d14>metadata:
+</span><span style=color:#d14>  labels:
+</span><span style=color:#d14>    release: hxd-prometheus
+</span><span style=color:#d14>  name: $name
+</span><span style=color:#d14>  namespace: hxd-test
+</span><span style=color:#d14>spec:
+</span><span style=color:#d14>  endpoints:
+</span><span style=color:#d14>    - path: /metrics
+</span><span style=color:#d14>      port: http
+</span><span style=color:#d14>  namespaceSelector:
+</span><span style=color:#d14>    matchNames:
+</span><span style=color:#d14>      - hxd-test
+</span><span style=color:#d14>  selector:
+</span><span style=color:#d14>    matchLabels:
+</span><span style=color:#d14>      app: hxd-test-sd
+</span><span style=color:#d14>EOF</span>
 
-    <span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#34;Added ServiceMonitor: </span><span style=color:#8be9fd;font-style:italic>$name</span><span style=color:#f1fa8c>&#34;</span>
-<span style=color:#ff79c6>done</span>
+    <span style=color:#0086b3>echo</span> <span style=color:#d14>&#34;Added ServiceMonitor: </span><span style=color:teal>$name</span><span style=color:#d14>&#34;</span>
+<span style=color:#000;font-weight:700>done</span>
 
-<span style=color:#8be9fd;font-style:italic>echo</span> <span style=color:#f1fa8c>&#34;Generated </span><span style=color:#8be9fd;font-style:italic>$filename</span><span style=color:#f1fa8c>&#34;</span>
+<span style=color:#0086b3>echo</span> <span style=color:#d14>&#34;Generated </span><span style=color:teal>$filename</span><span style=color:#d14>&#34;</span>
 </code></pre></div><p>avalanche部署，每个实例产生100w series：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#ff79c6>apiVersion</span>: apps/v1
-<span style=color:#ff79c6>kind</span>: Deployment
-<span style=color:#ff79c6>metadata</span>:
-  <span style=color:#ff79c6>name</span>: avalanche
-  <span style=color:#ff79c6>namespace</span>: hxd-test
-  <span style=color:#ff79c6>labels</span>:
-    <span style=color:#ff79c6>app</span>: avalanche
-<span style=color:#ff79c6>spec</span>:
-  <span style=color:#ff79c6>replicas</span>: <span style=color:#bd93f9>1</span>
-  <span style=color:#ff79c6>selector</span>:
-    <span style=color:#ff79c6>matchLabels</span>:
-      <span style=color:#ff79c6>app</span>: avalanche
-  <span style=color:#ff79c6>template</span>:
-    <span style=color:#ff79c6>metadata</span>:
-      <span style=color:#ff79c6>creationTimestamp</span>: <span style=color:#ff79c6>null</span>
-      <span style=color:#ff79c6>labels</span>:
-        <span style=color:#ff79c6>app</span>: avalanche
-    <span style=color:#ff79c6>spec</span>:
-      <span style=color:#ff79c6>containers</span>:
-        - <span style=color:#ff79c6>name</span>: avalanche
-          <span style=color:#ff79c6>image</span>: hxd/avalanche:main
-          <span style=color:#ff79c6>args</span>:
-            - <span style=color:#f1fa8c>&#39;--metric-count=10000&#39;</span>
-            - <span style=color:#f1fa8c>&#39;--label-count=1&#39;</span>
-            - <span style=color:#f1fa8c>&#39;--series-count=100&#39;</span>
-            - <span style=color:#f1fa8c>&#39;--value-interval=300000&#39;</span>
-            - <span style=color:#f1fa8c>&#39;--series-interval=300000&#39;</span>
-            - <span style=color:#f1fa8c>&#39;--metric-interval=300000&#39;</span>
-          <span style=color:#ff79c6>ports</span>:
-            - <span style=color:#ff79c6>name</span>: metrics
-              <span style=color:#ff79c6>containerPort</span>: <span style=color:#bd93f9>9001</span>
-              <span style=color:#ff79c6>protocol</span>: TCP
-</code></pre></div><p>磁盘相关命令：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>docker run --rm -v <span style=color:#f1fa8c>&#34;/home:/data/dist-test&#34;</span> bitnami/net-tools:v1.1 fio --rw<span style=color:#ff79c6>=</span>write --ioengine<span style=color:#ff79c6>=</span>sync --fdatasync<span style=color:#ff79c6>=</span><span style=color:#bd93f9>1</span> --directory<span style=color:#ff79c6>=</span>/data/dist-test --size<span style=color:#ff79c6>=</span>22m --bs<span style=color:#ff79c6>=</span><span style=color:#bd93f9>2300</span> --name<span style=color:#ff79c6>=</span>mytest
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>apps/v1<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>Deployment<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>avalanche<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>hxd-test<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>labels</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>avalanche<span style=color:#bbb>
+</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>replicas</span>:<span style=color:#bbb> </span><span style=color:#099>1</span><span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>selector</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>avalanche<span style=color:#bbb>
+</span><span style=color:#bbb>  </span><span style=color:navy>template</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:navy>metadata</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>creationTimestamp</span>:<span style=color:#bbb> </span><span style=color:#000;font-weight:700>null</span><span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>labels</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>        </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>avalanche<span style=color:#bbb>
+</span><span style=color:#bbb>    </span><span style=color:navy>spec</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>      </span><span style=color:navy>containers</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>avalanche<span style=color:#bbb>
+</span><span style=color:#bbb>          </span><span style=color:navy>image</span>:<span style=color:#bbb> </span>hxd/avalanche:main<span style=color:#bbb>
+</span><span style=color:#bbb>          </span><span style=color:navy>args</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>            </span>- <span style=color:#d14>&#39;--metric-count=10000&#39;</span><span style=color:#bbb>
+</span><span style=color:#bbb>            </span>- <span style=color:#d14>&#39;--label-count=1&#39;</span><span style=color:#bbb>
+</span><span style=color:#bbb>            </span>- <span style=color:#d14>&#39;--series-count=100&#39;</span><span style=color:#bbb>
+</span><span style=color:#bbb>            </span>- <span style=color:#d14>&#39;--value-interval=300000&#39;</span><span style=color:#bbb>
+</span><span style=color:#bbb>            </span>- <span style=color:#d14>&#39;--series-interval=300000&#39;</span><span style=color:#bbb>
+</span><span style=color:#bbb>            </span>- <span style=color:#d14>&#39;--metric-interval=300000&#39;</span><span style=color:#bbb>
+</span><span style=color:#bbb>          </span><span style=color:navy>ports</span>:<span style=color:#bbb>
+</span><span style=color:#bbb>            </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>metrics<span style=color:#bbb>
+</span><span style=color:#bbb>              </span><span style=color:navy>containerPort</span>:<span style=color:#bbb> </span><span style=color:#099>9001</span><span style=color:#bbb>
+</span><span style=color:#bbb>              </span><span style=color:navy>protocol</span>:<span style=color:#bbb> </span>TCP<span style=color:#bbb>
+</span></code></pre></div><p>磁盘相关命令：</p>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>docker run --rm -v <span style=color:#d14>&#34;/home:/data/dist-test&#34;</span> bitnami/net-tools:v1.1 fio --rw<span style=color:#000;font-weight:700>=</span>write --ioengine<span style=color:#000;font-weight:700>=</span>sync --fdatasync<span style=color:#000;font-weight:700>=</span><span style=color:#099>1</span> --directory<span style=color:#000;font-weight:700>=</span>/data/dist-test --size<span style=color:#000;font-weight:700>=</span>22m --bs<span style=color:#000;font-weight:700>=</span><span style=color:#099>2300</span> --name<span style=color:#000;font-weight:700>=</span>mytest
 
-dd <span style=color:#ff79c6>if</span><span style=color:#ff79c6>=</span>/dev/zero <span style=color:#8be9fd;font-style:italic>of</span><span style=color:#ff79c6>=</span>/home/random.dd <span style=color:#8be9fd;font-style:italic>bs</span><span style=color:#ff79c6>=</span>1M <span style=color:#8be9fd;font-style:italic>count</span><span style=color:#ff79c6>=</span><span style=color:#bd93f9>1024</span> <span style=color:#8be9fd;font-style:italic>oflag</span><span style=color:#ff79c6>=</span>direct <span style=color:#8be9fd;font-style:italic>iflag</span><span style=color:#ff79c6>=</span>nocache
+dd <span style=color:#000;font-weight:700>if</span><span style=color:#000;font-weight:700>=</span>/dev/zero <span style=color:teal>of</span><span style=color:#000;font-weight:700>=</span>/home/random.dd <span style=color:teal>bs</span><span style=color:#000;font-weight:700>=</span>1M <span style=color:teal>count</span><span style=color:#000;font-weight:700>=</span><span style=color:#099>1024</span> <span style=color:teal>oflag</span><span style=color:#000;font-weight:700>=</span>direct <span style=color:teal>iflag</span><span style=color:#000;font-weight:700>=</span>nocache
 </code></pre></div>
 </div>
 <div class=prev-next>

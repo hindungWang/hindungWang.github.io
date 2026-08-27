@@ -4,7 +4,7 @@ enableEmoji = true
 enableRobotsTXT = true
 languageCode = "cn-zh"
 # Choose one of emacs, trac or perldoc, monokai
-pygmentsStyle = "dracula"
+pygmentsStyle = "github"
 theme = "gokarna"
 title = "Hindung's Blog"
 
@@ -21,7 +21,6 @@ title = "Hindung's Blog"
   CustomHeadHTML = """
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/favicon.png" />
-    <link rel="stylesheet" href="/css/posts-nav.css" />
   """
 
   socialIcons = [

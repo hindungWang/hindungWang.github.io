@@ -19,7 +19,9 @@ Cilium cilium-agent cilium-agent在每个 Kubernetes 节点上运行，负责实
 在大规模策略场景下，iptable实现的网络策略表现不佳：https://docs.daocloud.io/network/modules/calico/policy/
 如果使用flannel等不支持网络策略的插件，即使创建NetworkPolicy也无法生效。
 kube-ovn kube-ovn支持使用k8s原生网络策略，没有自己实现，因此使用方法即为原生NetworkPolicy。
-apiVersion: networking.k8s.io/v1 # k8s原生资源 kind: NetworkPolicy metadata: name: test-network-policy namespace: default spec: podSelector: # 作用的对象集合 matchLabels: # 通过标签选择对应的POD xxx: xxx policyTypes: # 生效的策略，不填默认是Ingress - Ingress - Egress ingress: # 入方向的策略 - from: # 从哪个集合来 ports： # 端口或者端口范围 egress: # 出方向的策略 - to: # 到哪个集合去 ports： # 端口或者端口范围 to和from支持一些选择器：</description></item><item><title>K8s之kube-ovn网络插件</title><link>https://hindungwang.github.io/posts/25.kube-ovn/</link><pubDate>Thu, 27 Apr 2023 00:00:00 +0000</pubDate><guid>https://hindungwang.github.io/posts/25.kube-ovn/</guid><description>kube-ovn网络 此项预研包括了多网卡、集群互联、混合部署、OVS/OVN、CNI、kubevirt等基础组件，并探讨基于K8s实现的OVN平台所实现的功能以及能否满足公司不同场景的容器、虚拟机网络需求。
+apiVersion:networking.k8s.io/v1# k8s原生资源kind:NetworkPolicymetadata:name:test-network-policynamespace:defaultspec:podSelector:# 作用的对象集合matchLabels:# 通过标签选择对应的PODxxx:xxxpolicyTypes:# 生效的策略，不填默认是Ingress- Ingress- Egressingress:# 入方向的策略- from:# 从哪个集合来ports： # 端口或者端口范围egress:# 出方向的策略 - to:# 到哪个集合去ports： # 端口或者端口范围to和from支持一些选择器：
+podSelector：Pod选择 namespaceSelector：命名空间选择 ipBlock：ip地址范围 如：
+ingress:- from:- namespaceSelector:matchLabels:user:alice- podSelector:matchLabels:role:client- ipBlock:cidr:172.</description></item><item><title>K8s之kube-ovn网络插件</title><link>https://hindungwang.github.io/posts/25.kube-ovn/</link><pubDate>Thu, 27 Apr 2023 00:00:00 +0000</pubDate><guid>https://hindungwang.github.io/posts/25.kube-ovn/</guid><description>kube-ovn网络 此项预研包括了多网卡、集群互联、混合部署、OVS/OVN、CNI、kubevirt等基础组件，并探讨基于K8s实现的OVN平台所实现的功能以及能否满足公司不同场景的容器、虚拟机网络需求。
 kube-ovn Kube-OVN是一个基于Open Virtual Network (OVN)的Kubernetes网络解决方案。它使用OVN作为底层网络虚拟化平台，为Kubernetes集群提供高性能、高可用、可扩展的网络服务。
 下面是Kube-OVN的整体架构：
 OVN控制平面（与传统OVN类似） 负责管理Kubernetes集群的网络资源和配置，包括虚拟网络（VPC）、子网（Subnet）、路由、ACL等。这些组件部分来自 OVN/OVS 社区，Kube-OVN 对不同的使用场景做了特定修改。

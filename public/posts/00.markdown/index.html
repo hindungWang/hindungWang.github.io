@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/00.markdown/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -255,16 +255,16 @@ July 18, 2020
 </blockquote>
 <p>正如您在阅读的这份文档，它使用简单的符号标识不同的标题，将某些文字标记为<strong>粗体</strong>或者<em>斜体</em>，创建一个<a href=http://www.example.com>链接</a>或一个脚注<sup id=fnref:1><a href=#fn:1 class=footnote-ref role=doc-noteref>1</a></sup>。下面列举了几个高级功能，更多语法请按<code>Ctrl + /</code>查看帮助。</p>
 <h3 id=代码块>代码块</h3>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python>@requires_authorization
-<span style=color:#ff79c6>def</span> <span style=color:#50fa7b>somefunc</span>(param1<span style=color:#ff79c6>=</span><span style=color:#f1fa8c>&#39;&#39;</span>, param2<span style=color:#ff79c6>=</span><span style=color:#bd93f9>0</span>):
-    <span style=color:#f1fa8c>&#39;&#39;&#39;A docstring&#39;&#39;&#39;</span>
-    <span style=color:#ff79c6>if</span> param1 <span style=color:#ff79c6>&gt;</span> param2: <span style=color:#6272a4># interesting</span>
-        <span style=color:#8be9fd;font-style:italic>print</span> <span style=color:#f1fa8c>&#39;Greater&#39;</span>
-    <span style=color:#ff79c6>return</span> (param2 <span style=color:#ff79c6>-</span> param1 <span style=color:#ff79c6>+</span> <span style=color:#bd93f9>1</span>) <span style=color:#ff79c6>or</span> <span style=color:#ff79c6>None</span>
-<span style=color:#ff79c6>class</span> <span style=color:#50fa7b>SomeClass</span>:
-    <span style=color:#ff79c6>pass</span>
-<span style=color:#ff79c6>&gt;&gt;&gt;</span> message <span style=color:#ff79c6>=</span> <span style=color:#f1fa8c>&#39;&#39;&#39;interpreter
-</span><span style=color:#f1fa8c>... prompt&#39;&#39;&#39;</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=color:#3c5d5d;font-weight:700>@requires_authorization</span>
+<span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>somefunc</span>(param1<span style=color:#000;font-weight:700>=</span><span style=color:#d14>&#39;&#39;</span>, param2<span style=color:#000;font-weight:700>=</span><span style=color:#099>0</span>):
+    <span style=color:#d14>&#39;&#39;&#39;A docstring&#39;&#39;&#39;</span>
+    <span style=color:#000;font-weight:700>if</span> param1 <span style=color:#000;font-weight:700>&gt;</span> param2: <span style=color:#998;font-style:italic># interesting</span>
+        <span style=color:#0086b3>print</span> <span style=color:#d14>&#39;Greater&#39;</span>
+    <span style=color:#000;font-weight:700>return</span> (param2 <span style=color:#000;font-weight:700>-</span> param1 <span style=color:#000;font-weight:700>+</span> <span style=color:#099>1</span>) <span style=color:#000;font-weight:700>or</span> <span style=color:#000;font-weight:700>None</span>
+<span style=color:#000;font-weight:700>class</span> <span style=color:#458;font-weight:700>SomeClass</span>:
+    <span style=color:#000;font-weight:700>pass</span>
+<span style=color:#000;font-weight:700>&gt;&gt;&gt;</span> message <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>&#39;&#39;&#39;interpreter
+</span><span style=color:#d14>... prompt&#39;&#39;&#39;</span>
 </code></pre></div><h3 id=latex-公式>LaTeX 公式</h3>
 <p>可以创建行内公式，例如 $\Gamma(n) = (n-1)!\quad\forall n\in\mathbb N$。或者块级公式：</p>
 <p>$$ x = \dfrac{-b \pm \sqrt{b^2 - 4ac}}{2a} $$</p>

@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/10.go-sync-atomic/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -254,40 +254,40 @@ April 29, 2021
 <h1 id=操作分类>操作分类</h1>
 <h2 id=add操作>Add操作</h2>
 <p>由AddT函数实现的加法操作在原子上等效于：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>*</span>addr <span style=color:#ff79c6>+=</span> delta  \\ 加上步长 正负数都可以
-<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>*</span>addr    \\ 反回加后的结果
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>*</span>addr <span style=color:#000;font-weight:700>+=</span> delta  <span style=color:#a61717;background-color:#e3d2d2>\\</span> 加上步长 正负数都可以
+<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>*</span>addr    <span style=color:#a61717;background-color:#e3d2d2>\\</span> 反回加后的结果
 </code></pre></div><p>相关的方法有：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>AddInt32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int32</span>, delta <span style=color:#8be9fd>int32</span>) (new <span style=color:#8be9fd>int32</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>AddUint32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint32</span>, delta <span style=color:#8be9fd>uint32</span>) (new <span style=color:#8be9fd>uint32</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>AddInt64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int64</span>, delta <span style=color:#8be9fd>int64</span>) (new <span style=color:#8be9fd>int64</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>AddUint64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint64</span>, delta <span style=color:#8be9fd>uint64</span>) (new <span style=color:#8be9fd>uint64</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>AddUintptr</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uintptr</span>, delta <span style=color:#8be9fd>uintptr</span>) (new <span style=color:#8be9fd>uintptr</span>)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>, delta <span style=color:#458;font-weight:700>int32</span>) (new <span style=color:#458;font-weight:700>int32</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>, delta <span style=color:#458;font-weight:700>uint32</span>) (new <span style=color:#458;font-weight:700>uint32</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>, delta <span style=color:#458;font-weight:700>int64</span>) (new <span style=color:#458;font-weight:700>int64</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>, delta <span style=color:#458;font-weight:700>uint64</span>) (new <span style=color:#458;font-weight:700>uint64</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>, delta <span style=color:#458;font-weight:700>uintptr</span>) (new <span style=color:#458;font-weight:700>uintptr</span>)
 </code></pre></div><h2 id=cas操作>CAS操作</h2>
 <p>CAS即CompareAndSwap，这个函数主要就是先比较一下当前传入的地址的值是否和 old 值相等，如果相等，就赋值新值返回 true，如果不相等就返回 false.</p>
 <p>利用这个方法可以实现锁机制。</p>
 <p>相关的方法有：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>CompareAndSwapInt32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int32</span>, old, new <span style=color:#8be9fd>int32</span>) (swapped <span style=color:#8be9fd>bool</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>CompareAndSwapInt64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int64</span>, old, new <span style=color:#8be9fd>int64</span>) (swapped <span style=color:#8be9fd>bool</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>CompareAndSwapUint32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint32</span>, old, new <span style=color:#8be9fd>uint32</span>) (swapped <span style=color:#8be9fd>bool</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>CompareAndSwapUint64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint64</span>, old, new <span style=color:#8be9fd>uint64</span>) (swapped <span style=color:#8be9fd>bool</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>CompareAndSwapUintptr</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uintptr</span>, old, new <span style=color:#8be9fd>uintptr</span>) (swapped <span style=color:#8be9fd>bool</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>CompareAndSwapPointer</span>(addr <span style=color:#ff79c6>*</span>unsafe.Pointer, old, new unsafe.Pointer) (swapped <span style=color:#8be9fd>bool</span>)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>, old, new <span style=color:#458;font-weight:700>int32</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>, old, new <span style=color:#458;font-weight:700>int64</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>, old, new <span style=color:#458;font-weight:700>uint32</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>, old, new <span style=color:#458;font-weight:700>uint64</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>, old, new <span style=color:#458;font-weight:700>uintptr</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapPointer</span>(addr <span style=color:#000;font-weight:700>*</span>unsafe.Pointer, old, new unsafe.Pointer) (swapped <span style=color:#458;font-weight:700>bool</span>)
 </code></pre></div><p>从源码<a href=https://go.googlesource.com/go/+/go1.16.3/src/runtime/internal/atomic/asm_amd64.s#17>runtime/internal/atomic/asm_amd64.s</a>中可以看到CAS对应的汇编指令实现。
 如<code>CompareAndSwapInt32</code>方法的实现：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>// bool Cas(int32 *val, int32 old, int32 new)
-</span><span style=color:#6272a4>// Atomically:
-</span><span style=color:#6272a4>//	if(*val == old){
-</span><span style=color:#6272a4>//		*val = new;
-</span><span style=color:#6272a4>//		return 1;
-</span><span style=color:#6272a4>//	} else
-</span><span style=color:#6272a4>//		return 0;
-</span><span style=color:#6272a4></span>TEXT runtime∕internal∕atomic·<span style=color:#50fa7b>Cas</span>(SB),NOSPLIT,$<span style=color:#bd93f9>0</span><span style=color:#ff79c6>-</span><span style=color:#bd93f9>17</span>
-	MOVQ	ptr<span style=color:#ff79c6>+</span><span style=color:#bd93f9>0</span>(FP), BX
-	MOVL	old<span style=color:#ff79c6>+</span><span style=color:#bd93f9>8</span>(FP), AX
-	MOVL	new<span style=color:#ff79c6>+</span><span style=color:#bd93f9>12</span>(FP), CX
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// bool Cas(int32 *val, int32 old, int32 new)
+</span><span style=color:#998;font-style:italic>// Atomically:
+</span><span style=color:#998;font-style:italic>//	if(*val == old){
+</span><span style=color:#998;font-style:italic>//		*val = new;
+</span><span style=color:#998;font-style:italic>//		return 1;
+</span><span style=color:#998;font-style:italic>//	} else
+</span><span style=color:#998;font-style:italic>//		return 0;
+</span><span style=color:#998;font-style:italic></span>TEXT runtime<span style=color:#a61717;background-color:#e3d2d2>∕</span>internal<span style=color:#a61717;background-color:#e3d2d2>∕</span>atomic<span style=color:#a61717;background-color:#e3d2d2>·</span><span style=color:#900;font-weight:700>Cas</span>(SB),NOSPLIT,<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span><span style=color:#000;font-weight:700>-</span><span style=color:#099>17</span>
+	MOVQ	ptr<span style=color:#000;font-weight:700>+</span><span style=color:#099>0</span>(FP), BX
+	MOVL	old<span style=color:#000;font-weight:700>+</span><span style=color:#099>8</span>(FP), AX
+	MOVL	new<span style=color:#000;font-weight:700>+</span><span style=color:#099>12</span>(FP), CX
 	LOCK
-	CMPXCHGL	CX, <span style=color:#bd93f9>0</span>(BX)
-	SETEQ	ret<span style=color:#ff79c6>+</span><span style=color:#bd93f9>16</span>(FP)
+	CMPXCHGL	CX, <span style=color:#099>0</span>(BX)
+	SETEQ	ret<span style=color:#000;font-weight:700>+</span><span style=color:#099>16</span>(FP)
 	RET
 </code></pre></div><p>从汇编指令可以看出，使用了CPU的<code>LOCK</code>指令来保证原子的操作，而<code>CMPXCHGL</code>指令则是CPU级别实现的CAS操作。</p>
 <p><em>关于LOCK指令，可以发散到CPU指令的锁总线、锁缓存等内容，而CPU会有多级缓存，这就需要通过缓存一致性去保证原子性。而MESI是缓存一致性协议的一种实现方法。</em></p>
@@ -303,123 +303,123 @@ P2修改数值A为数值B，然后又修改回A
 P1被唤醒，比较后发现数值A没有变化，程序继续执行。</p>
 <h2 id=swap操作>Swap操作</h2>
 <p>Swap操作会执行交换操作，并且返回原来的值。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>old = <span style=color:#ff79c6>*</span>addr  <span style=color:#6272a4>// 复制原来的值
-</span><span style=color:#6272a4></span><span style=color:#ff79c6>*</span>addr = new  <span style=color:#6272a4>// 赋值为新的值
-</span><span style=color:#6272a4></span><span style=color:#ff79c6>return</span> old   <span style=color:#6272a4>// 返回原来的值
-</span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>SwapInt32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int32</span>, new <span style=color:#8be9fd>int32</span>) (old <span style=color:#8be9fd>int32</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>SwapInt64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int64</span>, new <span style=color:#8be9fd>int64</span>) (old <span style=color:#8be9fd>int64</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>SwapPointer</span>(addr <span style=color:#ff79c6>*</span>unsafe.Pointer, new unsafe.Pointer) (old unsafe.Pointer)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>SwapUint32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint32</span>, new <span style=color:#8be9fd>uint32</span>) (old <span style=color:#8be9fd>uint32</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>SwapUint64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint64</span>, new <span style=color:#8be9fd>uint64</span>) (old <span style=color:#8be9fd>uint64</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>SwapUintptr</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uintptr</span>, new <span style=color:#8be9fd>uintptr</span>) (old <span style=color:#8be9fd>uintptr</span>)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>old = <span style=color:#000;font-weight:700>*</span>addr  <span style=color:#998;font-style:italic>// 复制原来的值
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>*</span>addr = new  <span style=color:#998;font-style:italic>// 赋值为新的值
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>return</span> old   <span style=color:#998;font-style:italic>// 返回原来的值
+</span></code></pre></div><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>, new <span style=color:#458;font-weight:700>int32</span>) (old <span style=color:#458;font-weight:700>int32</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>, new <span style=color:#458;font-weight:700>int64</span>) (old <span style=color:#458;font-weight:700>int64</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapPointer</span>(addr <span style=color:#000;font-weight:700>*</span>unsafe.Pointer, new unsafe.Pointer) (old unsafe.Pointer)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>, new <span style=color:#458;font-weight:700>uint32</span>) (old <span style=color:#458;font-weight:700>uint32</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>, new <span style=color:#458;font-weight:700>uint64</span>) (old <span style=color:#458;font-weight:700>uint64</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>, new <span style=color:#458;font-weight:700>uintptr</span>) (old <span style=color:#458;font-weight:700>uintptr</span>)
 </code></pre></div><h2 id=load操作>Load操作</h2>
 <p>从某个地址里获取对应的值：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>return</span> <span style=color:#ff79c6>*</span>addr
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>*</span>addr
 </code></pre></div><p>方法签名：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>LoadInt32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int32</span>) (val <span style=color:#8be9fd>int32</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>LoadInt64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int64</span>) (val <span style=color:#8be9fd>int64</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>LoadPointer</span>(addr <span style=color:#ff79c6>*</span>unsafe.Pointer) (val unsafe.Pointer)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>LoadUint32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint32</span>) (val <span style=color:#8be9fd>uint32</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>LoadUint64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint64</span>) (val <span style=color:#8be9fd>uint64</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>LoadUintptr</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uintptr</span>) (val <span style=color:#8be9fd>uintptr</span>)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>) (val <span style=color:#458;font-weight:700>int32</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>) (val <span style=color:#458;font-weight:700>int64</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadPointer</span>(addr <span style=color:#000;font-weight:700>*</span>unsafe.Pointer) (val unsafe.Pointer)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>) (val <span style=color:#458;font-weight:700>uint32</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>) (val <span style=color:#458;font-weight:700>uint64</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>) (val <span style=color:#458;font-weight:700>uintptr</span>)
 </code></pre></div><h2 id=store操作>Store操作</h2>
 <p>往某个地址里赋值：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>*</span>addr = val
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>*</span>addr = val
 </code></pre></div><p>方法签名：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>StoreInt32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int32</span>, val <span style=color:#8be9fd>int32</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>StoreInt64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>int64</span>, val <span style=color:#8be9fd>int64</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>StorePointer</span>(addr <span style=color:#ff79c6>*</span>unsafe.Pointer, val unsafe.Pointer)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>StoreUint32</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint32</span>, val <span style=color:#8be9fd>uint32</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>StoreUint64</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint64</span>, val <span style=color:#8be9fd>uint64</span>)
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>StoreUintptr</span>(addr <span style=color:#ff79c6>*</span><span style=color:#8be9fd>uintptr</span>, val <span style=color:#8be9fd>uintptr</span>)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>, val <span style=color:#458;font-weight:700>int32</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>, val <span style=color:#458;font-weight:700>int64</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StorePointer</span>(addr <span style=color:#000;font-weight:700>*</span>unsafe.Pointer, val unsafe.Pointer)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>, val <span style=color:#458;font-weight:700>uint32</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>, val <span style=color:#458;font-weight:700>uint64</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>, val <span style=color:#458;font-weight:700>uintptr</span>)
 </code></pre></div><h2 id=value类型>Value类型</h2>
 <p>从源码<a href=https://go.googlesource.com/go/+/go1.16.3/src/sync/atomic/value.go#16>https://go.googlesource.com/go/+/go1.16.3/src/sync/atomic/value.go#16</a>可以看到：</p>
 <p>定义：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>type</span> Value <span style=color:#8be9fd;font-style:italic>struct</span> {
-	v <span style=color:#8be9fd;font-style:italic>interface</span>{}
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>type</span> Value <span style=color:#000;font-weight:700>struct</span> {
+	v <span style=color:#000;font-weight:700>interface</span>{}
 }
-<span style=color:#8be9fd;font-style:italic>func</span> (v <span style=color:#ff79c6>*</span>Value) <span style=color:#50fa7b>Load</span>() (x <span style=color:#8be9fd;font-style:italic>interface</span>{})
-<span style=color:#8be9fd;font-style:italic>func</span> (v <span style=color:#ff79c6>*</span>Value) <span style=color:#50fa7b>Store</span>(x <span style=color:#8be9fd;font-style:italic>interface</span>{}) 
+<span style=color:#000;font-weight:700>func</span> (v <span style=color:#000;font-weight:700>*</span>Value) <span style=color:#900;font-weight:700>Load</span>() (x <span style=color:#000;font-weight:700>interface</span>{})
+<span style=color:#000;font-weight:700>func</span> (v <span style=color:#000;font-weight:700>*</span>Value) <span style=color:#900;font-weight:700>Store</span>(x <span style=color:#000;font-weight:700>interface</span>{}) 
 </code></pre></div><p>源码如下：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>// Copyright 2014 The Go Authors. All rights reserved.
-</span><span style=color:#6272a4>// Use of this source code is governed by a BSD-style
-</span><span style=color:#6272a4>// license that can be found in the LICENSE file.
-</span><span style=color:#6272a4></span><span style=color:#ff79c6>package</span> atomic
-<span style=color:#ff79c6>import</span> (
-	<span style=color:#f1fa8c>&#34;unsafe&#34;</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// Copyright 2014 The Go Authors. All rights reserved.
+</span><span style=color:#998;font-style:italic>// Use of this source code is governed by a BSD-style
+</span><span style=color:#998;font-style:italic>// license that can be found in the LICENSE file.
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>package</span> atomic
+<span style=color:#000;font-weight:700>import</span> (
+	<span style=color:#d14>&#34;unsafe&#34;</span>
 )
-<span style=color:#6272a4>// A Value provides an atomic load and store of a consistently typed value.
-</span><span style=color:#6272a4>// The zero value for a Value returns nil from Load.
-</span><span style=color:#6272a4>// Once Store has been called, a Value must not be copied.
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>// A Value must not be copied after first use.
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>type</span> Value <span style=color:#8be9fd;font-style:italic>struct</span> {
-	v <span style=color:#8be9fd;font-style:italic>interface</span>{}
+<span style=color:#998;font-style:italic>// A Value provides an atomic load and store of a consistently typed value.
+</span><span style=color:#998;font-style:italic>// The zero value for a Value returns nil from Load.
+</span><span style=color:#998;font-style:italic>// Once Store has been called, a Value must not be copied.
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>// A Value must not be copied after first use.
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>type</span> Value <span style=color:#000;font-weight:700>struct</span> {
+	v <span style=color:#000;font-weight:700>interface</span>{}
 }
-<span style=color:#6272a4>// ifaceWords is interface{} internal representation.
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>type</span> ifaceWords <span style=color:#8be9fd;font-style:italic>struct</span> {
+<span style=color:#998;font-style:italic>// ifaceWords is interface{} internal representation.
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>type</span> ifaceWords <span style=color:#000;font-weight:700>struct</span> {
 	typ  unsafe.Pointer
 	data unsafe.Pointer
 }
-<span style=color:#6272a4>// Load returns the value set by the most recent Store.
-</span><span style=color:#6272a4>// It returns nil if there has been no call to Store for this Value.
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> (v <span style=color:#ff79c6>*</span>Value) <span style=color:#50fa7b>Load</span>() (x <span style=color:#8be9fd;font-style:italic>interface</span>{}) {
-	vp <span style=color:#ff79c6>:=</span> (<span style=color:#ff79c6>*</span>ifaceWords)(unsafe.<span style=color:#50fa7b>Pointer</span>(v))
-	typ <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>LoadPointer</span>(<span style=color:#ff79c6>&amp;</span>vp.typ)
-	<span style=color:#ff79c6>if</span> typ <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> <span style=color:#ff79c6>||</span> <span style=color:#8be9fd;font-style:italic>uintptr</span>(typ) <span style=color:#ff79c6>==</span> ^<span style=color:#8be9fd;font-style:italic>uintptr</span>(<span style=color:#bd93f9>0</span>) {
-		<span style=color:#6272a4>// First store not yet completed.
-</span><span style=color:#6272a4></span>		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>nil</span>
+<span style=color:#998;font-style:italic>// Load returns the value set by the most recent Store.
+</span><span style=color:#998;font-style:italic>// It returns nil if there has been no call to Store for this Value.
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> (v <span style=color:#000;font-weight:700>*</span>Value) <span style=color:#900;font-weight:700>Load</span>() (x <span style=color:#000;font-weight:700>interface</span>{}) {
+	vp <span style=color:#000;font-weight:700>:=</span> (<span style=color:#000;font-weight:700>*</span>ifaceWords)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(v))
+	typ <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>LoadPointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.typ)
+	<span style=color:#000;font-weight:700>if</span> typ <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>||</span> <span style=color:#0086b3>uintptr</span>(typ) <span style=color:#000;font-weight:700>==</span> ^<span style=color:#0086b3>uintptr</span>(<span style=color:#099>0</span>) {
+		<span style=color:#998;font-style:italic>// First store not yet completed.
+</span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>
 	}
-	data <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>LoadPointer</span>(<span style=color:#ff79c6>&amp;</span>vp.data)
-	xp <span style=color:#ff79c6>:=</span> (<span style=color:#ff79c6>*</span>ifaceWords)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>x))
+	data <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>LoadPointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.data)
+	xp <span style=color:#000;font-weight:700>:=</span> (<span style=color:#000;font-weight:700>*</span>ifaceWords)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(<span style=color:#000;font-weight:700>&amp;</span>x))
 	xp.typ = typ
 	xp.data = data
-	<span style=color:#ff79c6>return</span>
+	<span style=color:#000;font-weight:700>return</span>
 }
-<span style=color:#6272a4>// Store sets the value of the Value to x.
-</span><span style=color:#6272a4>// All calls to Store for a given Value must use values of the same concrete type.
-</span><span style=color:#6272a4>// Store of an inconsistent type panics, as does Store(nil).
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> (v <span style=color:#ff79c6>*</span>Value) <span style=color:#50fa7b>Store</span>(x <span style=color:#8be9fd;font-style:italic>interface</span>{}) {
-	<span style=color:#ff79c6>if</span> x <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
-		<span style=color:#8be9fd;font-style:italic>panic</span>(<span style=color:#f1fa8c>&#34;sync/atomic: store of nil value into Value&#34;</span>)
+<span style=color:#998;font-style:italic>// Store sets the value of the Value to x.
+</span><span style=color:#998;font-style:italic>// All calls to Store for a given Value must use values of the same concrete type.
+</span><span style=color:#998;font-style:italic>// Store of an inconsistent type panics, as does Store(nil).
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> (v <span style=color:#000;font-weight:700>*</span>Value) <span style=color:#900;font-weight:700>Store</span>(x <span style=color:#000;font-weight:700>interface</span>{}) {
+	<span style=color:#000;font-weight:700>if</span> x <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+		<span style=color:#0086b3>panic</span>(<span style=color:#d14>&#34;sync/atomic: store of nil value into Value&#34;</span>)
 	}
-	vp <span style=color:#ff79c6>:=</span> (<span style=color:#ff79c6>*</span>ifaceWords)(unsafe.<span style=color:#50fa7b>Pointer</span>(v))
-	xp <span style=color:#ff79c6>:=</span> (<span style=color:#ff79c6>*</span>ifaceWords)(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>x))
-	<span style=color:#ff79c6>for</span> {
-		typ <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>LoadPointer</span>(<span style=color:#ff79c6>&amp;</span>vp.typ)
-		<span style=color:#ff79c6>if</span> typ <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
-			<span style=color:#6272a4>// Attempt to start first store.
-</span><span style=color:#6272a4></span>			<span style=color:#6272a4>// Disable preemption so that other goroutines can use
-</span><span style=color:#6272a4></span>			<span style=color:#6272a4>// active spin wait to wait for completion; and so that
-</span><span style=color:#6272a4></span>			<span style=color:#6272a4>// GC does not see the fake type accidentally.
-</span><span style=color:#6272a4></span>			<span style=color:#50fa7b>runtime_procPin</span>()
-			<span style=color:#ff79c6>if</span> !<span style=color:#50fa7b>CompareAndSwapPointer</span>(<span style=color:#ff79c6>&amp;</span>vp.typ, <span style=color:#ff79c6>nil</span>, unsafe.<span style=color:#50fa7b>Pointer</span>(^<span style=color:#8be9fd;font-style:italic>uintptr</span>(<span style=color:#bd93f9>0</span>))) {
-				<span style=color:#50fa7b>runtime_procUnpin</span>()
-				<span style=color:#ff79c6>continue</span>
+	vp <span style=color:#000;font-weight:700>:=</span> (<span style=color:#000;font-weight:700>*</span>ifaceWords)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(v))
+	xp <span style=color:#000;font-weight:700>:=</span> (<span style=color:#000;font-weight:700>*</span>ifaceWords)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(<span style=color:#000;font-weight:700>&amp;</span>x))
+	<span style=color:#000;font-weight:700>for</span> {
+		typ <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>LoadPointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.typ)
+		<span style=color:#000;font-weight:700>if</span> typ <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+			<span style=color:#998;font-style:italic>// Attempt to start first store.
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// Disable preemption so that other goroutines can use
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// active spin wait to wait for completion; and so that
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// GC does not see the fake type accidentally.
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#900;font-weight:700>runtime_procPin</span>()
+			<span style=color:#000;font-weight:700>if</span> !<span style=color:#900;font-weight:700>CompareAndSwapPointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.typ, <span style=color:#000;font-weight:700>nil</span>, unsafe.<span style=color:#900;font-weight:700>Pointer</span>(^<span style=color:#0086b3>uintptr</span>(<span style=color:#099>0</span>))) {
+				<span style=color:#900;font-weight:700>runtime_procUnpin</span>()
+				<span style=color:#000;font-weight:700>continue</span>
 			}
-			<span style=color:#6272a4>// Complete first store.
-</span><span style=color:#6272a4></span>			<span style=color:#50fa7b>StorePointer</span>(<span style=color:#ff79c6>&amp;</span>vp.data, xp.data)
-			<span style=color:#50fa7b>StorePointer</span>(<span style=color:#ff79c6>&amp;</span>vp.typ, xp.typ)
-			<span style=color:#50fa7b>runtime_procUnpin</span>()
-			<span style=color:#ff79c6>return</span>
+			<span style=color:#998;font-style:italic>// Complete first store.
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#900;font-weight:700>StorePointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.data, xp.data)
+			<span style=color:#900;font-weight:700>StorePointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.typ, xp.typ)
+			<span style=color:#900;font-weight:700>runtime_procUnpin</span>()
+			<span style=color:#000;font-weight:700>return</span>
 		}
-		<span style=color:#ff79c6>if</span> <span style=color:#8be9fd;font-style:italic>uintptr</span>(typ) <span style=color:#ff79c6>==</span> ^<span style=color:#8be9fd;font-style:italic>uintptr</span>(<span style=color:#bd93f9>0</span>) {
-			<span style=color:#6272a4>// First store in progress. Wait.
-</span><span style=color:#6272a4></span>			<span style=color:#6272a4>// Since we disable preemption around the first store,
-</span><span style=color:#6272a4></span>			<span style=color:#6272a4>// we can wait with active spinning.
-</span><span style=color:#6272a4></span>			<span style=color:#ff79c6>continue</span>
+		<span style=color:#000;font-weight:700>if</span> <span style=color:#0086b3>uintptr</span>(typ) <span style=color:#000;font-weight:700>==</span> ^<span style=color:#0086b3>uintptr</span>(<span style=color:#099>0</span>) {
+			<span style=color:#998;font-style:italic>// First store in progress. Wait.
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// Since we disable preemption around the first store,
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// we can wait with active spinning.
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#000;font-weight:700>continue</span>
 		}
-		<span style=color:#6272a4>// First store completed. Check type and overwrite data.
-</span><span style=color:#6272a4></span>		<span style=color:#ff79c6>if</span> typ <span style=color:#ff79c6>!=</span> xp.typ {
-			<span style=color:#8be9fd;font-style:italic>panic</span>(<span style=color:#f1fa8c>&#34;sync/atomic: store of inconsistently typed value into Value&#34;</span>)
+		<span style=color:#998;font-style:italic>// First store completed. Check type and overwrite data.
+</span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>if</span> typ <span style=color:#000;font-weight:700>!=</span> xp.typ {
+			<span style=color:#0086b3>panic</span>(<span style=color:#d14>&#34;sync/atomic: store of inconsistently typed value into Value&#34;</span>)
 		}
-		<span style=color:#50fa7b>StorePointer</span>(<span style=color:#ff79c6>&amp;</span>vp.data, xp.data)
-		<span style=color:#ff79c6>return</span>
+		<span style=color:#900;font-weight:700>StorePointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.data, xp.data)
+		<span style=color:#000;font-weight:700>return</span>
 	}
 }
-<span style=color:#6272a4>// Disable/enable preemption, implemented in runtime.
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>runtime_procPin</span>()
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>runtime_procUnpin</span>()
+<span style=color:#998;font-style:italic>// Disable/enable preemption, implemented in runtime.
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>runtime_procPin</span>()
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>runtime_procUnpin</span>()
 </code></pre></div><h1 id=应用>应用</h1>
 <p>atomic.Value这种类型常用于<em>读多写少</em>的场景，比如配置结构体的热更新等。</p>
 <h2 id=例子cowcopy-on-write>例子COW(Copy On Write)</h2>
@@ -429,52 +429,52 @@ P1被唤醒，比较后发现数值A没有变化，程序继续执行。</p>
 <p>存在的问题：老的对象可能会被其他goroutine使用而导致不回立即被垃圾回收，对于多写的场景会产生大量副本，从而导致性能下降。</p>
 <p>优点：无锁（或者说很轻量的锁），所以也不会有 goroutine 的上下文切换，并且在读取的时候大家都读取的相同的副本所以性能上回好一些。</p>
 <p>COW 策略在 linux， redis 中都有很多的实践。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> main
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> main
 
-<span style=color:#ff79c6>import</span> (
-	<span style=color:#f1fa8c>&#34;fmt&#34;</span>
-	<span style=color:#f1fa8c>&#34;sync/atomic&#34;</span>
+<span style=color:#000;font-weight:700>import</span> (
+	<span style=color:#d14>&#34;fmt&#34;</span>
+	<span style=color:#d14>&#34;sync/atomic&#34;</span>
 )
 
-<span style=color:#8be9fd;font-style:italic>type</span> Map <span style=color:#8be9fd;font-style:italic>struct</span> {
+<span style=color:#000;font-weight:700>type</span> Map <span style=color:#000;font-weight:700>struct</span> {
 	v       atomic.Value
-	<span style=color:#6272a4>//writeMu sync.Mutex
-</span><span style=color:#6272a4></span>}
+	<span style=color:#998;font-style:italic>//writeMu sync.Mutex
+</span><span style=color:#998;font-style:italic></span>}
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>NewMap</span>() <span style=color:#ff79c6>*</span>Map {
-	res <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>Map{
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>NewMap</span>() <span style=color:#000;font-weight:700>*</span>Map {
+	res <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Map{
 		v:       atomic.Value{},
-		<span style=color:#6272a4>//writeMu: sync.Mutex{},
-</span><span style=color:#6272a4></span>	}
-	res.v.<span style=color:#50fa7b>Store</span>(<span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd>string</span>))
-	<span style=color:#ff79c6>return</span> res
+		<span style=color:#998;font-style:italic>//writeMu: sync.Mutex{},
+</span><span style=color:#998;font-style:italic></span>	}
+	res.v.<span style=color:#900;font-weight:700>Store</span>(<span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#458;font-weight:700>string</span>))
+	<span style=color:#000;font-weight:700>return</span> res
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (m <span style=color:#ff79c6>*</span>Map) <span style=color:#50fa7b>Get</span>(key <span style=color:#8be9fd>string</span>) <span style=color:#8be9fd>string</span> {
-	m1 <span style=color:#ff79c6>:=</span> m.v.<span style=color:#50fa7b>Load</span>().(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd>string</span>)
-	<span style=color:#ff79c6>return</span> m1[key]
+<span style=color:#000;font-weight:700>func</span> (m <span style=color:#000;font-weight:700>*</span>Map) <span style=color:#900;font-weight:700>Get</span>(key <span style=color:#458;font-weight:700>string</span>) <span style=color:#458;font-weight:700>string</span> {
+	m1 <span style=color:#000;font-weight:700>:=</span> m.v.<span style=color:#900;font-weight:700>Load</span>().(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#458;font-weight:700>string</span>)
+	<span style=color:#000;font-weight:700>return</span> m1[key]
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (m <span style=color:#ff79c6>*</span>Map) <span style=color:#50fa7b>Put</span>(key, val <span style=color:#8be9fd>string</span>) {
-	<span style=color:#6272a4>//m.writeMu.Lock() // synchronize with other potential writers
-</span><span style=color:#6272a4></span>	<span style=color:#6272a4>//defer m.writeMu.Unlock()
-</span><span style=color:#6272a4></span>	m1 <span style=color:#ff79c6>:=</span> m.v.<span style=color:#50fa7b>Load</span>().(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd>string</span>) <span style=color:#6272a4>// load current value of the data structure
-</span><span style=color:#6272a4></span>	m2 <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>string</span>]<span style=color:#8be9fd>string</span>)        <span style=color:#6272a4>// create a new value
-</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>for</span> k, v <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> m1 {
-		m2[k] = v <span style=color:#6272a4>// copy all data from the current object to the new one
-</span><span style=color:#6272a4></span>	}
-	m2[key] = val <span style=color:#6272a4>// do the update that we need
-</span><span style=color:#6272a4></span>	m.v.<span style=color:#50fa7b>Store</span>(m2) <span style=color:#6272a4>// atomically replace the current object with the new one
-</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// At this point all new readers start working with the new version.
-</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// The old version will be garbage collected once the existing readers
-</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// (if any) are done with it.
-</span><span style=color:#6272a4></span>}
+<span style=color:#000;font-weight:700>func</span> (m <span style=color:#000;font-weight:700>*</span>Map) <span style=color:#900;font-weight:700>Put</span>(key, val <span style=color:#458;font-weight:700>string</span>) {
+	<span style=color:#998;font-style:italic>//m.writeMu.Lock() // synchronize with other potential writers
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>//defer m.writeMu.Unlock()
+</span><span style=color:#998;font-style:italic></span>	m1 <span style=color:#000;font-weight:700>:=</span> m.v.<span style=color:#900;font-weight:700>Load</span>().(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#458;font-weight:700>string</span>) <span style=color:#998;font-style:italic>// load current value of the data structure
+</span><span style=color:#998;font-style:italic></span>	m2 <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#458;font-weight:700>string</span>)        <span style=color:#998;font-style:italic>// create a new value
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>for</span> k, v <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> m1 {
+		m2[k] = v <span style=color:#998;font-style:italic>// copy all data from the current object to the new one
+</span><span style=color:#998;font-style:italic></span>	}
+	m2[key] = val <span style=color:#998;font-style:italic>// do the update that we need
+</span><span style=color:#998;font-style:italic></span>	m.v.<span style=color:#900;font-weight:700>Store</span>(m2) <span style=color:#998;font-style:italic>// atomically replace the current object with the new one
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// At this point all new readers start working with the new version.
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// The old version will be garbage collected once the existing readers
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// (if any) are done with it.
+</span><span style=color:#998;font-style:italic></span>}
 
-<span style=color:#6272a4>// COW
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
-	m <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>NewMap</span>()
-	m.<span style=color:#50fa7b>Put</span>(<span style=color:#f1fa8c>&#34;key&#34;</span>, <span style=color:#f1fa8c>&#34;value&#34;</span>)
-	fmt.<span style=color:#50fa7b>Println</span>(m.<span style=color:#50fa7b>Get</span>(<span style=color:#f1fa8c>&#34;key&#34;</span>))
+<span style=color:#998;font-style:italic>// COW
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>() {
+	m <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>NewMap</span>()
+	m.<span style=color:#900;font-weight:700>Put</span>(<span style=color:#d14>&#34;key&#34;</span>, <span style=color:#d14>&#34;value&#34;</span>)
+	fmt.<span style=color:#900;font-weight:700>Println</span>(m.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;key&#34;</span>))
 }
 </code></pre></div>
 </div>

@@ -1,21 +1,36 @@
 /* ================================================================
-   Post 阅读页布局：三栏整体居中
-   左：文章列表 | 中：正文 | 右：目录
+   Post 阅读页 · Medium 风格
    ----------------------------------------------------------------
-   原则：
-   - 整块三栏组合水平居中，正文列永远处于视口正中，不再偏左
-   - 左右侧栏 sticky 跟随滚动，不遮挡正文
-   - 正文排版面向中文长文阅读优化
+   配色 / 字体 / 代码样式参考 medium.com：
+   - 正文衬线字体，UI 无衬线；黑白灰配色 + 极细分割线
+   - 代码块扁平浅灰、等宽字体、无阴影
+   - 进度条与激活态使用 Medium 绿 #1A8917
    ================================================================ */
 
-/* ---- 阅读进度条 ---- */
+:root {
+  --md-text: #242424;
+  --md-muted: #6B6B6B;
+  --md-hairline: rgba(0, 0, 0, 0.09);
+  --md-code-bg: #F2F2F2;
+  --md-accent: #1A8917;
+
+  --md-font-serif: charter, "Bitstream Charter", "Sitka Text", Cambria,
+    Georgia, "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+  --md-font-sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --md-font-mono: "SF Mono", "SFMono-Regular", Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+}
+
+/* ---- 阅读进度条（Medium 绿） ---- */
 #reading-progress {
   position: fixed;
   top: 0;
   left: 0;
   height: 3px;
   width: 100%;
-  background: var(--accent-color, #FF4D4D);
+  background: var(--md-accent);
   transform: scaleX(0);
   transform-origin: 0 0;
   will-change: transform;
@@ -62,12 +77,12 @@ body.post-page main#content {
 body.post-page main#content > .post.container {
   display: block;
   width: 100%;
-  max-width: 780px;
+  max-width: 720px;
   margin: 0 auto;
 }
 
 /* ================================================================
-   左侧：文章列表
+   左侧：文章列表（Medium 极简）
    ================================================================ */
 .posts-nav {
   display: none;
@@ -89,17 +104,18 @@ body.post-page main#content > .post.container {
   display: flex;
   align-items: baseline;
   gap: 8px;
+  font-family: var(--md-font-sans);
   font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
   text-transform: uppercase;
-  opacity: 0.45;
-  margin: 2px 0 12px;
-  padding-left: 10px;
+  color: var(--md-muted);
+  margin: 2px 0 14px;
+  padding-left: 12px;
 }
 .posts-nav-count {
   font-weight: 600;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .posts-nav ul { list-style: none; margin: 0; padding: 0; }
@@ -107,87 +123,113 @@ body.post-page main#content > .post.container {
 
 .posts-nav a {
   display: block;
-  color: inherit;
+  font-family: var(--md-font-sans);
+  color: var(--md-text);
   text-decoration: none;
-  padding: 5px 10px;
-  border-radius: 8px;
+  padding: 5px 12px;
+  border-radius: 6px;
   border-left: 2px solid transparent;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  opacity: 0.68;
-  transition: background 0.15s, opacity 0.15s;
+  opacity: 0.6;
+  transition: background 0.15s, opacity 0.15s, color 0.15s;
 }
 .posts-nav a:hover {
-  background: rgba(127, 127, 127, 0.12);
+  background: rgba(0, 0, 0, 0.05);
   opacity: 1;
 }
 .posts-nav li.active a {
-  color: var(--accent-color, #FF4D4D);
-  font-weight: 700;
-  border-left-color: var(--accent-color, #FF4D4D);
-  background: rgba(255, 77, 77, 0.07);
+  color: var(--md-accent);
+  font-weight: 600;
+  border-left-color: var(--md-accent);
+  background: none;
   opacity: 1;
 }
 
 .posts-nav::-webkit-scrollbar { width: 6px; }
 .posts-nav::-webkit-scrollbar-thumb {
-  background: rgba(127, 127, 127, 0.3);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 3px;
 }
 
 /* ================================================================
-   文章头部
+   文章头部（Medium：大标题 + 细分割线 + 灰色 meta）
    ================================================================ */
 body.post-page .post-header-section {
-  padding-bottom: 24px;
-  margin-bottom: 30px;
-  border-bottom: 1px solid rgba(127, 127, 127, 0.18);
+  padding-bottom: 26px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--md-hairline);
 }
 body.post-page .post-header-section h1 {
-  font-size: 2.05rem;
-  line-height: 1.35;
-  margin: 0 0 12px;
-  letter-spacing: 0.5px;
+  font-family: var(--md-font-sans);
+  font-size: 2.35rem;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.003em;
+  color: var(--md-text);
+  margin: 0 0 10px;
 }
 body.post-page .post [role="doc-subtitle"] {
   display: block;
-  font-size: 1.08em;
-  font-style: italic;
-  opacity: 0.7;
-  margin-bottom: 8px;
+  font-family: var(--md-font-serif);
+  font-size: 1.15em;
+  font-style: normal;
+  color: var(--md-muted);
+  margin-bottom: 12px;
 }
 body.post-page .post .post-date {
-  color: gray;
-  font-size: 0.9rem;
+  font-family: var(--md-font-sans);
+  color: var(--md-muted);
+  font-size: 14px;
+  margin: 0;
 }
+
+/* 标签：Medium 式纯文本链接 */
 body.post-page .post-tags {
-  margin-top: 16px;
+  margin-top: 18px;
+  list-style: none;
+  padding: 0;
 }
 body.post-page .post-tags .post-tag {
-  border: 1px solid rgba(127, 127, 127, 0.35);
-  border-radius: 999px;
-  background: transparent;
-  font-size: 13px;
-  margin: 0 6px 6px 0;
+  border: none;
+  background: none;
+  border-radius: 0;
+  font-size: 14px;
+  margin: 0 14px 6px 0;
+}
+body.post-page .post-tags .post-tag::after {
+  content: "·";
+  color: var(--md-muted);
+  margin-left: 14px;
+}
+body.post-page .post-tags .post-tag:last-child::after {
+  content: none;
 }
 body.post-page .post-tags .post-tag a {
-  padding: 4px 12px;
+  font-family: var(--md-font-sans);
+  color: var(--md-muted);
+  padding: 0;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+body.post-page .post-tags .post-tag a:hover {
+  color: var(--md-text);
+  text-decoration: underline;
 }
 
 /* ================================================================
-   正文排版（面向中文长文阅读）
+   正文排版（Medium：衬线正文、21px、宽松行距）
    ================================================================ */
 body.post-page .post.container {
-  font-family: "Lato", -apple-system, BlinkMacSystemFont, "PingFang SC",
-    "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC",
-    "Source Han Sans SC", sans-serif;
+  font-family: var(--md-font-serif);
+  color: var(--md-text);
 }
 
 body.post-page .post .post-content {
-  font-size: 1.05rem;
-  line-height: 1.9;
-  letter-spacing: 0.02em;
+  font-size: 1.2rem;
+  line-height: 1.7;
+  letter-spacing: 0.003em;
   margin-top: 0;
   overflow-wrap: break-word;
 }
@@ -195,105 +237,122 @@ body.post-page .post-content p {
   margin: 0 0 1.35em;
 }
 
+/* 标题：Medium 衬线加粗，无装饰条 */
 body.post-page .post-content h1,
 body.post-page .post-content h2,
 body.post-page .post-content h3,
 body.post-page .post-content h4 {
-  line-height: 1.4;
+  font-family: var(--md-font-serif);
   font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: -0.003em;
+  color: var(--md-text);
+}
+body.post-page .post-content h1 {
+  font-size: 1.85rem;
+  margin: 1.6em 0 0.7em;
 }
 body.post-page .post-content h2 {
-  font-size: 1.5rem;
-  margin: 2.1em 0 0.85em;
-  padding-left: 13px;
-  border-left: 4px solid var(--accent-color, #FF4D4D);
+  font-size: 1.6rem;
+  margin: 1.6em 0 0.7em;
 }
 body.post-page .post-content h3 {
-  font-size: 1.26rem;
-  margin: 1.8em 0 0.7em;
+  font-size: 1.3rem;
+  margin: 1.4em 0 0.6em;
 }
 body.post-page .post-content h4 {
-  font-size: 1.1rem;
-  margin: 1.5em 0 0.6em;
+  font-size: 1.15rem;
+  margin: 1.3em 0 0.55em;
 }
 body.post-page .post-content h5 {
   font-size: 1rem;
-  margin: 1.2em 0 0.5em;
+  margin: 1.1em 0 0.5em;
 }
 
-/* 代码块 */
+/* 代码块：扁平浅灰、等宽、无阴影（Medium 式） */
 body.post-page .post-content pre {
-  border-radius: 10px;
-  padding: 18px 20px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
+  background: var(--md-code-bg) !important;
+  border-radius: 8px;
+  padding: 20px 22px;
+  box-shadow: none;
+  border: none;
+  font-family: var(--md-font-mono);
+  font-size: 0.93rem;
   line-height: 1.65;
+  color: #333;
 }
 body.post-page .post-content pre code {
-  font-size: 0.9em;
+  font-family: var(--md-font-mono);
+  background: transparent !important;
+  font-size: 0.93rem;
 }
 body.post-page .post-content :not(pre) > code {
-  border-radius: 5px;
+  font-family: var(--md-font-mono);
+  background: var(--md-code-bg) !important;
+  color: var(--md-text);
+  border-radius: 4px;
   padding: 2px 6px;
   font-size: 0.88em;
-  font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 }
 
-/* 引用 */
+/* 引用：极简细边 */
 body.post-page .post-content blockquote {
   margin: 1.6em 0;
-  padding: 12px 18px;
-  border-left: 3px solid var(--accent-color, #FF4D4D);
-  border-radius: 0 10px 10px 0;
-  background: rgba(127, 127, 127, 0.07);
-  color: inherit;
+  padding: 2px 0 2px 20px;
+  border-left: 3px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0;
+  background: none;
+  color: var(--md-text);
+  font-size: 1.05em;
 }
 body.post-page .post-content blockquote p:last-child {
   margin-bottom: 0;
 }
 
-/* 表格 */
+/* 表格：极细分隔线 */
 body.post-page .post-content table {
-  border: 1px solid rgba(127, 127, 127, 0.22);
-  border-radius: 10px;
+  border: 1px solid var(--md-hairline);
+  border-radius: 6px;
+  font-family: var(--md-font-sans);
   font-size: 0.95rem;
   margin: 1.8em 0;
 }
 body.post-page .post-content table thead {
-  background: rgba(127, 127, 127, 0.1);
+  background: rgba(0, 0, 0, 0.03);
 }
 body.post-page .post-content table th,
 body.post-page .post-content table td {
   padding: 10px 16px;
-  border-bottom: 1px solid rgba(127, 127, 127, 0.16);
+  border-bottom: 1px solid var(--md-hairline);
 }
 body.post-page .post-content table tr:last-child td {
   border-bottom: none;
 }
 
-/* 图片 */
+/* 图片：无阴影 */
 body.post-page .post-content img {
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-radius: 4px;
+  box-shadow: none;
 }
 
-/* 分割线 */
+/* 分割线：细线 */
 body.post-page .post-content hr {
   border: 0;
   height: 1px;
   margin: 2.8em auto;
-  width: 70%;
-  background: linear-gradient(90deg, transparent, rgba(127, 127, 127, 0.4), transparent);
+  width: 60%;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.18), transparent);
 }
 
-/* 正文链接 */
+/* 正文链接：Medium 式浅灰下划线，悬停加深 */
 body.post-page .post-content a {
-  color: var(--accent-color, #FF4D4D);
+  color: var(--md-text);
   text-decoration: none;
-  border-bottom: 1px solid rgba(255, 77, 77, 0.35);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.22);
   transition: border-color 0.15s;
 }
 body.post-page .post-content a:hover {
-  border-bottom-color: currentColor;
+  border-bottom-color: var(--md-text);
 }
 /* 包裹图片的链接不画下划线 */
 body.post-page .post-content a:has(> img) {

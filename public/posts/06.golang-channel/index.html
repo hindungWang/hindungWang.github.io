@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/06.golang-channel/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -261,49 +261,49 @@ channels, for <em>communication</em>, <em>synchronization</em> between goroutine
 <p>这是Go语言的并发哲学。</p>
 <p>下面就来详细了解一下golang是如何实现channel这个对象，并且如何实现goroutine之间的数据通信的。</p>
 <h3 id=channel的基本使用>channel的基本使用</h3>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>var</span> ch <span style=color:#8be9fd;font-style:italic>chan</span> <span style=color:#8be9fd>int</span> <span style=color:#6272a4>//声明一个int类型的channel，注意，该语句仅声明，不初始化channel
-</span><span style=color:#6272a4></span>
-ch <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>chan</span> <span style=color:#8be9fd>int</span>) <span style=color:#6272a4>//创建一个无缓冲的int型的channel，无缓冲的channel当放入1个元素后，后续的输入便会阻塞
-</span><span style=color:#6272a4></span>
-ch <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>chan</span> <span style=color:#8be9fd>int</span>, <span style=color:#bd93f9>10</span>) <span style=color:#6272a4>//创建一个缓冲区大小为10的int型的channel
-</span><span style=color:#6272a4></span>
-ch <span style=color:#ff79c6>&lt;-</span> x <span style=color:#6272a4>//将x发送到channel中，如果channel缓冲区满，则阻塞当前goroutine
-</span><span style=color:#6272a4></span>
-<span style=color:#ff79c6>&lt;-</span> ch <span style=color:#6272a4>//从channel中接收一个值，如果缓冲区为空，则阻塞
-</span><span style=color:#6272a4></span>
-x = <span style=color:#ff79c6>&lt;-</span> ch <span style=color:#6272a4>//从channel中接收一个值并存到x中，如果缓冲区为空，则阻塞
-</span><span style=color:#6272a4></span>
-x, ok = <span style=color:#ff79c6>&lt;-</span> ch <span style=color:#6272a4>//从channel中接收一个值，如果channel关闭了，那么ok为false（在没有defaultselect语句的前提下），在channel未关闭且为空的情况下，会阻塞
-</span><span style=color:#6272a4></span>
-<span style=color:#8be9fd;font-style:italic>close</span>(ch) <span style=color:#6272a4>//关闭channel
-</span><span style=color:#6272a4></span>
-<span style=color:#ff79c6>for</span> item <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> ch {} <span style=color:#6272a4>//等待并取出channel中的值，直到channel关闭，会阻塞
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>var</span> ch <span style=color:#000;font-weight:700>chan</span> <span style=color:#458;font-weight:700>int</span> <span style=color:#998;font-style:italic>//声明一个int类型的channel，注意，该语句仅声明，不初始化channel
+</span><span style=color:#998;font-style:italic></span>
+ch <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>chan</span> <span style=color:#458;font-weight:700>int</span>) <span style=color:#998;font-style:italic>//创建一个无缓冲的int型的channel，无缓冲的channel当放入1个元素后，后续的输入便会阻塞
+</span><span style=color:#998;font-style:italic></span>
+ch <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>chan</span> <span style=color:#458;font-weight:700>int</span>, <span style=color:#099>10</span>) <span style=color:#998;font-style:italic>//创建一个缓冲区大小为10的int型的channel
+</span><span style=color:#998;font-style:italic></span>
+ch <span style=color:#000;font-weight:700>&lt;-</span> x <span style=color:#998;font-style:italic>//将x发送到channel中，如果channel缓冲区满，则阻塞当前goroutine
+</span><span style=color:#998;font-style:italic></span>
+<span style=color:#000;font-weight:700>&lt;-</span> ch <span style=color:#998;font-style:italic>//从channel中接收一个值，如果缓冲区为空，则阻塞
+</span><span style=color:#998;font-style:italic></span>
+x = <span style=color:#000;font-weight:700>&lt;-</span> ch <span style=color:#998;font-style:italic>//从channel中接收一个值并存到x中，如果缓冲区为空，则阻塞
+</span><span style=color:#998;font-style:italic></span>
+x, ok = <span style=color:#000;font-weight:700>&lt;-</span> ch <span style=color:#998;font-style:italic>//从channel中接收一个值，如果channel关闭了，那么ok为false（在没有defaultselect语句的前提下），在channel未关闭且为空的情况下，会阻塞
+</span><span style=color:#998;font-style:italic></span>
+<span style=color:#0086b3>close</span>(ch) <span style=color:#998;font-style:italic>//关闭channel
+</span><span style=color:#998;font-style:italic></span>
+<span style=color:#000;font-weight:700>for</span> item <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> ch {} <span style=color:#998;font-style:italic>//等待并取出channel中的值，直到channel关闭，会阻塞
 </span></code></pre></div><h4 id=无缓冲区的channel>无缓冲区的channel</h4>
 <p>从无缓存的channel中读取消息会阻塞，直到goroutine向channel中发送消息；同理，向无缓存的channel 中发送消息也会阻塞，直到有goroutine从channel中读取消息。</p>
 <h4 id=有缓冲区的channel>有缓冲区的channel</h4>
 <p>有缓存的channe 的构造方式为指定make函数的第二个参数，该参数为channel缓存的容量。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>ch <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>make</span>(<span style=color:#8be9fd;font-style:italic>chan</span> <span style=color:#8be9fd>int</span>, <span style=color:#bd93f9>10</span>)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>ch <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>chan</span> <span style=color:#458;font-weight:700>int</span>, <span style=color:#099>10</span>)
 </code></pre></div><p>有缓存的channel实现了一个阻塞队列(采用环形数组实现)。当缓存未满时，向channel中发送消息时不会阻塞，当缓存满时，发送操作将被阻塞，直到有其他goroutine从中读取消息；相应的，当channel中消息不为空时，读取消息不会出现阻塞，当channel为空时，读取操作会造成阻塞，直到有goroutine向channel中写入消息。</p>
 <h4 id=只读只写的channel>只读/只写的channel</h4>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>//定义只读的channel
-</span><span style=color:#6272a4></span>read_only <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>make</span> (<span style=color:#ff79c6>&lt;-</span><span style=color:#8be9fd;font-style:italic>chan</span> <span style=color:#8be9fd>int</span>)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>//定义只读的channel
+</span><span style=color:#998;font-style:italic></span>read_only <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>make</span> (<span style=color:#000;font-weight:700>&lt;-</span><span style=color:#000;font-weight:700>chan</span> <span style=color:#458;font-weight:700>int</span>)
 
-<span style=color:#6272a4>//定义只写的channel
-</span><span style=color:#6272a4></span>write_only <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>make</span> (<span style=color:#8be9fd;font-style:italic>chan</span><span style=color:#ff79c6>&lt;-</span> <span style=color:#8be9fd>int</span>)
+<span style=color:#998;font-style:italic>//定义只写的channel
+</span><span style=color:#998;font-style:italic></span>write_only <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>make</span> (<span style=color:#000;font-weight:700>chan</span><span style=color:#000;font-weight:700>&lt;-</span> <span style=color:#458;font-weight:700>int</span>)
 
-<span style=color:#6272a4>//可同时读写
-</span><span style=color:#6272a4></span>read_write <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>make</span> (<span style=color:#8be9fd;font-style:italic>chan</span> <span style=color:#8be9fd>int</span>)
+<span style=color:#998;font-style:italic>//可同时读写
+</span><span style=color:#998;font-style:italic></span>read_write <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>make</span> (<span style=color:#000;font-weight:700>chan</span> <span style=color:#458;font-weight:700>int</span>)
 </code></pre></div><p>一般来说， 只读或者只写的channel主要用在参数传递上面，比如有一个读取和发送数据的函数，那么在函数参数定义的时候可以限定channel类型，使得权限最小。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>//只能往channel里面写数据
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>send</span>(ch <span style=color:#8be9fd;font-style:italic>chan</span><span style=color:#ff79c6>&lt;-</span> <span style=color:#8be9fd>int</span>) {
-    <span style=color:#ff79c6>for</span> i <span style=color:#ff79c6>:=</span> <span style=color:#bd93f9>0</span>; i &lt; <span style=color:#bd93f9>5</span>; i<span style=color:#ff79c6>++</span> {
-        ch <span style=color:#ff79c6>&lt;-</span> i
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>//只能往channel里面写数据
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>send</span>(ch <span style=color:#000;font-weight:700>chan</span><span style=color:#000;font-weight:700>&lt;-</span> <span style=color:#458;font-weight:700>int</span>) {
+    <span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>:=</span> <span style=color:#099>0</span>; i &lt; <span style=color:#099>5</span>; i<span style=color:#000;font-weight:700>++</span> {
+        ch <span style=color:#000;font-weight:700>&lt;-</span> i
     }
 }
-<span style=color:#6272a4>//只能从channel里面读数据
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>recv</span>(ch <span style=color:#ff79c6>&lt;-</span><span style=color:#8be9fd;font-style:italic>chan</span> <span style=color:#8be9fd>int</span>) {
-    <span style=color:#ff79c6>for</span> i <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>range</span> ch {
-        fmt.<span style=color:#50fa7b>Println</span>(i)
+<span style=color:#998;font-style:italic>//只能从channel里面读数据
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>recv</span>(ch <span style=color:#000;font-weight:700>&lt;-</span><span style=color:#000;font-weight:700>chan</span> <span style=color:#458;font-weight:700>int</span>) {
+    <span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> ch {
+        fmt.<span style=color:#900;font-weight:700>Println</span>(i)
     }
 }
 </code></pre></div><h3 id=channel的底层实现>channel的底层实现</h3>
@@ -311,66 +311,66 @@ x, ok = <span style=color:#ff79c6>&lt;-</span> ch <span style=color:#6272a4>//�
 我们本次主要重点看一下channel底层是如何实现的。（源码是基于Go 1.10.2）
 channel的数据结构表示</p>
 <p>在src/runtime/chan.go里面定义了channel的数据结构</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>type</span> hchan <span style=color:#8be9fd;font-style:italic>struct</span> {
-    qcount   <span style=color:#8be9fd>uint</span>           <span style=color:#6272a4>// total data in the queue： channel的当前元素个数，也就是len方法的结果
-</span><span style=color:#6272a4></span>    dataqsiz <span style=color:#8be9fd>uint</span>           <span style=color:#6272a4>// size of the circular queue：channel的容量，环形队列的大小，cap方法的结果
-</span><span style=color:#6272a4></span>    buf      unsafe.Pointer <span style=color:#6272a4>// points to an array of dataqsiz elements :环形数组实现的缓冲区
-</span><span style=color:#6272a4></span>    elemsize <span style=color:#8be9fd>uint16</span>  <span style=color:#6272a4>// 每个元素的大小
-</span><span style=color:#6272a4></span>    closed   <span style=color:#8be9fd>uint32</span>  <span style=color:#6272a4>//标志位，标识是否close
-</span><span style=color:#6272a4></span>    elemtype <span style=color:#ff79c6>*</span>_type <span style=color:#6272a4>// element type： channel存放元素的类型
-</span><span style=color:#6272a4></span>    sendx    <span style=color:#8be9fd>uint</span>   <span style=color:#6272a4>// send index： 环形队列中下一次发送元素的索引
-</span><span style=color:#6272a4></span>    recvx    <span style=color:#8be9fd>uint</span>   <span style=color:#6272a4>// receive index： 环形队列中下一次接收元素的索引
-</span><span style=color:#6272a4></span>    recvq    waitq  <span style=color:#6272a4>// list of recv waiters  ： recv的goroutinue的等待队列
-</span><span style=color:#6272a4></span>    sendq    waitq  <span style=color:#6272a4>// list of send waiters  ： send的goroutinue的等待队列
-</span><span style=color:#6272a4></span>
-    <span style=color:#6272a4>// lock protects all fields in hchan, as well as several
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// fields in sudogs blocked on this channel.
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// Do not change another G&#39;s status while holding this lock
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// (in particular, do not ready a G), as this can deadlock
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// with stack shrinking.
-</span><span style=color:#6272a4></span>    lock mutex  <span style=color:#6272a4>//互斥量，保证同步安全
-</span><span style=color:#6272a4></span>}
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>type</span> hchan <span style=color:#000;font-weight:700>struct</span> {
+    qcount   <span style=color:#458;font-weight:700>uint</span>           <span style=color:#998;font-style:italic>// total data in the queue： channel的当前元素个数，也就是len方法的结果
+</span><span style=color:#998;font-style:italic></span>    dataqsiz <span style=color:#458;font-weight:700>uint</span>           <span style=color:#998;font-style:italic>// size of the circular queue：channel的容量，环形队列的大小，cap方法的结果
+</span><span style=color:#998;font-style:italic></span>    buf      unsafe.Pointer <span style=color:#998;font-style:italic>// points to an array of dataqsiz elements :环形数组实现的缓冲区
+</span><span style=color:#998;font-style:italic></span>    elemsize <span style=color:#458;font-weight:700>uint16</span>  <span style=color:#998;font-style:italic>// 每个元素的大小
+</span><span style=color:#998;font-style:italic></span>    closed   <span style=color:#458;font-weight:700>uint32</span>  <span style=color:#998;font-style:italic>//标志位，标识是否close
+</span><span style=color:#998;font-style:italic></span>    elemtype <span style=color:#000;font-weight:700>*</span>_type <span style=color:#998;font-style:italic>// element type： channel存放元素的类型
+</span><span style=color:#998;font-style:italic></span>    sendx    <span style=color:#458;font-weight:700>uint</span>   <span style=color:#998;font-style:italic>// send index： 环形队列中下一次发送元素的索引
+</span><span style=color:#998;font-style:italic></span>    recvx    <span style=color:#458;font-weight:700>uint</span>   <span style=color:#998;font-style:italic>// receive index： 环形队列中下一次接收元素的索引
+</span><span style=color:#998;font-style:italic></span>    recvq    waitq  <span style=color:#998;font-style:italic>// list of recv waiters  ： recv的goroutinue的等待队列
+</span><span style=color:#998;font-style:italic></span>    sendq    waitq  <span style=color:#998;font-style:italic>// list of send waiters  ： send的goroutinue的等待队列
+</span><span style=color:#998;font-style:italic></span>
+    <span style=color:#998;font-style:italic>// lock protects all fields in hchan, as well as several
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// fields in sudogs blocked on this channel.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// Do not change another G&#39;s status while holding this lock
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// (in particular, do not ready a G), as this can deadlock
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// with stack shrinking.
+</span><span style=color:#998;font-style:italic></span>    lock mutex  <span style=color:#998;font-style:italic>//互斥量，保证同步安全
+</span><span style=color:#998;font-style:italic></span>}
 </code></pre></div><p>上面就是channel对象的数据结构表示，内部有一个环形队列来存放数据。并且还有两个waitq链表来实现goroutine的等待队列，用来存放哪些goroutine因为send或者recv被阻塞在了这个channel上面：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>type</span> waitq <span style=color:#8be9fd;font-style:italic>struct</span> {
-    first <span style=color:#ff79c6>*</span>sudog
-    last  <span style=color:#ff79c6>*</span>sudog
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>type</span> waitq <span style=color:#000;font-weight:700>struct</span> {
+    first <span style=color:#000;font-weight:700>*</span>sudog
+    last  <span style=color:#000;font-weight:700>*</span>sudog
 }
 </code></pre></div><p>最后sudog就是对于goroutine中的G的封装, 记录的就是因为channel读写被阻塞的goroutine。
 make channel的实现</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>makechan</span>(t <span style=color:#ff79c6>*</span>chantype, size <span style=color:#8be9fd>int</span>) <span style=color:#ff79c6>*</span>hchan {
-    elem <span style=color:#ff79c6>:=</span> t.elem
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>makechan</span>(t <span style=color:#000;font-weight:700>*</span>chantype, size <span style=color:#458;font-weight:700>int</span>) <span style=color:#000;font-weight:700>*</span>hchan {
+    elem <span style=color:#000;font-weight:700>:=</span> t.elem
 
-    <span style=color:#ff79c6>...</span>
+    <span style=color:#000;font-weight:700>...</span>
 
-    <span style=color:#6272a4>// Hchan does not contain pointers interesting for GC when elements stored in buf do not contain pointers.
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// buf points into the same allocation, elemtype is persistent.
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// SudoG&#39;s are referenced from their owning thread so they can&#39;t be collected.
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// TODO(dvyukov,rlh): Rethink when collector can move allocated objects.
-</span><span style=color:#6272a4></span>    <span style=color:#8be9fd;font-style:italic>var</span> c <span style=color:#ff79c6>*</span>hchan
-    <span style=color:#ff79c6>switch</span> {
-    <span style=color:#ff79c6>case</span> size <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span> <span style=color:#ff79c6>||</span> elem.size <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span>:  <span style=color:#6272a4>//没有缓冲区
-</span><span style=color:#6272a4></span>        <span style=color:#6272a4>// Queue or element size is zero.
-</span><span style=color:#6272a4></span>        c = (<span style=color:#ff79c6>*</span>hchan)(<span style=color:#50fa7b>mallocgc</span>(hchanSize, <span style=color:#ff79c6>nil</span>, <span style=color:#ff79c6>true</span>))
-        <span style=color:#6272a4>// Race detector uses this location for synchronization.
-</span><span style=color:#6272a4></span>        c.buf = unsafe.<span style=color:#50fa7b>Pointer</span>(c)
-    <span style=color:#ff79c6>case</span> elem.kind<span style=color:#ff79c6>&amp;</span>kindNoPointers <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span>:  <span style=color:#6272a4>//channel不包含指针
-</span><span style=color:#6272a4></span>        <span style=color:#6272a4>// Elements do not contain pointers.
-</span><span style=color:#6272a4></span>        <span style=color:#6272a4>// Allocate hchan and buf in one call.
-</span><span style=color:#6272a4></span>        c = (<span style=color:#ff79c6>*</span>hchan)(<span style=color:#50fa7b>mallocgc</span>(hchanSize<span style=color:#ff79c6>+</span><span style=color:#8be9fd;font-style:italic>uintptr</span>(size)<span style=color:#ff79c6>*</span>elem.size, <span style=color:#ff79c6>nil</span>, <span style=color:#ff79c6>true</span>))
-        c.buf = <span style=color:#50fa7b>add</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(c), hchanSize)
-    <span style=color:#ff79c6>default</span>:
-        <span style=color:#6272a4>// Elements contain pointers.
-</span><span style=color:#6272a4></span>        c = <span style=color:#8be9fd;font-style:italic>new</span>(hchan)
-        c.buf = <span style=color:#50fa7b>mallocgc</span>(<span style=color:#8be9fd;font-style:italic>uintptr</span>(size)<span style=color:#ff79c6>*</span>elem.size, elem, <span style=color:#ff79c6>true</span>)
+    <span style=color:#998;font-style:italic>// Hchan does not contain pointers interesting for GC when elements stored in buf do not contain pointers.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// buf points into the same allocation, elemtype is persistent.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// SudoG&#39;s are referenced from their owning thread so they can&#39;t be collected.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// TODO(dvyukov,rlh): Rethink when collector can move allocated objects.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>var</span> c <span style=color:#000;font-weight:700>*</span>hchan
+    <span style=color:#000;font-weight:700>switch</span> {
+    <span style=color:#000;font-weight:700>case</span> size <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> <span style=color:#000;font-weight:700>||</span> elem.size <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span>:  <span style=color:#998;font-style:italic>//没有缓冲区
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#998;font-style:italic>// Queue or element size is zero.
+</span><span style=color:#998;font-style:italic></span>        c = (<span style=color:#000;font-weight:700>*</span>hchan)(<span style=color:#900;font-weight:700>mallocgc</span>(hchanSize, <span style=color:#000;font-weight:700>nil</span>, <span style=color:#000;font-weight:700>true</span>))
+        <span style=color:#998;font-style:italic>// Race detector uses this location for synchronization.
+</span><span style=color:#998;font-style:italic></span>        c.buf = unsafe.<span style=color:#900;font-weight:700>Pointer</span>(c)
+    <span style=color:#000;font-weight:700>case</span> elem.kind<span style=color:#000;font-weight:700>&amp;</span>kindNoPointers <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span>:  <span style=color:#998;font-style:italic>//channel不包含指针
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#998;font-style:italic>// Elements do not contain pointers.
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#998;font-style:italic>// Allocate hchan and buf in one call.
+</span><span style=color:#998;font-style:italic></span>        c = (<span style=color:#000;font-weight:700>*</span>hchan)(<span style=color:#900;font-weight:700>mallocgc</span>(hchanSize<span style=color:#000;font-weight:700>+</span><span style=color:#0086b3>uintptr</span>(size)<span style=color:#000;font-weight:700>*</span>elem.size, <span style=color:#000;font-weight:700>nil</span>, <span style=color:#000;font-weight:700>true</span>))
+        c.buf = <span style=color:#900;font-weight:700>add</span>(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(c), hchanSize)
+    <span style=color:#000;font-weight:700>default</span>:
+        <span style=color:#998;font-style:italic>// Elements contain pointers.
+</span><span style=color:#998;font-style:italic></span>        c = <span style=color:#0086b3>new</span>(hchan)
+        c.buf = <span style=color:#900;font-weight:700>mallocgc</span>(<span style=color:#0086b3>uintptr</span>(size)<span style=color:#000;font-weight:700>*</span>elem.size, elem, <span style=color:#000;font-weight:700>true</span>)
     }
 
-    c.elemsize = <span style=color:#8be9fd;font-style:italic>uint16</span>(elem.size)
+    c.elemsize = <span style=color:#0086b3>uint16</span>(elem.size)
     c.elemtype = elem
-    c.dataqsiz = <span style=color:#8be9fd;font-style:italic>uint</span>(size)
+    c.dataqsiz = <span style=color:#0086b3>uint</span>(size)
 
-    <span style=color:#ff79c6>...</span>
-    <span style=color:#ff79c6>return</span> c
+    <span style=color:#000;font-weight:700>...</span>
+    <span style=color:#000;font-weight:700>return</span> c
 }
 </code></pre></div><p>可以看得出来，make channel里面主要是要申请环形队列的内存块，也就是为什么channel不能用new来实现的原因了。</p>
 <p>并且make channel申请数据的堆内存，所以我们可以直接传递channel对象而不是channel的指针。</p>
@@ -378,125 +378,125 @@ make channel的实现</p>
 <p>我们通过上面的图来表示发送和接受的流程，刚开始的时候，缓冲区都是空的。如果开始发送，那么变成下面这种状态，并且sendx开始累加。</p>
 <p>缓冲区发送满了以后就是这种状态：</p>
 <p>channel send的源代码：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>chansend</span>(c <span style=color:#ff79c6>*</span>hchan, ep unsafe.Pointer, block <span style=color:#8be9fd>bool</span>, callerpc <span style=color:#8be9fd>uintptr</span>) <span style=color:#8be9fd>bool</span> {
-    <span style=color:#6272a4>//如果想一个nil的channel发送数据，会调用gopark将当前的goroutine休眠，
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//然后通过第一个参数唤醒，但是下面传入的第一个参数也是nil那么就会导致这个goroutine一直休眠
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//如果goroutine sysmon检查到这种情况就，就会throw(&#34;all goroutines are asleep - deadlock!&#34;) 
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> c <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
-        <span style=color:#ff79c6>if</span> !block {
-            <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>false</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>chansend</span>(c <span style=color:#000;font-weight:700>*</span>hchan, ep unsafe.Pointer, block <span style=color:#458;font-weight:700>bool</span>, callerpc <span style=color:#458;font-weight:700>uintptr</span>) <span style=color:#458;font-weight:700>bool</span> {
+    <span style=color:#998;font-style:italic>//如果想一个nil的channel发送数据，会调用gopark将当前的goroutine休眠，
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//然后通过第一个参数唤醒，但是下面传入的第一个参数也是nil那么就会导致这个goroutine一直休眠
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//如果goroutine sysmon检查到这种情况就，就会throw(&#34;all goroutines are asleep - deadlock!&#34;) 
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> c <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+        <span style=color:#000;font-weight:700>if</span> !block {
+            <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>false</span>
         }
-        <span style=color:#50fa7b>gopark</span>(<span style=color:#ff79c6>nil</span>, <span style=color:#ff79c6>nil</span>, <span style=color:#f1fa8c>&#34;chan send (nil chan)&#34;</span>, traceEvGoStop, <span style=color:#bd93f9>2</span>)
-        <span style=color:#50fa7b>throw</span>(<span style=color:#f1fa8c>&#34;unreachable&#34;</span>)
+        <span style=color:#900;font-weight:700>gopark</span>(<span style=color:#000;font-weight:700>nil</span>, <span style=color:#000;font-weight:700>nil</span>, <span style=color:#d14>&#34;chan send (nil chan)&#34;</span>, traceEvGoStop, <span style=color:#099>2</span>)
+        <span style=color:#900;font-weight:700>throw</span>(<span style=color:#d14>&#34;unreachable&#34;</span>)
     }
-    <span style=color:#ff79c6>...</span>
+    <span style=color:#000;font-weight:700>...</span>
 
-    <span style=color:#ff79c6>if</span> raceenabled {
-        <span style=color:#50fa7b>racereadpc</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(c), callerpc, <span style=color:#50fa7b>funcPC</span>(chansend))
-    }
-
-    <span style=color:#6272a4>// Fast path: check for failed non-blocking operation without acquiring the lock.
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// After observing that the channel is not closed, we observe that the channel is
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// not ready for sending. Each of these observations is a single word-sized read
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// (first c.closed and second c.recvq.first or c.qcount depending on kind of channel).
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// Because a closed channel cannot transition from &#39;ready for sending&#39; to
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// &#39;not ready for sending&#39;, even if the channel is closed between the two observations,
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// they imply a moment between the two when the channel was both not yet closed
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// and not ready for sending. We behave as if we observed the channel at that moment,
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// and report that the send cannot proceed.
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// It is okay if the reads are reordered here: if we observe that the channel is not
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// ready for sending and then observe that it is not closed, that implies that the
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// channel wasn&#39;t closed during the first observation.
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> !block <span style=color:#ff79c6>&amp;&amp;</span> c.closed <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span> <span style=color:#ff79c6>&amp;&amp;</span> ((c.dataqsiz <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span> <span style=color:#ff79c6>&amp;&amp;</span> c.recvq.first <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span>) <span style=color:#ff79c6>||</span>
-        (c.dataqsiz &gt; <span style=color:#bd93f9>0</span> <span style=color:#ff79c6>&amp;&amp;</span> c.qcount <span style=color:#ff79c6>==</span> c.dataqsiz)) {
-        <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>false</span>
+    <span style=color:#000;font-weight:700>if</span> raceenabled {
+        <span style=color:#900;font-weight:700>racereadpc</span>(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(c), callerpc, <span style=color:#900;font-weight:700>funcPC</span>(chansend))
     }
 
-    <span style=color:#8be9fd;font-style:italic>var</span> t0 <span style=color:#8be9fd>int64</span>
-    <span style=color:#ff79c6>if</span> blockprofilerate &gt; <span style=color:#bd93f9>0</span> {
-        t0 = <span style=color:#50fa7b>cputicks</span>()
+    <span style=color:#998;font-style:italic>// Fast path: check for failed non-blocking operation without acquiring the lock.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// After observing that the channel is not closed, we observe that the channel is
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// not ready for sending. Each of these observations is a single word-sized read
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// (first c.closed and second c.recvq.first or c.qcount depending on kind of channel).
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// Because a closed channel cannot transition from &#39;ready for sending&#39; to
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// &#39;not ready for sending&#39;, even if the channel is closed between the two observations,
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// they imply a moment between the two when the channel was both not yet closed
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// and not ready for sending. We behave as if we observed the channel at that moment,
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// and report that the send cannot proceed.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// It is okay if the reads are reordered here: if we observe that the channel is not
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// ready for sending and then observe that it is not closed, that implies that the
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// channel wasn&#39;t closed during the first observation.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> !block <span style=color:#000;font-weight:700>&amp;&amp;</span> c.closed <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> ((c.dataqsiz <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> c.recvq.first <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span>) <span style=color:#000;font-weight:700>||</span>
+        (c.dataqsiz &gt; <span style=color:#099>0</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> c.qcount <span style=color:#000;font-weight:700>==</span> c.dataqsiz)) {
+        <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>false</span>
     }
 
-    <span style=color:#6272a4>//获取同步锁
-</span><span style=color:#6272a4></span>    <span style=color:#50fa7b>lock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
-
-    <span style=color:#6272a4>//不能向已经close的channel发送数据，否则直接panic
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> c.closed <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
-        <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
-        <span style=color:#8be9fd;font-style:italic>panic</span>(<span style=color:#50fa7b>plainError</span>(<span style=color:#f1fa8c>&#34;send on closed channel&#34;</span>))
+    <span style=color:#000;font-weight:700>var</span> t0 <span style=color:#458;font-weight:700>int64</span>
+    <span style=color:#000;font-weight:700>if</span> blockprofilerate &gt; <span style=color:#099>0</span> {
+        t0 = <span style=color:#900;font-weight:700>cputicks</span>()
     }
 
-    <span style=color:#6272a4>//如果有goroutine在这个channel上面等待，那么直接将数据发送给这个接收goroutine
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> sg <span style=color:#ff79c6>:=</span> c.recvq.<span style=color:#50fa7b>dequeue</span>(); sg <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-        <span style=color:#6272a4>// Found a waiting receiver. We pass the value we want to send
-</span><span style=color:#6272a4></span>        <span style=color:#6272a4>// directly to the receiver, bypassing the channel buffer (if any).
-</span><span style=color:#6272a4></span>        <span style=color:#50fa7b>send</span>(c, sg, ep, <span style=color:#8be9fd;font-style:italic>func</span>() { <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock) }, <span style=color:#bd93f9>3</span>)
-        <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>true</span>
+    <span style=color:#998;font-style:italic>//获取同步锁
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#900;font-weight:700>lock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
+
+    <span style=color:#998;font-style:italic>//不能向已经close的channel发送数据，否则直接panic
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> c.closed <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span> {
+        <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
+        <span style=color:#0086b3>panic</span>(<span style=color:#900;font-weight:700>plainError</span>(<span style=color:#d14>&#34;send on closed channel&#34;</span>))
     }
 
-   <span style=color:#6272a4>//缓冲队列还没有满，那么直接将数据复制到缓冲队列里面
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> c.qcount &lt; c.dataqsiz {
-        <span style=color:#6272a4>// Space is available in the channel buffer. Enqueue the element to send.
-</span><span style=color:#6272a4></span>        qp <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>chanbuf</span>(c, c.sendx)
-        <span style=color:#ff79c6>if</span> raceenabled {
-            <span style=color:#50fa7b>raceacquire</span>(qp)
-            <span style=color:#50fa7b>racerelease</span>(qp)
+    <span style=color:#998;font-style:italic>//如果有goroutine在这个channel上面等待，那么直接将数据发送给这个接收goroutine
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> sg <span style=color:#000;font-weight:700>:=</span> c.recvq.<span style=color:#900;font-weight:700>dequeue</span>(); sg <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+        <span style=color:#998;font-style:italic>// Found a waiting receiver. We pass the value we want to send
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#998;font-style:italic>// directly to the receiver, bypassing the channel buffer (if any).
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#900;font-weight:700>send</span>(c, sg, ep, <span style=color:#000;font-weight:700>func</span>() { <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock) }, <span style=color:#099>3</span>)
+        <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>true</span>
+    }
+
+   <span style=color:#998;font-style:italic>//缓冲队列还没有满，那么直接将数据复制到缓冲队列里面
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> c.qcount &lt; c.dataqsiz {
+        <span style=color:#998;font-style:italic>// Space is available in the channel buffer. Enqueue the element to send.
+</span><span style=color:#998;font-style:italic></span>        qp <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>chanbuf</span>(c, c.sendx)
+        <span style=color:#000;font-weight:700>if</span> raceenabled {
+            <span style=color:#900;font-weight:700>raceacquire</span>(qp)
+            <span style=color:#900;font-weight:700>racerelease</span>(qp)
         }
-        <span style=color:#50fa7b>typedmemmove</span>(c.elemtype, qp, ep)
-        c.sendx<span style=color:#ff79c6>++</span>
-        <span style=color:#ff79c6>if</span> c.sendx <span style=color:#ff79c6>==</span> c.dataqsiz {
-            c.sendx = <span style=color:#bd93f9>0</span>
+        <span style=color:#900;font-weight:700>typedmemmove</span>(c.elemtype, qp, ep)
+        c.sendx<span style=color:#000;font-weight:700>++</span>
+        <span style=color:#000;font-weight:700>if</span> c.sendx <span style=color:#000;font-weight:700>==</span> c.dataqsiz {
+            c.sendx = <span style=color:#099>0</span>
         }
-        c.qcount<span style=color:#ff79c6>++</span>
-        <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
-        <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>true</span>
+        c.qcount<span style=color:#000;font-weight:700>++</span>
+        <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
+        <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>true</span>
     }
 
-    <span style=color:#ff79c6>if</span> !block {
-        <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
-        <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>false</span>
+    <span style=color:#000;font-weight:700>if</span> !block {
+        <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
+        <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>false</span>
     }
 
-    <span style=color:#6272a4>// Block on the channel. Some receiver will complete our operation for us.
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//如果缓冲队列满了，俺么就将当前的发送goroutine塞到发送队列中去
-</span><span style=color:#6272a4></span>    gp <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>getg</span>()
-    mysg <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>acquireSudog</span>()
-    mysg.releasetime = <span style=color:#bd93f9>0</span>
-    <span style=color:#ff79c6>if</span> t0 <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
-        mysg.releasetime = <span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>
+    <span style=color:#998;font-style:italic>// Block on the channel. Some receiver will complete our operation for us.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//如果缓冲队列满了，俺么就将当前的发送goroutine塞到发送队列中去
+</span><span style=color:#998;font-style:italic></span>    gp <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>getg</span>()
+    mysg <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>acquireSudog</span>()
+    mysg.releasetime = <span style=color:#099>0</span>
+    <span style=color:#000;font-weight:700>if</span> t0 <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span> {
+        mysg.releasetime = <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>
     }
-    <span style=color:#6272a4>// No stack splits between assigning elem and enqueuing mysg
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// on gp.waiting where copystack can find it.
-</span><span style=color:#6272a4></span>    mysg.elem = ep
-    mysg.waitlink = <span style=color:#ff79c6>nil</span>
+    <span style=color:#998;font-style:italic>// No stack splits between assigning elem and enqueuing mysg
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// on gp.waiting where copystack can find it.
+</span><span style=color:#998;font-style:italic></span>    mysg.elem = ep
+    mysg.waitlink = <span style=color:#000;font-weight:700>nil</span>
     mysg.g = gp
-    mysg.isSelect = <span style=color:#ff79c6>false</span>
+    mysg.isSelect = <span style=color:#000;font-weight:700>false</span>
     mysg.c = c
     gp.waiting = mysg
-    gp.param = <span style=color:#ff79c6>nil</span>
-    c.sendq.<span style=color:#50fa7b>enqueue</span>(mysg)  <span style=color:#6272a4>//入队列
-</span><span style=color:#6272a4></span>    <span style=color:#50fa7b>goparkunlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock, <span style=color:#f1fa8c>&#34;chan send&#34;</span>, traceEvGoBlockSend, <span style=color:#bd93f9>3</span>)
+    gp.param = <span style=color:#000;font-weight:700>nil</span>
+    c.sendq.<span style=color:#900;font-weight:700>enqueue</span>(mysg)  <span style=color:#998;font-style:italic>//入队列
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#900;font-weight:700>goparkunlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock, <span style=color:#d14>&#34;chan send&#34;</span>, traceEvGoBlockSend, <span style=color:#099>3</span>)
 
-    <span style=color:#6272a4>// someone woke us up.
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> mysg <span style=color:#ff79c6>!=</span> gp.waiting {
-        <span style=color:#50fa7b>throw</span>(<span style=color:#f1fa8c>&#34;G waiting list is corrupted&#34;</span>)
+    <span style=color:#998;font-style:italic>// someone woke us up.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> mysg <span style=color:#000;font-weight:700>!=</span> gp.waiting {
+        <span style=color:#900;font-weight:700>throw</span>(<span style=color:#d14>&#34;G waiting list is corrupted&#34;</span>)
     }
-    gp.waiting = <span style=color:#ff79c6>nil</span>
-    <span style=color:#ff79c6>if</span> gp.param <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
-        <span style=color:#ff79c6>if</span> c.closed <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span> {
-            <span style=color:#50fa7b>throw</span>(<span style=color:#f1fa8c>&#34;chansend: spurious wakeup&#34;</span>)
+    gp.waiting = <span style=color:#000;font-weight:700>nil</span>
+    <span style=color:#000;font-weight:700>if</span> gp.param <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+        <span style=color:#000;font-weight:700>if</span> c.closed <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> {
+            <span style=color:#900;font-weight:700>throw</span>(<span style=color:#d14>&#34;chansend: spurious wakeup&#34;</span>)
         }
-        <span style=color:#8be9fd;font-style:italic>panic</span>(<span style=color:#50fa7b>plainError</span>(<span style=color:#f1fa8c>&#34;send on closed channel&#34;</span>))
+        <span style=color:#0086b3>panic</span>(<span style=color:#900;font-weight:700>plainError</span>(<span style=color:#d14>&#34;send on closed channel&#34;</span>))
     }
-    gp.param = <span style=color:#ff79c6>nil</span>
-    <span style=color:#ff79c6>if</span> mysg.releasetime &gt; <span style=color:#bd93f9>0</span> {
-        <span style=color:#50fa7b>blockevent</span>(mysg.releasetime<span style=color:#ff79c6>-</span>t0, <span style=color:#bd93f9>2</span>)
+    gp.param = <span style=color:#000;font-weight:700>nil</span>
+    <span style=color:#000;font-weight:700>if</span> mysg.releasetime &gt; <span style=color:#099>0</span> {
+        <span style=color:#900;font-weight:700>blockevent</span>(mysg.releasetime<span style=color:#000;font-weight:700>-</span>t0, <span style=color:#099>2</span>)
     }
-    mysg.c = <span style=color:#ff79c6>nil</span>
-    <span style=color:#50fa7b>releaseSudog</span>(mysg)
-    <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>true</span>
+    mysg.c = <span style=color:#000;font-weight:700>nil</span>
+    <span style=color:#900;font-weight:700>releaseSudog</span>(mysg)
+    <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>true</span>
 }
 </code></pre></div><p>从上面的代码可以看到基本发送流程</p>
 <ul>
@@ -510,121 +510,121 @@ make channel的实现</p>
 image.png</p>
 <p>直到把数据读完阻塞为止。</p>
 <p>channel recv的源代码：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>chanrecv</span>(c <span style=color:#ff79c6>*</span>hchan, ep unsafe.Pointer, block <span style=color:#8be9fd>bool</span>) (selected, received <span style=color:#8be9fd>bool</span>) {
-    <span style=color:#6272a4>// raceenabled: don&#39;t need to check ep, as it is always on the stack
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// or is new memory allocated by reflect.
-</span><span style=color:#6272a4></span>
-    <span style=color:#ff79c6>...</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>chanrecv</span>(c <span style=color:#000;font-weight:700>*</span>hchan, ep unsafe.Pointer, block <span style=color:#458;font-weight:700>bool</span>) (selected, received <span style=color:#458;font-weight:700>bool</span>) {
+    <span style=color:#998;font-style:italic>// raceenabled: don&#39;t need to check ep, as it is always on the stack
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// or is new memory allocated by reflect.
+</span><span style=color:#998;font-style:italic></span>
+    <span style=color:#000;font-weight:700>...</span>
 
-    <span style=color:#6272a4>// Fast path: check for failed non-blocking operation without acquiring the lock.
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// After observing that the channel is not ready for receiving, we observe that the
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// channel is not closed. Each of these observations is a single word-sized read
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// (first c.sendq.first or c.qcount, and second c.closed).
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// Because a channel cannot be reopened, the later observation of the channel
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// being not closed implies that it was also not closed at the moment of the
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// first observation. We behave as if we observed the channel at that moment
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// and report that the receive cannot proceed.
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// The order of operations is important here: reversing the operations can lead to
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// incorrect behavior when racing with a close.
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> !block <span style=color:#ff79c6>&amp;&amp;</span> (c.dataqsiz <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span> <span style=color:#ff79c6>&amp;&amp;</span> c.sendq.first <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> <span style=color:#ff79c6>||</span>
-        c.dataqsiz &gt; <span style=color:#bd93f9>0</span> <span style=color:#ff79c6>&amp;&amp;</span> atomic.<span style=color:#50fa7b>Loaduint</span>(<span style=color:#ff79c6>&amp;</span>c.qcount) <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span>) <span style=color:#ff79c6>&amp;&amp;</span>
-        atomic.<span style=color:#50fa7b>Load</span>(<span style=color:#ff79c6>&amp;</span>c.closed) <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span> {
-        <span style=color:#ff79c6>return</span>
+    <span style=color:#998;font-style:italic>// Fast path: check for failed non-blocking operation without acquiring the lock.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// After observing that the channel is not ready for receiving, we observe that the
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// channel is not closed. Each of these observations is a single word-sized read
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// (first c.sendq.first or c.qcount, and second c.closed).
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// Because a channel cannot be reopened, the later observation of the channel
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// being not closed implies that it was also not closed at the moment of the
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// first observation. We behave as if we observed the channel at that moment
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// and report that the receive cannot proceed.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// The order of operations is important here: reversing the operations can lead to
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// incorrect behavior when racing with a close.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> !block <span style=color:#000;font-weight:700>&amp;&amp;</span> (c.dataqsiz <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> c.sendq.first <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>||</span>
+        c.dataqsiz &gt; <span style=color:#099>0</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> atomic.<span style=color:#900;font-weight:700>Loaduint</span>(<span style=color:#000;font-weight:700>&amp;</span>c.qcount) <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span>) <span style=color:#000;font-weight:700>&amp;&amp;</span>
+        atomic.<span style=color:#900;font-weight:700>Load</span>(<span style=color:#000;font-weight:700>&amp;</span>c.closed) <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> {
+        <span style=color:#000;font-weight:700>return</span>
     }
 
-    <span style=color:#8be9fd;font-style:italic>var</span> t0 <span style=color:#8be9fd>int64</span>
-    <span style=color:#ff79c6>if</span> blockprofilerate &gt; <span style=color:#bd93f9>0</span> {
-        t0 = <span style=color:#50fa7b>cputicks</span>()
+    <span style=color:#000;font-weight:700>var</span> t0 <span style=color:#458;font-weight:700>int64</span>
+    <span style=color:#000;font-weight:700>if</span> blockprofilerate &gt; <span style=color:#099>0</span> {
+        t0 = <span style=color:#900;font-weight:700>cputicks</span>()
     }
 
-    <span style=color:#6272a4>//加锁
-</span><span style=color:#6272a4></span>    <span style=color:#50fa7b>lock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
+    <span style=color:#998;font-style:italic>//加锁
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#900;font-weight:700>lock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
 
-    <span style=color:#6272a4>//如果channel已经关闭并且channel为空，那么recv的时候返回空值
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> c.closed <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> <span style=color:#ff79c6>&amp;&amp;</span> c.qcount <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span> {
-        <span style=color:#ff79c6>if</span> raceenabled {
-            <span style=color:#50fa7b>raceacquire</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(c))
+    <span style=color:#998;font-style:italic>//如果channel已经关闭并且channel为空，那么recv的时候返回空值
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> c.closed <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> c.qcount <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> {
+        <span style=color:#000;font-weight:700>if</span> raceenabled {
+            <span style=color:#900;font-weight:700>raceacquire</span>(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(c))
         }
-        <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
-        <span style=color:#ff79c6>if</span> ep <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-            <span style=color:#50fa7b>typedmemclr</span>(c.elemtype, ep)
+        <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
+        <span style=color:#000;font-weight:700>if</span> ep <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+            <span style=color:#900;font-weight:700>typedmemclr</span>(c.elemtype, ep)
         }
-        <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>true</span>, <span style=color:#ff79c6>false</span>
+        <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>true</span>, <span style=color:#000;font-weight:700>false</span>
     }
 
-    <span style=color:#6272a4>//如果有send阻塞队列
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//如果channel没有缓冲区，那么直接从send goroutine接收数据
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>//否则从缓冲区队列头取出数据，并且唤醒send开始写入数据到队列尾部
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> sg <span style=color:#ff79c6>:=</span> c.sendq.<span style=color:#50fa7b>dequeue</span>(); sg <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-        <span style=color:#6272a4>// Found a waiting sender. If buffer is size 0, receive value
-</span><span style=color:#6272a4></span>        <span style=color:#6272a4>// directly from sender. Otherwise, receive from head of queue
-</span><span style=color:#6272a4></span>        <span style=color:#6272a4>// and add sender&#39;s value to the tail of the queue (both map to
-</span><span style=color:#6272a4></span>        <span style=color:#6272a4>// the same buffer slot because the queue is full).
-</span><span style=color:#6272a4></span>        <span style=color:#50fa7b>recv</span>(c, sg, ep, <span style=color:#8be9fd;font-style:italic>func</span>() { <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock) }, <span style=color:#bd93f9>3</span>)
-        <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>true</span>, <span style=color:#ff79c6>true</span>
+    <span style=color:#998;font-style:italic>//如果有send阻塞队列
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//如果channel没有缓冲区，那么直接从send goroutine接收数据
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>//否则从缓冲区队列头取出数据，并且唤醒send开始写入数据到队列尾部
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> sg <span style=color:#000;font-weight:700>:=</span> c.sendq.<span style=color:#900;font-weight:700>dequeue</span>(); sg <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+        <span style=color:#998;font-style:italic>// Found a waiting sender. If buffer is size 0, receive value
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#998;font-style:italic>// directly from sender. Otherwise, receive from head of queue
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#998;font-style:italic>// and add sender&#39;s value to the tail of the queue (both map to
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#998;font-style:italic>// the same buffer slot because the queue is full).
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#900;font-weight:700>recv</span>(c, sg, ep, <span style=color:#000;font-weight:700>func</span>() { <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock) }, <span style=color:#099>3</span>)
+        <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>true</span>, <span style=color:#000;font-weight:700>true</span>
     }
 
-    <span style=color:#6272a4>//缓存队列不为空，那么从队列获取数据
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> c.qcount &gt; <span style=color:#bd93f9>0</span> {
-        <span style=color:#6272a4>// Receive directly from queue
-</span><span style=color:#6272a4></span>        qp <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>chanbuf</span>(c, c.recvx)
-        <span style=color:#ff79c6>if</span> raceenabled {
-            <span style=color:#50fa7b>raceacquire</span>(qp)
-            <span style=color:#50fa7b>racerelease</span>(qp)
+    <span style=color:#998;font-style:italic>//缓存队列不为空，那么从队列获取数据
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> c.qcount &gt; <span style=color:#099>0</span> {
+        <span style=color:#998;font-style:italic>// Receive directly from queue
+</span><span style=color:#998;font-style:italic></span>        qp <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>chanbuf</span>(c, c.recvx)
+        <span style=color:#000;font-weight:700>if</span> raceenabled {
+            <span style=color:#900;font-weight:700>raceacquire</span>(qp)
+            <span style=color:#900;font-weight:700>racerelease</span>(qp)
         }
-        <span style=color:#ff79c6>if</span> ep <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-            <span style=color:#50fa7b>typedmemmove</span>(c.elemtype, ep, qp)
+        <span style=color:#000;font-weight:700>if</span> ep <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+            <span style=color:#900;font-weight:700>typedmemmove</span>(c.elemtype, ep, qp)
         }
-        <span style=color:#50fa7b>typedmemclr</span>(c.elemtype, qp)
-        c.recvx<span style=color:#ff79c6>++</span>
-        <span style=color:#ff79c6>if</span> c.recvx <span style=color:#ff79c6>==</span> c.dataqsiz {
-            c.recvx = <span style=color:#bd93f9>0</span>
+        <span style=color:#900;font-weight:700>typedmemclr</span>(c.elemtype, qp)
+        c.recvx<span style=color:#000;font-weight:700>++</span>
+        <span style=color:#000;font-weight:700>if</span> c.recvx <span style=color:#000;font-weight:700>==</span> c.dataqsiz {
+            c.recvx = <span style=color:#099>0</span>
         }
-        c.qcount<span style=color:#ff79c6>--</span>
-        <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
-        <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>true</span>, <span style=color:#ff79c6>true</span>
+        c.qcount<span style=color:#000;font-weight:700>--</span>
+        <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
+        <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>true</span>, <span style=color:#000;font-weight:700>true</span>
     }
 
-    <span style=color:#ff79c6>if</span> !block {
-        <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
-        <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>false</span>, <span style=color:#ff79c6>false</span>
+    <span style=color:#000;font-weight:700>if</span> !block {
+        <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
+        <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>false</span>, <span style=color:#000;font-weight:700>false</span>
     }
 
-    <span style=color:#6272a4>//缓存队列为空，那么将recv goroutine加入到recv阻塞队列中
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// no sender available: block on this channel.
-</span><span style=color:#6272a4></span>    gp <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>getg</span>()
-    mysg <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>acquireSudog</span>()
-    mysg.releasetime = <span style=color:#bd93f9>0</span>
-    <span style=color:#ff79c6>if</span> t0 <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
-        mysg.releasetime = <span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>
+    <span style=color:#998;font-style:italic>//缓存队列为空，那么将recv goroutine加入到recv阻塞队列中
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// no sender available: block on this channel.
+</span><span style=color:#998;font-style:italic></span>    gp <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>getg</span>()
+    mysg <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>acquireSudog</span>()
+    mysg.releasetime = <span style=color:#099>0</span>
+    <span style=color:#000;font-weight:700>if</span> t0 <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span> {
+        mysg.releasetime = <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>
     }
-    <span style=color:#6272a4>// No stack splits between assigning elem and enqueuing mysg
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// on gp.waiting where copystack can find it.
-</span><span style=color:#6272a4></span>    mysg.elem = ep
-    mysg.waitlink = <span style=color:#ff79c6>nil</span>
+    <span style=color:#998;font-style:italic>// No stack splits between assigning elem and enqueuing mysg
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// on gp.waiting where copystack can find it.
+</span><span style=color:#998;font-style:italic></span>    mysg.elem = ep
+    mysg.waitlink = <span style=color:#000;font-weight:700>nil</span>
     gp.waiting = mysg
     mysg.g = gp
-    mysg.isSelect = <span style=color:#ff79c6>false</span>
+    mysg.isSelect = <span style=color:#000;font-weight:700>false</span>
     mysg.c = c
-    gp.param = <span style=color:#ff79c6>nil</span>
-    c.recvq.<span style=color:#50fa7b>enqueue</span>(mysg)
-    <span style=color:#50fa7b>goparkunlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock, <span style=color:#f1fa8c>&#34;chan receive&#34;</span>, traceEvGoBlockRecv, <span style=color:#bd93f9>3</span>)
+    gp.param = <span style=color:#000;font-weight:700>nil</span>
+    c.recvq.<span style=color:#900;font-weight:700>enqueue</span>(mysg)
+    <span style=color:#900;font-weight:700>goparkunlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock, <span style=color:#d14>&#34;chan receive&#34;</span>, traceEvGoBlockRecv, <span style=color:#099>3</span>)
 
-    <span style=color:#6272a4>// someone woke us up
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> mysg <span style=color:#ff79c6>!=</span> gp.waiting {
-        <span style=color:#50fa7b>throw</span>(<span style=color:#f1fa8c>&#34;G waiting list is corrupted&#34;</span>)
+    <span style=color:#998;font-style:italic>// someone woke us up
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> mysg <span style=color:#000;font-weight:700>!=</span> gp.waiting {
+        <span style=color:#900;font-weight:700>throw</span>(<span style=color:#d14>&#34;G waiting list is corrupted&#34;</span>)
     }
-    gp.waiting = <span style=color:#ff79c6>nil</span>
-    <span style=color:#ff79c6>if</span> mysg.releasetime &gt; <span style=color:#bd93f9>0</span> {
-        <span style=color:#50fa7b>blockevent</span>(mysg.releasetime<span style=color:#ff79c6>-</span>t0, <span style=color:#bd93f9>2</span>)
+    gp.waiting = <span style=color:#000;font-weight:700>nil</span>
+    <span style=color:#000;font-weight:700>if</span> mysg.releasetime &gt; <span style=color:#099>0</span> {
+        <span style=color:#900;font-weight:700>blockevent</span>(mysg.releasetime<span style=color:#000;font-weight:700>-</span>t0, <span style=color:#099>2</span>)
     }
-    closed <span style=color:#ff79c6>:=</span> gp.param <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span>
-    gp.param = <span style=color:#ff79c6>nil</span>
-    mysg.c = <span style=color:#ff79c6>nil</span>
-    <span style=color:#50fa7b>releaseSudog</span>(mysg)
-    <span style=color:#ff79c6>return</span> <span style=color:#ff79c6>true</span>, !closed
+    closed <span style=color:#000;font-weight:700>:=</span> gp.param <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span>
+    gp.param = <span style=color:#000;font-weight:700>nil</span>
+    mysg.c = <span style=color:#000;font-weight:700>nil</span>
+    <span style=color:#900;font-weight:700>releaseSudog</span>(mysg)
+    <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>true</span>, !closed
 }
 </code></pre></div><p>channel的数据接收和发送比较类似：</p>
 <ul>
@@ -639,79 +639,79 @@ image.png</p>
 <li>缓存队列为空，那么将recv goroutine加入到recv阻塞队列中</li>
 </ul>
 <h4 id=关闭channel>关闭channel</h4>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>closechan</span>(c <span style=color:#ff79c6>*</span>hchan) {
-    <span style=color:#ff79c6>if</span> c <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
-        <span style=color:#8be9fd;font-style:italic>panic</span>(<span style=color:#50fa7b>plainError</span>(<span style=color:#f1fa8c>&#34;close of nil channel&#34;</span>))
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>closechan</span>(c <span style=color:#000;font-weight:700>*</span>hchan) {
+    <span style=color:#000;font-weight:700>if</span> c <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+        <span style=color:#0086b3>panic</span>(<span style=color:#900;font-weight:700>plainError</span>(<span style=color:#d14>&#34;close of nil channel&#34;</span>))
     }
 
-    <span style=color:#50fa7b>lock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
+    <span style=color:#900;font-weight:700>lock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
 
-    <span style=color:#6272a4>//重复close同一个channel会panic
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>if</span> c.closed <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
-        <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
-        <span style=color:#8be9fd;font-style:italic>panic</span>(<span style=color:#50fa7b>plainError</span>(<span style=color:#f1fa8c>&#34;close of closed channel&#34;</span>))
+    <span style=color:#998;font-style:italic>//重复close同一个channel会panic
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>if</span> c.closed <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span> {
+        <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
+        <span style=color:#0086b3>panic</span>(<span style=color:#900;font-weight:700>plainError</span>(<span style=color:#d14>&#34;close of closed channel&#34;</span>))
     }
 
-    <span style=color:#ff79c6>if</span> raceenabled {
-        callerpc <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>getcallerpc</span>()
-        <span style=color:#50fa7b>racewritepc</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(c), callerpc, <span style=color:#50fa7b>funcPC</span>(closechan))
-        <span style=color:#50fa7b>racerelease</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(c))
+    <span style=color:#000;font-weight:700>if</span> raceenabled {
+        callerpc <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>getcallerpc</span>()
+        <span style=color:#900;font-weight:700>racewritepc</span>(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(c), callerpc, <span style=color:#900;font-weight:700>funcPC</span>(closechan))
+        <span style=color:#900;font-weight:700>racerelease</span>(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(c))
     }
 
-    c.closed = <span style=color:#bd93f9>1</span>
+    c.closed = <span style=color:#099>1</span>
 
-    <span style=color:#8be9fd;font-style:italic>var</span> glist <span style=color:#ff79c6>*</span>g
+    <span style=color:#000;font-weight:700>var</span> glist <span style=color:#000;font-weight:700>*</span>g
 
-    <span style=color:#6272a4>//把所有的阻塞的recvgoroutine唤醒
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// release all readers
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>for</span> {
-        sg <span style=color:#ff79c6>:=</span> c.recvq.<span style=color:#50fa7b>dequeue</span>()
-        <span style=color:#ff79c6>if</span> sg <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
-            <span style=color:#ff79c6>break</span>
+    <span style=color:#998;font-style:italic>//把所有的阻塞的recvgoroutine唤醒
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// release all readers
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>for</span> {
+        sg <span style=color:#000;font-weight:700>:=</span> c.recvq.<span style=color:#900;font-weight:700>dequeue</span>()
+        <span style=color:#000;font-weight:700>if</span> sg <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+            <span style=color:#000;font-weight:700>break</span>
         }
-        <span style=color:#ff79c6>if</span> sg.elem <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-            <span style=color:#50fa7b>typedmemclr</span>(c.elemtype, sg.elem)
-            sg.elem = <span style=color:#ff79c6>nil</span>
+        <span style=color:#000;font-weight:700>if</span> sg.elem <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+            <span style=color:#900;font-weight:700>typedmemclr</span>(c.elemtype, sg.elem)
+            sg.elem = <span style=color:#000;font-weight:700>nil</span>
         }
-        <span style=color:#ff79c6>if</span> sg.releasetime <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
-            sg.releasetime = <span style=color:#50fa7b>cputicks</span>()
+        <span style=color:#000;font-weight:700>if</span> sg.releasetime <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span> {
+            sg.releasetime = <span style=color:#900;font-weight:700>cputicks</span>()
         }
-        gp <span style=color:#ff79c6>:=</span> sg.g
-        gp.param = <span style=color:#ff79c6>nil</span>
-        <span style=color:#ff79c6>if</span> raceenabled {
-            <span style=color:#50fa7b>raceacquireg</span>(gp, unsafe.<span style=color:#50fa7b>Pointer</span>(c))
+        gp <span style=color:#000;font-weight:700>:=</span> sg.g
+        gp.param = <span style=color:#000;font-weight:700>nil</span>
+        <span style=color:#000;font-weight:700>if</span> raceenabled {
+            <span style=color:#900;font-weight:700>raceacquireg</span>(gp, unsafe.<span style=color:#900;font-weight:700>Pointer</span>(c))
         }
-        gp.schedlink.<span style=color:#50fa7b>set</span>(glist)
+        gp.schedlink.<span style=color:#900;font-weight:700>set</span>(glist)
         glist = gp
     }
 
-    <span style=color:#6272a4>//唤醒所有的阻塞的send
-</span><span style=color:#6272a4></span>    <span style=color:#6272a4>// release all writers (they will panic)
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>for</span> {
-        sg <span style=color:#ff79c6>:=</span> c.sendq.<span style=color:#50fa7b>dequeue</span>()
-        <span style=color:#ff79c6>if</span> sg <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
-            <span style=color:#ff79c6>break</span>
+    <span style=color:#998;font-style:italic>//唤醒所有的阻塞的send
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#998;font-style:italic>// release all writers (they will panic)
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>for</span> {
+        sg <span style=color:#000;font-weight:700>:=</span> c.sendq.<span style=color:#900;font-weight:700>dequeue</span>()
+        <span style=color:#000;font-weight:700>if</span> sg <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+            <span style=color:#000;font-weight:700>break</span>
         }
-        sg.elem = <span style=color:#ff79c6>nil</span>
-        <span style=color:#ff79c6>if</span> sg.releasetime <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
-            sg.releasetime = <span style=color:#50fa7b>cputicks</span>()
+        sg.elem = <span style=color:#000;font-weight:700>nil</span>
+        <span style=color:#000;font-weight:700>if</span> sg.releasetime <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span> {
+            sg.releasetime = <span style=color:#900;font-weight:700>cputicks</span>()
         }
-        gp <span style=color:#ff79c6>:=</span> sg.g
-        gp.param = <span style=color:#ff79c6>nil</span>
-        <span style=color:#ff79c6>if</span> raceenabled {
-            <span style=color:#50fa7b>raceacquireg</span>(gp, unsafe.<span style=color:#50fa7b>Pointer</span>(c))
+        gp <span style=color:#000;font-weight:700>:=</span> sg.g
+        gp.param = <span style=color:#000;font-weight:700>nil</span>
+        <span style=color:#000;font-weight:700>if</span> raceenabled {
+            <span style=color:#900;font-weight:700>raceacquireg</span>(gp, unsafe.<span style=color:#900;font-weight:700>Pointer</span>(c))
         }
-        gp.schedlink.<span style=color:#50fa7b>set</span>(glist)
+        gp.schedlink.<span style=color:#900;font-weight:700>set</span>(glist)
         glist = gp
     }
-    <span style=color:#50fa7b>unlock</span>(<span style=color:#ff79c6>&amp;</span>c.lock)
+    <span style=color:#900;font-weight:700>unlock</span>(<span style=color:#000;font-weight:700>&amp;</span>c.lock)
 
-    <span style=color:#6272a4>// Ready all Gs now that we&#39;ve dropped the channel lock.
-</span><span style=color:#6272a4></span>    <span style=color:#ff79c6>for</span> glist <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-        gp <span style=color:#ff79c6>:=</span> glist
-        glist = glist.schedlink.<span style=color:#50fa7b>ptr</span>()
-        gp.schedlink = <span style=color:#bd93f9>0</span>
-        <span style=color:#50fa7b>goready</span>(gp, <span style=color:#bd93f9>3</span>)
+    <span style=color:#998;font-style:italic>// Ready all Gs now that we&#39;ve dropped the channel lock.
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>for</span> glist <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+        gp <span style=color:#000;font-weight:700>:=</span> glist
+        glist = glist.schedlink.<span style=color:#900;font-weight:700>ptr</span>()
+        gp.schedlink = <span style=color:#099>0</span>
+        <span style=color:#900;font-weight:700>goready</span>(gp, <span style=color:#099>3</span>)
     }
 }
 </code></pre></div><p>close channel 的工作除了将 ch.closed 设置为1。还需要：</p>
@@ -722,244 +722,244 @@ image.png</p>
 </ul>
 <h3 id=select与channel>select与channel</h3>
 <p>select用于在多个channel上同时进行侦听并收发消息，当任何一个case满足条件时即执行，如果没有可执行的case则会执行default的case，如果没有指定defaultcase，则会阻塞程序，select的语法：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>select</span> {
-   <span style=color:#ff79c6>case</span> communication clause :
-      <span style=color:#50fa7b>statement</span>(s);     
-   <span style=color:#ff79c6>case</span> communication clause :
-      <span style=color:#50fa7b>statement</span>(s);
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>select</span> {
+   <span style=color:#000;font-weight:700>case</span> communication clause :
+      <span style=color:#900;font-weight:700>statement</span>(s);     
+   <span style=color:#000;font-weight:700>case</span> communication clause :
+      <span style=color:#900;font-weight:700>statement</span>(s);
 
-   <span style=color:#6272a4>/*可以定义任意数量的 case */</span>
+   <span style=color:#998;font-style:italic>/*可以定义任意数量的 case */</span>
 
-   <span style=color:#ff79c6>default</span> : <span style=color:#6272a4>/*可选 */</span>
-      <span style=color:#50fa7b>statement</span>(s);
+   <span style=color:#000;font-weight:700>default</span> : <span style=color:#998;font-style:italic>/*可选 */</span>
+      <span style=color:#900;font-weight:700>statement</span>(s);
 }
 </code></pre></div><p>下面来看一下golang底层是如何实现select和channel的配合的。
 一个send case + default</p>
 <p>对于这种情况，chan.go源码中是如下实现：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>// compiler implements
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>//    select {
-</span><span style=color:#6272a4>//    case c &lt;- v:
-</span><span style=color:#6272a4>//        ... foo
-</span><span style=color:#6272a4>//    default:
-</span><span style=color:#6272a4>//        ... bar
-</span><span style=color:#6272a4>//    }
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>// as
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>//    if selectnbsend(c, v) {
-</span><span style=color:#6272a4>//        ... foo
-</span><span style=color:#6272a4>//    } else {
-</span><span style=color:#6272a4>//        ... bar
-</span><span style=color:#6272a4>//    }
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>selectnbsend</span>(c <span style=color:#ff79c6>*</span>hchan, elem unsafe.Pointer) (selected <span style=color:#8be9fd>bool</span>) {
-    <span style=color:#ff79c6>return</span> <span style=color:#50fa7b>chansend</span>(c, elem, <span style=color:#ff79c6>false</span>, <span style=color:#50fa7b>getcallerpc</span>())
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// compiler implements
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>//    select {
+</span><span style=color:#998;font-style:italic>//    case c &lt;- v:
+</span><span style=color:#998;font-style:italic>//        ... foo
+</span><span style=color:#998;font-style:italic>//    default:
+</span><span style=color:#998;font-style:italic>//        ... bar
+</span><span style=color:#998;font-style:italic>//    }
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>// as
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>//    if selectnbsend(c, v) {
+</span><span style=color:#998;font-style:italic>//        ... foo
+</span><span style=color:#998;font-style:italic>//    } else {
+</span><span style=color:#998;font-style:italic>//        ... bar
+</span><span style=color:#998;font-style:italic>//    }
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>selectnbsend</span>(c <span style=color:#000;font-weight:700>*</span>hchan, elem unsafe.Pointer) (selected <span style=color:#458;font-weight:700>bool</span>) {
+    <span style=color:#000;font-weight:700>return</span> <span style=color:#900;font-weight:700>chansend</span>(c, elem, <span style=color:#000;font-weight:700>false</span>, <span style=color:#900;font-weight:700>getcallerpc</span>())
 }
 
-一个recv <span style=color:#ff79c6>case</span> <span style=color:#ff79c6>+</span> <span style=color:#ff79c6>default</span>
+一个recv <span style=color:#000;font-weight:700>case</span> <span style=color:#000;font-weight:700>+</span> <span style=color:#000;font-weight:700>default</span>
 
-<span style=color:#6272a4>// compiler implements
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>//    select {
-</span><span style=color:#6272a4>//    case v = &lt;-c:
-</span><span style=color:#6272a4>//        ... foo
-</span><span style=color:#6272a4>//    default:
-</span><span style=color:#6272a4>//        ... bar
-</span><span style=color:#6272a4>//    }
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>// as
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>//    if selectnbrecv(&amp;v, c) {
-</span><span style=color:#6272a4>//        ... foo
-</span><span style=color:#6272a4>//    } else {
-</span><span style=color:#6272a4>//        ... bar
-</span><span style=color:#6272a4>//    }
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>selectnbrecv</span>(elem unsafe.Pointer, c <span style=color:#ff79c6>*</span>hchan) (selected <span style=color:#8be9fd>bool</span>) {
-    selected, _ = <span style=color:#50fa7b>chanrecv</span>(c, elem, <span style=color:#ff79c6>false</span>)
-    <span style=color:#ff79c6>return</span>
+<span style=color:#998;font-style:italic>// compiler implements
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>//    select {
+</span><span style=color:#998;font-style:italic>//    case v = &lt;-c:
+</span><span style=color:#998;font-style:italic>//        ... foo
+</span><span style=color:#998;font-style:italic>//    default:
+</span><span style=color:#998;font-style:italic>//        ... bar
+</span><span style=color:#998;font-style:italic>//    }
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>// as
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>//    if selectnbrecv(&amp;v, c) {
+</span><span style=color:#998;font-style:italic>//        ... foo
+</span><span style=color:#998;font-style:italic>//    } else {
+</span><span style=color:#998;font-style:italic>//        ... bar
+</span><span style=color:#998;font-style:italic>//    }
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>selectnbrecv</span>(elem unsafe.Pointer, c <span style=color:#000;font-weight:700>*</span>hchan) (selected <span style=color:#458;font-weight:700>bool</span>) {
+    selected, _ = <span style=color:#900;font-weight:700>chanrecv</span>(c, elem, <span style=color:#000;font-weight:700>false</span>)
+    <span style=color:#000;font-weight:700>return</span>
 }
 
-带有ok结果的recv <span style=color:#ff79c6>+</span> <span style=color:#ff79c6>default</span>
+带有ok结果的recv <span style=color:#000;font-weight:700>+</span> <span style=color:#000;font-weight:700>default</span>
 
-<span style=color:#6272a4>// compiler implements
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>//    select {
-</span><span style=color:#6272a4>//    case v, ok = &lt;-c:
-</span><span style=color:#6272a4>//        ... foo
-</span><span style=color:#6272a4>//    default:
-</span><span style=color:#6272a4>//        ... bar
-</span><span style=color:#6272a4>//    }
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>// as
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>//    if c != nil &amp;&amp; selectnbrecv2(&amp;v, &amp;ok, c) {
-</span><span style=color:#6272a4>//        ... foo
-</span><span style=color:#6272a4>//    } else {
-</span><span style=color:#6272a4>//        ... bar
-</span><span style=color:#6272a4>//    }
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>selectnbrecv2</span>(elem unsafe.Pointer, received <span style=color:#ff79c6>*</span><span style=color:#8be9fd>bool</span>, c <span style=color:#ff79c6>*</span>hchan) (selected <span style=color:#8be9fd>bool</span>) {
-    <span style=color:#6272a4>// TODO(khr): just return 2 values from this function, now that it is in Go.
-</span><span style=color:#6272a4></span>    selected, <span style=color:#ff79c6>*</span>received = <span style=color:#50fa7b>chanrecv</span>(c, elem, <span style=color:#ff79c6>false</span>)
-    <span style=color:#ff79c6>return</span>
+<span style=color:#998;font-style:italic>// compiler implements
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>//    select {
+</span><span style=color:#998;font-style:italic>//    case v, ok = &lt;-c:
+</span><span style=color:#998;font-style:italic>//        ... foo
+</span><span style=color:#998;font-style:italic>//    default:
+</span><span style=color:#998;font-style:italic>//        ... bar
+</span><span style=color:#998;font-style:italic>//    }
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>// as
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>//    if c != nil &amp;&amp; selectnbrecv2(&amp;v, &amp;ok, c) {
+</span><span style=color:#998;font-style:italic>//        ... foo
+</span><span style=color:#998;font-style:italic>//    } else {
+</span><span style=color:#998;font-style:italic>//        ... bar
+</span><span style=color:#998;font-style:italic>//    }
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>selectnbrecv2</span>(elem unsafe.Pointer, received <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>bool</span>, c <span style=color:#000;font-weight:700>*</span>hchan) (selected <span style=color:#458;font-weight:700>bool</span>) {
+    <span style=color:#998;font-style:italic>// TODO(khr): just return 2 values from this function, now that it is in Go.
+</span><span style=color:#998;font-style:italic></span>    selected, <span style=color:#000;font-weight:700>*</span>received = <span style=color:#900;font-weight:700>chanrecv</span>(c, elem, <span style=color:#000;font-weight:700>false</span>)
+    <span style=color:#000;font-weight:700>return</span>
 }
 
-多种case <span style=color:#ff79c6>+</span> default混合
+多种case <span style=color:#000;font-weight:700>+</span> default混合
 
-如果下面这种多个case混合的代码，那么select是如何工作的呢？
+如果下面这种多个case混合的代码<span style=color:#a61717;background-color:#e3d2d2>，</span>那么select是如何工作的呢<span style=color:#a61717;background-color:#e3d2d2>？</span>
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
-    <span style=color:#8be9fd;font-style:italic>var</span> ch <span style=color:#8be9fd;font-style:italic>chan</span> <span style=color:#8be9fd>int</span>
-    <span style=color:#8be9fd;font-style:italic>var</span> ch2 <span style=color:#8be9fd;font-style:italic>chan</span> <span style=color:#8be9fd>int</span>
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>() {
+    <span style=color:#000;font-weight:700>var</span> ch <span style=color:#000;font-weight:700>chan</span> <span style=color:#458;font-weight:700>int</span>
+    <span style=color:#000;font-weight:700>var</span> ch2 <span style=color:#000;font-weight:700>chan</span> <span style=color:#458;font-weight:700>int</span>
 
-    <span style=color:#6272a4>//省略初始化channel
-</span><span style=color:#6272a4></span>
-    <span style=color:#ff79c6>select</span> {
-    <span style=color:#ff79c6>case</span> <span style=color:#ff79c6>&lt;-</span>ch:
-    <span style=color:#ff79c6>case</span> v, _ <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&lt;-</span>ch2:
-        fmt.<span style=color:#50fa7b>Println</span>(v)
-    <span style=color:#ff79c6>case</span> ch <span style=color:#ff79c6>&lt;-</span> <span style=color:#bd93f9>1</span>:
-    <span style=color:#ff79c6>default</span>:
+    <span style=color:#998;font-style:italic>//省略初始化channel
+</span><span style=color:#998;font-style:italic></span>
+    <span style=color:#000;font-weight:700>select</span> {
+    <span style=color:#000;font-weight:700>case</span> <span style=color:#000;font-weight:700>&lt;-</span>ch:
+    <span style=color:#000;font-weight:700>case</span> v, _ <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&lt;-</span>ch2:
+        fmt.<span style=color:#900;font-weight:700>Println</span>(v)
+    <span style=color:#000;font-weight:700>case</span> ch <span style=color:#000;font-weight:700>&lt;-</span> <span style=color:#099>1</span>:
+    <span style=color:#000;font-weight:700>default</span>:
     }
 }
 </code></pre></div><p>我们通过go build -gcflags -S helloworld.go 2> helloworld.s来反汇编上面的代码，可以看到下面的代码。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#bd93f9>0x0084</span> <span style=color:#bd93f9>00132</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>11</span>)    CALL    runtime.<span style=color:#50fa7b>newselect</span>(SB)
-<span style=color:#bd93f9>0x0089</span> <span style=color:#bd93f9>00137</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>12</span>)    LEAQ    <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_8<span style=color:#ff79c6>+</span><span style=color:#bd93f9>88</span>(SP), AX
-<span style=color:#bd93f9>0x008e</span> <span style=color:#bd93f9>00142</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>12</span>)    MOVQ    AX, (SP)
-<span style=color:#bd93f9>0x0092</span> <span style=color:#bd93f9>00146</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>12</span>)    XORPS    X1, X1
-<span style=color:#bd93f9>0x0095</span> <span style=color:#bd93f9>0014</span><span style=color:#bd93f9>9</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>12</span>)    MOVUPS    X1, <span style=color:#bd93f9>8</span>(SP)
-<span style=color:#bd93f9>0x009a</span> <span style=color:#bd93f9>00154</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>12</span>)    MOVQ    $<span style=color:#bd93f9>0</span>, <span style=color:#bd93f9>24</span>(SP)
-<span style=color:#bd93f9>0x00a3</span> <span style=color:#bd93f9>00163</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>12</span>)    PCDATA    $<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-<span style=color:#bd93f9>0x00a3</span> <span style=color:#bd93f9>00163</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>12</span>)    CALL    runtime.<span style=color:#50fa7b>selectrecv</span>(SB)
-<span style=color:#bd93f9>0x00a8</span> <span style=color:#bd93f9>0016</span><span style=color:#bd93f9>8</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>13</span>)    LEAQ    <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_8<span style=color:#ff79c6>+</span><span style=color:#bd93f9>88</span>(SP), AX
-<span style=color:#bd93f9>0x00ad</span> <span style=color:#bd93f9>00173</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>13</span>)    MOVQ    AX, (SP)
-<span style=color:#bd93f9>0x00b1</span> <span style=color:#bd93f9>00177</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>13</span>)    MOVQ    $<span style=color:#bd93f9>0</span>, <span style=color:#bd93f9>8</span>(SP)
-<span style=color:#bd93f9>0x00ba</span> <span style=color:#bd93f9>001</span><span style=color:#bd93f9>86</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>13</span>)    LEAQ    <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_3<span style=color:#ff79c6>+</span><span style=color:#bd93f9>64</span>(SP), CX
-<span style=color:#bd93f9>0x00bf</span> <span style=color:#bd93f9>001</span><span style=color:#bd93f9>91</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>13</span>)    MOVQ    CX, <span style=color:#bd93f9>16</span>(SP)
-<span style=color:#bd93f9>0x00c4</span> <span style=color:#bd93f9>001</span><span style=color:#bd93f9>96</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>13</span>)    MOVQ    $<span style=color:#bd93f9>0</span>, <span style=color:#bd93f9>24</span>(SP)
-<span style=color:#bd93f9>0x00cd</span> <span style=color:#bd93f9>00205</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>13</span>)    PCDATA    $<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-<span style=color:#bd93f9>0x00cd</span> <span style=color:#bd93f9>00205</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>13</span>)    CALL    runtime.<span style=color:#50fa7b>selectrecv</span>(SB)
-<span style=color:#bd93f9>0x00d2</span> <span style=color:#bd93f9>00210</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>15</span>)    LEAQ    <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_8<span style=color:#ff79c6>+</span><span style=color:#bd93f9>88</span>(SP), AX
-<span style=color:#bd93f9>0x00d7</span> <span style=color:#bd93f9>00215</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>15</span>)    MOVQ    AX, (SP)
-<span style=color:#bd93f9>0x00db</span> <span style=color:#bd93f9>0021</span><span style=color:#bd93f9>9</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>15</span>)    MOVQ    $<span style=color:#bd93f9>0</span>, <span style=color:#bd93f9>8</span>(SP)
-<span style=color:#bd93f9>0x00e4</span> <span style=color:#bd93f9>0022</span><span style=color:#bd93f9>8</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>15</span>)    LEAQ    <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_7<span style=color:#ff79c6>+</span><span style=color:#bd93f9>48</span>(SP), CX
-<span style=color:#bd93f9>0x00e9</span> <span style=color:#bd93f9>00233</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>15</span>)    MOVQ    CX, <span style=color:#bd93f9>16</span>(SP)
-<span style=color:#bd93f9>0x00ee</span> <span style=color:#bd93f9>0023</span><span style=color:#bd93f9>8</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>15</span>)    PCDATA    $<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-<span style=color:#bd93f9>0x00ee</span> <span style=color:#bd93f9>0023</span><span style=color:#bd93f9>8</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>15</span>)    CALL    runtime.<span style=color:#50fa7b>selectsend</span>(SB)
-<span style=color:#bd93f9>0x00f3</span> <span style=color:#bd93f9>00243</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>16</span>)    LEAQ    <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_8<span style=color:#ff79c6>+</span><span style=color:#bd93f9>88</span>(SP), AX
-<span style=color:#bd93f9>0x00f8</span> <span style=color:#bd93f9>0024</span><span style=color:#bd93f9>8</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>16</span>)    MOVQ    AX, (SP)
-<span style=color:#bd93f9>0x00fc</span> <span style=color:#bd93f9>00252</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>16</span>)    PCDATA    $<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-<span style=color:#bd93f9>0x00fc</span> <span style=color:#bd93f9>00252</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>16</span>)    CALL    runtime.<span style=color:#50fa7b>selectdefault</span>(SB)
-<span style=color:#bd93f9>0x0101</span> <span style=color:#bd93f9>00257</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>11</span>)    LEAQ    <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_8<span style=color:#ff79c6>+</span><span style=color:#bd93f9>88</span>(SP), AX
-<span style=color:#bd93f9>0x0106</span> <span style=color:#bd93f9>00262</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>11</span>)    MOVQ    AX, (SP)
-<span style=color:#bd93f9>0x010a</span> <span style=color:#bd93f9>00266</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>11</span>)    PCDATA    $<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-<span style=color:#bd93f9>0x010a</span> <span style=color:#bd93f9>00266</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>11</span>)    CALL    runtime.<span style=color:#50fa7b>selectgo</span>(SB)
-<span style=color:#bd93f9>0x010f</span> <span style=color:#bd93f9>00271</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>11</span>)    MOVQ    <span style=color:#bd93f9>8</span>(SP), AX
-<span style=color:#bd93f9>0x0114</span> <span style=color:#bd93f9>00276</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>12</span>)    TESTQ    AX, AX
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#099>0x0084</span> <span style=color:#099>00132</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>11</span>)    CALL    runtime.<span style=color:#900;font-weight:700>newselect</span>(SB)
+<span style=color:#099>0x0089</span> <span style=color:#099>00137</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>12</span>)    LEAQ    <span style=color:#d14>&#34;&#34;</span>..autotmp_8<span style=color:#000;font-weight:700>+</span><span style=color:#099>88</span>(SP), AX
+<span style=color:#099>0x008e</span> <span style=color:#099>00142</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>12</span>)    MOVQ    AX, (SP)
+<span style=color:#099>0x0092</span> <span style=color:#099>00146</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>12</span>)    XORPS    X1, X1
+<span style=color:#099>0x0095</span> <span style=color:#099>0014</span><span style=color:#099>9</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>12</span>)    MOVUPS    X1, <span style=color:#099>8</span>(SP)
+<span style=color:#099>0x009a</span> <span style=color:#099>00154</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>12</span>)    MOVQ    <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#099>24</span>(SP)
+<span style=color:#099>0x00a3</span> <span style=color:#099>00163</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>12</span>)    PCDATA    <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+<span style=color:#099>0x00a3</span> <span style=color:#099>00163</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>12</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectrecv</span>(SB)
+<span style=color:#099>0x00a8</span> <span style=color:#099>0016</span><span style=color:#099>8</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>13</span>)    LEAQ    <span style=color:#d14>&#34;&#34;</span>..autotmp_8<span style=color:#000;font-weight:700>+</span><span style=color:#099>88</span>(SP), AX
+<span style=color:#099>0x00ad</span> <span style=color:#099>00173</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>13</span>)    MOVQ    AX, (SP)
+<span style=color:#099>0x00b1</span> <span style=color:#099>00177</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>13</span>)    MOVQ    <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#099>8</span>(SP)
+<span style=color:#099>0x00ba</span> <span style=color:#099>001</span><span style=color:#099>86</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>13</span>)    LEAQ    <span style=color:#d14>&#34;&#34;</span>..autotmp_3<span style=color:#000;font-weight:700>+</span><span style=color:#099>64</span>(SP), CX
+<span style=color:#099>0x00bf</span> <span style=color:#099>001</span><span style=color:#099>91</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>13</span>)    MOVQ    CX, <span style=color:#099>16</span>(SP)
+<span style=color:#099>0x00c4</span> <span style=color:#099>001</span><span style=color:#099>96</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>13</span>)    MOVQ    <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#099>24</span>(SP)
+<span style=color:#099>0x00cd</span> <span style=color:#099>00205</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>13</span>)    PCDATA    <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+<span style=color:#099>0x00cd</span> <span style=color:#099>00205</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>13</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectrecv</span>(SB)
+<span style=color:#099>0x00d2</span> <span style=color:#099>00210</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>15</span>)    LEAQ    <span style=color:#d14>&#34;&#34;</span>..autotmp_8<span style=color:#000;font-weight:700>+</span><span style=color:#099>88</span>(SP), AX
+<span style=color:#099>0x00d7</span> <span style=color:#099>00215</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>15</span>)    MOVQ    AX, (SP)
+<span style=color:#099>0x00db</span> <span style=color:#099>0021</span><span style=color:#099>9</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>15</span>)    MOVQ    <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#099>8</span>(SP)
+<span style=color:#099>0x00e4</span> <span style=color:#099>0022</span><span style=color:#099>8</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>15</span>)    LEAQ    <span style=color:#d14>&#34;&#34;</span>..autotmp_7<span style=color:#000;font-weight:700>+</span><span style=color:#099>48</span>(SP), CX
+<span style=color:#099>0x00e9</span> <span style=color:#099>00233</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>15</span>)    MOVQ    CX, <span style=color:#099>16</span>(SP)
+<span style=color:#099>0x00ee</span> <span style=color:#099>0023</span><span style=color:#099>8</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>15</span>)    PCDATA    <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+<span style=color:#099>0x00ee</span> <span style=color:#099>0023</span><span style=color:#099>8</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>15</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectsend</span>(SB)
+<span style=color:#099>0x00f3</span> <span style=color:#099>00243</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>16</span>)    LEAQ    <span style=color:#d14>&#34;&#34;</span>..autotmp_8<span style=color:#000;font-weight:700>+</span><span style=color:#099>88</span>(SP), AX
+<span style=color:#099>0x00f8</span> <span style=color:#099>0024</span><span style=color:#099>8</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>16</span>)    MOVQ    AX, (SP)
+<span style=color:#099>0x00fc</span> <span style=color:#099>00252</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>16</span>)    PCDATA    <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+<span style=color:#099>0x00fc</span> <span style=color:#099>00252</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>16</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectdefault</span>(SB)
+<span style=color:#099>0x0101</span> <span style=color:#099>00257</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>11</span>)    LEAQ    <span style=color:#d14>&#34;&#34;</span>..autotmp_8<span style=color:#000;font-weight:700>+</span><span style=color:#099>88</span>(SP), AX
+<span style=color:#099>0x0106</span> <span style=color:#099>00262</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>11</span>)    MOVQ    AX, (SP)
+<span style=color:#099>0x010a</span> <span style=color:#099>00266</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>11</span>)    PCDATA    <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+<span style=color:#099>0x010a</span> <span style=color:#099>00266</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>11</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectgo</span>(SB)
+<span style=color:#099>0x010f</span> <span style=color:#099>00271</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>11</span>)    MOVQ    <span style=color:#099>8</span>(SP), AX
+<span style=color:#099>0x0114</span> <span style=color:#099>00276</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>12</span>)    TESTQ    AX, AX
 
-其中下面这几行就是关键：
+其中下面这几行就是关键<span style=color:#a61717;background-color:#e3d2d2>：</span>
 
-<span style=color:#bd93f9>0x0084</span> <span style=color:#bd93f9>00132</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>11</span>)    CALL    runtime.<span style=color:#50fa7b>newselect</span>(SB)
-<span style=color:#bd93f9>0x00a3</span> <span style=color:#bd93f9>00163</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>12</span>)    CALL    runtime.<span style=color:#50fa7b>selectrecv</span>(SB)
-<span style=color:#bd93f9>0x00cd</span> <span style=color:#bd93f9>00205</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>13</span>)    CALL    runtime.<span style=color:#50fa7b>selectrecv</span>(SB)
-<span style=color:#bd93f9>0x00ee</span> <span style=color:#bd93f9>0023</span><span style=color:#bd93f9>8</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>15</span>)    CALL    runtime.<span style=color:#50fa7b>selectsend</span>(SB)
-<span style=color:#bd93f9>0x00fc</span> <span style=color:#bd93f9>00252</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>16</span>)    CALL    runtime.<span style=color:#50fa7b>selectdefault</span>(SB)
-<span style=color:#bd93f9>0x010a</span> <span style=color:#bd93f9>00266</span> (helloworld.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>11</span>)    CALL    runtime.<span style=color:#50fa7b>selectgo</span>(SB)
+<span style=color:#099>0x0084</span> <span style=color:#099>00132</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>11</span>)    CALL    runtime.<span style=color:#900;font-weight:700>newselect</span>(SB)
+<span style=color:#099>0x00a3</span> <span style=color:#099>00163</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>12</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectrecv</span>(SB)
+<span style=color:#099>0x00cd</span> <span style=color:#099>00205</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>13</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectrecv</span>(SB)
+<span style=color:#099>0x00ee</span> <span style=color:#099>0023</span><span style=color:#099>8</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>15</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectsend</span>(SB)
+<span style=color:#099>0x00fc</span> <span style=color:#099>00252</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>16</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectdefault</span>(SB)
+<span style=color:#099>0x010a</span> <span style=color:#099>00266</span> (helloworld.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>11</span>)    CALL    runtime.<span style=color:#900;font-weight:700>selectgo</span>(SB)
 </code></pre></div><p>我们在src\runtime\select.go下面可以找到selectgo方法，这个是select的调度方法：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>selectgo</span>(sel <span style=color:#ff79c6>*</span>hselect) <span style=color:#8be9fd>int</span> {
-    <span style=color:#ff79c6>...</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>selectgo</span>(sel <span style=color:#000;font-weight:700>*</span>hselect) <span style=color:#458;font-weight:700>int</span> {
+    <span style=color:#000;font-weight:700>...</span>
 
     loop:
-    <span style=color:#6272a4>// pass 1 - look for something already waiting
-</span><span style=color:#6272a4></span>    <span style=color:#8be9fd;font-style:italic>var</span> dfli <span style=color:#8be9fd>int</span>
-    <span style=color:#8be9fd;font-style:italic>var</span> dfl <span style=color:#ff79c6>*</span>scase
-    <span style=color:#8be9fd;font-style:italic>var</span> casi <span style=color:#8be9fd>int</span>
-    <span style=color:#8be9fd;font-style:italic>var</span> cas <span style=color:#ff79c6>*</span>scase
-    <span style=color:#ff79c6>for</span> i <span style=color:#ff79c6>:=</span> <span style=color:#bd93f9>0</span>; i &lt; <span style=color:#8be9fd;font-style:italic>int</span>(sel.ncase); i<span style=color:#ff79c6>++</span> {
-        casi = <span style=color:#8be9fd;font-style:italic>int</span>(pollorder[i])
-        cas = <span style=color:#ff79c6>&amp;</span>scases[casi]
+    <span style=color:#998;font-style:italic>// pass 1 - look for something already waiting
+</span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>var</span> dfli <span style=color:#458;font-weight:700>int</span>
+    <span style=color:#000;font-weight:700>var</span> dfl <span style=color:#000;font-weight:700>*</span>scase
+    <span style=color:#000;font-weight:700>var</span> casi <span style=color:#458;font-weight:700>int</span>
+    <span style=color:#000;font-weight:700>var</span> cas <span style=color:#000;font-weight:700>*</span>scase
+    <span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>:=</span> <span style=color:#099>0</span>; i &lt; <span style=color:#0086b3>int</span>(sel.ncase); i<span style=color:#000;font-weight:700>++</span> {
+        casi = <span style=color:#0086b3>int</span>(pollorder[i])
+        cas = <span style=color:#000;font-weight:700>&amp;</span>scases[casi]
         c = cas.c
 
-        <span style=color:#ff79c6>switch</span> cas.kind {
-        <span style=color:#ff79c6>case</span> caseNil:
-            <span style=color:#ff79c6>continue</span>
+        <span style=color:#000;font-weight:700>switch</span> cas.kind {
+        <span style=color:#000;font-weight:700>case</span> caseNil:
+            <span style=color:#000;font-weight:700>continue</span>
 
-        <span style=color:#6272a4>//接收数据
-</span><span style=color:#6272a4></span>        <span style=color:#ff79c6>case</span> caseRecv:
-            sg = c.sendq.<span style=color:#50fa7b>dequeue</span>()
-            <span style=color:#6272a4>//如果有发送goroutine阻塞，那么就接收数据
-</span><span style=color:#6272a4></span>            <span style=color:#ff79c6>if</span> sg <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-                <span style=color:#ff79c6>goto</span> recv
-            }
-
-            <span style=color:#6272a4>//如果缓冲队列里面有数据，接收数据
-</span><span style=color:#6272a4></span>            <span style=color:#ff79c6>if</span> c.qcount &gt; <span style=color:#bd93f9>0</span> {
-                <span style=color:#ff79c6>goto</span> bufrecv
+        <span style=color:#998;font-style:italic>//接收数据
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#000;font-weight:700>case</span> caseRecv:
+            sg = c.sendq.<span style=color:#900;font-weight:700>dequeue</span>()
+            <span style=color:#998;font-style:italic>//如果有发送goroutine阻塞，那么就接收数据
+</span><span style=color:#998;font-style:italic></span>            <span style=color:#000;font-weight:700>if</span> sg <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+                <span style=color:#000;font-weight:700>goto</span> recv
             }
 
-            <span style=color:#6272a4>//如果channel是关闭的
-</span><span style=color:#6272a4></span>            <span style=color:#ff79c6>if</span> c.closed <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
-                <span style=color:#ff79c6>goto</span> rclose
+            <span style=color:#998;font-style:italic>//如果缓冲队列里面有数据，接收数据
+</span><span style=color:#998;font-style:italic></span>            <span style=color:#000;font-weight:700>if</span> c.qcount &gt; <span style=color:#099>0</span> {
+                <span style=color:#000;font-weight:700>goto</span> bufrecv
             }
 
-        <span style=color:#ff79c6>case</span> caseSend:
-            <span style=color:#ff79c6>if</span> raceenabled {
-                <span style=color:#50fa7b>racereadpc</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(c), cas.pc, chansendpc)
-            }
-            <span style=color:#ff79c6>if</span> c.closed <span style=color:#ff79c6>!=</span> <span style=color:#bd93f9>0</span> {
-                <span style=color:#ff79c6>goto</span> sclose
+            <span style=color:#998;font-style:italic>//如果channel是关闭的
+</span><span style=color:#998;font-style:italic></span>            <span style=color:#000;font-weight:700>if</span> c.closed <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span> {
+                <span style=color:#000;font-weight:700>goto</span> rclose
             }
 
-            <span style=color:#6272a4>//如果有接收goroutine阻塞，那么就发送数据
-</span><span style=color:#6272a4></span>            sg = c.recvq.<span style=color:#50fa7b>dequeue</span>()
-            <span style=color:#ff79c6>if</span> sg <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>nil</span> {
-                <span style=color:#ff79c6>goto</span> send
+        <span style=color:#000;font-weight:700>case</span> caseSend:
+            <span style=color:#000;font-weight:700>if</span> raceenabled {
+                <span style=color:#900;font-weight:700>racereadpc</span>(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(c), cas.pc, chansendpc)
+            }
+            <span style=color:#000;font-weight:700>if</span> c.closed <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>0</span> {
+                <span style=color:#000;font-weight:700>goto</span> sclose
             }
 
-            <span style=color:#6272a4>//如果缓冲区不为空，那么发送数据
-</span><span style=color:#6272a4></span>            <span style=color:#ff79c6>if</span> c.qcount &lt; c.dataqsiz {
-                <span style=color:#ff79c6>goto</span> bufsend
+            <span style=color:#998;font-style:italic>//如果有接收goroutine阻塞，那么就发送数据
+</span><span style=color:#998;font-style:italic></span>            sg = c.recvq.<span style=color:#900;font-weight:700>dequeue</span>()
+            <span style=color:#000;font-weight:700>if</span> sg <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+                <span style=color:#000;font-weight:700>goto</span> send
             }
-            <span style=color:#6272a4>//default分支
-</span><span style=color:#6272a4></span>        <span style=color:#ff79c6>case</span> caseDefault:
+
+            <span style=color:#998;font-style:italic>//如果缓冲区不为空，那么发送数据
+</span><span style=color:#998;font-style:italic></span>            <span style=color:#000;font-weight:700>if</span> c.qcount &lt; c.dataqsiz {
+                <span style=color:#000;font-weight:700>goto</span> bufsend
+            }
+            <span style=color:#998;font-style:italic>//default分支
+</span><span style=color:#998;font-style:italic></span>        <span style=color:#000;font-weight:700>case</span> caseDefault:
             dfli = casi
             dfl = cas
         }
     }
 }
 </code></pre></div><p>其他的selectsend， selectrecv， selectdefault都是增加select的scases，将分支加入到调度列表中去。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>newselect</span>(sel <span style=color:#ff79c6>*</span>hselect, selsize <span style=color:#8be9fd>int64</span>, size <span style=color:#8be9fd>int32</span>) {
-    <span style=color:#ff79c6>if</span> selsize <span style=color:#ff79c6>!=</span> <span style=color:#8be9fd;font-style:italic>int64</span>(<span style=color:#50fa7b>selectsize</span>(<span style=color:#8be9fd;font-style:italic>uintptr</span>(size))) {
-        <span style=color:#8be9fd;font-style:italic>print</span>(<span style=color:#f1fa8c>&#34;runtime: bad select size &#34;</span>, selsize, <span style=color:#f1fa8c>&#34;, want &#34;</span>, <span style=color:#50fa7b>selectsize</span>(<span style=color:#8be9fd;font-style:italic>uintptr</span>(size)), <span style=color:#f1fa8c>&#34;\n&#34;</span>)
-        <span style=color:#50fa7b>throw</span>(<span style=color:#f1fa8c>&#34;bad select size&#34;</span>)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>newselect</span>(sel <span style=color:#000;font-weight:700>*</span>hselect, selsize <span style=color:#458;font-weight:700>int64</span>, size <span style=color:#458;font-weight:700>int32</span>) {
+    <span style=color:#000;font-weight:700>if</span> selsize <span style=color:#000;font-weight:700>!=</span> <span style=color:#0086b3>int64</span>(<span style=color:#900;font-weight:700>selectsize</span>(<span style=color:#0086b3>uintptr</span>(size))) {
+        <span style=color:#0086b3>print</span>(<span style=color:#d14>&#34;runtime: bad select size &#34;</span>, selsize, <span style=color:#d14>&#34;, want &#34;</span>, <span style=color:#900;font-weight:700>selectsize</span>(<span style=color:#0086b3>uintptr</span>(size)), <span style=color:#d14>&#34;\n&#34;</span>)
+        <span style=color:#900;font-weight:700>throw</span>(<span style=color:#d14>&#34;bad select size&#34;</span>)
     }
-    sel.tcase = <span style=color:#8be9fd;font-style:italic>uint16</span>(size)
-    sel.ncase = <span style=color:#bd93f9>0</span>
-    sel.lockorder = (<span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint16</span>)(<span style=color:#50fa7b>add</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>sel.scase), <span style=color:#8be9fd;font-style:italic>uintptr</span>(size)<span style=color:#ff79c6>*</span>unsafe.<span style=color:#50fa7b>Sizeof</span>(hselect{}.scase[<span style=color:#bd93f9>0</span>])))
-    sel.pollorder = (<span style=color:#ff79c6>*</span><span style=color:#8be9fd>uint16</span>)(<span style=color:#50fa7b>add</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(sel.lockorder), <span style=color:#8be9fd;font-style:italic>uintptr</span>(size)<span style=color:#ff79c6>*</span>unsafe.<span style=color:#50fa7b>Sizeof</span>(<span style=color:#ff79c6>*</span>hselect{}.lockorder)))
+    sel.tcase = <span style=color:#0086b3>uint16</span>(size)
+    sel.ncase = <span style=color:#099>0</span>
+    sel.lockorder = (<span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint16</span>)(<span style=color:#900;font-weight:700>add</span>(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(<span style=color:#000;font-weight:700>&amp;</span>sel.scase), <span style=color:#0086b3>uintptr</span>(size)<span style=color:#000;font-weight:700>*</span>unsafe.<span style=color:#900;font-weight:700>Sizeof</span>(hselect{}.scase[<span style=color:#099>0</span>])))
+    sel.pollorder = (<span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint16</span>)(<span style=color:#900;font-weight:700>add</span>(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(sel.lockorder), <span style=color:#0086b3>uintptr</span>(size)<span style=color:#000;font-weight:700>*</span>unsafe.<span style=color:#900;font-weight:700>Sizeof</span>(<span style=color:#000;font-weight:700>*</span>hselect{}.lockorder)))
 
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>selectsend</span>(sel <span style=color:#ff79c6>*</span>hselect, c <span style=color:#ff79c6>*</span>hchan, elem unsafe.Pointer) {
-    pc <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>getcallerpc</span>()
-    i <span style=color:#ff79c6>:=</span> sel.ncase
-    <span style=color:#ff79c6>if</span> i <span style=color:#ff79c6>&gt;=</span> sel.tcase {
-        <span style=color:#50fa7b>throw</span>(<span style=color:#f1fa8c>&#34;selectsend: too many cases&#34;</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>selectsend</span>(sel <span style=color:#000;font-weight:700>*</span>hselect, c <span style=color:#000;font-weight:700>*</span>hchan, elem unsafe.Pointer) {
+    pc <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>getcallerpc</span>()
+    i <span style=color:#000;font-weight:700>:=</span> sel.ncase
+    <span style=color:#000;font-weight:700>if</span> i <span style=color:#000;font-weight:700>&gt;=</span> sel.tcase {
+        <span style=color:#900;font-weight:700>throw</span>(<span style=color:#d14>&#34;selectsend: too many cases&#34;</span>)
     }
-    sel.ncase = i <span style=color:#ff79c6>+</span> <span style=color:#bd93f9>1</span>
-    <span style=color:#ff79c6>if</span> c <span style=color:#ff79c6>==</span> <span style=color:#ff79c6>nil</span> {
-        <span style=color:#ff79c6>return</span>
+    sel.ncase = i <span style=color:#000;font-weight:700>+</span> <span style=color:#099>1</span>
+    <span style=color:#000;font-weight:700>if</span> c <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+        <span style=color:#000;font-weight:700>return</span>
     }
-    cas <span style=color:#ff79c6>:=</span> (<span style=color:#ff79c6>*</span>scase)(<span style=color:#50fa7b>add</span>(unsafe.<span style=color:#50fa7b>Pointer</span>(<span style=color:#ff79c6>&amp;</span>sel.scase), <span style=color:#8be9fd;font-style:italic>uintptr</span>(i)<span style=color:#ff79c6>*</span>unsafe.<span style=color:#50fa7b>Sizeof</span>(sel.scase[<span style=color:#bd93f9>0</span>])))
+    cas <span style=color:#000;font-weight:700>:=</span> (<span style=color:#000;font-weight:700>*</span>scase)(<span style=color:#900;font-weight:700>add</span>(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(<span style=color:#000;font-weight:700>&amp;</span>sel.scase), <span style=color:#0086b3>uintptr</span>(i)<span style=color:#000;font-weight:700>*</span>unsafe.<span style=color:#900;font-weight:700>Sizeof</span>(sel.scase[<span style=color:#099>0</span>])))
     cas.pc = pc
     cas.c = c
     cas.kind = caseSend
     cas.elem = elem
 
-    <span style=color:#ff79c6>if</span> debugSelect {
-        <span style=color:#8be9fd;font-style:italic>print</span>(<span style=color:#f1fa8c>&#34;selectsend s=&#34;</span>, sel, <span style=color:#f1fa8c>&#34; pc=&#34;</span>, <span style=color:#50fa7b>hex</span>(cas.pc), <span style=color:#f1fa8c>&#34; chan=&#34;</span>, cas.c, <span style=color:#f1fa8c>&#34;\n&#34;</span>)
+    <span style=color:#000;font-weight:700>if</span> debugSelect {
+        <span style=color:#0086b3>print</span>(<span style=color:#d14>&#34;selectsend s=&#34;</span>, sel, <span style=color:#d14>&#34; pc=&#34;</span>, <span style=color:#900;font-weight:700>hex</span>(cas.pc), <span style=color:#d14>&#34; chan=&#34;</span>, cas.c, <span style=color:#d14>&#34;\n&#34;</span>)
     }
 }
 </code></pre></div><p>select有自己的数据结构，包括hselect和scase，这里就不详细展开select的内部实现原理的，我们只要理解下面几点：</p>

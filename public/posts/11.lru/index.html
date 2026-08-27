@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/11.lru/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -243,122 +243,122 @@ May 6, 2021
 <h2 id=解析>解析</h2>
 <p>由于要求要用O(1)的时间复杂度，所以要采用双向链表＋map的数据结构解答。</p>
 <p>具体源码如下：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> main
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> main
 
-<span style=color:#ff79c6>import</span> <span style=color:#f1fa8c>&#34;fmt&#34;</span>
+<span style=color:#000;font-weight:700>import</span> <span style=color:#d14>&#34;fmt&#34;</span>
 
-<span style=color:#8be9fd;font-style:italic>type</span> LRUCache <span style=color:#8be9fd;font-style:italic>struct</span> {
-	M          <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>int</span>]<span style=color:#ff79c6>*</span>Node
-	Cap        <span style=color:#8be9fd>int</span>
-	Size       <span style=color:#8be9fd>int</span>
-	Head, Tail <span style=color:#ff79c6>*</span>Node
+<span style=color:#000;font-weight:700>type</span> LRUCache <span style=color:#000;font-weight:700>struct</span> {
+	M          <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>int</span>]<span style=color:#000;font-weight:700>*</span>Node
+	Cap        <span style=color:#458;font-weight:700>int</span>
+	Size       <span style=color:#458;font-weight:700>int</span>
+	Head, Tail <span style=color:#000;font-weight:700>*</span>Node
 }
 
-<span style=color:#8be9fd;font-style:italic>type</span> Node <span style=color:#8be9fd;font-style:italic>struct</span> {
-	Key, Value <span style=color:#8be9fd>int</span>
-	Pre, Next  <span style=color:#ff79c6>*</span>Node
+<span style=color:#000;font-weight:700>type</span> Node <span style=color:#000;font-weight:700>struct</span> {
+	Key, Value <span style=color:#458;font-weight:700>int</span>
+	Pre, Next  <span style=color:#000;font-weight:700>*</span>Node
 }
 
-<span style=color:#6272a4>// init LRUCache
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Constructor</span>(capacity <span style=color:#8be9fd>int</span>) LRUCache {
-	l <span style=color:#ff79c6>:=</span> LRUCache{
-		M:    <span style=color:#8be9fd;font-style:italic>map</span>[<span style=color:#8be9fd>int</span>]<span style=color:#ff79c6>*</span>Node{},
+<span style=color:#998;font-style:italic>// init LRUCache
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Constructor</span>(capacity <span style=color:#458;font-weight:700>int</span>) LRUCache {
+	l <span style=color:#000;font-weight:700>:=</span> LRUCache{
+		M:    <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>int</span>]<span style=color:#000;font-weight:700>*</span>Node{},
 		Cap:  capacity,
-		Size: <span style=color:#bd93f9>0</span>,
-		Head: <span style=color:#ff79c6>&amp;</span>Node{
-			Key:   <span style=color:#bd93f9>0</span>,
-			Value: <span style=color:#bd93f9>0</span>,
-			Pre:   <span style=color:#ff79c6>nil</span>,
-			Next:  <span style=color:#ff79c6>nil</span>,
+		Size: <span style=color:#099>0</span>,
+		Head: <span style=color:#000;font-weight:700>&amp;</span>Node{
+			Key:   <span style=color:#099>0</span>,
+			Value: <span style=color:#099>0</span>,
+			Pre:   <span style=color:#000;font-weight:700>nil</span>,
+			Next:  <span style=color:#000;font-weight:700>nil</span>,
 		},
-		Tail: <span style=color:#ff79c6>&amp;</span>Node{
-			Key:   <span style=color:#bd93f9>0</span>,
-			Value: <span style=color:#bd93f9>0</span>,
-			Pre:   <span style=color:#ff79c6>nil</span>,
-			Next:  <span style=color:#ff79c6>nil</span>,
+		Tail: <span style=color:#000;font-weight:700>&amp;</span>Node{
+			Key:   <span style=color:#099>0</span>,
+			Value: <span style=color:#099>0</span>,
+			Pre:   <span style=color:#000;font-weight:700>nil</span>,
+			Next:  <span style=color:#000;font-weight:700>nil</span>,
 		},
 	}
-	<span style=color:#6272a4>// nil&lt;-head&lt;-&gt;tail-&gt;
-</span><span style=color:#6272a4></span>	l.Head.Next = l.Tail
+	<span style=color:#998;font-style:italic>// nil&lt;-head&lt;-&gt;tail-&gt;
+</span><span style=color:#998;font-style:italic></span>	l.Head.Next = l.Tail
 	l.Tail.Pre = l.Head
-	<span style=color:#ff79c6>return</span> l
+	<span style=color:#000;font-weight:700>return</span> l
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (this <span style=color:#ff79c6>*</span>LRUCache) <span style=color:#50fa7b>Get</span>(key <span style=color:#8be9fd>int</span>) <span style=color:#8be9fd>int</span> {
-	<span style=color:#6272a4>// get node and move to head next
-</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>if</span> node, ok <span style=color:#ff79c6>:=</span> this.M[key]; ok {
-		res <span style=color:#ff79c6>:=</span> node.Value
-		<span style=color:#ff79c6>if</span> node <span style=color:#ff79c6>==</span> this.Head.Next {
-			<span style=color:#ff79c6>return</span> res
+<span style=color:#000;font-weight:700>func</span> (this <span style=color:#000;font-weight:700>*</span>LRUCache) <span style=color:#900;font-weight:700>Get</span>(key <span style=color:#458;font-weight:700>int</span>) <span style=color:#458;font-weight:700>int</span> {
+	<span style=color:#998;font-style:italic>// get node and move to head next
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>if</span> node, ok <span style=color:#000;font-weight:700>:=</span> this.M[key]; ok {
+		res <span style=color:#000;font-weight:700>:=</span> node.Value
+		<span style=color:#000;font-weight:700>if</span> node <span style=color:#000;font-weight:700>==</span> this.Head.Next {
+			<span style=color:#000;font-weight:700>return</span> res
 		}
-		pre <span style=color:#ff79c6>:=</span> node.Pre
-		next <span style=color:#ff79c6>:=</span> node.Next
+		pre <span style=color:#000;font-weight:700>:=</span> node.Pre
+		next <span style=color:#000;font-weight:700>:=</span> node.Next
 		pre.Next = node.Next
 		next.Pre = node.Pre
 		node.Next = this.Head.Next
 		this.Head.Next.Pre = node
 		node.Pre = this.Head
 		this.Head.Next = node
-		<span style=color:#ff79c6>return</span> res
+		<span style=color:#000;font-weight:700>return</span> res
 	}
-	<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>
+	<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (this <span style=color:#ff79c6>*</span>LRUCache) <span style=color:#50fa7b>Put</span>(key <span style=color:#8be9fd>int</span>, value <span style=color:#8be9fd>int</span>) {
-	<span style=color:#6272a4>// if exist, do update, and move to head next
-</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>if</span> this.<span style=color:#50fa7b>Get</span>(key) <span style=color:#ff79c6>!=</span> <span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span> {
+<span style=color:#000;font-weight:700>func</span> (this <span style=color:#000;font-weight:700>*</span>LRUCache) <span style=color:#900;font-weight:700>Put</span>(key <span style=color:#458;font-weight:700>int</span>, value <span style=color:#458;font-weight:700>int</span>) {
+	<span style=color:#998;font-style:italic>// if exist, do update, and move to head next
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>if</span> this.<span style=color:#900;font-weight:700>Get</span>(key) <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span> {
 		this.Head.Next.Value = value
-		<span style=color:#ff79c6>return</span>
+		<span style=color:#000;font-weight:700>return</span>
 	}
-	<span style=color:#6272a4>// if not exist, move to head next
-</span><span style=color:#6272a4></span>	node <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>Node{
+	<span style=color:#998;font-style:italic>// if not exist, move to head next
+</span><span style=color:#998;font-style:italic></span>	node <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Node{
 		Key:   key,
 		Value: value,
 	}
-	next <span style=color:#ff79c6>:=</span> this.Head.Next
+	next <span style=color:#000;font-weight:700>:=</span> this.Head.Next
 	node.Next = next
 	node.Pre = this.Head
 	next.Pre = node
 	this.Head.Next = node
-	<span style=color:#ff79c6>if</span> this.Size <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span> {
+	<span style=color:#000;font-weight:700>if</span> this.Size <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> {
 		this.Tail.Pre = node
 	}
-	<span style=color:#6272a4>// size++
-</span><span style=color:#6272a4></span>	this.Size<span style=color:#ff79c6>++</span>
-	<span style=color:#6272a4>// insert to map
-</span><span style=color:#6272a4></span>	this.M[key] = node
-	<span style=color:#6272a4>// if size &gt; cap, tail move to pre,and size--
-</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>if</span> this.Size &gt; this.Cap {
-		rm <span style=color:#ff79c6>:=</span> this.Tail.Pre
+	<span style=color:#998;font-style:italic>// size++
+</span><span style=color:#998;font-style:italic></span>	this.Size<span style=color:#000;font-weight:700>++</span>
+	<span style=color:#998;font-style:italic>// insert to map
+</span><span style=color:#998;font-style:italic></span>	this.M[key] = node
+	<span style=color:#998;font-style:italic>// if size &gt; cap, tail move to pre,and size--
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>if</span> this.Size &gt; this.Cap {
+		rm <span style=color:#000;font-weight:700>:=</span> this.Tail.Pre
 		this.Tail.Pre = rm.Pre
 		rm.Pre.Next = this.Tail
-		<span style=color:#6272a4>// delete from map
-</span><span style=color:#6272a4></span>		<span style=color:#8be9fd;font-style:italic>delete</span>(this.M, rm.Key)
-		<span style=color:#6272a4>// clean value
-</span><span style=color:#6272a4></span>		<span style=color:#ff79c6>*</span>rm = Node{}
-		this.Size<span style=color:#ff79c6>--</span>
+		<span style=color:#998;font-style:italic>// delete from map
+</span><span style=color:#998;font-style:italic></span>		<span style=color:#0086b3>delete</span>(this.M, rm.Key)
+		<span style=color:#998;font-style:italic>// clean value
+</span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>*</span>rm = Node{}
+		this.Size<span style=color:#000;font-weight:700>--</span>
 	}
 }
 
-<span style=color:#6272a4>/**
-</span><span style=color:#6272a4> * Your LRUCache object will be instantiated and called as such:
-</span><span style=color:#6272a4> * obj := Constructor(capacity);
-</span><span style=color:#6272a4> * param_1 := obj.Get(key);
-</span><span style=color:#6272a4> * obj.Put(key,value);
-</span><span style=color:#6272a4> */</span>
+<span style=color:#998;font-style:italic>/**
+</span><span style=color:#998;font-style:italic> * Your LRUCache object will be instantiated and called as such:
+</span><span style=color:#998;font-style:italic> * obj := Constructor(capacity);
+</span><span style=color:#998;font-style:italic> * param_1 := obj.Get(key);
+</span><span style=color:#998;font-style:italic> * obj.Put(key,value);
+</span><span style=color:#998;font-style:italic> */</span>
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
-	lRUCache <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>Constructor</span>(<span style=color:#bd93f9>2</span>)
-	lRUCache.<span style=color:#50fa7b>Put</span>(<span style=color:#bd93f9>1</span>, <span style=color:#bd93f9>1</span>) <span style=color:#6272a4>// 缓存是 {1=1}
-</span><span style=color:#6272a4></span>	lRUCache.<span style=color:#50fa7b>Put</span>(<span style=color:#bd93f9>2</span>, <span style=color:#bd93f9>2</span>) <span style=color:#6272a4>// 缓存是 {1=1, 2=2}
-</span><span style=color:#6272a4></span>	fmt.<span style=color:#50fa7b>Println</span>(lRUCache.<span style=color:#50fa7b>Get</span>(<span style=color:#bd93f9>1</span>))    <span style=color:#6272a4>// 返回 1
-</span><span style=color:#6272a4></span>	lRUCache.<span style=color:#50fa7b>Put</span>(<span style=color:#bd93f9>3</span>, <span style=color:#bd93f9>3</span>) <span style=color:#6272a4>// 该操作会使得关键字 2 作废，缓存是 {1=1, 3=3}
-</span><span style=color:#6272a4></span>	fmt.<span style=color:#50fa7b>Println</span>(lRUCache.<span style=color:#50fa7b>Get</span>(<span style=color:#bd93f9>2</span>))    <span style=color:#6272a4>// 返回 -1 (未找到)
-</span><span style=color:#6272a4></span>	lRUCache.<span style=color:#50fa7b>Put</span>(<span style=color:#bd93f9>4</span>, <span style=color:#bd93f9>4</span>) <span style=color:#6272a4>// 该操作会使得关键字 1 作废，缓存是 {4=4, 3=3}
-</span><span style=color:#6272a4></span>	fmt.<span style=color:#50fa7b>Println</span>(lRUCache.<span style=color:#50fa7b>Get</span>(<span style=color:#bd93f9>1</span>))    <span style=color:#6272a4>// 返回 -1 (未找到)
-</span><span style=color:#6272a4></span>	fmt.<span style=color:#50fa7b>Println</span>(lRUCache.<span style=color:#50fa7b>Get</span>(<span style=color:#bd93f9>3</span>))    <span style=color:#6272a4>// 返回 3
-</span><span style=color:#6272a4></span>	fmt.<span style=color:#50fa7b>Println</span>(lRUCache.<span style=color:#50fa7b>Get</span>(<span style=color:#bd93f9>4</span>))    <span style=color:#6272a4>// 返回 4
-</span><span style=color:#6272a4></span>}
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>() {
+	lRUCache <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>Constructor</span>(<span style=color:#099>2</span>)
+	lRUCache.<span style=color:#900;font-weight:700>Put</span>(<span style=color:#099>1</span>, <span style=color:#099>1</span>) <span style=color:#998;font-style:italic>// 缓存是 {1=1}
+</span><span style=color:#998;font-style:italic></span>	lRUCache.<span style=color:#900;font-weight:700>Put</span>(<span style=color:#099>2</span>, <span style=color:#099>2</span>) <span style=color:#998;font-style:italic>// 缓存是 {1=1, 2=2}
+</span><span style=color:#998;font-style:italic></span>	fmt.<span style=color:#900;font-weight:700>Println</span>(lRUCache.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#099>1</span>))    <span style=color:#998;font-style:italic>// 返回 1
+</span><span style=color:#998;font-style:italic></span>	lRUCache.<span style=color:#900;font-weight:700>Put</span>(<span style=color:#099>3</span>, <span style=color:#099>3</span>) <span style=color:#998;font-style:italic>// 该操作会使得关键字 2 作废，缓存是 {1=1, 3=3}
+</span><span style=color:#998;font-style:italic></span>	fmt.<span style=color:#900;font-weight:700>Println</span>(lRUCache.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#099>2</span>))    <span style=color:#998;font-style:italic>// 返回 -1 (未找到)
+</span><span style=color:#998;font-style:italic></span>	lRUCache.<span style=color:#900;font-weight:700>Put</span>(<span style=color:#099>4</span>, <span style=color:#099>4</span>) <span style=color:#998;font-style:italic>// 该操作会使得关键字 1 作废，缓存是 {4=4, 3=3}
+</span><span style=color:#998;font-style:italic></span>	fmt.<span style=color:#900;font-weight:700>Println</span>(lRUCache.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#099>1</span>))    <span style=color:#998;font-style:italic>// 返回 -1 (未找到)
+</span><span style=color:#998;font-style:italic></span>	fmt.<span style=color:#900;font-weight:700>Println</span>(lRUCache.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#099>3</span>))    <span style=color:#998;font-style:italic>// 返回 3
+</span><span style=color:#998;font-style:italic></span>	fmt.<span style=color:#900;font-weight:700>Println</span>(lRUCache.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#099>4</span>))    <span style=color:#998;font-style:italic>// 返回 4
+</span><span style=color:#998;font-style:italic></span>}
 </code></pre></div>
 </div>
 <div class=prev-next>

@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/20.go-priority-queue/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -245,347 +245,347 @@ September 23, 2020
 <p>由于刷题时偶尔会用到队列以及优先队列等数据结构，其他语言都有现成的实现，如C++的priority_queue等，使用非常方便，但是由于个人比较喜欢使用golang语言进行答题，但是go对队列以及优先队列的实现只提供了一个接口，即container/heap包中的heap数据结构，故实现还是要自己去码，这里做一个笔记。实现了heap接口来实现priority_queue，并且提供了其他方法的实现。</p>
 <h2 id=heap原理>heap原理</h2>
 <p>go的container/heap包实现的是数据结构是数组构成的二叉树（完全二叉树），如下所示：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>// 树中某个节点的值总是不大于或不小于其孩子节点的值；
-</span><span style=color:#6272a4>// 树中每个节点的子树都是堆树
-</span><span style=color:#6272a4>// index  0  1  2  3  4   5  6   7   8  9
-</span><span style=color:#6272a4>// index  1  2  3  4   5  6   7   8  9  10
-</span><span style=color:#6272a4>// a[] = {4, 1, 3, 2, 16, 9, 10, 14, 8, 7}
-</span><span style=color:#6272a4>//                  4
-</span><span style=color:#6272a4>//                /  \
-</span><span style=color:#6272a4>//               1    3
-</span><span style=color:#6272a4>//              / \  / \
-</span><span style=color:#6272a4>//             2  16 9  10
-</span><span style=color:#6272a4>//            /\  /
-</span><span style=color:#6272a4>//           14 8 7
-</span><span style=color:#6272a4>// 若取a[1]为堆顶最大或最小，a[i]的左子节点为a[2i],右子节点为a[2i+1],父节点为a[i/2]:
-</span><span style=color:#6272a4>//          a[i]
-</span><span style=color:#6272a4>//          /  \
-</span><span style=color:#6272a4>//      a[2i]  a[2i+1]
-</span><span style=color:#6272a4>// 若取a[0]为堆顶最大或最小，a[i]的左子节点为a[2i+1],右子节点为a[2i+2],父节点为a[(i-1)/2]
-</span><span style=color:#6272a4>//          a[i]
-</span><span style=color:#6272a4>//          /  \
-</span><span style=color:#6272a4>//    a[2i+1]  a[2i+2]
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// 树中某个节点的值总是不大于或不小于其孩子节点的值；
+</span><span style=color:#998;font-style:italic>// 树中每个节点的子树都是堆树
+</span><span style=color:#998;font-style:italic>// index  0  1  2  3  4   5  6   7   8  9
+</span><span style=color:#998;font-style:italic>// index  1  2  3  4   5  6   7   8  9  10
+</span><span style=color:#998;font-style:italic>// a[] = {4, 1, 3, 2, 16, 9, 10, 14, 8, 7}
+</span><span style=color:#998;font-style:italic>//                  4
+</span><span style=color:#998;font-style:italic>//                /  \
+</span><span style=color:#998;font-style:italic>//               1    3
+</span><span style=color:#998;font-style:italic>//              / \  / \
+</span><span style=color:#998;font-style:italic>//             2  16 9  10
+</span><span style=color:#998;font-style:italic>//            /\  /
+</span><span style=color:#998;font-style:italic>//           14 8 7
+</span><span style=color:#998;font-style:italic>// 若取a[1]为堆顶最大或最小，a[i]的左子节点为a[2i],右子节点为a[2i+1],父节点为a[i/2]:
+</span><span style=color:#998;font-style:italic>//          a[i]
+</span><span style=color:#998;font-style:italic>//          /  \
+</span><span style=color:#998;font-style:italic>//      a[2i]  a[2i+1]
+</span><span style=color:#998;font-style:italic>// 若取a[0]为堆顶最大或最小，a[i]的左子节点为a[2i+1],右子节点为a[2i+2],父节点为a[(i-1)/2]
+</span><span style=color:#998;font-style:italic>//          a[i]
+</span><span style=color:#998;font-style:italic>//          /  \
+</span><span style=color:#998;font-style:italic>//    a[2i+1]  a[2i+2]
 </span></code></pre></div><p>而container/heap包采用的是a[0]作为对顶，故左子、右子节点以及父节点表示为a[2i+1]、a[2i+2]、a[(i-1)/2]。</p>
 <h2 id=containerheap源码>container/heap源码</h2>
 <p>container/heap包是Go内置的接口，如下所示：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#6272a4>// The Interface type describes the requirements
-</span><span style=color:#6272a4>// for a type using the routines in this package.
-</span><span style=color:#6272a4>// Any type that implements it may be used as a
-</span><span style=color:#6272a4>// min-heap with the following invariants (established after
-</span><span style=color:#6272a4>// Init has been called or if the data is empty or sorted):
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>//	!h.Less(j, i) for 0 &lt;= i &lt; h.Len() and 2*i+1 &lt;= j &lt;= 2*i+2 and j &lt; h.Len()
-</span><span style=color:#6272a4>//
-</span><span style=color:#6272a4>// Note that Push and Pop in this interface are for package heap&#39;s
-</span><span style=color:#6272a4>// implementation to call. To add and remove things from the heap,
-</span><span style=color:#6272a4>// use heap.Push and heap.Pop.
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>type</span> Interface <span style=color:#8be9fd;font-style:italic>interface</span> {
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// The Interface type describes the requirements
+</span><span style=color:#998;font-style:italic>// for a type using the routines in this package.
+</span><span style=color:#998;font-style:italic>// Any type that implements it may be used as a
+</span><span style=color:#998;font-style:italic>// min-heap with the following invariants (established after
+</span><span style=color:#998;font-style:italic>// Init has been called or if the data is empty or sorted):
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>//	!h.Less(j, i) for 0 &lt;= i &lt; h.Len() and 2*i+1 &lt;= j &lt;= 2*i+2 and j &lt; h.Len()
+</span><span style=color:#998;font-style:italic>//
+</span><span style=color:#998;font-style:italic>// Note that Push and Pop in this interface are for package heap&#39;s
+</span><span style=color:#998;font-style:italic>// implementation to call. To add and remove things from the heap,
+</span><span style=color:#998;font-style:italic>// use heap.Push and heap.Pop.
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>type</span> Interface <span style=color:#000;font-weight:700>interface</span> {
 	sort.Interface
-	<span style=color:#50fa7b>Push</span>(x <span style=color:#8be9fd;font-style:italic>interface</span>{}) <span style=color:#6272a4>// add x as element Len()
-</span><span style=color:#6272a4></span>	<span style=color:#50fa7b>Pop</span>() <span style=color:#8be9fd;font-style:italic>interface</span>{}   <span style=color:#6272a4>// remove and return element Len() - 1.
-</span><span style=color:#6272a4></span>}
+	<span style=color:#900;font-weight:700>Push</span>(x <span style=color:#000;font-weight:700>interface</span>{}) <span style=color:#998;font-style:italic>// add x as element Len()
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#900;font-weight:700>Pop</span>() <span style=color:#000;font-weight:700>interface</span>{}   <span style=color:#998;font-style:italic>// remove and return element Len() - 1.
+</span><span style=color:#998;font-style:italic></span>}
 
-<span style=color:#6272a4>// Init establishes the heap invariants required by the other routines in this package.
-</span><span style=color:#6272a4>// Init is idempotent with respect to the heap invariants
-</span><span style=color:#6272a4>// and may be called whenever the heap invariants may have been invalidated.
-</span><span style=color:#6272a4>// The complexity is O(n) where n = h.Len().
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Init</span>(h Interface) {
-	<span style=color:#6272a4>// heapify
-</span><span style=color:#6272a4></span>	n <span style=color:#ff79c6>:=</span> h.<span style=color:#50fa7b>Len</span>()
-	<span style=color:#ff79c6>for</span> i <span style=color:#ff79c6>:=</span> n<span style=color:#ff79c6>/</span><span style=color:#bd93f9>2</span> <span style=color:#ff79c6>-</span> <span style=color:#bd93f9>1</span>; i <span style=color:#ff79c6>&gt;=</span> <span style=color:#bd93f9>0</span>; i<span style=color:#ff79c6>--</span> {
-		<span style=color:#50fa7b>down</span>(h, i, n)
+<span style=color:#998;font-style:italic>// Init establishes the heap invariants required by the other routines in this package.
+</span><span style=color:#998;font-style:italic>// Init is idempotent with respect to the heap invariants
+</span><span style=color:#998;font-style:italic>// and may be called whenever the heap invariants may have been invalidated.
+</span><span style=color:#998;font-style:italic>// The complexity is O(n) where n = h.Len().
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Init</span>(h Interface) {
+	<span style=color:#998;font-style:italic>// heapify
+</span><span style=color:#998;font-style:italic></span>	n <span style=color:#000;font-weight:700>:=</span> h.<span style=color:#900;font-weight:700>Len</span>()
+	<span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>:=</span> n<span style=color:#000;font-weight:700>/</span><span style=color:#099>2</span> <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span>; i <span style=color:#000;font-weight:700>&gt;=</span> <span style=color:#099>0</span>; i<span style=color:#000;font-weight:700>--</span> {
+		<span style=color:#900;font-weight:700>down</span>(h, i, n)
 	}
 }
 
-<span style=color:#6272a4>// Push pushes the element x onto the heap.
-</span><span style=color:#6272a4>// The complexity is O(log n) where n = h.Len().
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Push</span>(h Interface, x <span style=color:#8be9fd;font-style:italic>interface</span>{}) {
-	h.<span style=color:#50fa7b>Push</span>(x)
-	<span style=color:#50fa7b>up</span>(h, h.<span style=color:#50fa7b>Len</span>()<span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>)
+<span style=color:#998;font-style:italic>// Push pushes the element x onto the heap.
+</span><span style=color:#998;font-style:italic>// The complexity is O(log n) where n = h.Len().
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Push</span>(h Interface, x <span style=color:#000;font-weight:700>interface</span>{}) {
+	h.<span style=color:#900;font-weight:700>Push</span>(x)
+	<span style=color:#900;font-weight:700>up</span>(h, h.<span style=color:#900;font-weight:700>Len</span>()<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>)
 }
 
-<span style=color:#6272a4>// Pop removes and returns the minimum element (according to Less) from the heap.
-</span><span style=color:#6272a4>// The complexity is O(log n) where n = h.Len().
-</span><span style=color:#6272a4>// Pop is equivalent to Remove(h, 0).
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Pop</span>(h Interface) <span style=color:#8be9fd;font-style:italic>interface</span>{} {
-	n <span style=color:#ff79c6>:=</span> h.<span style=color:#50fa7b>Len</span>() <span style=color:#ff79c6>-</span> <span style=color:#bd93f9>1</span>
-	h.<span style=color:#50fa7b>Swap</span>(<span style=color:#bd93f9>0</span>, n)
-	<span style=color:#50fa7b>down</span>(h, <span style=color:#bd93f9>0</span>, n)
-	<span style=color:#ff79c6>return</span> h.<span style=color:#50fa7b>Pop</span>()
+<span style=color:#998;font-style:italic>// Pop removes and returns the minimum element (according to Less) from the heap.
+</span><span style=color:#998;font-style:italic>// The complexity is O(log n) where n = h.Len().
+</span><span style=color:#998;font-style:italic>// Pop is equivalent to Remove(h, 0).
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Pop</span>(h Interface) <span style=color:#000;font-weight:700>interface</span>{} {
+	n <span style=color:#000;font-weight:700>:=</span> h.<span style=color:#900;font-weight:700>Len</span>() <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span>
+	h.<span style=color:#900;font-weight:700>Swap</span>(<span style=color:#099>0</span>, n)
+	<span style=color:#900;font-weight:700>down</span>(h, <span style=color:#099>0</span>, n)
+	<span style=color:#000;font-weight:700>return</span> h.<span style=color:#900;font-weight:700>Pop</span>()
 }
 
-<span style=color:#6272a4>// Remove removes and returns the element at index i from the heap.
-</span><span style=color:#6272a4>// The complexity is O(log n) where n = h.Len().
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Remove</span>(h Interface, i <span style=color:#8be9fd>int</span>) <span style=color:#8be9fd;font-style:italic>interface</span>{} {
-	n <span style=color:#ff79c6>:=</span> h.<span style=color:#50fa7b>Len</span>() <span style=color:#ff79c6>-</span> <span style=color:#bd93f9>1</span>
-	<span style=color:#ff79c6>if</span> n <span style=color:#ff79c6>!=</span> i {
-		h.<span style=color:#50fa7b>Swap</span>(i, n)
-		<span style=color:#ff79c6>if</span> !<span style=color:#50fa7b>down</span>(h, i, n) {
-			<span style=color:#50fa7b>up</span>(h, i)
+<span style=color:#998;font-style:italic>// Remove removes and returns the element at index i from the heap.
+</span><span style=color:#998;font-style:italic>// The complexity is O(log n) where n = h.Len().
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Remove</span>(h Interface, i <span style=color:#458;font-weight:700>int</span>) <span style=color:#000;font-weight:700>interface</span>{} {
+	n <span style=color:#000;font-weight:700>:=</span> h.<span style=color:#900;font-weight:700>Len</span>() <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span>
+	<span style=color:#000;font-weight:700>if</span> n <span style=color:#000;font-weight:700>!=</span> i {
+		h.<span style=color:#900;font-weight:700>Swap</span>(i, n)
+		<span style=color:#000;font-weight:700>if</span> !<span style=color:#900;font-weight:700>down</span>(h, i, n) {
+			<span style=color:#900;font-weight:700>up</span>(h, i)
 		}
 	}
-	<span style=color:#ff79c6>return</span> h.<span style=color:#50fa7b>Pop</span>()
+	<span style=color:#000;font-weight:700>return</span> h.<span style=color:#900;font-weight:700>Pop</span>()
 }
 
-<span style=color:#6272a4>// Fix re-establishes the heap ordering after the element at index i has changed its value.
-</span><span style=color:#6272a4>// Changing the value of the element at index i and then calling Fix is equivalent to,
-</span><span style=color:#6272a4>// but less expensive than, calling Remove(h, i) followed by a Push of the new value.
-</span><span style=color:#6272a4>// The complexity is O(log n) where n = h.Len().
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>Fix</span>(h Interface, i <span style=color:#8be9fd>int</span>) {
-	<span style=color:#ff79c6>if</span> !<span style=color:#50fa7b>down</span>(h, i, h.<span style=color:#50fa7b>Len</span>()) {
-		<span style=color:#50fa7b>up</span>(h, i)
+<span style=color:#998;font-style:italic>// Fix re-establishes the heap ordering after the element at index i has changed its value.
+</span><span style=color:#998;font-style:italic>// Changing the value of the element at index i and then calling Fix is equivalent to,
+</span><span style=color:#998;font-style:italic>// but less expensive than, calling Remove(h, i) followed by a Push of the new value.
+</span><span style=color:#998;font-style:italic>// The complexity is O(log n) where n = h.Len().
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Fix</span>(h Interface, i <span style=color:#458;font-weight:700>int</span>) {
+	<span style=color:#000;font-weight:700>if</span> !<span style=color:#900;font-weight:700>down</span>(h, i, h.<span style=color:#900;font-weight:700>Len</span>()) {
+		<span style=color:#900;font-weight:700>up</span>(h, i)
 	}
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>up</span>(h Interface, j <span style=color:#8be9fd>int</span>) {
-	<span style=color:#ff79c6>for</span> {
-		i <span style=color:#ff79c6>:=</span> (j <span style=color:#ff79c6>-</span> <span style=color:#bd93f9>1</span>) <span style=color:#ff79c6>/</span> <span style=color:#bd93f9>2</span> <span style=color:#6272a4>// parent
-</span><span style=color:#6272a4></span>		<span style=color:#ff79c6>if</span> i <span style=color:#ff79c6>==</span> j <span style=color:#ff79c6>||</span> !h.<span style=color:#50fa7b>Less</span>(j, i) {
-			<span style=color:#ff79c6>break</span>
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>up</span>(h Interface, j <span style=color:#458;font-weight:700>int</span>) {
+	<span style=color:#000;font-weight:700>for</span> {
+		i <span style=color:#000;font-weight:700>:=</span> (j <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span>) <span style=color:#000;font-weight:700>/</span> <span style=color:#099>2</span> <span style=color:#998;font-style:italic>// parent
+</span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>if</span> i <span style=color:#000;font-weight:700>==</span> j <span style=color:#000;font-weight:700>||</span> !h.<span style=color:#900;font-weight:700>Less</span>(j, i) {
+			<span style=color:#000;font-weight:700>break</span>
 		}
-		h.<span style=color:#50fa7b>Swap</span>(i, j)
+		h.<span style=color:#900;font-weight:700>Swap</span>(i, j)
 		j = i
 	}
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>down</span>(h Interface, i0, n <span style=color:#8be9fd>int</span>) <span style=color:#8be9fd>bool</span> {
-	i <span style=color:#ff79c6>:=</span> i0
-	<span style=color:#ff79c6>for</span> {
-		j1 <span style=color:#ff79c6>:=</span> <span style=color:#bd93f9>2</span><span style=color:#ff79c6>*</span>i <span style=color:#ff79c6>+</span> <span style=color:#bd93f9>1</span>
-		<span style=color:#ff79c6>if</span> j1 <span style=color:#ff79c6>&gt;=</span> n <span style=color:#ff79c6>||</span> j1 &lt; <span style=color:#bd93f9>0</span> { <span style=color:#6272a4>// j1 &lt; 0 after int overflow
-</span><span style=color:#6272a4></span>			<span style=color:#ff79c6>break</span>
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>down</span>(h Interface, i0, n <span style=color:#458;font-weight:700>int</span>) <span style=color:#458;font-weight:700>bool</span> {
+	i <span style=color:#000;font-weight:700>:=</span> i0
+	<span style=color:#000;font-weight:700>for</span> {
+		j1 <span style=color:#000;font-weight:700>:=</span> <span style=color:#099>2</span><span style=color:#000;font-weight:700>*</span>i <span style=color:#000;font-weight:700>+</span> <span style=color:#099>1</span>
+		<span style=color:#000;font-weight:700>if</span> j1 <span style=color:#000;font-weight:700>&gt;=</span> n <span style=color:#000;font-weight:700>||</span> j1 &lt; <span style=color:#099>0</span> { <span style=color:#998;font-style:italic>// j1 &lt; 0 after int overflow
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#000;font-weight:700>break</span>
 		}
-		j <span style=color:#ff79c6>:=</span> j1 <span style=color:#6272a4>// left child
-</span><span style=color:#6272a4></span>		<span style=color:#ff79c6>if</span> j2 <span style=color:#ff79c6>:=</span> j1 <span style=color:#ff79c6>+</span> <span style=color:#bd93f9>1</span>; j2 &lt; n <span style=color:#ff79c6>&amp;&amp;</span> h.<span style=color:#50fa7b>Less</span>(j2, j1) {
-			j = j2 <span style=color:#6272a4>// = 2*i + 2  // right child
-</span><span style=color:#6272a4></span>		}
-		<span style=color:#ff79c6>if</span> !h.<span style=color:#50fa7b>Less</span>(j, i) {
-			<span style=color:#ff79c6>break</span>
+		j <span style=color:#000;font-weight:700>:=</span> j1 <span style=color:#998;font-style:italic>// left child
+</span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>if</span> j2 <span style=color:#000;font-weight:700>:=</span> j1 <span style=color:#000;font-weight:700>+</span> <span style=color:#099>1</span>; j2 &lt; n <span style=color:#000;font-weight:700>&amp;&amp;</span> h.<span style=color:#900;font-weight:700>Less</span>(j2, j1) {
+			j = j2 <span style=color:#998;font-style:italic>// = 2*i + 2  // right child
+</span><span style=color:#998;font-style:italic></span>		}
+		<span style=color:#000;font-weight:700>if</span> !h.<span style=color:#900;font-weight:700>Less</span>(j, i) {
+			<span style=color:#000;font-weight:700>break</span>
 		}
-		h.<span style=color:#50fa7b>Swap</span>(i, j)
+		h.<span style=color:#900;font-weight:700>Swap</span>(i, j)
 		i = j
 	}
-	<span style=color:#ff79c6>return</span> i &gt; i0
+	<span style=color:#000;font-weight:700>return</span> i &gt; i0
 }
 </code></pre></div><h3 id=简单使用>简单使用</h3>
 <p>由以上源码可知，要实现一个heap数据结构，需要实现Len()、Less()（根据这里控制大顶堆还是小顶堆）、Swap()、Push()、Pop()、Fix()(或Update())方法，其中Fix方法是可选的。Fix方法主要是传入元素和元素所在数组的index，并且下沉该元素。</p>
 <p>下面实现一个简单的[]int数组构成的heap。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> heap
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> heap
 
-<span style=color:#8be9fd;font-style:italic>type</span> IntHeap []<span style=color:#8be9fd>int</span>
+<span style=color:#000;font-weight:700>type</span> IntHeap []<span style=color:#458;font-weight:700>int</span>
  
-<span style=color:#8be9fd;font-style:italic>func</span> (h IntHeap) <span style=color:#50fa7b>Len</span>() <span style=color:#8be9fd>int</span>           { <span style=color:#ff79c6>return</span> <span style=color:#8be9fd;font-style:italic>len</span>(h) }
-<span style=color:#8be9fd;font-style:italic>func</span> (h IntHeap) <span style=color:#50fa7b>Less</span>(i, j <span style=color:#8be9fd>int</span>) <span style=color:#8be9fd>bool</span> { <span style=color:#ff79c6>return</span> h[i] &lt; h[j] }
-<span style=color:#8be9fd;font-style:italic>func</span> (h IntHeap) <span style=color:#50fa7b>Swap</span>(i, j <span style=color:#8be9fd>int</span>)      { h[i], h[j] = h[j], h[i] }
+<span style=color:#000;font-weight:700>func</span> (h IntHeap) <span style=color:#900;font-weight:700>Len</span>() <span style=color:#458;font-weight:700>int</span>           { <span style=color:#000;font-weight:700>return</span> <span style=color:#0086b3>len</span>(h) }
+<span style=color:#000;font-weight:700>func</span> (h IntHeap) <span style=color:#900;font-weight:700>Less</span>(i, j <span style=color:#458;font-weight:700>int</span>) <span style=color:#458;font-weight:700>bool</span> { <span style=color:#000;font-weight:700>return</span> h[i] &lt; h[j] }
+<span style=color:#000;font-weight:700>func</span> (h IntHeap) <span style=color:#900;font-weight:700>Swap</span>(i, j <span style=color:#458;font-weight:700>int</span>)      { h[i], h[j] = h[j], h[i] }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (h <span style=color:#ff79c6>*</span>IntHeap) <span style=color:#50fa7b>Push</span>(x <span style=color:#8be9fd;font-style:italic>interface</span>{}) {
-    <span style=color:#ff79c6>*</span>h = <span style=color:#8be9fd;font-style:italic>append</span>(<span style=color:#ff79c6>*</span>h, x.(<span style=color:#8be9fd>int</span>))
+<span style=color:#000;font-weight:700>func</span> (h <span style=color:#000;font-weight:700>*</span>IntHeap) <span style=color:#900;font-weight:700>Push</span>(x <span style=color:#000;font-weight:700>interface</span>{}) {
+    <span style=color:#000;font-weight:700>*</span>h = <span style=color:#0086b3>append</span>(<span style=color:#000;font-weight:700>*</span>h, x.(<span style=color:#458;font-weight:700>int</span>))
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (h <span style=color:#ff79c6>*</span>IntHeap) <span style=color:#50fa7b>Pop</span>() <span style=color:#8be9fd;font-style:italic>interface</span>{} {
-    old <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>*</span>h
-    n <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>len</span>(old)
-    x <span style=color:#ff79c6>:=</span> old[n<span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>]
-    <span style=color:#ff79c6>*</span>h = old[<span style=color:#bd93f9>0</span> : n<span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>]
-    <span style=color:#ff79c6>return</span> x
+<span style=color:#000;font-weight:700>func</span> (h <span style=color:#000;font-weight:700>*</span>IntHeap) <span style=color:#900;font-weight:700>Pop</span>() <span style=color:#000;font-weight:700>interface</span>{} {
+    old <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>*</span>h
+    n <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>len</span>(old)
+    x <span style=color:#000;font-weight:700>:=</span> old[n<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>]
+    <span style=color:#000;font-weight:700>*</span>h = old[<span style=color:#099>0</span> : n<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>]
+    <span style=color:#000;font-weight:700>return</span> x
 }
 
-<span style=color:#6272a4>/**
-</span><span style=color:#6272a4>*  test file
-</span><span style=color:#6272a4>**/</span>
+<span style=color:#998;font-style:italic>/**
+</span><span style=color:#998;font-style:italic>*  test file
+</span><span style=color:#998;font-style:italic>**/</span>
 
-<span style=color:#ff79c6>package</span> heap
+<span style=color:#000;font-weight:700>package</span> heap
 
-<span style=color:#ff79c6>import</span> (
-	<span style=color:#f1fa8c>&#34;container/heap&#34;</span>
-	<span style=color:#f1fa8c>&#34;log&#34;</span>
-	<span style=color:#f1fa8c>&#34;testing&#34;</span>
+<span style=color:#000;font-weight:700>import</span> (
+	<span style=color:#d14>&#34;container/heap&#34;</span>
+	<span style=color:#d14>&#34;log&#34;</span>
+	<span style=color:#d14>&#34;testing&#34;</span>
 )
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>TestHeap</span>(t <span style=color:#ff79c6>*</span>testing.T) {
-	h <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>IntHeap{<span style=color:#bd93f9>1</span>,<span style=color:#bd93f9>2</span>,<span style=color:#bd93f9>4</span>,<span style=color:#bd93f9>5</span>,<span style=color:#bd93f9>6</span>}
-	heap.<span style=color:#50fa7b>Init</span>(h)
-	heap.<span style=color:#50fa7b>Push</span>(h, <span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>)
-	<span style=color:#ff79c6>for</span> h.<span style=color:#50fa7b>Len</span>() &gt; <span style=color:#bd93f9>0</span> {
-        log.<span style=color:#50fa7b>Println</span>(heap.<span style=color:#50fa7b>Pop</span>(h))
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>TestHeap</span>(t <span style=color:#000;font-weight:700>*</span>testing.T) {
+	h <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>IntHeap{<span style=color:#099>1</span>,<span style=color:#099>2</span>,<span style=color:#099>4</span>,<span style=color:#099>5</span>,<span style=color:#099>6</span>}
+	heap.<span style=color:#900;font-weight:700>Init</span>(h)
+	heap.<span style=color:#900;font-weight:700>Push</span>(h, <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>)
+	<span style=color:#000;font-weight:700>for</span> h.<span style=color:#900;font-weight:700>Len</span>() &gt; <span style=color:#099>0</span> {
+        log.<span style=color:#900;font-weight:700>Println</span>(heap.<span style=color:#900;font-weight:700>Pop</span>(h))
     }
 }
 
-<span style=color:#6272a4>/**
-</span><span style=color:#6272a4>*  output
-</span><span style=color:#6272a4>**/</span>
-<span style=color:#ff79c6>==</span>= RUN   TestHeap
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> <span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> <span style=color:#bd93f9>1</span>
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> <span style=color:#bd93f9>2</span>
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> <span style=color:#bd93f9>4</span>
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> <span style=color:#bd93f9>5</span>
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> <span style=color:#bd93f9>6</span>
+<span style=color:#998;font-style:italic>/**
+</span><span style=color:#998;font-style:italic>*  output
+</span><span style=color:#998;font-style:italic>**/</span>
+<span style=color:#000;font-weight:700>==</span>= RUN   TestHeap
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> <span style=color:#099>1</span>
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> <span style=color:#099>2</span>
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> <span style=color:#099>4</span>
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> <span style=color:#099>5</span>
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> <span style=color:#099>6</span>
 </code></pre></div><p>这样就可以实现int数组的小顶堆，如果需要实现更加复杂的数据结构的heap，可以参考[]int的方法来实现，如：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> heap
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> heap
 
-<span style=color:#8be9fd;font-style:italic>type</span> Data <span style=color:#8be9fd;font-style:italic>struct</span> {
-	key <span style=color:#8be9fd>int</span>
-	value <span style=color:#8be9fd>int</span>
-	wight <span style=color:#8be9fd>int</span>
+<span style=color:#000;font-weight:700>type</span> Data <span style=color:#000;font-weight:700>struct</span> {
+	key <span style=color:#458;font-weight:700>int</span>
+	value <span style=color:#458;font-weight:700>int</span>
+	wight <span style=color:#458;font-weight:700>int</span>
 }
 
-<span style=color:#8be9fd;font-style:italic>type</span> DataHeap []Data
+<span style=color:#000;font-weight:700>type</span> DataHeap []Data
  
-<span style=color:#8be9fd;font-style:italic>func</span> (h DataHeap) <span style=color:#50fa7b>Len</span>() <span style=color:#8be9fd>int</span>           { <span style=color:#ff79c6>return</span> <span style=color:#8be9fd;font-style:italic>len</span>(h) }
-<span style=color:#8be9fd;font-style:italic>func</span> (h DataHeap) <span style=color:#50fa7b>Less</span>(i, j <span style=color:#8be9fd>int</span>) <span style=color:#8be9fd>bool</span> { <span style=color:#ff79c6>return</span> h[i].wight &lt; h[j].wight }
-<span style=color:#8be9fd;font-style:italic>func</span> (h DataHeap) <span style=color:#50fa7b>Swap</span>(i, j <span style=color:#8be9fd>int</span>)      { h[i], h[j] = h[j], h[i] }
+<span style=color:#000;font-weight:700>func</span> (h DataHeap) <span style=color:#900;font-weight:700>Len</span>() <span style=color:#458;font-weight:700>int</span>           { <span style=color:#000;font-weight:700>return</span> <span style=color:#0086b3>len</span>(h) }
+<span style=color:#000;font-weight:700>func</span> (h DataHeap) <span style=color:#900;font-weight:700>Less</span>(i, j <span style=color:#458;font-weight:700>int</span>) <span style=color:#458;font-weight:700>bool</span> { <span style=color:#000;font-weight:700>return</span> h[i].wight &lt; h[j].wight }
+<span style=color:#000;font-weight:700>func</span> (h DataHeap) <span style=color:#900;font-weight:700>Swap</span>(i, j <span style=color:#458;font-weight:700>int</span>)      { h[i], h[j] = h[j], h[i] }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (h <span style=color:#ff79c6>*</span>DataHeap) <span style=color:#50fa7b>Push</span>(x <span style=color:#8be9fd;font-style:italic>interface</span>{}) {
-    <span style=color:#ff79c6>*</span>h = <span style=color:#8be9fd;font-style:italic>append</span>(<span style=color:#ff79c6>*</span>h, x.(Data))
+<span style=color:#000;font-weight:700>func</span> (h <span style=color:#000;font-weight:700>*</span>DataHeap) <span style=color:#900;font-weight:700>Push</span>(x <span style=color:#000;font-weight:700>interface</span>{}) {
+    <span style=color:#000;font-weight:700>*</span>h = <span style=color:#0086b3>append</span>(<span style=color:#000;font-weight:700>*</span>h, x.(Data))
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (h <span style=color:#ff79c6>*</span>DataHeap) <span style=color:#50fa7b>Pop</span>() <span style=color:#8be9fd;font-style:italic>interface</span>{} {
-    old <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>*</span>h
-    n <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>len</span>(old)
-    x <span style=color:#ff79c6>:=</span> old[n<span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>]
-    <span style=color:#ff79c6>*</span>h = old[<span style=color:#bd93f9>0</span> : n<span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>]
-    <span style=color:#ff79c6>return</span> x
+<span style=color:#000;font-weight:700>func</span> (h <span style=color:#000;font-weight:700>*</span>DataHeap) <span style=color:#900;font-weight:700>Pop</span>() <span style=color:#000;font-weight:700>interface</span>{} {
+    old <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>*</span>h
+    n <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>len</span>(old)
+    x <span style=color:#000;font-weight:700>:=</span> old[n<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>]
+    <span style=color:#000;font-weight:700>*</span>h = old[<span style=color:#099>0</span> : n<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>]
+    <span style=color:#000;font-weight:700>return</span> x
 }
 
-<span style=color:#6272a4>/**
-</span><span style=color:#6272a4>*  test file
-</span><span style=color:#6272a4>**/</span>
-<span style=color:#ff79c6>package</span> heap
+<span style=color:#998;font-style:italic>/**
+</span><span style=color:#998;font-style:italic>*  test file
+</span><span style=color:#998;font-style:italic>**/</span>
+<span style=color:#000;font-weight:700>package</span> heap
 
-<span style=color:#ff79c6>import</span> (
-	<span style=color:#f1fa8c>&#34;container/heap&#34;</span>
-	<span style=color:#f1fa8c>&#34;log&#34;</span>
-	<span style=color:#f1fa8c>&#34;testing&#34;</span>
+<span style=color:#000;font-weight:700>import</span> (
+	<span style=color:#d14>&#34;container/heap&#34;</span>
+	<span style=color:#d14>&#34;log&#34;</span>
+	<span style=color:#d14>&#34;testing&#34;</span>
 )
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>TestDataHeap</span>(t <span style=color:#ff79c6>*</span>testing.T) {
-	h <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>DataHeap{Data{<span style=color:#bd93f9>1</span>,<span style=color:#bd93f9>2</span>,<span style=color:#bd93f9>3</span>},Data{<span style=color:#bd93f9>1</span>,<span style=color:#bd93f9>4</span>,<span style=color:#bd93f9>5</span>},
-	Data{<span style=color:#bd93f9>1</span>,<span style=color:#bd93f9>4</span>,<span style=color:#bd93f9>0</span>},Data{<span style=color:#bd93f9>1</span>,<span style=color:#bd93f9>4</span>,<span style=color:#bd93f9>2</span>}}
-	heap.<span style=color:#50fa7b>Init</span>(h)
-	heap.<span style=color:#50fa7b>Push</span>(h, Data{<span style=color:#bd93f9>1</span>,<span style=color:#bd93f9>4</span>,<span style=color:#ff79c6>-</span><span style=color:#bd93f9>340</span>})
-	<span style=color:#ff79c6>for</span> h.<span style=color:#50fa7b>Len</span>() &gt; <span style=color:#bd93f9>0</span> {
-        log.<span style=color:#50fa7b>Println</span>(heap.<span style=color:#50fa7b>Pop</span>(h))
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>TestDataHeap</span>(t <span style=color:#000;font-weight:700>*</span>testing.T) {
+	h <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>DataHeap{Data{<span style=color:#099>1</span>,<span style=color:#099>2</span>,<span style=color:#099>3</span>},Data{<span style=color:#099>1</span>,<span style=color:#099>4</span>,<span style=color:#099>5</span>},
+	Data{<span style=color:#099>1</span>,<span style=color:#099>4</span>,<span style=color:#099>0</span>},Data{<span style=color:#099>1</span>,<span style=color:#099>4</span>,<span style=color:#099>2</span>}}
+	heap.<span style=color:#900;font-weight:700>Init</span>(h)
+	heap.<span style=color:#900;font-weight:700>Push</span>(h, Data{<span style=color:#099>1</span>,<span style=color:#099>4</span>,<span style=color:#000;font-weight:700>-</span><span style=color:#099>340</span>})
+	<span style=color:#000;font-weight:700>for</span> h.<span style=color:#900;font-weight:700>Len</span>() &gt; <span style=color:#099>0</span> {
+        log.<span style=color:#900;font-weight:700>Println</span>(heap.<span style=color:#900;font-weight:700>Pop</span>(h))
     }
 }
 
-<span style=color:#6272a4>/**
-</span><span style=color:#6272a4>*  output
-</span><span style=color:#6272a4>**/</span>
-<span style=color:#ff79c6>==</span>= RUN   TestDataHeap
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> {<span style=color:#bd93f9>1</span> <span style=color:#bd93f9>4</span> <span style=color:#ff79c6>-</span><span style=color:#bd93f9>340</span>}
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> {<span style=color:#bd93f9>1</span> <span style=color:#bd93f9>4</span> <span style=color:#bd93f9>0</span>}
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> {<span style=color:#bd93f9>1</span> <span style=color:#bd93f9>4</span> <span style=color:#bd93f9>2</span>}
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> {<span style=color:#bd93f9>1</span> <span style=color:#bd93f9>2</span> <span style=color:#bd93f9>3</span>}
-<span style=color:#bd93f9>2020</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>09</span><span style=color:#ff79c6>/</span><span style=color:#bd93f9>24</span> <span style=color:#bd93f9>21</span>:<span style=color:#bd93f9>59</span>:<span style=color:#bd93f9>59</span> {<span style=color:#bd93f9>1</span> <span style=color:#bd93f9>4</span> <span style=color:#bd93f9>5</span>}
+<span style=color:#998;font-style:italic>/**
+</span><span style=color:#998;font-style:italic>*  output
+</span><span style=color:#998;font-style:italic>**/</span>
+<span style=color:#000;font-weight:700>==</span>= RUN   TestDataHeap
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> {<span style=color:#099>1</span> <span style=color:#099>4</span> <span style=color:#000;font-weight:700>-</span><span style=color:#099>340</span>}
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> {<span style=color:#099>1</span> <span style=color:#099>4</span> <span style=color:#099>0</span>}
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> {<span style=color:#099>1</span> <span style=color:#099>4</span> <span style=color:#099>2</span>}
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> {<span style=color:#099>1</span> <span style=color:#099>2</span> <span style=color:#099>3</span>}
+<span style=color:#099>2020</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>09</span><span style=color:#000;font-weight:700>/</span><span style=color:#099>24</span> <span style=color:#099>21</span>:<span style=color:#099>59</span>:<span style=color:#099>59</span> {<span style=color:#099>1</span> <span style=color:#099>4</span> <span style=color:#099>5</span>}
 </code></pre></div><h2 id=其他方法实现heap>其他方法实现heap</h2>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#ff79c6>package</span> main
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> main
 
-<span style=color:#ff79c6>import</span> (
-	<span style=color:#f1fa8c>&#34;fmt&#34;</span>
-	<span style=color:#f1fa8c>&#34;math/rand&#34;</span>
-	<span style=color:#f1fa8c>&#34;time&#34;</span>
+<span style=color:#000;font-weight:700>import</span> (
+	<span style=color:#d14>&#34;fmt&#34;</span>
+	<span style=color:#d14>&#34;math/rand&#34;</span>
+	<span style=color:#d14>&#34;time&#34;</span>
 )
 
-<span style=color:#6272a4>// 堆实现最小优先队列，即最小堆
-</span><span style=color:#6272a4>// 数据结构是数组构成的二叉树（完全二叉树）
-</span><span style=color:#6272a4>// 树中某个节点的值总是不大于或不小于其孩子节点的值；
-</span><span style=color:#6272a4>// 树中每个节点的子树都是堆树
-</span><span style=color:#6272a4>//        1  2  3  4   5  6   7   8  9  10
-</span><span style=color:#6272a4>// a[] = {4, 1, 3, 2, 16, 9, 10, 14, 8, 7}
-</span><span style=color:#6272a4>//                  4
-</span><span style=color:#6272a4>//                /  \
-</span><span style=color:#6272a4>//               1    3
-</span><span style=color:#6272a4>//              / \  / \
-</span><span style=color:#6272a4>//             2  16 9  10
-</span><span style=color:#6272a4>//            /\  /
-</span><span style=color:#6272a4>//           14 8 7
-</span><span style=color:#6272a4>// 若取a[1]为堆顶最大或最小，a[i]的左子节点为a[2i],右子节点为a[2i+1],父节点为a[i/2]
-</span><span style=color:#6272a4>// 若取a[0]为堆顶最大或最小，a[i]的左子节点为a[2i+1],右子节点为a[2i+2],父节点为a[(i-1)/2]
-</span><span style=color:#6272a4></span>
-<span style=color:#8be9fd;font-style:italic>type</span> PriorityHeap <span style=color:#8be9fd;font-style:italic>struct</span> {
-	arr []<span style=color:#8be9fd>int</span>
+<span style=color:#998;font-style:italic>// 堆实现最小优先队列，即最小堆
+</span><span style=color:#998;font-style:italic>// 数据结构是数组构成的二叉树（完全二叉树）
+</span><span style=color:#998;font-style:italic>// 树中某个节点的值总是不大于或不小于其孩子节点的值；
+</span><span style=color:#998;font-style:italic>// 树中每个节点的子树都是堆树
+</span><span style=color:#998;font-style:italic>//        1  2  3  4   5  6   7   8  9  10
+</span><span style=color:#998;font-style:italic>// a[] = {4, 1, 3, 2, 16, 9, 10, 14, 8, 7}
+</span><span style=color:#998;font-style:italic>//                  4
+</span><span style=color:#998;font-style:italic>//                /  \
+</span><span style=color:#998;font-style:italic>//               1    3
+</span><span style=color:#998;font-style:italic>//              / \  / \
+</span><span style=color:#998;font-style:italic>//             2  16 9  10
+</span><span style=color:#998;font-style:italic>//            /\  /
+</span><span style=color:#998;font-style:italic>//           14 8 7
+</span><span style=color:#998;font-style:italic>// 若取a[1]为堆顶最大或最小，a[i]的左子节点为a[2i],右子节点为a[2i+1],父节点为a[i/2]
+</span><span style=color:#998;font-style:italic>// 若取a[0]为堆顶最大或最小，a[i]的左子节点为a[2i+1],右子节点为a[2i+2],父节点为a[(i-1)/2]
+</span><span style=color:#998;font-style:italic></span>
+<span style=color:#000;font-weight:700>type</span> PriorityHeap <span style=color:#000;font-weight:700>struct</span> {
+	arr []<span style=color:#458;font-weight:700>int</span>
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (p <span style=color:#ff79c6>*</span>PriorityHeap) <span style=color:#50fa7b>push</span>(pri <span style=color:#8be9fd>int</span>) {
-	p.arr = <span style=color:#8be9fd;font-style:italic>append</span>(p.arr, pri)
-	<span style=color:#6272a4>/*if len(p.arr) == 0 {
-</span><span style=color:#6272a4>		return
-</span><span style=color:#6272a4>	}*/</span>
-	<span style=color:#6272a4>// fixup 比父节点小的就上浮
-</span><span style=color:#6272a4></span>	end <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>len</span>(p.arr) <span style=color:#ff79c6>-</span> <span style=color:#bd93f9>1</span>
-	father <span style=color:#ff79c6>:=</span> (end <span style=color:#ff79c6>-</span> <span style=color:#bd93f9>1</span> ) <span style=color:#ff79c6>/</span> <span style=color:#bd93f9>2</span>
-	<span style=color:#ff79c6>for</span> father <span style=color:#ff79c6>&gt;=</span> <span style=color:#bd93f9>0</span> {
-		<span style=color:#ff79c6>if</span> p.arr[father] <span style=color:#ff79c6>&lt;=</span> p.arr[end] {
-			<span style=color:#ff79c6>break</span>
+<span style=color:#000;font-weight:700>func</span> (p <span style=color:#000;font-weight:700>*</span>PriorityHeap) <span style=color:#900;font-weight:700>push</span>(pri <span style=color:#458;font-weight:700>int</span>) {
+	p.arr = <span style=color:#0086b3>append</span>(p.arr, pri)
+	<span style=color:#998;font-style:italic>/*if len(p.arr) == 0 {
+</span><span style=color:#998;font-style:italic>		return
+</span><span style=color:#998;font-style:italic>	}*/</span>
+	<span style=color:#998;font-style:italic>// fixup 比父节点小的就上浮
+</span><span style=color:#998;font-style:italic></span>	end <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>len</span>(p.arr) <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span>
+	father <span style=color:#000;font-weight:700>:=</span> (end <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span> ) <span style=color:#000;font-weight:700>/</span> <span style=color:#099>2</span>
+	<span style=color:#000;font-weight:700>for</span> father <span style=color:#000;font-weight:700>&gt;=</span> <span style=color:#099>0</span> {
+		<span style=color:#000;font-weight:700>if</span> p.arr[father] <span style=color:#000;font-weight:700>&lt;=</span> p.arr[end] {
+			<span style=color:#000;font-weight:700>break</span>
 		}
 		p.arr[father], p.arr[end] = p.arr[end], p.arr[father]
 		end = father
-		father = (end <span style=color:#ff79c6>-</span> <span style=color:#bd93f9>1</span> ) <span style=color:#ff79c6>/</span> <span style=color:#bd93f9>2</span>
+		father = (end <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span> ) <span style=color:#000;font-weight:700>/</span> <span style=color:#099>2</span>
 	}
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (p <span style=color:#ff79c6>*</span>PriorityHeap) <span style=color:#50fa7b>pop</span>() <span style=color:#8be9fd>int</span> {
-	length <span style=color:#ff79c6>:=</span> <span style=color:#8be9fd;font-style:italic>len</span>(p.arr)
-	<span style=color:#ff79c6>if</span> length <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>0</span> {
-		<span style=color:#ff79c6>return</span> <span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>
+<span style=color:#000;font-weight:700>func</span> (p <span style=color:#000;font-weight:700>*</span>PriorityHeap) <span style=color:#900;font-weight:700>pop</span>() <span style=color:#458;font-weight:700>int</span> {
+	length <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>len</span>(p.arr)
+	<span style=color:#000;font-weight:700>if</span> length <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> {
+		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>
 	}
-	res <span style=color:#ff79c6>:=</span> p.arr[<span style=color:#bd93f9>0</span>]
-	<span style=color:#ff79c6>if</span> length <span style=color:#ff79c6>==</span> <span style=color:#bd93f9>1</span> {
-		p.arr = []<span style=color:#8be9fd>int</span>{}
-		<span style=color:#ff79c6>return</span> res
+	res <span style=color:#000;font-weight:700>:=</span> p.arr[<span style=color:#099>0</span>]
+	<span style=color:#000;font-weight:700>if</span> length <span style=color:#000;font-weight:700>==</span> <span style=color:#099>1</span> {
+		p.arr = []<span style=color:#458;font-weight:700>int</span>{}
+		<span style=color:#000;font-weight:700>return</span> res
 	}
-	p.arr[<span style=color:#bd93f9>0</span>] = p.arr[length<span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>]
-	p.arr = p.arr[:length<span style=color:#ff79c6>-</span><span style=color:#bd93f9>1</span>]
-	length = <span style=color:#8be9fd;font-style:italic>len</span>(p.arr)
-	<span style=color:#6272a4>// fix down 比左、右节点小的越小越往哪边下沉
-</span><span style=color:#6272a4></span>	farther <span style=color:#ff79c6>:=</span> <span style=color:#bd93f9>0</span>
-	min <span style=color:#ff79c6>:=</span> <span style=color:#bd93f9>2</span> <span style=color:#ff79c6>*</span> farther <span style=color:#ff79c6>+</span> <span style=color:#bd93f9>1</span>
-	<span style=color:#ff79c6>for</span> min &lt; length {
-		<span style=color:#ff79c6>if</span> min<span style=color:#ff79c6>+</span><span style=color:#bd93f9>1</span> &lt; length { <span style=color:#6272a4>// 右节点存在？
-</span><span style=color:#6272a4></span>			<span style=color:#ff79c6>if</span> p.arr[min] &gt; p.arr[min<span style=color:#ff79c6>+</span><span style=color:#bd93f9>1</span>] { <span style=color:#6272a4>// 左节点比右节点大？
-</span><span style=color:#6272a4></span>				min<span style=color:#ff79c6>++</span> <span style=color:#6272a4>// 那就用右节点，否则往左子节点下沉
-</span><span style=color:#6272a4></span>			}
+	p.arr[<span style=color:#099>0</span>] = p.arr[length<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>]
+	p.arr = p.arr[:length<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>]
+	length = <span style=color:#0086b3>len</span>(p.arr)
+	<span style=color:#998;font-style:italic>// fix down 比左、右节点小的越小越往哪边下沉
+</span><span style=color:#998;font-style:italic></span>	farther <span style=color:#000;font-weight:700>:=</span> <span style=color:#099>0</span>
+	min <span style=color:#000;font-weight:700>:=</span> <span style=color:#099>2</span> <span style=color:#000;font-weight:700>*</span> farther <span style=color:#000;font-weight:700>+</span> <span style=color:#099>1</span>
+	<span style=color:#000;font-weight:700>for</span> min &lt; length {
+		<span style=color:#000;font-weight:700>if</span> min<span style=color:#000;font-weight:700>+</span><span style=color:#099>1</span> &lt; length { <span style=color:#998;font-style:italic>// 右节点存在？
+</span><span style=color:#998;font-style:italic></span>			<span style=color:#000;font-weight:700>if</span> p.arr[min] &gt; p.arr[min<span style=color:#000;font-weight:700>+</span><span style=color:#099>1</span>] { <span style=color:#998;font-style:italic>// 左节点比右节点大？
+</span><span style=color:#998;font-style:italic></span>				min<span style=color:#000;font-weight:700>++</span> <span style=color:#998;font-style:italic>// 那就用右节点，否则往左子节点下沉
+</span><span style=color:#998;font-style:italic></span>			}
 		}
-		<span style=color:#ff79c6>if</span> p.arr[farther] <span style=color:#ff79c6>&lt;=</span> p.arr[min] {
-			<span style=color:#ff79c6>break</span>
+		<span style=color:#000;font-weight:700>if</span> p.arr[farther] <span style=color:#000;font-weight:700>&lt;=</span> p.arr[min] {
+			<span style=color:#000;font-weight:700>break</span>
 		}
 		p.arr[farther], p.arr[min] = p.arr[min], p.arr[farther]
 		farther = min
-		min = <span style=color:#bd93f9>2</span> <span style=color:#ff79c6>*</span> farther <span style=color:#ff79c6>+</span> <span style=color:#bd93f9>1</span>
+		min = <span style=color:#099>2</span> <span style=color:#000;font-weight:700>*</span> farther <span style=color:#000;font-weight:700>+</span> <span style=color:#099>1</span>
 	}
-	<span style=color:#ff79c6>return</span> res
+	<span style=color:#000;font-weight:700>return</span> res
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>initHeap</span>() <span style=color:#ff79c6>*</span>PriorityHeap {
-	p <span style=color:#ff79c6>:=</span> <span style=color:#ff79c6>&amp;</span>PriorityHeap{
-		arr: []<span style=color:#8be9fd>int</span>{},
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>initHeap</span>() <span style=color:#000;font-weight:700>*</span>PriorityHeap {
+	p <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>PriorityHeap{
+		arr: []<span style=color:#458;font-weight:700>int</span>{},
 	}
-	<span style=color:#ff79c6>return</span> p
+	<span style=color:#000;font-weight:700>return</span> p
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
-	p <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>initHeap</span>()
-	rand.<span style=color:#50fa7b>Seed</span>(time.<span style=color:#50fa7b>Now</span>().<span style=color:#50fa7b>Unix</span>())
-	<span style=color:#ff79c6>for</span> i<span style=color:#ff79c6>:=</span><span style=color:#bd93f9>0</span>;i&lt;<span style=color:#bd93f9>10</span>;i<span style=color:#ff79c6>++</span> {
-		p.<span style=color:#50fa7b>push</span>(rand.<span style=color:#50fa7b>Int</span>() <span style=color:#ff79c6>%</span> <span style=color:#bd93f9>100</span>)
+<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>() {
+	p <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>initHeap</span>()
+	rand.<span style=color:#900;font-weight:700>Seed</span>(time.<span style=color:#900;font-weight:700>Now</span>().<span style=color:#900;font-weight:700>Unix</span>())
+	<span style=color:#000;font-weight:700>for</span> i<span style=color:#000;font-weight:700>:=</span><span style=color:#099>0</span>;i&lt;<span style=color:#099>10</span>;i<span style=color:#000;font-weight:700>++</span> {
+		p.<span style=color:#900;font-weight:700>push</span>(rand.<span style=color:#900;font-weight:700>Int</span>() <span style=color:#000;font-weight:700>%</span> <span style=color:#099>100</span>)
 	}
-	<span style=color:#ff79c6>for</span> i<span style=color:#ff79c6>:=</span><span style=color:#bd93f9>0</span>;i&lt;<span style=color:#bd93f9>10</span>;i<span style=color:#ff79c6>++</span> {
-		fmt.<span style=color:#50fa7b>Println</span>(p.<span style=color:#50fa7b>pop</span>(), i)
+	<span style=color:#000;font-weight:700>for</span> i<span style=color:#000;font-weight:700>:=</span><span style=color:#099>0</span>;i&lt;<span style=color:#099>10</span>;i<span style=color:#000;font-weight:700>++</span> {
+		fmt.<span style=color:#900;font-weight:700>Println</span>(p.<span style=color:#900;font-weight:700>pop</span>(), i)
 	}
-	fmt.<span style=color:#50fa7b>Println</span>(p.<span style=color:#50fa7b>pop</span>())
-<span style=color:#6272a4>/*  output:
-</span><span style=color:#6272a4>    17 0
-</span><span style=color:#6272a4>	47 1
-</span><span style=color:#6272a4>	49 2
-</span><span style=color:#6272a4>	52 3
-</span><span style=color:#6272a4>	55 4
-</span><span style=color:#6272a4>	55 5
-</span><span style=color:#6272a4>	71 6
-</span><span style=color:#6272a4>	74 7
-</span><span style=color:#6272a4>	93 8
-</span><span style=color:#6272a4>	98 9
-</span><span style=color:#6272a4>	-1*/</span>
+	fmt.<span style=color:#900;font-weight:700>Println</span>(p.<span style=color:#900;font-weight:700>pop</span>())
+<span style=color:#998;font-style:italic>/*  output:
+</span><span style=color:#998;font-style:italic>    17 0
+</span><span style=color:#998;font-style:italic>	47 1
+</span><span style=color:#998;font-style:italic>	49 2
+</span><span style=color:#998;font-style:italic>	52 3
+</span><span style=color:#998;font-style:italic>	55 4
+</span><span style=color:#998;font-style:italic>	55 5
+</span><span style=color:#998;font-style:italic>	71 6
+</span><span style=color:#998;font-style:italic>	74 7
+</span><span style=color:#998;font-style:italic>	93 8
+</span><span style=color:#998;font-style:italic>	98 9
+</span><span style=color:#998;font-style:italic>	-1*/</span>
 }
 </code></pre></div>
 </div>

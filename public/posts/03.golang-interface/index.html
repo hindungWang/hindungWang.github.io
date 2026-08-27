@@ -20,11 +20,11 @@
 <link rel=canonical href=https://hindungwang.github.io/posts/03.golang-interface/>
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
+<link rel=stylesheet type=text/css href=/css/posts-nav.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
-<link rel=stylesheet href=/css/posts-nav.css>
 </head>
 <body class=post-page>
 <script>setThemeByUserPref()</script><header class=header>
@@ -249,272 +249,272 @@ July 23, 2020
 <li>可以嵌入其他接口（目标类型方法集中必须拥有包含嵌入接口方法在内的全部方法才算实现了该接口）</li>
 </ul>
 <p>如：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> Notifier <span style=color:#8be9fd;font-style:italic>interface</span> {
-　 <span style=color:#50fa7b>notify</span>()
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> Notifier <span style=color:#000;font-weight:700>interface</span> {
+　 <span style=color:#900;font-weight:700>notify</span>()
 }
 </code></pre></div><p>这就定义了一个名为<code>Notifier</code>的<code>interface</code>，实现这个<code>interface</code>很简单，实现<code>notify</code>方法即可：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> User <span style=color:#8be9fd;font-style:italic>struct</span> {
-　 name　<span style=color:#8be9fd>string</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> User <span style=color:#000;font-weight:700>struct</span> {
+　 name　<span style=color:#458;font-weight:700>string</span>
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (u <span style=color:#ff79c6>*</span>User) <span style=color:#50fa7b>notify</span>() {
-　 fmt.<span style=color:#50fa7b>Printf</span>(<span style=color:#f1fa8c>&#34;Notify user name %s\n&#34;</span>, u.name)
+<span style=color:#000;font-weight:700>func</span> (u <span style=color:#000;font-weight:700>*</span>User) <span style=color:#900;font-weight:700>notify</span>() {
+　 fmt.<span style=color:#900;font-weight:700>Printf</span>(<span style=color:#d14>&#34;Notify user name %s\n&#34;</span>, u.name)
 }
 </code></pre></div><p>其他结构体也可以实现这个<code>interface</code>：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> Admin <span style=color:#8be9fd;font-style:italic>struct</span> {
-　 name　<span style=color:#8be9fd>string</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> Admin <span style=color:#000;font-weight:700>struct</span> {
+　 name　<span style=color:#458;font-weight:700>string</span>
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (a <span style=color:#ff79c6>*</span>Admin) <span style=color:#50fa7b>notify</span>() {
-　 fmt.<span style=color:#50fa7b>Printf</span>(<span style=color:#f1fa8c>&#34;Sending admin name %s\n&#34;</span>, a.name)
+<span style=color:#000;font-weight:700>func</span> (a <span style=color:#000;font-weight:700>*</span>Admin) <span style=color:#900;font-weight:700>notify</span>() {
+　 fmt.<span style=color:#900;font-weight:700>Printf</span>(<span style=color:#d14>&#34;Sending admin name %s\n&#34;</span>, a.name)
 }
 </code></pre></div><p>这种实现是<code>DuckType</code>：类型不需要显式声明它实现了某个接口：接口被隐式地实现。多个类型可以实现同一个接。</p>
 <p>在调用<code>notify</code>的地方实现如下方法，即可实现多态性，即面向接口编程：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>sendNotify</span>(n Notifier) {
-   n.<span style=color:#50fa7b>notify</span>()
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>sendNotify</span>(n Notifier) {
+   n.<span style=color:#900;font-weight:700>notify</span>()
 }
 </code></pre></div><p>函数<code>sendNotify</code>接受一个实现了<code>Notifier</code>接口的值作为参数。 既然任意一个实体类型都能实现该接口，那么这个函数可以针对任意实体类型的值来执行notify方法，调用<code>notify</code>时， 会根据对象的实际定义来实现不同的行为，从而实现多态行为。</p>
 <p>这里需要注意的地方是，<code>Notifier</code>接口只有一个方法，并且<code>*Admin</code> 和 <code>*User</code>类型都实现了<code>notify</code>方法，这就说明<code>*Admin</code>和<code>*User</code>类型实现了<code>Notifier</code>接口。如果<code>Notifier</code>有多个方法时，情况可能就会不一样：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> Person <span style=color:#8be9fd;font-style:italic>interface</span> {   
-    <span style=color:#50fa7b>Job</span>()
-    <span style=color:#50fa7b>GrowUp</span>()
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> Person <span style=color:#000;font-weight:700>interface</span> {   
+    <span style=color:#900;font-weight:700>Job</span>()
+    <span style=color:#900;font-weight:700>GrowUp</span>()
 }
 
-<span style=color:#8be9fd;font-style:italic>type</span> Student <span style=color:#8be9fd;font-style:italic>struct</span> {
-    Age <span style=color:#8be9fd>int</span>
+<span style=color:#000;font-weight:700>type</span> Student <span style=color:#000;font-weight:700>struct</span> {
+    Age <span style=color:#458;font-weight:700>int</span>
 }
  
-<span style=color:#8be9fd;font-style:italic>func</span> (p Student) <span style=color:#50fa7b>Job</span>() {              <span style=color:#6272a4>// Student类型实现了Job方法
-</span><span style=color:#6272a4></span>    fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#f1fa8c>&#34;I am a student.&#34;</span>)
-    <span style=color:#ff79c6>return</span>
+<span style=color:#000;font-weight:700>func</span> (p Student) <span style=color:#900;font-weight:700>Job</span>() {              <span style=color:#998;font-style:italic>// Student类型实现了Job方法
+</span><span style=color:#998;font-style:italic></span>    fmt.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#d14>&#34;I am a student.&#34;</span>)
+    <span style=color:#000;font-weight:700>return</span>
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (p <span style=color:#ff79c6>*</span>Student) <span style=color:#50fa7b>GrowUp</span>() {          <span style=color:#6272a4>// *Student类型实现了GrowUp方法（注意这里的区别）
-</span><span style=color:#6272a4></span>    p.Age <span style=color:#ff79c6>+=</span> <span style=color:#bd93f9>1</span>
-    <span style=color:#ff79c6>return</span>
+<span style=color:#000;font-weight:700>func</span> (p <span style=color:#000;font-weight:700>*</span>Student) <span style=color:#900;font-weight:700>GrowUp</span>() {          <span style=color:#998;font-style:italic>// *Student类型实现了GrowUp方法（注意这里的区别）
+</span><span style=color:#998;font-style:italic></span>    p.Age <span style=color:#000;font-weight:700>+=</span> <span style=color:#099>1</span>
+    <span style=color:#000;font-weight:700>return</span>
 }
 
-<span style=color:#8be9fd;font-style:italic>type</span> Programmer <span style=color:#8be9fd;font-style:italic>struct</span> {              
-    Age <span style=color:#8be9fd>int</span>
+<span style=color:#000;font-weight:700>type</span> Programmer <span style=color:#000;font-weight:700>struct</span> {              
+    Age <span style=color:#458;font-weight:700>int</span>
 }
 
-<span style=color:#8be9fd;font-style:italic>func</span> (p Programmer) <span style=color:#50fa7b>Job</span>() {           <span style=color:#6272a4>// Programmer类型实现了Job方法
-</span><span style=color:#6272a4></span>    fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#f1fa8c>&#34;I am a programmer.&#34;</span>)
-    <span style=color:#ff79c6>return</span>
+<span style=color:#000;font-weight:700>func</span> (p Programmer) <span style=color:#900;font-weight:700>Job</span>() {           <span style=color:#998;font-style:italic>// Programmer类型实现了Job方法
+</span><span style=color:#998;font-style:italic></span>    fmt.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#d14>&#34;I am a programmer.&#34;</span>)
+    <span style=color:#000;font-weight:700>return</span>
 }
  
-<span style=color:#8be9fd;font-style:italic>func</span> (p Programmer) <span style=color:#50fa7b>GrowUp</span>() {        <span style=color:#6272a4>// Programmer类型实现了growUp方法
-</span><span style=color:#6272a4></span>    p.Age <span style=color:#ff79c6>+=</span> <span style=color:#bd93f9>10</span>
-    <span style=color:#ff79c6>return</span>
+<span style=color:#000;font-weight:700>func</span> (p Programmer) <span style=color:#900;font-weight:700>GrowUp</span>() {        <span style=color:#998;font-style:italic>// Programmer类型实现了growUp方法
+</span><span style=color:#998;font-style:italic></span>    p.Age <span style=color:#000;font-weight:700>+=</span> <span style=color:#099>10</span>
+    <span style=color:#000;font-weight:700>return</span>
 }
 </code></pre></div><p><code>*Student</code>和<code>Programmer</code>和<code>*Programmer</code>类型都实现了<code>Person</code>接口，但是<code>Student</code>类型却没用，因为<code>Student</code>类型没有完全实现<code>Person</code>接口，执行以下程序时就会报错：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>var</span> s Person = Student{<span style=color:#bd93f9>9</span>} <span style=color:#6272a4>// 报错
-</span><span style=color:#6272a4></span>    s.<span style=color:#50fa7b>Job</span>()
-    s.<span style=color:#50fa7b>GrowUp</span>()   
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>var</span> s Person = Student{<span style=color:#099>9</span>} <span style=color:#998;font-style:italic>// 报错
+</span><span style=color:#998;font-style:italic></span>    s.<span style=color:#900;font-weight:700>Job</span>()
+    s.<span style=color:#900;font-weight:700>GrowUp</span>()   
 
-<span style=color:#6272a4>// 改成如下会成功
-</span><span style=color:#6272a4></span><span style=color:#8be9fd;font-style:italic>var</span> s Person = <span style=color:#ff79c6>&amp;</span>Student{<span style=color:#bd93f9>9</span>}
-    s.<span style=color:#50fa7b>Job</span>()
-    s.<span style=color:#50fa7b>GrowUp</span>()  
+<span style=color:#998;font-style:italic>// 改成如下会成功
+</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>var</span> s Person = <span style=color:#000;font-weight:700>&amp;</span>Student{<span style=color:#099>9</span>}
+    s.<span style=color:#900;font-weight:700>Job</span>()
+    s.<span style=color:#900;font-weight:700>GrowUp</span>()  
 </code></pre></div><p><code>*Student</code>类型为什么会实现了<code>Person</code>接口呢？是因为<code>Student</code>类型实现了<code>Job</code>方法，所以让 <code>*Student</code>类型自动拥有了<code>Job</code>方法。也就是：<strong>实现了接收者是值类型的方法，相当于自动实现了接收者是指针类型的方法；而实现了接收者是指针类型的方法，不会自动生成对应接收者是值类型的方法</strong>。</p>
 <h3 id=类型断言>类型断言</h3>
 <p>在上面的多态函数的实现中，我们如何去判断传进来的<code>n</code>是<code>Student</code>还是<code>Programmer</code>呢？使用类型断言可以解决：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>WhoSay</span>(n Person) {
-    <span style=color:#ff79c6>switch</span> v<span style=color:#ff79c6>:=</span> n.(<span style=color:#8be9fd;font-style:italic>type</span>) {
-      <span style=color:#ff79c6>case</span> <span style=color:#ff79c6>*</span>Student:
-        <span style=color:#6272a4>//is User role
-</span><span style=color:#6272a4></span>      <span style=color:#ff79c6>case</span> <span style=color:#ff79c6>*</span>Programmer:
-        <span style=color:#6272a4>//is Programmer role
-</span><span style=color:#6272a4></span>      <span style=color:#ff79c6>default</span>:
-        fmt.<span style=color:#50fa7b>Println</span>(<span style=color:#f1fa8c>&#34;don&#39;t know the type&#34;</span>)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>WhoSay</span>(n Person) {
+    <span style=color:#000;font-weight:700>switch</span> v<span style=color:#000;font-weight:700>:=</span> n.(<span style=color:#000;font-weight:700>type</span>) {
+      <span style=color:#000;font-weight:700>case</span> <span style=color:#000;font-weight:700>*</span>Student:
+        <span style=color:#998;font-style:italic>//is User role
+</span><span style=color:#998;font-style:italic></span>      <span style=color:#000;font-weight:700>case</span> <span style=color:#000;font-weight:700>*</span>Programmer:
+        <span style=color:#998;font-style:italic>//is Programmer role
+</span><span style=color:#998;font-style:italic></span>      <span style=color:#000;font-weight:700>default</span>:
+        fmt.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#d14>&#34;don&#39;t know the type&#34;</span>)
     }
 }
 </code></pre></div><h3 id=空interface>空interface</h3>
 <p>在<code>Go</code>中，有种空的<code>interface</code>类型，即没有任何方法的<code>interface</code>：<code>interface{}</code>。</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> Any <span style=color:#8be9fd;font-style:italic>interface</span> {}
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> Any <span style=color:#000;font-weight:700>interface</span> {}
 </code></pre></div><p>对空接口类型来说，我们可以将任意一种类型的值赋值给空接口类型（就好比<code>java</code>的最高级父类）：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>var</span> any <span style=color:#8be9fd;font-style:italic>interface</span> {}
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>var</span> any <span style=color:#000;font-weight:700>interface</span> {}
 
-    any = <span style=color:#ff79c6>true</span>
-    any = <span style=color:#bd93f9>14.5</span>
-    any = <span style=color:#f1fa8c>&#34;hello&#34;</span>
-    <span style=color:#ff79c6>...</span>
+    any = <span style=color:#000;font-weight:700>true</span>
+    any = <span style=color:#099>14.5</span>
+    any = <span style=color:#d14>&#34;hello&#34;</span>
+    <span style=color:#000;font-weight:700>...</span>
 </code></pre></div><h2 id=interface的实现>Interface的实现</h2>
 <p>任何<code>interface</code>类型，在内存中都是2个机器字长（world），32位机器上是8<code>Byte</code>，64位机器上是16<code>Byte</code>。</p>
 <p>空<code>interface</code>的源码(src\runtime\runtime2.go line 197左右)：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> eface <span style=color:#8be9fd;font-style:italic>struct</span> {
-	_type <span style=color:#ff79c6>*</span>_type          <span style=color:#6272a4>// 类型指针
-</span><span style=color:#6272a4></span>	data  unsafe.Pointer  <span style=color:#6272a4>// 数据区域指针
-</span><span style=color:#6272a4></span>}
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> eface <span style=color:#000;font-weight:700>struct</span> {
+	_type <span style=color:#000;font-weight:700>*</span>_type          <span style=color:#998;font-style:italic>// 类型指针
+</span><span style=color:#998;font-style:italic></span>	data  unsafe.Pointer  <span style=color:#998;font-style:italic>// 数据区域指针
+</span><span style=color:#998;font-style:italic></span>}
 </code></pre></div><p>里面就两个指针，<code>_type</code>类型表示了类型的基本信息，类型大小，对齐信息，类型编号等，源码如下(src\runtime\type.go line 28左右)：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> _type <span style=color:#8be9fd;font-style:italic>struct</span> {
-	size       <span style=color:#8be9fd>uintptr</span>   <span style=color:#6272a4>// 类型大小
-</span><span style=color:#6272a4></span>	ptrdata    <span style=color:#8be9fd>uintptr</span>   <span style=color:#6272a4>// size of memory prefix holding all pointers
-</span><span style=color:#6272a4></span>	hash       <span style=color:#8be9fd>uint32</span>    <span style=color:#6272a4>// 哈希值
-</span><span style=color:#6272a4></span>	tflag      tflag     <span style=color:#6272a4>// 类型的flag，与反射相关
-</span><span style=color:#6272a4></span>	align      <span style=color:#8be9fd>uint8</span>     <span style=color:#6272a4>// 内存对齐相关
-</span><span style=color:#6272a4></span>	fieldalign <span style=color:#8be9fd>uint8</span>     <span style=color:#6272a4>// 内存对齐相关
-</span><span style=color:#6272a4></span>	kind       <span style=color:#8be9fd>uint8</span>     <span style=color:#6272a4>// 类型的编号
-</span><span style=color:#6272a4></span>	alg        <span style=color:#ff79c6>*</span>typeAlg  <span style=color:#6272a4>// 类型的编号相关
-</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// gcdata stores the GC type data for the garbage collector.
-</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// If the KindGCProg bit is set in kind, gcdata is a GC program.
-</span><span style=color:#6272a4></span>	<span style=color:#6272a4>// Otherwise it is a ptrmask bitmap. See mbitmap.go for details.
-</span><span style=color:#6272a4></span>	gcdata    <span style=color:#ff79c6>*</span><span style=color:#8be9fd>byte</span>      <span style=color:#6272a4>// 以下就是gc相关
-</span><span style=color:#6272a4></span>	str       nameOff
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> _type <span style=color:#000;font-weight:700>struct</span> {
+	size       <span style=color:#458;font-weight:700>uintptr</span>   <span style=color:#998;font-style:italic>// 类型大小
+</span><span style=color:#998;font-style:italic></span>	ptrdata    <span style=color:#458;font-weight:700>uintptr</span>   <span style=color:#998;font-style:italic>// size of memory prefix holding all pointers
+</span><span style=color:#998;font-style:italic></span>	hash       <span style=color:#458;font-weight:700>uint32</span>    <span style=color:#998;font-style:italic>// 哈希值
+</span><span style=color:#998;font-style:italic></span>	tflag      tflag     <span style=color:#998;font-style:italic>// 类型的flag，与反射相关
+</span><span style=color:#998;font-style:italic></span>	align      <span style=color:#458;font-weight:700>uint8</span>     <span style=color:#998;font-style:italic>// 内存对齐相关
+</span><span style=color:#998;font-style:italic></span>	fieldalign <span style=color:#458;font-weight:700>uint8</span>     <span style=color:#998;font-style:italic>// 内存对齐相关
+</span><span style=color:#998;font-style:italic></span>	kind       <span style=color:#458;font-weight:700>uint8</span>     <span style=color:#998;font-style:italic>// 类型的编号
+</span><span style=color:#998;font-style:italic></span>	alg        <span style=color:#000;font-weight:700>*</span>typeAlg  <span style=color:#998;font-style:italic>// 类型的编号相关
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// gcdata stores the GC type data for the garbage collector.
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// If the KindGCProg bit is set in kind, gcdata is a GC program.
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// Otherwise it is a ptrmask bitmap. See mbitmap.go for details.
+</span><span style=color:#998;font-style:italic></span>	gcdata    <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>byte</span>      <span style=color:#998;font-style:italic>// 以下就是gc相关
+</span><span style=color:#998;font-style:italic></span>	str       nameOff
 	ptrToThis typeOff
 }
 </code></pre></div><p><code>Go</code>语言各种数据类型都是在 <code>_type</code> 字段的基础上，增加一些额外的字段来进行管理的。</p>
 <p>非空<code>interface</code>的实现(src\runtime\runtime2.go line 192左右):</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> iface <span style=color:#8be9fd;font-style:italic>struct</span> {
-	tab  <span style=color:#ff79c6>*</span>itab
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> iface <span style=color:#000;font-weight:700>struct</span> {
+	tab  <span style=color:#000;font-weight:700>*</span>itab
 	data unsafe.Pointer
 }
 
-<span style=color:#8be9fd;font-style:italic>type</span> itab <span style=color:#8be9fd;font-style:italic>struct</span> {
-	inter <span style=color:#ff79c6>*</span>interfacetype
-	_type <span style=color:#ff79c6>*</span>_type
-	hash  <span style=color:#8be9fd>uint32</span>     <span style=color:#6272a4>// copy of _type.hash. Used for type switches.
-</span><span style=color:#6272a4></span>	_     [<span style=color:#bd93f9>4</span>]<span style=color:#8be9fd>byte</span>
-	fun   [<span style=color:#bd93f9>1</span>]<span style=color:#8be9fd>uintptr</span> <span style=color:#6272a4>// variable sized. fun[0]==0 means _type does not implement inter.
-</span><span style=color:#6272a4></span>}
+<span style=color:#000;font-weight:700>type</span> itab <span style=color:#000;font-weight:700>struct</span> {
+	inter <span style=color:#000;font-weight:700>*</span>interfacetype
+	_type <span style=color:#000;font-weight:700>*</span>_type
+	hash  <span style=color:#458;font-weight:700>uint32</span>     <span style=color:#998;font-style:italic>// copy of _type.hash. Used for type switches.
+</span><span style=color:#998;font-style:italic></span>	_     [<span style=color:#099>4</span>]<span style=color:#458;font-weight:700>byte</span>
+	fun   [<span style=color:#099>1</span>]<span style=color:#458;font-weight:700>uintptr</span> <span style=color:#998;font-style:italic>// variable sized. fun[0]==0 means _type does not implement inter.
+</span><span style=color:#998;font-style:italic></span>}
 </code></pre></div><p>第一个<code>itab</code>中存放了类型信息，还有一个<code>fun</code>表示方法表。<code>fun</code> 数组的大小为 1，这里存储的是第一个方法的函数指针， 如果有更多的方法，在它之后的内存空间里继续存储。 从汇编角度来看，通过增加地址就能获取到这些函数指针，没什么影响。顺便提一句，这些方法是按照函数名称的字典序进行排列的。</p>
 <p><code>interfacetype</code>类型，src\runtime\type.go line 390左右：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> interfacetype <span style=color:#8be9fd;font-style:italic>struct</span> {
-	typ     _type       <span style=color:#6272a4>// 包装了 _type 类型
-</span><span style=color:#6272a4></span>	pkgpath name        <span style=color:#6272a4>// 接口所定义的函数列表
-</span><span style=color:#6272a4></span>	mhdr    []imethod   <span style=color:#6272a4>// 记录定义了接口的包名
-</span><span style=color:#6272a4></span>}
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> interfacetype <span style=color:#000;font-weight:700>struct</span> {
+	typ     _type       <span style=color:#998;font-style:italic>// 包装了 _type 类型
+</span><span style=color:#998;font-style:italic></span>	pkgpath name        <span style=color:#998;font-style:italic>// 接口所定义的函数列表
+</span><span style=color:#998;font-style:italic></span>	mhdr    []imethod   <span style=color:#998;font-style:italic>// 记录定义了接口的包名
+</span><span style=color:#998;font-style:italic></span>}
 </code></pre></div><h3 id=interface的构造过程>Interface的构造过程</h3>
 <p>先来看看这个例子（方便观察加上了行号）：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#bd93f9>1</span> <span style=color:#ff79c6>package</span> main
-<span style=color:#bd93f9>2</span>
-<span style=color:#bd93f9>3</span> <span style=color:#ff79c6>import</span> (
-<span style=color:#bd93f9>4</span>     <span style=color:#f1fa8c>&#34;strconv&#34;</span>
-<span style=color:#bd93f9>5</span>     <span style=color:#f1fa8c>&#34;fmt&#34;</span>
-<span style=color:#bd93f9>6</span> )
-<span style=color:#bd93f9>7</span>
-<span style=color:#bd93f9>8</span> <span style=color:#8be9fd;font-style:italic>type</span> Stringer <span style=color:#8be9fd;font-style:italic>interface</span> {
-<span style=color:#bd93f9>9</span>     <span style=color:#50fa7b>String</span>() <span style=color:#8be9fd>string</span>
-<span style=color:#bd93f9>10</span> }
-<span style=color:#bd93f9>11</span>
-<span style=color:#bd93f9>12</span> <span style=color:#8be9fd;font-style:italic>type</span> Binary <span style=color:#8be9fd>uint64</span>
-<span style=color:#bd93f9>13</span>
-<span style=color:#bd93f9>14</span> <span style=color:#8be9fd;font-style:italic>func</span> (i Binary) <span style=color:#50fa7b>String</span>() <span style=color:#8be9fd>string</span> {
-<span style=color:#bd93f9>15</span>     <span style=color:#ff79c6>return</span> strconv.<span style=color:#50fa7b>FormatUint</span>(i.<span style=color:#50fa7b>Get</span>(), <span style=color:#bd93f9>2</span>)
-<span style=color:#bd93f9>16</span> }
-<span style=color:#bd93f9>17</span>
-<span style=color:#bd93f9>18</span> <span style=color:#8be9fd;font-style:italic>func</span> (i Binary) <span style=color:#50fa7b>Get</span>() <span style=color:#8be9fd>uint64</span> {
-<span style=color:#bd93f9>19</span>     <span style=color:#ff79c6>return</span> <span style=color:#8be9fd;font-style:italic>uint64</span>(i)
-<span style=color:#bd93f9>20</span> }
-<span style=color:#bd93f9>21</span>
-<span style=color:#bd93f9>22</span> <span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>main</span>() {
-<span style=color:#bd93f9>23</span>     b <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>Binary</span>(<span style=color:#bd93f9>200</span>)
-<span style=color:#bd93f9>24</span>     s <span style=color:#ff79c6>:=</span> <span style=color:#50fa7b>Stringer</span>(b)
-<span style=color:#bd93f9>25</span>     fmt.<span style=color:#50fa7b>Println</span>(s.<span style=color:#50fa7b>String</span>())  <span style=color:#6272a4>// 输出11001000
-</span><span style=color:#6272a4></span><span style=color:#bd93f9>26</span> }
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#099>1</span> <span style=color:#000;font-weight:700>package</span> main
+<span style=color:#099>2</span>
+<span style=color:#099>3</span> <span style=color:#000;font-weight:700>import</span> (
+<span style=color:#099>4</span>     <span style=color:#d14>&#34;strconv&#34;</span>
+<span style=color:#099>5</span>     <span style=color:#d14>&#34;fmt&#34;</span>
+<span style=color:#099>6</span> )
+<span style=color:#099>7</span>
+<span style=color:#099>8</span> <span style=color:#000;font-weight:700>type</span> Stringer <span style=color:#000;font-weight:700>interface</span> {
+<span style=color:#099>9</span>     <span style=color:#900;font-weight:700>String</span>() <span style=color:#458;font-weight:700>string</span>
+<span style=color:#099>10</span> }
+<span style=color:#099>11</span>
+<span style=color:#099>12</span> <span style=color:#000;font-weight:700>type</span> Binary <span style=color:#458;font-weight:700>uint64</span>
+<span style=color:#099>13</span>
+<span style=color:#099>14</span> <span style=color:#000;font-weight:700>func</span> (i Binary) <span style=color:#900;font-weight:700>String</span>() <span style=color:#458;font-weight:700>string</span> {
+<span style=color:#099>15</span>     <span style=color:#000;font-weight:700>return</span> strconv.<span style=color:#900;font-weight:700>FormatUint</span>(i.<span style=color:#900;font-weight:700>Get</span>(), <span style=color:#099>2</span>)
+<span style=color:#099>16</span> }
+<span style=color:#099>17</span>
+<span style=color:#099>18</span> <span style=color:#000;font-weight:700>func</span> (i Binary) <span style=color:#900;font-weight:700>Get</span>() <span style=color:#458;font-weight:700>uint64</span> {
+<span style=color:#099>19</span>     <span style=color:#000;font-weight:700>return</span> <span style=color:#0086b3>uint64</span>(i)
+<span style=color:#099>20</span> }
+<span style=color:#099>21</span>
+<span style=color:#099>22</span> <span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>() {
+<span style=color:#099>23</span>     b <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>Binary</span>(<span style=color:#099>200</span>)
+<span style=color:#099>24</span>     s <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>Stringer</span>(b)
+<span style=color:#099>25</span>     fmt.<span style=color:#900;font-weight:700>Println</span>(s.<span style=color:#900;font-weight:700>String</span>())  <span style=color:#998;font-style:italic>// 输出11001000
+</span><span style=color:#998;font-style:italic></span><span style=color:#099>26</span> }
 </code></pre></div><p>执行命令： <code>go tool compile -S gotest.go > main.txt</code></p>
 <p>其中一段<code>main</code>函数的汇编代码如下：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#f1fa8c>&#34;&#34;</span>.main STEXT size=<span style=color:#bd93f9>210</span> args=<span style=color:#bd93f9>0x0</span> locals=<span style=color:#bd93f9>0x58</span>
-	<span style=color:#bd93f9>0x0000</span> <span style=color:#bd93f9>00000</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	TEXT	<span style=color:#f1fa8c>&#34;&#34;</span>.<span style=color:#50fa7b>main</span>(SB), ABIInternal, $<span style=color:#bd93f9>88</span><span style=color:#ff79c6>-</span><span style=color:#bd93f9>0</span>
-	<span style=color:#bd93f9>0x0000</span> <span style=color:#bd93f9>00000</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	MOVQ	TLS, CX
-	<span style=color:#bd93f9>0x0009</span> <span style=color:#bd93f9>0000</span><span style=color:#bd93f9>9</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	<span style=color:#50fa7b>MOVQ</span>	(CX)(TLS<span style=color:#ff79c6>*</span><span style=color:#bd93f9>2</span>), CX
-	<span style=color:#bd93f9>0x0010</span> <span style=color:#bd93f9>00016</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	CMPQ	SP, <span style=color:#bd93f9>16</span>(CX)
-	<span style=color:#bd93f9>0x0014</span> <span style=color:#bd93f9>00020</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	JLS	<span style=color:#bd93f9>200</span>
-	<span style=color:#bd93f9>0x001a</span> <span style=color:#bd93f9>00026</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	SUBQ	$<span style=color:#bd93f9>88</span>, SP
-	<span style=color:#bd93f9>0x001e</span> <span style=color:#bd93f9>00030</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	MOVQ	BP, <span style=color:#bd93f9>80</span>(SP)
-	<span style=color:#bd93f9>0x0023</span> <span style=color:#bd93f9>00035</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	LEAQ	<span style=color:#bd93f9>80</span>(SP), BP
-	<span style=color:#bd93f9>0x0028</span> <span style=color:#bd93f9>00040</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	FUNCDATA	$<span style=color:#bd93f9>0</span>, gclocals·<span style=color:#bd93f9>69</span><span style=color:#50fa7b>c1753bd5f81501d95132d08af04464</span>(SB)
-	<span style=color:#bd93f9>0x0028</span> <span style=color:#bd93f9>00040</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	FUNCDATA	$<span style=color:#bd93f9>1</span>, gclocals·<span style=color:#bd93f9>568470801006e5</span><span style=color:#50fa7b>c0dc3947ea998fe279</span>(SB)
-	<span style=color:#bd93f9>0x0028</span> <span style=color:#bd93f9>00040</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	FUNCDATA	$<span style=color:#bd93f9>2</span>, gclocals·<span style=color:#50fa7b>bfec7e55b3f043d1941c093912808913</span>(SB)
-	<span style=color:#bd93f9>0x0028</span> <span style=color:#bd93f9>00040</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>22</span>)	FUNCDATA	$<span style=color:#bd93f9>3</span>, <span style=color:#f1fa8c>&#34;&#34;</span>.main.<span style=color:#50fa7b>stkobj</span>(SB)
-	<span style=color:#bd93f9>0x0028</span> <span style=color:#bd93f9>00040</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>24</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>0</span>
-	<span style=color:#bd93f9>0x0028</span> <span style=color:#bd93f9>00040</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>24</span>)	PCDATA	$<span style=color:#bd93f9>1</span>, $<span style=color:#bd93f9>0</span>
-	<span style=color:#bd93f9>0x0028</span> <span style=color:#bd93f9>00040</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>24</span>)	MOVQ	$<span style=color:#bd93f9>200</span>, (SP)
-	<span style=color:#bd93f9>0x0030</span> <span style=color:#bd93f9>0004</span><span style=color:#bd93f9>8</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>24</span>)	CALL	runtime.<span style=color:#50fa7b>convT64</span>(SB)                      <span style=color:#6272a4>// 首先将200转换为int64类型，这里会构造出一个inteface
-</span><span style=color:#6272a4></span>	<span style=color:#bd93f9>0x0035</span> <span style=color:#bd93f9>00053</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-	<span style=color:#bd93f9>0x0035</span> <span style=color:#bd93f9>00053</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	LEAQ	<span style=color:#ff79c6>go</span>.itab.<span style=color:#f1fa8c>&#34;&#34;</span>.Binary,<span style=color:#f1fa8c>&#34;&#34;</span>.<span style=color:#50fa7b>Stringer</span>(SB), AX    <span style=color:#6272a4>// 
-</span><span style=color:#6272a4></span>	<span style=color:#bd93f9>0x003c</span> <span style=color:#bd93f9>00060</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>0</span>
-	<span style=color:#bd93f9>0x003c</span> <span style=color:#bd93f9>00060</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	TESTB	AL, (AX)
-	<span style=color:#bd93f9>0x003e</span> <span style=color:#bd93f9>00062</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>24</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-	<span style=color:#bd93f9>0x003e</span> <span style=color:#bd93f9>00062</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>24</span>)	MOVQ	<span style=color:#bd93f9>8</span>(SP), AX
-	<span style=color:#bd93f9>0x0043</span> <span style=color:#bd93f9>00067</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVQ	<span style=color:#ff79c6>go</span>.itab.<span style=color:#f1fa8c>&#34;&#34;</span>.Binary,<span style=color:#f1fa8c>&#34;&#34;</span>.Stringer<span style=color:#ff79c6>+</span><span style=color:#bd93f9>24</span>(SB), CX <span style=color:#6272a4>// 将Stringer.String函数地址放进 CX
-</span><span style=color:#6272a4></span>	<span style=color:#bd93f9>0x004a</span> <span style=color:#bd93f9>00074</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>0</span>
-	<span style=color:#bd93f9>0x004a</span> <span style=color:#bd93f9>00074</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVQ	AX, (SP)
-	<span style=color:#bd93f9>0x004e</span> <span style=color:#bd93f9>0007</span><span style=color:#bd93f9>8</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	CALL	CX                                       <span style=color:#6272a4>// 调用Stringer.String
-</span><span style=color:#6272a4></span>	<span style=color:#bd93f9>0x0050</span> <span style=color:#bd93f9>000</span><span style=color:#bd93f9>80</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-	<span style=color:#bd93f9>0x0050</span> <span style=color:#bd93f9>000</span><span style=color:#bd93f9>80</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVQ	<span style=color:#bd93f9>8</span>(SP), AX
-	<span style=color:#bd93f9>0x0055</span> <span style=color:#bd93f9>000</span><span style=color:#bd93f9>85</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVQ	<span style=color:#bd93f9>16</span>(SP), CX
-	<span style=color:#bd93f9>0x005a</span> <span style=color:#bd93f9>000</span><span style=color:#bd93f9>90</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>0</span>
-	<span style=color:#bd93f9>0x005a</span> <span style=color:#bd93f9>000</span><span style=color:#bd93f9>90</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVQ	AX, (SP)
-	<span style=color:#bd93f9>0x005e</span> <span style=color:#bd93f9>000</span><span style=color:#bd93f9>94</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVQ	CX, <span style=color:#bd93f9>8</span>(SP)
-	<span style=color:#bd93f9>0x0063</span> <span style=color:#bd93f9>000</span><span style=color:#bd93f9>99</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	CALL	runtime.<span style=color:#50fa7b>convTstring</span>(SB)                  <span style=color:#6272a4>// 函数strconv.FormatUint内部的转换
-</span><span style=color:#6272a4></span>	<span style=color:#bd93f9>0x0068</span> <span style=color:#bd93f9>00104</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-	<span style=color:#bd93f9>0x0068</span> <span style=color:#bd93f9>00104</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVQ	<span style=color:#bd93f9>16</span>(SP), AX
-	<span style=color:#bd93f9>0x006d</span> <span style=color:#bd93f9>0010</span><span style=color:#bd93f9>9</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>1</span>, $<span style=color:#bd93f9>1</span>
-	<span style=color:#bd93f9>0x006d</span> <span style=color:#bd93f9>0010</span><span style=color:#bd93f9>9</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	XORPS	X0, X0
-	<span style=color:#bd93f9>0x0070</span> <span style=color:#bd93f9>00112</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVUPS	X0, <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_16<span style=color:#ff79c6>+</span><span style=color:#bd93f9>64</span>(SP)
-	<span style=color:#bd93f9>0x0075</span> <span style=color:#bd93f9>00117</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>2</span>
-	<span style=color:#bd93f9>0x0075</span> <span style=color:#bd93f9>00117</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	LEAQ	<span style=color:#8be9fd;font-style:italic>type</span>.<span style=color:#8be9fd;font-style:italic>string</span>(SB), CX
-	<span style=color:#bd93f9>0x007c</span> <span style=color:#bd93f9>00124</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>1</span>
-	<span style=color:#bd93f9>0x007c</span> <span style=color:#bd93f9>00124</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVQ	CX, <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_16<span style=color:#ff79c6>+</span><span style=color:#bd93f9>64</span>(SP)
-	<span style=color:#bd93f9>0x0081</span> <span style=color:#bd93f9>0012</span><span style=color:#bd93f9>9</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	PCDATA	$<span style=color:#bd93f9>0</span>, $<span style=color:#bd93f9>0</span>
-	<span style=color:#bd93f9>0x0081</span> <span style=color:#bd93f9>0012</span><span style=color:#bd93f9>9</span> (gotest.<span style=color:#ff79c6>go</span>:<span style=color:#bd93f9>25</span>)	MOVQ	AX, <span style=color:#f1fa8c>&#34;&#34;</span>..autotmp_16<span style=color:#ff79c6>+</span><span style=color:#bd93f9>72</span>(SP)
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#d14>&#34;&#34;</span>.main STEXT size=<span style=color:#099>210</span> args=<span style=color:#099>0x0</span> locals=<span style=color:#099>0x58</span>
+	<span style=color:#099>0x0000</span> <span style=color:#099>00000</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	TEXT	<span style=color:#d14>&#34;&#34;</span>.<span style=color:#900;font-weight:700>main</span>(SB), ABIInternal, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>88</span><span style=color:#000;font-weight:700>-</span><span style=color:#099>0</span>
+	<span style=color:#099>0x0000</span> <span style=color:#099>00000</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	MOVQ	TLS, CX
+	<span style=color:#099>0x0009</span> <span style=color:#099>0000</span><span style=color:#099>9</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	<span style=color:#900;font-weight:700>MOVQ</span>	(CX)(TLS<span style=color:#000;font-weight:700>*</span><span style=color:#099>2</span>), CX
+	<span style=color:#099>0x0010</span> <span style=color:#099>00016</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	CMPQ	SP, <span style=color:#099>16</span>(CX)
+	<span style=color:#099>0x0014</span> <span style=color:#099>00020</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	JLS	<span style=color:#099>200</span>
+	<span style=color:#099>0x001a</span> <span style=color:#099>00026</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	SUBQ	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>88</span>, SP
+	<span style=color:#099>0x001e</span> <span style=color:#099>00030</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	MOVQ	BP, <span style=color:#099>80</span>(SP)
+	<span style=color:#099>0x0023</span> <span style=color:#099>00035</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	LEAQ	<span style=color:#099>80</span>(SP), BP
+	<span style=color:#099>0x0028</span> <span style=color:#099>00040</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	FUNCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, gclocals<span style=color:#a61717;background-color:#e3d2d2>·</span><span style=color:#099>69</span><span style=color:#900;font-weight:700>c1753bd5f81501d95132d08af04464</span>(SB)
+	<span style=color:#099>0x0028</span> <span style=color:#099>00040</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	FUNCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>, gclocals<span style=color:#a61717;background-color:#e3d2d2>·</span><span style=color:#099>568470801006e5</span><span style=color:#900;font-weight:700>c0dc3947ea998fe279</span>(SB)
+	<span style=color:#099>0x0028</span> <span style=color:#099>00040</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	FUNCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>2</span>, gclocals<span style=color:#a61717;background-color:#e3d2d2>·</span><span style=color:#900;font-weight:700>bfec7e55b3f043d1941c093912808913</span>(SB)
+	<span style=color:#099>0x0028</span> <span style=color:#099>00040</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>22</span>)	FUNCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>3</span>, <span style=color:#d14>&#34;&#34;</span>.main.<span style=color:#900;font-weight:700>stkobj</span>(SB)
+	<span style=color:#099>0x0028</span> <span style=color:#099>00040</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>24</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>
+	<span style=color:#099>0x0028</span> <span style=color:#099>00040</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>24</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>
+	<span style=color:#099>0x0028</span> <span style=color:#099>00040</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>24</span>)	MOVQ	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>200</span>, (SP)
+	<span style=color:#099>0x0030</span> <span style=color:#099>0004</span><span style=color:#099>8</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>24</span>)	CALL	runtime.<span style=color:#900;font-weight:700>convT64</span>(SB)                      <span style=color:#998;font-style:italic>// 首先将200转换为int64类型，这里会构造出一个inteface
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#099>0x0035</span> <span style=color:#099>00053</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+	<span style=color:#099>0x0035</span> <span style=color:#099>00053</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	LEAQ	<span style=color:#000;font-weight:700>go</span>.itab.<span style=color:#d14>&#34;&#34;</span>.Binary,<span style=color:#d14>&#34;&#34;</span>.<span style=color:#900;font-weight:700>Stringer</span>(SB), AX    <span style=color:#998;font-style:italic>// 
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#099>0x003c</span> <span style=color:#099>00060</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>
+	<span style=color:#099>0x003c</span> <span style=color:#099>00060</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	TESTB	AL, (AX)
+	<span style=color:#099>0x003e</span> <span style=color:#099>00062</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>24</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+	<span style=color:#099>0x003e</span> <span style=color:#099>00062</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>24</span>)	MOVQ	<span style=color:#099>8</span>(SP), AX
+	<span style=color:#099>0x0043</span> <span style=color:#099>00067</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVQ	<span style=color:#000;font-weight:700>go</span>.itab.<span style=color:#d14>&#34;&#34;</span>.Binary,<span style=color:#d14>&#34;&#34;</span>.Stringer<span style=color:#000;font-weight:700>+</span><span style=color:#099>24</span>(SB), CX <span style=color:#998;font-style:italic>// 将Stringer.String函数地址放进 CX
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#099>0x004a</span> <span style=color:#099>00074</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>
+	<span style=color:#099>0x004a</span> <span style=color:#099>00074</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVQ	AX, (SP)
+	<span style=color:#099>0x004e</span> <span style=color:#099>0007</span><span style=color:#099>8</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	CALL	CX                                       <span style=color:#998;font-style:italic>// 调用Stringer.String
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#099>0x0050</span> <span style=color:#099>000</span><span style=color:#099>80</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+	<span style=color:#099>0x0050</span> <span style=color:#099>000</span><span style=color:#099>80</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVQ	<span style=color:#099>8</span>(SP), AX
+	<span style=color:#099>0x0055</span> <span style=color:#099>000</span><span style=color:#099>85</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVQ	<span style=color:#099>16</span>(SP), CX
+	<span style=color:#099>0x005a</span> <span style=color:#099>000</span><span style=color:#099>90</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>
+	<span style=color:#099>0x005a</span> <span style=color:#099>000</span><span style=color:#099>90</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVQ	AX, (SP)
+	<span style=color:#099>0x005e</span> <span style=color:#099>000</span><span style=color:#099>94</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVQ	CX, <span style=color:#099>8</span>(SP)
+	<span style=color:#099>0x0063</span> <span style=color:#099>000</span><span style=color:#099>99</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	CALL	runtime.<span style=color:#900;font-weight:700>convTstring</span>(SB)                  <span style=color:#998;font-style:italic>// 函数strconv.FormatUint内部的转换
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#099>0x0068</span> <span style=color:#099>00104</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+	<span style=color:#099>0x0068</span> <span style=color:#099>00104</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVQ	<span style=color:#099>16</span>(SP), AX
+	<span style=color:#099>0x006d</span> <span style=color:#099>0010</span><span style=color:#099>9</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+	<span style=color:#099>0x006d</span> <span style=color:#099>0010</span><span style=color:#099>9</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	XORPS	X0, X0
+	<span style=color:#099>0x0070</span> <span style=color:#099>00112</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVUPS	X0, <span style=color:#d14>&#34;&#34;</span>..autotmp_16<span style=color:#000;font-weight:700>+</span><span style=color:#099>64</span>(SP)
+	<span style=color:#099>0x0075</span> <span style=color:#099>00117</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>2</span>
+	<span style=color:#099>0x0075</span> <span style=color:#099>00117</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	LEAQ	<span style=color:#000;font-weight:700>type</span>.<span style=color:#0086b3>string</span>(SB), CX
+	<span style=color:#099>0x007c</span> <span style=color:#099>00124</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>1</span>
+	<span style=color:#099>0x007c</span> <span style=color:#099>00124</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVQ	CX, <span style=color:#d14>&#34;&#34;</span>..autotmp_16<span style=color:#000;font-weight:700>+</span><span style=color:#099>64</span>(SP)
+	<span style=color:#099>0x0081</span> <span style=color:#099>0012</span><span style=color:#099>9</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	PCDATA	<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>, <span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span>
+	<span style=color:#099>0x0081</span> <span style=color:#099>0012</span><span style=color:#099>9</span> (gotest.<span style=color:#000;font-weight:700>go</span>:<span style=color:#099>25</span>)	MOVQ	AX, <span style=color:#d14>&#34;&#34;</span>..autotmp_16<span style=color:#000;font-weight:700>+</span><span style=color:#099>72</span>(SP)
 </code></pre></div><p>查看<code>go.itab.””.Binary,””.Stringer(SB)</code>这个地方：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#ff79c6>go</span>.itab.<span style=color:#f1fa8c>&#34;&#34;</span>.Binary,<span style=color:#f1fa8c>&#34;&#34;</span>.Stringer SRODATA dupok size=<span style=color:#bd93f9>32</span>
-	<span style=color:#bd93f9>0x0000</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span>  <span style=color:#ff79c6>...............</span>.
-	<span style=color:#bd93f9>0x0010</span> <span style=color:#bd93f9>3</span>b <span style=color:#bd93f9>3</span>d <span style=color:#bd93f9>72</span> <span style=color:#bd93f9>44</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span> <span style=color:#bd93f9>00</span>  ;=rD<span style=color:#ff79c6>............</span>
-	rel <span style=color:#bd93f9>0</span><span style=color:#ff79c6>+</span><span style=color:#bd93f9>8</span> t=<span style=color:#bd93f9>1</span> <span style=color:#8be9fd;font-style:italic>type</span>.<span style=color:#f1fa8c>&#34;&#34;</span>.Stringer<span style=color:#ff79c6>+</span><span style=color:#bd93f9>0</span>
-	rel <span style=color:#bd93f9>8</span><span style=color:#ff79c6>+</span><span style=color:#bd93f9>8</span> t=<span style=color:#bd93f9>1</span> <span style=color:#8be9fd;font-style:italic>type</span>.<span style=color:#f1fa8c>&#34;&#34;</span>.Binary<span style=color:#ff79c6>+</span><span style=color:#bd93f9>0</span>
-	rel <span style=color:#bd93f9>24</span><span style=color:#ff79c6>+</span><span style=color:#bd93f9>8</span> t=<span style=color:#bd93f9>1</span> <span style=color:#f1fa8c>&#34;&#34;</span>.(<span style=color:#ff79c6>*</span>Binary).String<span style=color:#ff79c6>+</span><span style=color:#bd93f9>0</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>go</span>.itab.<span style=color:#d14>&#34;&#34;</span>.Binary,<span style=color:#d14>&#34;&#34;</span>.Stringer SRODATA dupok size=<span style=color:#099>32</span>
+	<span style=color:#099>0x0000</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span>  <span style=color:#000;font-weight:700>...............</span>.
+	<span style=color:#099>0x0010</span> <span style=color:#099>3</span>b <span style=color:#099>3</span>d <span style=color:#099>72</span> <span style=color:#099>44</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span> <span style=color:#099>00</span>  ;=rD<span style=color:#000;font-weight:700>............</span>
+	rel <span style=color:#099>0</span><span style=color:#000;font-weight:700>+</span><span style=color:#099>8</span> t=<span style=color:#099>1</span> <span style=color:#000;font-weight:700>type</span>.<span style=color:#d14>&#34;&#34;</span>.Stringer<span style=color:#000;font-weight:700>+</span><span style=color:#099>0</span>
+	rel <span style=color:#099>8</span><span style=color:#000;font-weight:700>+</span><span style=color:#099>8</span> t=<span style=color:#099>1</span> <span style=color:#000;font-weight:700>type</span>.<span style=color:#d14>&#34;&#34;</span>.Binary<span style=color:#000;font-weight:700>+</span><span style=color:#099>0</span>
+	rel <span style=color:#099>24</span><span style=color:#000;font-weight:700>+</span><span style=color:#099>8</span> t=<span style=color:#099>1</span> <span style=color:#d14>&#34;&#34;</span>.(<span style=color:#000;font-weight:700>*</span>Binary).String<span style=color:#000;font-weight:700>+</span><span style=color:#099>0</span>
 </code></pre></div><p><code>size</code>大小为32<code>Byte</code>：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>type</span> itab <span style=color:#8be9fd;font-style:italic>struct</span> {
-	inter <span style=color:#ff79c6>*</span>interfacetype  <span style=color:#6272a4>// 8 Byte (64位机子，指针)
-</span><span style=color:#6272a4></span>	_type <span style=color:#ff79c6>*</span>_type          <span style=color:#6272a4>// 8 Byte (64位机子，指针)
-</span><span style=color:#6272a4></span>	hash  <span style=color:#8be9fd>uint32</span>          <span style=color:#6272a4>// 4 Byte
-</span><span style=color:#6272a4></span>	_     [<span style=color:#bd93f9>4</span>]<span style=color:#8be9fd>byte</span>         <span style=color:#6272a4>// 4 Byte
-</span><span style=color:#6272a4></span>	fun   [<span style=color:#bd93f9>1</span>]<span style=color:#8be9fd>uintptr</span>      <span style=color:#6272a4>// 8 Byte
-</span><span style=color:#6272a4></span>}
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>type</span> itab <span style=color:#000;font-weight:700>struct</span> {
+	inter <span style=color:#000;font-weight:700>*</span>interfacetype  <span style=color:#998;font-style:italic>// 8 Byte (64位机子，指针)
+</span><span style=color:#998;font-style:italic></span>	_type <span style=color:#000;font-weight:700>*</span>_type          <span style=color:#998;font-style:italic>// 8 Byte (64位机子，指针)
+</span><span style=color:#998;font-style:italic></span>	hash  <span style=color:#458;font-weight:700>uint32</span>          <span style=color:#998;font-style:italic>// 4 Byte
+</span><span style=color:#998;font-style:italic></span>	_     [<span style=color:#099>4</span>]<span style=color:#458;font-weight:700>byte</span>         <span style=color:#998;font-style:italic>// 4 Byte
+</span><span style=color:#998;font-style:italic></span>	fun   [<span style=color:#099>1</span>]<span style=color:#458;font-weight:700>uintptr</span>      <span style=color:#998;font-style:italic>// 8 Byte
+</span><span style=color:#998;font-style:italic></span>}
 </code></pre></div><p>每个字段相加，就是<code>itab</code>结构体的大小32字节，那串数字是<code>itab</code>序列化后的内容，可以对应找出<code>hash</code>值，在判断两个类型是否相同的时候会用这个值比较。</p>
 <p>对于<code>Binary</code>，作为一个64位整数，可以这么表示:</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-javascript data-lang=javascript>b <span style=color:#ff79c6>:=</span> Binary(<span style=color:#bd93f9>200</span>)
-	<span style=color:#ff79c6>+==========+</span>
-	<span style=color:#ff79c6>|</span>   <span style=color:#bd93f9>200</span>    <span style=color:#ff79c6>|</span> 
-	<span style=color:#ff79c6>+==========+</span>
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-javascript data-lang=javascript>b <span style=color:#000;font-weight:700>:=</span> Binary(<span style=color:#099>200</span>)
+	<span style=color:#000;font-weight:700>+==========+</span>
+	<span style=color:#000;font-weight:700>|</span>   <span style=color:#099>200</span>    <span style=color:#000;font-weight:700>|</span> 
+	<span style=color:#000;font-weight:700>+==========+</span>
       int64
 </code></pre></div><p>对于<code>s := Stringer(b)</code>，可以如下表示：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>s :<span style=color:#ff79c6>=</span> Stringer<span style=color:#ff79c6>(</span>b<span style=color:#ff79c6>)</span>
-+<span style=color:#ff79c6>========</span>+           itab
-| tab    | ----&gt;  +<span style=color:#ff79c6>=======</span>+
-+<span style=color:#ff79c6>========</span>+        | inter | 
-| data   |---&gt;200 +<span style=color:#ff79c6>=======</span>+
-+<span style=color:#ff79c6>========</span>+        |  <span style=color:#8be9fd;font-style:italic>type</span> | ---&gt; Stringer.Binary
-                  +<span style=color:#ff79c6>=======</span>+      +<span style=color:#ff79c6>=======</span>+
-                                 | <span style=color:#8be9fd;font-style:italic>hash</span>  |
-                                 +<span style=color:#ff79c6>=======</span>+
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>s :<span style=color:#000;font-weight:700>=</span> Stringer<span style=color:#000;font-weight:700>(</span>b<span style=color:#000;font-weight:700>)</span>
++<span style=color:#000;font-weight:700>========</span>+           itab
+| tab    | ----&gt;  +<span style=color:#000;font-weight:700>=======</span>+
++<span style=color:#000;font-weight:700>========</span>+        | inter | 
+| data   |---&gt;200 +<span style=color:#000;font-weight:700>=======</span>+
++<span style=color:#000;font-weight:700>========</span>+        |  <span style=color:#0086b3>type</span> | ---&gt; Stringer.Binary
+                  +<span style=color:#000;font-weight:700>=======</span>+      +<span style=color:#000;font-weight:700>=======</span>+
+                                 | <span style=color:#0086b3>hash</span>  |
+                                 +<span style=color:#000;font-weight:700>=======</span>+
                                  |  fun  | ---&gt; *Binary.String
-                                 +<span style=color:#ff79c6>=======</span>+
+                                 +<span style=color:#000;font-weight:700>=======</span>+
 </code></pre></div><p>那么对于<code>s</code>来说 <code>itab</code>中的<code>inter</code>表示的是<code>Stringer</code>这个接口，<code>type</code>表示的是<code>Binary</code>这个动态类型，<code>fun</code>函数表中存放的就是<code>Binary</code>中实现了<code>String</code>而接口的方法地址。</p>
 <p>对于接口的<code>type-switch</code>，返回的就是静态类型 对于反射里面的<code>TypeOf</code>，返回的是动态类型，也就是数据真实的类型。</p>
 <p>对于调用<code>s.String()</code>方法，其实就是 <code>s.itab->fun[0]</code>。</p>
 <h3 id=划重点>划重点</h3>
 <p>这里就引出一个需要注意的地方：，<code>var a interface{}</code> 这个地方用<code>if a == nil</code>是可以判断的， 但是如果使用其他类型的<code>nil</code>指针赋给<code>interface</code>：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>var</span> b <span style=color:#ff79c6>*</span>Binary = <span style=color:#ff79c6>nil</span>
-<span style=color:#8be9fd;font-style:italic>var</span> a <span style=color:#8be9fd;font-style:italic>interface</span>{} = b
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>var</span> b <span style=color:#000;font-weight:700>*</span>Binary = <span style=color:#000;font-weight:700>nil</span>
+<span style=color:#000;font-weight:700>var</span> a <span style=color:#000;font-weight:700>interface</span>{} = b
 </code></pre></div><p>这时候<code>if a == nil</code>就不会成立的，即使<code>b</code>为<code>nil</code>，这是因为这个时候<code>a</code>的结构如下：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>   <span style=color:#8be9fd;font-style:italic>a</span>
-<span style=color:#ff79c6>+========</span>+               itab
-| tab    | -------&gt;   +<span style=color:#ff79c6>========</span>+
-+<span style=color:#ff79c6>========</span>+            |inter   | 
-| data   | ---&gt; <span style=color:#8be9fd;font-style:italic>nil</span>   <span style=color:#ff79c6>+========</span>+
-+<span style=color:#ff79c6>========</span>+            | <span style=color:#8be9fd;font-style:italic>type</span>   |
-                      +<span style=color:#ff79c6>========</span>+
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-shell data-lang=shell>   <span style=color:teal>a</span>
+<span style=color:#000;font-weight:700>+========</span>+               itab
+| tab    | -------&gt;   +<span style=color:#000;font-weight:700>========</span>+
++<span style=color:#000;font-weight:700>========</span>+            |inter   | 
+| data   | ---&gt; <span style=color:teal>nil</span>   <span style=color:#000;font-weight:700>+========</span>+
++<span style=color:#000;font-weight:700>========</span>+            | <span style=color:#0086b3>type</span>   |
+                      +<span style=color:#000;font-weight:700>========</span>+
                       |   ...  |
 </code></pre></div><p>所以这个时候把一个其他类型的<code>nil</code>指针赋值给<code>interface{}</code>的时候，<code>interface</code>并不是空，而是对<code>interface</code>进行了初始化，只不过<code>data</code>是<code>nil</code>而已。所有如果一个参数的返回值是<code>interface{}</code>或者其他有方法的<code>interface</code>，比如<code>error</code>等，所以一旦函数返回的是某种<code>interface</code>的时候，就需要注意，不要直接返回某种类型的空指针，需要转换成直接的<code>nil</code>进行赋值。如：</p>
-<div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#282a36;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#8be9fd;font-style:italic>func</span> <span style=color:#50fa7b>doSomething</span>() (<span style=color:#8be9fd;font-style:italic>interface</span>{}) {
-	<span style=color:#8be9fd;font-style:italic>var</span> a <span style=color:#ff79c6>*</span>Binary = <span style=color:#ff79c6>nil</span>
-	<span style=color:#6272a4>//do something
-</span><span style=color:#6272a4></span>	<span style=color:#ff79c6>return</span> a  <span style=color:#6272a4>// 这边应该判断a是nil然后直接返回nil
-</span><span style=color:#6272a4></span>}
+<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-Go data-lang=Go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>doSomething</span>() (<span style=color:#000;font-weight:700>interface</span>{}) {
+	<span style=color:#000;font-weight:700>var</span> a <span style=color:#000;font-weight:700>*</span>Binary = <span style=color:#000;font-weight:700>nil</span>
+	<span style=color:#998;font-style:italic>//do something
+</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>return</span> a  <span style=color:#998;font-style:italic>// 这边应该判断a是nil然后直接返回nil
+</span><span style=color:#998;font-style:italic></span>}
 </code></pre></div><h2 id=总结>总结</h2>
 <p>本片笔记主要记录一些<code>interface</code>的原理，若有什么不对的地方欢迎指正。 <code>iface</code>与<code>eface</code>的区别以及<code>convT2I</code>、<code>convT2E</code>函数的源码也没深入去了解，希望以后有时间可以看一看。</p>
 <p><em><strong>参考：</strong></em></p>
