@@ -21,8 +21,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -243,63 +245,63 @@ June 1, 2021
 <p><a href=https://hindung.oss-cn-beijing.aliyuncs.com/img/kubectl.png>kubectl🔗</a></p>
 <h2 id=有趣的kubectl命令>有趣的kubectl命令</h2>
 <h3 id=获取正在running的pod>获取正在Running的Pod</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get pods -A --field-selector<span style=color:#000;font-weight:700>=</span>status.phase<span style=color:#000;font-weight:700>==</span>Running
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get pods -A --field-selector<span class=o>=</span>status.phase<span class=o>==</span>Running
 NAMESPACE     NAME                                     READY   STATUS    RESTARTS   AGE
-kelu          cka2-75dbf7c54-gm4r4                     1/1     Running   <span style=color:#099>0</span>          23h
-kube-system   calico-kube-controllers-ccf66db4-cpvqp   1/1     Running   <span style=color:#099>0</span>          3d20h
-kube-system   calico-node-8d4th                        1/1     Running   <span style=color:#099>0</span>          3d2h
-kube-system   calico-node-szmzb                        1/1     Running   <span style=color:#099>0</span>          3d20h
+kelu          cka2-75dbf7c54-gm4r4                     1/1     Running   <span class=m>0</span>          23h
+kube-system   calico-kube-controllers-ccf66db4-cpvqp   1/1     Running   <span class=m>0</span>          3d20h
+kube-system   calico-node-8d4th                        1/1     Running   <span class=m>0</span>          3d2h
+kube-system   calico-node-szmzb                        1/1     Running   <span class=m>0</span>          3d20h
 </code></pre></div><h3 id=查看节点内存容量>查看节点内存容量</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get no -o json |    jq -r <span style=color:#d14>&#39;.items | sort_by(.status.capacity.memory)[]|[.metadata.name,.status.capacity.memory]| @tsv&#39;</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get no -o json <span class=p>|</span>    jq -r <span class=s1>&#39;.items | sort_by(.status.capacity.memory)[]|[.metadata.name,.status.capacity.memory]| @tsv&#39;</span>
 rq-bjptest01    3848040Ki
 rqinterntest2   7986060Ki
 </code></pre></div><h3 id=查看各个节点上的pod数量>查看各个节点上的Pod数量</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get po -o json --all-namespaces |  jq <span style=color:#d14>&#39;.items | group_by(.spec.nodeName) | map({&#34;nodeName&#34;: .[0].spec.nodeName, &#34;count&#34;: length}) | sort_by(.count)&#39;</span>
-<span style=color:#000;font-weight:700>[</span>
-  <span style=color:#000;font-weight:700>{</span>
-    <span style=color:#d14>&#34;nodeName&#34;</span>: <span style=color:#d14>&#34;rq-bjptest01&#34;</span>,
-    <span style=color:#d14>&#34;count&#34;</span>: <span style=color:#099>3</span>
-  <span style=color:#000;font-weight:700>}</span>,
-  <span style=color:#000;font-weight:700>{</span>
-    <span style=color:#d14>&#34;nodeName&#34;</span>: <span style=color:#d14>&#34;rqinterntest2&#34;</span>,
-    <span style=color:#d14>&#34;count&#34;</span>: <span style=color:#099>8</span>
-  <span style=color:#000;font-weight:700>}</span>
-<span style=color:#000;font-weight:700>]</span>
-kubectl get pods --all-namespaces -o json | jq <span style=color:#d14>&#39;.items[] | .spec.nodeName&#39;</span> -r | sort | uniq -c
-     <span style=color:#099>17</span> rqkubedev03
-     <span style=color:#099>30</span> rqkubedev04
-     <span style=color:#099>23</span> rqkubedev05
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get po -o json --all-namespaces <span class=p>|</span>  jq <span class=s1>&#39;.items | group_by(.spec.nodeName) | map({&#34;nodeName&#34;: .[0].spec.nodeName, &#34;count&#34;: length}) | sort_by(.count)&#39;</span>
+<span class=o>[</span>
+  <span class=o>{</span>
+    <span class=s2>&#34;nodeName&#34;</span>: <span class=s2>&#34;rq-bjptest01&#34;</span>,
+    <span class=s2>&#34;count&#34;</span>: <span class=m>3</span>
+  <span class=o>}</span>,
+  <span class=o>{</span>
+    <span class=s2>&#34;nodeName&#34;</span>: <span class=s2>&#34;rqinterntest2&#34;</span>,
+    <span class=s2>&#34;count&#34;</span>: <span class=m>8</span>
+  <span class=o>}</span>
+<span class=o>]</span>
+kubectl get pods --all-namespaces -o json <span class=p>|</span> jq <span class=s1>&#39;.items[] | .spec.nodeName&#39;</span> -r <span class=p>|</span> sort <span class=p>|</span> uniq -c
+     <span class=m>17</span> rqkubedev03
+     <span class=m>30</span> rqkubedev04
+     <span class=m>23</span> rqkubedev05
 </code></pre></div><h3 id=查看pod以及镜像>查看POD以及镜像</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get pods -o custom-columns<span style=color:#000;font-weight:700>=</span><span style=color:#d14>&#39;NAME:metadata.name,IMAGES:spec.containers[*].image&#39;</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get pods -o custom-columns<span class=o>=</span><span class=s1>&#39;NAME:metadata.name,IMAGES:spec.containers[*].image&#39;</span>
 NAME                              IMAGES
 details-v1-5974b67c8-gqz94        docker.io/istio/examples-bookinfo-details-v1:1.16.2,docker.io/istio/proxyv2:1.7.2
 gitea-5bb577b964-w64gg            harbor.caih.local/gitea/gitea:1.10.1
 productpage-v1-64794f5db4-hw2fl   docker.io/istio/examples-bookinfo-productpage-v1:1.16.2,docker.io/istio/proxyv2:1.7.2
 </code></pre></div><h3 id=查看各个节点上的pod>查看各个节点上的POD</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get pods --all-namespaces -o json | jq <span style=color:#d14>&#39;.items | map({podName: .metadata.name, nodeName: .spec.nodeName}) | group_by(.nodeName) | map({nodeName: .[0].nodeName, pods: map(.podName)})&#39;</span>
-<span style=color:#000;font-weight:700>[</span>
-  <span style=color:#000;font-weight:700>{</span>
-    <span style=color:#d14>&#34;nodeName&#34;</span>: <span style=color:#d14>&#34;rqkubedev03&#34;</span>,
-    <span style=color:#d14>&#34;pods&#34;</span>: <span style=color:#000;font-weight:700>[</span>
-      <span style=color:#d14>&#34;123-84654b5d8f-sm2dt&#34;</span>,
-      <span style=color:#d14>&#34;reviews-v2-6cb6ccd848-ndsqq&#34;</span>,
-      <span style=color:#d14>&#34;fleet-agent-6cc4bd5c67-b877w&#34;</span>,
-      <span style=color:#d14>&#34;jaeger-es-index-cleaner-1602806100-5ngzz&#34;</span>,
-      <span style=color:#d14>&#34;jaeger-es-index-cleaner-1602806100-b47gk&#34;</span>,
-      <span style=color:#d14>&#34;jaeger-es-index-cleaner-1602806100-kkx2z&#34;</span>,
-      <span style=color:#d14>&#34;jaeger-es-index-cleaner-1602806100-rg6z8&#34;</span>,
-      <span style=color:#d14>&#34;jaeger-es-index-cleaner-1602806100-s47n4&#34;</span>,
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get pods --all-namespaces -o json <span class=p>|</span> jq <span class=s1>&#39;.items | map({podName: .metadata.name, nodeName: .spec.nodeName}) | group_by(.nodeName) | map({nodeName: .[0].nodeName, pods: map(.podName)})&#39;</span>
+<span class=o>[</span>
+  <span class=o>{</span>
+    <span class=s2>&#34;nodeName&#34;</span>: <span class=s2>&#34;rqkubedev03&#34;</span>,
+    <span class=s2>&#34;pods&#34;</span>: <span class=o>[</span>
+      <span class=s2>&#34;123-84654b5d8f-sm2dt&#34;</span>,
+      <span class=s2>&#34;reviews-v2-6cb6ccd848-ndsqq&#34;</span>,
+      <span class=s2>&#34;fleet-agent-6cc4bd5c67-b877w&#34;</span>,
+      <span class=s2>&#34;jaeger-es-index-cleaner-1602806100-5ngzz&#34;</span>,
+      <span class=s2>&#34;jaeger-es-index-cleaner-1602806100-b47gk&#34;</span>,
+      <span class=s2>&#34;jaeger-es-index-cleaner-1602806100-kkx2z&#34;</span>,
+      <span class=s2>&#34;jaeger-es-index-cleaner-1602806100-rg6z8&#34;</span>,
+      <span class=s2>&#34;jaeger-es-index-cleaner-1602806100-s47n4&#34;</span>,
 </code></pre></div><h3 id=查看pod占用的内存和cpu并按内存或者cpu排序>查看Pod占用的内存和CPU并按内存或者CPU排序</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#998;font-style:italic># 内存</span>
-kubectl top pods -A | sort --reverse --key <span style=color:#099>4</span> --numeric
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=c1># 内存</span>
+kubectl top pods -A <span class=p>|</span> sort --reverse --key <span class=m>4</span> --numeric
 caihcloud              jenkinsm-6fc5d7fc46-2tl6q                            29m          1995Mi
 istio-system           prometheus-788c945c9c-mdrjf                          97m          1424Mi
 kube-system            kube-apiserver-rqkubedev04                           149m         957Mi
 kube-system            kube-apiserver-rqkubedev03                           69m          476Mi
 caihcloud              jenkinsslaveswarm-6c6f5d8d9b-8ns5w                   2m           464Mi
 
-<span style=color:#998;font-style:italic># CPU</span>
-kubectl top pods -A | sort --reverse --key <span style=color:#099>3</span> --numeric
+<span class=c1># CPU</span>
+kubectl top pods -A <span class=p>|</span> sort --reverse --key <span class=m>3</span> --numeric
 kube-system            kube-apiserver-rqkubedev04                           150m         964Mi
 istio-system           prometheus-788c945c9c-mdrjf                          89m          1426Mi
 kube-system            kube-apiserver-rqkubedev03                           42m          532Mi
@@ -307,15 +309,15 @@ kube-system            calico-node-6n65m                                    42m 
 kube-system            calico-node-fg6tk                                    34m          49Mi
 
 </code></pre></div><h3 id=获取重启次数降序排序的pod>获取重启次数降序排序的Pod</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get pods -A --sort-by<span style=color:#000;font-weight:700>=</span>.status.containerStatuses<span style=color:#000;font-weight:700>[</span>0<span style=color:#000;font-weight:700>]</span>.restartCount | tac
-kube-system            kube-scheduler-rqkubedev03                           0/1     CrashLoopBackOff   <span style=color:#099>593</span>        2d2h
-traefik-v2             traefik-gfnw5                                        1/1     Running            <span style=color:#099>27</span>         23d
-kube-system            kube-controller-manager-rqkubedev03                  1/1     Running            <span style=color:#099>24</span>         23d
-kube-system            kube-controller-manager-rqkubedev04                  1/1     Running            <span style=color:#099>22</span>         23d
-kube-system            kube-apiserver-rqkubedev03                           1/1     Running            <span style=color:#099>21</span>         23d
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get pods -A --sort-by<span class=o>=</span>.status.containerStatuses<span class=o>[</span>0<span class=o>]</span>.restartCount <span class=p>|</span> tac
+kube-system            kube-scheduler-rqkubedev03                           0/1     CrashLoopBackOff   <span class=m>593</span>        2d2h
+traefik-v2             traefik-gfnw5                                        1/1     Running            <span class=m>27</span>         23d
+kube-system            kube-controller-manager-rqkubedev03                  1/1     Running            <span class=m>24</span>         23d
+kube-system            kube-controller-manager-rqkubedev04                  1/1     Running            <span class=m>22</span>         23d
+kube-system            kube-apiserver-rqkubedev03                           1/1     Running            <span class=m>21</span>         23d
 NAMESPACE              NAME                                                 READY   STATUS             RESTARTS   AGE
 </code></pre></div><h3 id=获得所有pod的request和limits>获得所有POD的request和limits</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get pods -A  -o custom-columns<span style=color:#000;font-weight:700>=</span><span style=color:#d14>&#39;NAME:metadata.name,MEM_REQUEST:spec.containers[*].resources.requests.memory,MEM_LIMIT:spec.containers[*].resources.limits.memory,CPU_REQUEST:spec.containers[*].resources.requests.cpu,CPU_LIMIT:spec.containers[*].resources.limits.cpu&#39;</span>       
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get pods -A  -o custom-columns<span class=o>=</span><span class=s1>&#39;NAME:metadata.name,MEM_REQUEST:spec.containers[*].resources.requests.memory,MEM_LIMIT:spec.containers[*].resources.limits.memory,CPU_REQUEST:spec.containers[*].resources.requests.cpu,CPU_LIMIT:spec.containers[*].resources.limits.cpu&#39;</span>       
 NAME                                                 MEM_REQUEST   MEM_LIMIT     CPU_REQUEST   CPU_LIMIT
 123-84654b5d8f-sm2dt                                 &lt;none&gt;        &lt;none&gt;        &lt;none&gt;        &lt;none&gt;
 backend-c56f64647-grql6                              10Mi          1Gi           10m           &lt;none&gt;
@@ -324,30 +326,30 @@ caihcloud-ui-9fbb954dc-trtn7                         10Mi          1Gi          
 caihcloudm-caihcloudm-api-5cfffcc96-mz6pt            10Mi          1Gi           10m           200m
 caihcloudm-caihcloudm-api-5cfffcc96-xdwsb            10Mi          1Gi           10m           200m
 </code></pre></div><h3 id=获取节点的ip>获取节点的IP</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get nodes -o <span style=color:teal>jsonpath</span><span style=color:#000;font-weight:700>=</span><span style=color:#d14>&#39;{range .items[*]}{.metadata.name} {.status.addresses[?(@.type==&#34;InternalIP&#34;)].address}{&#34;\n&#34;}{end}&#39;</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get nodes -o <span class=nv>jsonpath</span><span class=o>=</span><span class=s1>&#39;{range .items[*]}{.metadata.name} {.status.addresses[?(@.type==&#34;InternalIP&#34;)].address}{&#34;\n&#34;}{end}&#39;</span>
 rqkubedev03 10.19.0.57
 rqkubedev04 10.19.0.58
 rqkubedev05 10.19.0.59
 </code></pre></div><h3 id=获取service的nodeport信息>获取Service的Nodeport信息</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get -A svc -o json | jq -r <span style=color:#d14>&#39;.items[] | [.metadata.name,([.spec.ports[].nodePort | tostring ] | join(&#34;|&#34;))]| @tsv&#39;</span>
-backend 23168|<span style=color:#099>20675</span>
-caihcloud       <span style=color:#099>37386</span>
-caihcloud-ui    <span style=color:#099>26105</span>
-caihcloudm-caihcloudm-api       <span style=color:#099>36236</span>
-caihcloudm-caihcloudm-prerender <span style=color:#099>31964</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get -A svc -o json <span class=p>|</span> jq -r <span class=s1>&#39;.items[] | [.metadata.name,([.spec.ports[].nodePort | tostring ] | join(&#34;|&#34;))]| @tsv&#39;</span>
+backend 23168<span class=p>|</span><span class=m>20675</span>
+caihcloud       <span class=m>37386</span>
+caihcloud-ui    <span class=m>26105</span>
+caihcloudm-caihcloudm-api       <span class=m>36236</span>
+caihcloudm-caihcloudm-prerender <span class=m>31964</span>
 </code></pre></div><h3 id=获取pod网段>获取POD网段</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get nodes -o <span style=color:teal>jsonpath</span><span style=color:#000;font-weight:700>=</span><span style=color:#d14>&#39;{.items[*].spec.podCIDR}&#39;</span> | tr <span style=color:#d14>&#34; &#34;</span> <span style=color:#d14>&#34;\n&#34;</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get nodes -o <span class=nv>jsonpath</span><span class=o>=</span><span class=s1>&#39;{.items[*].spec.podCIDR}&#39;</span> <span class=p>|</span> tr <span class=s2>&#34; &#34;</span> <span class=s2>&#34;\n&#34;</span>
 10.193.0.0/24
 10.193.1.0/24
 10.193.2.0/24
 </code></pre></div><h3 id=输出一个pod中所有的容器的日志>输出一个POD中所有的容器的日志</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl logs caihcloudm-caihcloudm-api-5cfffcc96-mz6pt -n caihcloud —all-containers
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl logs caihcloudm-caihcloudm-api-5cfffcc96-mz6pt -n caihcloud —all-containers
 </code></pre></div><h3 id=按标签输出pod的日志>按标签输出POD的日志</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl -n caihcloud logs -f -l <span style=color:teal>app</span><span style=color:#000;font-weight:700>=</span>caihcloudm-caihcloudm-api
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl -n caihcloud logs -f -l <span class=nv>app</span><span class=o>=</span>caihcloudm-caihcloudm-api
 </code></pre></div><h3 id=获取前一个容器的日志容器异常挂掉的场景>获取前一个容器的日志（容器异常挂掉的场景）</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl logs caihcloud-67ffdf9fc9-wzmts -n caihcloud --previous
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl logs caihcloud-67ffdf9fc9-wzmts -n caihcloud --previous
 </code></pre></div><h3 id=强制删除terminating-的-pod谨慎>强制删除Terminating 的 POD（谨慎）</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>kubectl get po -A | grep Terminating|awk <span style=color:#d14>&#39;{print $1,$2}&#39;</span>|<span style=color:#000;font-weight:700>while</span> <span style=color:#0086b3>read</span> ns podName;<span style=color:#000;font-weight:700>do</span> kubectl delete pod <span style=color:teal>$podName</span> -n <span style=color:teal>$ns</span> --grace-period<span style=color:#000;font-weight:700>=</span><span style=color:#099>0</span> --force;<span style=color:#000;font-weight:700>done</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>kubectl get po -A <span class=p>|</span> grep Terminating<span class=p>|</span>awk <span class=s1>&#39;{print $1,$2}&#39;</span><span class=p>|</span><span class=k>while</span> <span class=nb>read</span> ns podName<span class=p>;</span><span class=k>do</span> kubectl delete pod <span class=nv>$podName</span> -n <span class=nv>$ns</span> --grace-period<span class=o>=</span><span class=m>0</span> --force<span class=p>;</span><span class=k>done</span>
 </code></pre></div>
 </div>
 <div class=prev-next>

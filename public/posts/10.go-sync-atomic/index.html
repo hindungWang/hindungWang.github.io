@@ -21,8 +21,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -254,41 +256,41 @@ April 29, 2021
 <h1 id=操作分类>操作分类</h1>
 <h2 id=add操作>Add操作</h2>
 <p>由AddT函数实现的加法操作在原子上等效于：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>*</span>addr <span style=color:#000;font-weight:700>+=</span> delta  <span style=color:#a61717;background-color:#e3d2d2>\\</span> 加上步长 正负数都可以
-<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>*</span>addr    <span style=color:#a61717;background-color:#e3d2d2>\\</span> 反回加后的结果
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=o>*</span><span class=nx>addr</span> <span class=o>+=</span> <span class=nx>delta</span>  <span class=err>\\</span> <span class=nx>加上步长</span> <span class=nx>正负数都可以</span>
+<span class=k>return</span> <span class=o>*</span><span class=nx>addr</span>    <span class=err>\\</span> <span class=nx>反回加后的结果</span>
 </code></pre></div><p>相关的方法有：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>, delta <span style=color:#458;font-weight:700>int32</span>) (new <span style=color:#458;font-weight:700>int32</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>, delta <span style=color:#458;font-weight:700>uint32</span>) (new <span style=color:#458;font-weight:700>uint32</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>, delta <span style=color:#458;font-weight:700>int64</span>) (new <span style=color:#458;font-weight:700>int64</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>, delta <span style=color:#458;font-weight:700>uint64</span>) (new <span style=color:#458;font-weight:700>uint64</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>AddUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>, delta <span style=color:#458;font-weight:700>uintptr</span>) (new <span style=color:#458;font-weight:700>uintptr</span>)
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>AddInt32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int32</span><span class=p>,</span> <span class=nx>delta</span> <span class=kt>int32</span><span class=p>)</span> <span class=p>(</span><span class=nx>new</span> <span class=kt>int32</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>AddUint32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint32</span><span class=p>,</span> <span class=nx>delta</span> <span class=kt>uint32</span><span class=p>)</span> <span class=p>(</span><span class=nx>new</span> <span class=kt>uint32</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>AddInt64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int64</span><span class=p>,</span> <span class=nx>delta</span> <span class=kt>int64</span><span class=p>)</span> <span class=p>(</span><span class=nx>new</span> <span class=kt>int64</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>AddUint64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint64</span><span class=p>,</span> <span class=nx>delta</span> <span class=kt>uint64</span><span class=p>)</span> <span class=p>(</span><span class=nx>new</span> <span class=kt>uint64</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>AddUintptr</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uintptr</span><span class=p>,</span> <span class=nx>delta</span> <span class=kt>uintptr</span><span class=p>)</span> <span class=p>(</span><span class=nx>new</span> <span class=kt>uintptr</span><span class=p>)</span>
 </code></pre></div><h2 id=cas操作>CAS操作</h2>
 <p>CAS即CompareAndSwap，这个函数主要就是先比较一下当前传入的地址的值是否和 old 值相等，如果相等，就赋值新值返回 true，如果不相等就返回 false.</p>
 <p>利用这个方法可以实现锁机制。</p>
 <p>相关的方法有：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>, old, new <span style=color:#458;font-weight:700>int32</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>, old, new <span style=color:#458;font-weight:700>int64</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>, old, new <span style=color:#458;font-weight:700>uint32</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>, old, new <span style=color:#458;font-weight:700>uint64</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>, old, new <span style=color:#458;font-weight:700>uintptr</span>) (swapped <span style=color:#458;font-weight:700>bool</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CompareAndSwapPointer</span>(addr <span style=color:#000;font-weight:700>*</span>unsafe.Pointer, old, new unsafe.Pointer) (swapped <span style=color:#458;font-weight:700>bool</span>)
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>CompareAndSwapInt32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int32</span><span class=p>,</span> <span class=nx>old</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>int32</span><span class=p>)</span> <span class=p>(</span><span class=nx>swapped</span> <span class=kt>bool</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>CompareAndSwapInt64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int64</span><span class=p>,</span> <span class=nx>old</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>int64</span><span class=p>)</span> <span class=p>(</span><span class=nx>swapped</span> <span class=kt>bool</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>CompareAndSwapUint32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint32</span><span class=p>,</span> <span class=nx>old</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>uint32</span><span class=p>)</span> <span class=p>(</span><span class=nx>swapped</span> <span class=kt>bool</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>CompareAndSwapUint64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint64</span><span class=p>,</span> <span class=nx>old</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>uint64</span><span class=p>)</span> <span class=p>(</span><span class=nx>swapped</span> <span class=kt>bool</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>CompareAndSwapUintptr</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uintptr</span><span class=p>,</span> <span class=nx>old</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>uintptr</span><span class=p>)</span> <span class=p>(</span><span class=nx>swapped</span> <span class=kt>bool</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>CompareAndSwapPointer</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>,</span> <span class=nx>old</span><span class=p>,</span> <span class=nx>new</span> <span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>)</span> <span class=p>(</span><span class=nx>swapped</span> <span class=kt>bool</span><span class=p>)</span>
 </code></pre></div><p>从源码<a href=https://go.googlesource.com/go/+/go1.16.3/src/runtime/internal/atomic/asm_amd64.s#17>runtime/internal/atomic/asm_amd64.s</a>中可以看到CAS对应的汇编指令实现。
 如<code>CompareAndSwapInt32</code>方法的实现：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// bool Cas(int32 *val, int32 old, int32 new)
-</span><span style=color:#998;font-style:italic>// Atomically:
-</span><span style=color:#998;font-style:italic>//	if(*val == old){
-</span><span style=color:#998;font-style:italic>//		*val = new;
-</span><span style=color:#998;font-style:italic>//		return 1;
-</span><span style=color:#998;font-style:italic>//	} else
-</span><span style=color:#998;font-style:italic>//		return 0;
-</span><span style=color:#998;font-style:italic></span>TEXT runtime<span style=color:#a61717;background-color:#e3d2d2>∕</span>internal<span style=color:#a61717;background-color:#e3d2d2>∕</span>atomic<span style=color:#a61717;background-color:#e3d2d2>·</span><span style=color:#900;font-weight:700>Cas</span>(SB),NOSPLIT,<span style=color:#a61717;background-color:#e3d2d2>$</span><span style=color:#099>0</span><span style=color:#000;font-weight:700>-</span><span style=color:#099>17</span>
-	MOVQ	ptr<span style=color:#000;font-weight:700>+</span><span style=color:#099>0</span>(FP), BX
-	MOVL	old<span style=color:#000;font-weight:700>+</span><span style=color:#099>8</span>(FP), AX
-	MOVL	new<span style=color:#000;font-weight:700>+</span><span style=color:#099>12</span>(FP), CX
-	LOCK
-	CMPXCHGL	CX, <span style=color:#099>0</span>(BX)
-	SETEQ	ret<span style=color:#000;font-weight:700>+</span><span style=color:#099>16</span>(FP)
-	RET
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// bool Cas(int32 *val, int32 old, int32 new)
+</span><span class=c1>// Atomically:
+</span><span class=c1>//	if(*val == old){
+</span><span class=c1>//		*val = new;
+</span><span class=c1>//		return 1;
+</span><span class=c1>//	} else
+</span><span class=c1>//		return 0;
+</span><span class=c1></span><span class=nx>TEXT</span> <span class=nx>runtime</span><span class=err>∕</span><span class=nx>internal</span><span class=err>∕</span><span class=nx>atomic</span><span class=err>·</span><span class=nf>Cas</span><span class=p>(</span><span class=nx>SB</span><span class=p>),</span><span class=nx>NOSPLIT</span><span class=p>,</span><span class=err>$</span><span class=mi>0</span><span class=o>-</span><span class=mi>17</span>
+	<span class=nx>MOVQ</span>	<span class=nx>ptr</span><span class=o>+</span><span class=mi>0</span><span class=p>(</span><span class=nx>FP</span><span class=p>),</span> <span class=nx>BX</span>
+	<span class=nx>MOVL</span>	<span class=nx>old</span><span class=o>+</span><span class=mi>8</span><span class=p>(</span><span class=nx>FP</span><span class=p>),</span> <span class=nx>AX</span>
+	<span class=nx>MOVL</span>	<span class=nx>new</span><span class=o>+</span><span class=mi>12</span><span class=p>(</span><span class=nx>FP</span><span class=p>),</span> <span class=nx>CX</span>
+	<span class=nx>LOCK</span>
+	<span class=nx>CMPXCHGL</span>	<span class=nx>CX</span><span class=p>,</span> <span class=mi>0</span><span class=p>(</span><span class=nx>BX</span><span class=p>)</span>
+	<span class=nx>SETEQ</span>	<span class=nx>ret</span><span class=o>+</span><span class=mi>16</span><span class=p>(</span><span class=nx>FP</span><span class=p>)</span>
+	<span class=nx>RET</span>
 </code></pre></div><p>从汇编指令可以看出，使用了CPU的<code>LOCK</code>指令来保证原子的操作，而<code>CMPXCHGL</code>指令则是CPU级别实现的CAS操作。</p>
 <p><em>关于LOCK指令，可以发散到CPU指令的锁总线、锁缓存等内容，而CPU会有多级缓存，这就需要通过缓存一致性去保证原子性。而MESI是缓存一致性协议的一种实现方法。</em></p>
 <h3 id=cas不能解决的问题>CAS不能解决的问题</h3>
@@ -303,123 +305,123 @@ P2修改数值A为数值B，然后又修改回A
 P1被唤醒，比较后发现数值A没有变化，程序继续执行。</p>
 <h2 id=swap操作>Swap操作</h2>
 <p>Swap操作会执行交换操作，并且返回原来的值。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>old = <span style=color:#000;font-weight:700>*</span>addr  <span style=color:#998;font-style:italic>// 复制原来的值
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>*</span>addr = new  <span style=color:#998;font-style:italic>// 赋值为新的值
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>return</span> old   <span style=color:#998;font-style:italic>// 返回原来的值
-</span></code></pre></div><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>, new <span style=color:#458;font-weight:700>int32</span>) (old <span style=color:#458;font-weight:700>int32</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>, new <span style=color:#458;font-weight:700>int64</span>) (old <span style=color:#458;font-weight:700>int64</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapPointer</span>(addr <span style=color:#000;font-weight:700>*</span>unsafe.Pointer, new unsafe.Pointer) (old unsafe.Pointer)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>, new <span style=color:#458;font-weight:700>uint32</span>) (old <span style=color:#458;font-weight:700>uint32</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>, new <span style=color:#458;font-weight:700>uint64</span>) (old <span style=color:#458;font-weight:700>uint64</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>SwapUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>, new <span style=color:#458;font-weight:700>uintptr</span>) (old <span style=color:#458;font-weight:700>uintptr</span>)
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>old</span> <span class=p>=</span> <span class=o>*</span><span class=nx>addr</span>  <span class=c1>// 复制原来的值
+</span><span class=c1></span><span class=o>*</span><span class=nx>addr</span> <span class=p>=</span> <span class=nx>new</span>  <span class=c1>// 赋值为新的值
+</span><span class=c1></span><span class=k>return</span> <span class=nx>old</span>   <span class=c1>// 返回原来的值
+</span></code></pre></div><div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>SwapInt32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int32</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>int32</span><span class=p>)</span> <span class=p>(</span><span class=nx>old</span> <span class=kt>int32</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>SwapInt64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int64</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>int64</span><span class=p>)</span> <span class=p>(</span><span class=nx>old</span> <span class=kt>int64</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>SwapPointer</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>,</span> <span class=nx>new</span> <span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>)</span> <span class=p>(</span><span class=nx>old</span> <span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>SwapUint32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint32</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>uint32</span><span class=p>)</span> <span class=p>(</span><span class=nx>old</span> <span class=kt>uint32</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>SwapUint64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint64</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>uint64</span><span class=p>)</span> <span class=p>(</span><span class=nx>old</span> <span class=kt>uint64</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>SwapUintptr</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uintptr</span><span class=p>,</span> <span class=nx>new</span> <span class=kt>uintptr</span><span class=p>)</span> <span class=p>(</span><span class=nx>old</span> <span class=kt>uintptr</span><span class=p>)</span>
 </code></pre></div><h2 id=load操作>Load操作</h2>
 <p>从某个地址里获取对应的值：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>*</span>addr
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=k>return</span> <span class=o>*</span><span class=nx>addr</span>
 </code></pre></div><p>方法签名：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>) (val <span style=color:#458;font-weight:700>int32</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>) (val <span style=color:#458;font-weight:700>int64</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadPointer</span>(addr <span style=color:#000;font-weight:700>*</span>unsafe.Pointer) (val unsafe.Pointer)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>) (val <span style=color:#458;font-weight:700>uint32</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>) (val <span style=color:#458;font-weight:700>uint64</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>LoadUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>) (val <span style=color:#458;font-weight:700>uintptr</span>)
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>LoadInt32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int32</span><span class=p>)</span> <span class=p>(</span><span class=nx>val</span> <span class=kt>int32</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>LoadInt64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int64</span><span class=p>)</span> <span class=p>(</span><span class=nx>val</span> <span class=kt>int64</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>LoadPointer</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>)</span> <span class=p>(</span><span class=nx>val</span> <span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>LoadUint32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint32</span><span class=p>)</span> <span class=p>(</span><span class=nx>val</span> <span class=kt>uint32</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>LoadUint64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint64</span><span class=p>)</span> <span class=p>(</span><span class=nx>val</span> <span class=kt>uint64</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>LoadUintptr</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uintptr</span><span class=p>)</span> <span class=p>(</span><span class=nx>val</span> <span class=kt>uintptr</span><span class=p>)</span>
 </code></pre></div><h2 id=store操作>Store操作</h2>
 <p>往某个地址里赋值：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>*</span>addr = val
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=o>*</span><span class=nx>addr</span> <span class=p>=</span> <span class=nx>val</span>
 </code></pre></div><p>方法签名：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreInt32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int32</span>, val <span style=color:#458;font-weight:700>int32</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreInt64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>int64</span>, val <span style=color:#458;font-weight:700>int64</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StorePointer</span>(addr <span style=color:#000;font-weight:700>*</span>unsafe.Pointer, val unsafe.Pointer)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreUint32</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint32</span>, val <span style=color:#458;font-weight:700>uint32</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreUint64</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uint64</span>, val <span style=color:#458;font-weight:700>uint64</span>)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>StoreUintptr</span>(addr <span style=color:#000;font-weight:700>*</span><span style=color:#458;font-weight:700>uintptr</span>, val <span style=color:#458;font-weight:700>uintptr</span>)
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>StoreInt32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int32</span><span class=p>,</span> <span class=nx>val</span> <span class=kt>int32</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>StoreInt64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>int64</span><span class=p>,</span> <span class=nx>val</span> <span class=kt>int64</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>StorePointer</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>,</span> <span class=nx>val</span> <span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>StoreUint32</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint32</span><span class=p>,</span> <span class=nx>val</span> <span class=kt>uint32</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>StoreUint64</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uint64</span><span class=p>,</span> <span class=nx>val</span> <span class=kt>uint64</span><span class=p>)</span>
+<span class=kd>func</span> <span class=nf>StoreUintptr</span><span class=p>(</span><span class=nx>addr</span> <span class=o>*</span><span class=kt>uintptr</span><span class=p>,</span> <span class=nx>val</span> <span class=kt>uintptr</span><span class=p>)</span>
 </code></pre></div><h2 id=value类型>Value类型</h2>
 <p>从源码<a href=https://go.googlesource.com/go/+/go1.16.3/src/sync/atomic/value.go#16>https://go.googlesource.com/go/+/go1.16.3/src/sync/atomic/value.go#16</a>可以看到：</p>
 <p>定义：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>type</span> Value <span style=color:#000;font-weight:700>struct</span> {
-	v <span style=color:#000;font-weight:700>interface</span>{}
-}
-<span style=color:#000;font-weight:700>func</span> (v <span style=color:#000;font-weight:700>*</span>Value) <span style=color:#900;font-weight:700>Load</span>() (x <span style=color:#000;font-weight:700>interface</span>{})
-<span style=color:#000;font-weight:700>func</span> (v <span style=color:#000;font-weight:700>*</span>Value) <span style=color:#900;font-weight:700>Store</span>(x <span style=color:#000;font-weight:700>interface</span>{}) 
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>type</span> <span class=nx>Value</span> <span class=kd>struct</span> <span class=p>{</span>
+	<span class=nx>v</span> <span class=kd>interface</span><span class=p>{}</span>
+<span class=p>}</span>
+<span class=kd>func</span> <span class=p>(</span><span class=nx>v</span> <span class=o>*</span><span class=nx>Value</span><span class=p>)</span> <span class=nf>Load</span><span class=p>()</span> <span class=p>(</span><span class=nx>x</span> <span class=kd>interface</span><span class=p>{})</span>
+<span class=kd>func</span> <span class=p>(</span><span class=nx>v</span> <span class=o>*</span><span class=nx>Value</span><span class=p>)</span> <span class=nf>Store</span><span class=p>(</span><span class=nx>x</span> <span class=kd>interface</span><span class=p>{})</span> 
 </code></pre></div><p>源码如下：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// Copyright 2014 The Go Authors. All rights reserved.
-</span><span style=color:#998;font-style:italic>// Use of this source code is governed by a BSD-style
-</span><span style=color:#998;font-style:italic>// license that can be found in the LICENSE file.
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>package</span> atomic
-<span style=color:#000;font-weight:700>import</span> (
-	<span style=color:#d14>&#34;unsafe&#34;</span>
-)
-<span style=color:#998;font-style:italic>// A Value provides an atomic load and store of a consistently typed value.
-</span><span style=color:#998;font-style:italic>// The zero value for a Value returns nil from Load.
-</span><span style=color:#998;font-style:italic>// Once Store has been called, a Value must not be copied.
-</span><span style=color:#998;font-style:italic>//
-</span><span style=color:#998;font-style:italic>// A Value must not be copied after first use.
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>type</span> Value <span style=color:#000;font-weight:700>struct</span> {
-	v <span style=color:#000;font-weight:700>interface</span>{}
-}
-<span style=color:#998;font-style:italic>// ifaceWords is interface{} internal representation.
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>type</span> ifaceWords <span style=color:#000;font-weight:700>struct</span> {
-	typ  unsafe.Pointer
-	data unsafe.Pointer
-}
-<span style=color:#998;font-style:italic>// Load returns the value set by the most recent Store.
-</span><span style=color:#998;font-style:italic>// It returns nil if there has been no call to Store for this Value.
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> (v <span style=color:#000;font-weight:700>*</span>Value) <span style=color:#900;font-weight:700>Load</span>() (x <span style=color:#000;font-weight:700>interface</span>{}) {
-	vp <span style=color:#000;font-weight:700>:=</span> (<span style=color:#000;font-weight:700>*</span>ifaceWords)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(v))
-	typ <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>LoadPointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.typ)
-	<span style=color:#000;font-weight:700>if</span> typ <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>||</span> <span style=color:#0086b3>uintptr</span>(typ) <span style=color:#000;font-weight:700>==</span> ^<span style=color:#0086b3>uintptr</span>(<span style=color:#099>0</span>) {
-		<span style=color:#998;font-style:italic>// First store not yet completed.
-</span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>
-	}
-	data <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>LoadPointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.data)
-	xp <span style=color:#000;font-weight:700>:=</span> (<span style=color:#000;font-weight:700>*</span>ifaceWords)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(<span style=color:#000;font-weight:700>&amp;</span>x))
-	xp.typ = typ
-	xp.data = data
-	<span style=color:#000;font-weight:700>return</span>
-}
-<span style=color:#998;font-style:italic>// Store sets the value of the Value to x.
-</span><span style=color:#998;font-style:italic>// All calls to Store for a given Value must use values of the same concrete type.
-</span><span style=color:#998;font-style:italic>// Store of an inconsistent type panics, as does Store(nil).
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> (v <span style=color:#000;font-weight:700>*</span>Value) <span style=color:#900;font-weight:700>Store</span>(x <span style=color:#000;font-weight:700>interface</span>{}) {
-	<span style=color:#000;font-weight:700>if</span> x <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
-		<span style=color:#0086b3>panic</span>(<span style=color:#d14>&#34;sync/atomic: store of nil value into Value&#34;</span>)
-	}
-	vp <span style=color:#000;font-weight:700>:=</span> (<span style=color:#000;font-weight:700>*</span>ifaceWords)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(v))
-	xp <span style=color:#000;font-weight:700>:=</span> (<span style=color:#000;font-weight:700>*</span>ifaceWords)(unsafe.<span style=color:#900;font-weight:700>Pointer</span>(<span style=color:#000;font-weight:700>&amp;</span>x))
-	<span style=color:#000;font-weight:700>for</span> {
-		typ <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>LoadPointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.typ)
-		<span style=color:#000;font-weight:700>if</span> typ <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
-			<span style=color:#998;font-style:italic>// Attempt to start first store.
-</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// Disable preemption so that other goroutines can use
-</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// active spin wait to wait for completion; and so that
-</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// GC does not see the fake type accidentally.
-</span><span style=color:#998;font-style:italic></span>			<span style=color:#900;font-weight:700>runtime_procPin</span>()
-			<span style=color:#000;font-weight:700>if</span> !<span style=color:#900;font-weight:700>CompareAndSwapPointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.typ, <span style=color:#000;font-weight:700>nil</span>, unsafe.<span style=color:#900;font-weight:700>Pointer</span>(^<span style=color:#0086b3>uintptr</span>(<span style=color:#099>0</span>))) {
-				<span style=color:#900;font-weight:700>runtime_procUnpin</span>()
-				<span style=color:#000;font-weight:700>continue</span>
-			}
-			<span style=color:#998;font-style:italic>// Complete first store.
-</span><span style=color:#998;font-style:italic></span>			<span style=color:#900;font-weight:700>StorePointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.data, xp.data)
-			<span style=color:#900;font-weight:700>StorePointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.typ, xp.typ)
-			<span style=color:#900;font-weight:700>runtime_procUnpin</span>()
-			<span style=color:#000;font-weight:700>return</span>
-		}
-		<span style=color:#000;font-weight:700>if</span> <span style=color:#0086b3>uintptr</span>(typ) <span style=color:#000;font-weight:700>==</span> ^<span style=color:#0086b3>uintptr</span>(<span style=color:#099>0</span>) {
-			<span style=color:#998;font-style:italic>// First store in progress. Wait.
-</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// Since we disable preemption around the first store,
-</span><span style=color:#998;font-style:italic></span>			<span style=color:#998;font-style:italic>// we can wait with active spinning.
-</span><span style=color:#998;font-style:italic></span>			<span style=color:#000;font-weight:700>continue</span>
-		}
-		<span style=color:#998;font-style:italic>// First store completed. Check type and overwrite data.
-</span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>if</span> typ <span style=color:#000;font-weight:700>!=</span> xp.typ {
-			<span style=color:#0086b3>panic</span>(<span style=color:#d14>&#34;sync/atomic: store of inconsistently typed value into Value&#34;</span>)
-		}
-		<span style=color:#900;font-weight:700>StorePointer</span>(<span style=color:#000;font-weight:700>&amp;</span>vp.data, xp.data)
-		<span style=color:#000;font-weight:700>return</span>
-	}
-}
-<span style=color:#998;font-style:italic>// Disable/enable preemption, implemented in runtime.
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>runtime_procPin</span>()
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>runtime_procUnpin</span>()
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// Copyright 2014 The Go Authors. All rights reserved.
+</span><span class=c1>// Use of this source code is governed by a BSD-style
+</span><span class=c1>// license that can be found in the LICENSE file.
+</span><span class=c1></span><span class=kn>package</span> <span class=nx>atomic</span>
+<span class=kn>import</span> <span class=p>(</span>
+	<span class=s>&#34;unsafe&#34;</span>
+<span class=p>)</span>
+<span class=c1>// A Value provides an atomic load and store of a consistently typed value.
+</span><span class=c1>// The zero value for a Value returns nil from Load.
+</span><span class=c1>// Once Store has been called, a Value must not be copied.
+</span><span class=c1>//
+</span><span class=c1>// A Value must not be copied after first use.
+</span><span class=c1></span><span class=kd>type</span> <span class=nx>Value</span> <span class=kd>struct</span> <span class=p>{</span>
+	<span class=nx>v</span> <span class=kd>interface</span><span class=p>{}</span>
+<span class=p>}</span>
+<span class=c1>// ifaceWords is interface{} internal representation.
+</span><span class=c1></span><span class=kd>type</span> <span class=nx>ifaceWords</span> <span class=kd>struct</span> <span class=p>{</span>
+	<span class=nx>typ</span>  <span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span>
+	<span class=nx>data</span> <span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span>
+<span class=p>}</span>
+<span class=c1>// Load returns the value set by the most recent Store.
+</span><span class=c1>// It returns nil if there has been no call to Store for this Value.
+</span><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>v</span> <span class=o>*</span><span class=nx>Value</span><span class=p>)</span> <span class=nf>Load</span><span class=p>()</span> <span class=p>(</span><span class=nx>x</span> <span class=kd>interface</span><span class=p>{})</span> <span class=p>{</span>
+	<span class=nx>vp</span> <span class=o>:=</span> <span class=p>(</span><span class=o>*</span><span class=nx>ifaceWords</span><span class=p>)(</span><span class=nx>unsafe</span><span class=p>.</span><span class=nf>Pointer</span><span class=p>(</span><span class=nx>v</span><span class=p>))</span>
+	<span class=nx>typ</span> <span class=o>:=</span> <span class=nf>LoadPointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>vp</span><span class=p>.</span><span class=nx>typ</span><span class=p>)</span>
+	<span class=k>if</span> <span class=nx>typ</span> <span class=o>==</span> <span class=kc>nil</span> <span class=o>||</span> <span class=nb>uintptr</span><span class=p>(</span><span class=nx>typ</span><span class=p>)</span> <span class=o>==</span> <span class=p>^</span><span class=nb>uintptr</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+		<span class=c1>// First store not yet completed.
+</span><span class=c1></span>		<span class=k>return</span> <span class=kc>nil</span>
+	<span class=p>}</span>
+	<span class=nx>data</span> <span class=o>:=</span> <span class=nf>LoadPointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>vp</span><span class=p>.</span><span class=nx>data</span><span class=p>)</span>
+	<span class=nx>xp</span> <span class=o>:=</span> <span class=p>(</span><span class=o>*</span><span class=nx>ifaceWords</span><span class=p>)(</span><span class=nx>unsafe</span><span class=p>.</span><span class=nf>Pointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>x</span><span class=p>))</span>
+	<span class=nx>xp</span><span class=p>.</span><span class=nx>typ</span> <span class=p>=</span> <span class=nx>typ</span>
+	<span class=nx>xp</span><span class=p>.</span><span class=nx>data</span> <span class=p>=</span> <span class=nx>data</span>
+	<span class=k>return</span>
+<span class=p>}</span>
+<span class=c1>// Store sets the value of the Value to x.
+</span><span class=c1>// All calls to Store for a given Value must use values of the same concrete type.
+</span><span class=c1>// Store of an inconsistent type panics, as does Store(nil).
+</span><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>v</span> <span class=o>*</span><span class=nx>Value</span><span class=p>)</span> <span class=nf>Store</span><span class=p>(</span><span class=nx>x</span> <span class=kd>interface</span><span class=p>{})</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=nx>x</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=nb>panic</span><span class=p>(</span><span class=s>&#34;sync/atomic: store of nil value into Value&#34;</span><span class=p>)</span>
+	<span class=p>}</span>
+	<span class=nx>vp</span> <span class=o>:=</span> <span class=p>(</span><span class=o>*</span><span class=nx>ifaceWords</span><span class=p>)(</span><span class=nx>unsafe</span><span class=p>.</span><span class=nf>Pointer</span><span class=p>(</span><span class=nx>v</span><span class=p>))</span>
+	<span class=nx>xp</span> <span class=o>:=</span> <span class=p>(</span><span class=o>*</span><span class=nx>ifaceWords</span><span class=p>)(</span><span class=nx>unsafe</span><span class=p>.</span><span class=nf>Pointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>x</span><span class=p>))</span>
+	<span class=k>for</span> <span class=p>{</span>
+		<span class=nx>typ</span> <span class=o>:=</span> <span class=nf>LoadPointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>vp</span><span class=p>.</span><span class=nx>typ</span><span class=p>)</span>
+		<span class=k>if</span> <span class=nx>typ</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+			<span class=c1>// Attempt to start first store.
+</span><span class=c1></span>			<span class=c1>// Disable preemption so that other goroutines can use
+</span><span class=c1></span>			<span class=c1>// active spin wait to wait for completion; and so that
+</span><span class=c1></span>			<span class=c1>// GC does not see the fake type accidentally.
+</span><span class=c1></span>			<span class=nf>runtime_procPin</span><span class=p>()</span>
+			<span class=k>if</span> <span class=p>!</span><span class=nf>CompareAndSwapPointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>vp</span><span class=p>.</span><span class=nx>typ</span><span class=p>,</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>unsafe</span><span class=p>.</span><span class=nf>Pointer</span><span class=p>(^</span><span class=nb>uintptr</span><span class=p>(</span><span class=mi>0</span><span class=p>)))</span> <span class=p>{</span>
+				<span class=nf>runtime_procUnpin</span><span class=p>()</span>
+				<span class=k>continue</span>
+			<span class=p>}</span>
+			<span class=c1>// Complete first store.
+</span><span class=c1></span>			<span class=nf>StorePointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>vp</span><span class=p>.</span><span class=nx>data</span><span class=p>,</span> <span class=nx>xp</span><span class=p>.</span><span class=nx>data</span><span class=p>)</span>
+			<span class=nf>StorePointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>vp</span><span class=p>.</span><span class=nx>typ</span><span class=p>,</span> <span class=nx>xp</span><span class=p>.</span><span class=nx>typ</span><span class=p>)</span>
+			<span class=nf>runtime_procUnpin</span><span class=p>()</span>
+			<span class=k>return</span>
+		<span class=p>}</span>
+		<span class=k>if</span> <span class=nb>uintptr</span><span class=p>(</span><span class=nx>typ</span><span class=p>)</span> <span class=o>==</span> <span class=p>^</span><span class=nb>uintptr</span><span class=p>(</span><span class=mi>0</span><span class=p>)</span> <span class=p>{</span>
+			<span class=c1>// First store in progress. Wait.
+</span><span class=c1></span>			<span class=c1>// Since we disable preemption around the first store,
+</span><span class=c1></span>			<span class=c1>// we can wait with active spinning.
+</span><span class=c1></span>			<span class=k>continue</span>
+		<span class=p>}</span>
+		<span class=c1>// First store completed. Check type and overwrite data.
+</span><span class=c1></span>		<span class=k>if</span> <span class=nx>typ</span> <span class=o>!=</span> <span class=nx>xp</span><span class=p>.</span><span class=nx>typ</span> <span class=p>{</span>
+			<span class=nb>panic</span><span class=p>(</span><span class=s>&#34;sync/atomic: store of inconsistently typed value into Value&#34;</span><span class=p>)</span>
+		<span class=p>}</span>
+		<span class=nf>StorePointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>vp</span><span class=p>.</span><span class=nx>data</span><span class=p>,</span> <span class=nx>xp</span><span class=p>.</span><span class=nx>data</span><span class=p>)</span>
+		<span class=k>return</span>
+	<span class=p>}</span>
+<span class=p>}</span>
+<span class=c1>// Disable/enable preemption, implemented in runtime.
+</span><span class=c1></span><span class=kd>func</span> <span class=nf>runtime_procPin</span><span class=p>()</span>
+<span class=kd>func</span> <span class=nf>runtime_procUnpin</span><span class=p>()</span>
 </code></pre></div><h1 id=应用>应用</h1>
 <p>atomic.Value这种类型常用于<em>读多写少</em>的场景，比如配置结构体的热更新等。</p>
 <h2 id=例子cowcopy-on-write>例子COW(Copy On Write)</h2>
@@ -429,53 +431,53 @@ P1被唤醒，比较后发现数值A没有变化，程序继续执行。</p>
 <p>存在的问题：老的对象可能会被其他goroutine使用而导致不回立即被垃圾回收，对于多写的场景会产生大量副本，从而导致性能下降。</p>
 <p>优点：无锁（或者说很轻量的锁），所以也不会有 goroutine 的上下文切换，并且在读取的时候大家都读取的相同的副本所以性能上回好一些。</p>
 <p>COW 策略在 linux， redis 中都有很多的实践。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> main
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>main</span>
 
-<span style=color:#000;font-weight:700>import</span> (
-	<span style=color:#d14>&#34;fmt&#34;</span>
-	<span style=color:#d14>&#34;sync/atomic&#34;</span>
-)
+<span class=kn>import</span> <span class=p>(</span>
+	<span class=s>&#34;fmt&#34;</span>
+	<span class=s>&#34;sync/atomic&#34;</span>
+<span class=p>)</span>
 
-<span style=color:#000;font-weight:700>type</span> Map <span style=color:#000;font-weight:700>struct</span> {
-	v       atomic.Value
-	<span style=color:#998;font-style:italic>//writeMu sync.Mutex
-</span><span style=color:#998;font-style:italic></span>}
+<span class=kd>type</span> <span class=nx>Map</span> <span class=kd>struct</span> <span class=p>{</span>
+	<span class=nx>v</span>       <span class=nx>atomic</span><span class=p>.</span><span class=nx>Value</span>
+	<span class=c1>//writeMu sync.Mutex
+</span><span class=c1></span><span class=p>}</span>
 
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>NewMap</span>() <span style=color:#000;font-weight:700>*</span>Map {
-	res <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Map{
-		v:       atomic.Value{},
-		<span style=color:#998;font-style:italic>//writeMu: sync.Mutex{},
-</span><span style=color:#998;font-style:italic></span>	}
-	res.v.<span style=color:#900;font-weight:700>Store</span>(<span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#458;font-weight:700>string</span>))
-	<span style=color:#000;font-weight:700>return</span> res
-}
+<span class=kd>func</span> <span class=nf>NewMap</span><span class=p>()</span> <span class=o>*</span><span class=nx>Map</span> <span class=p>{</span>
+	<span class=nx>res</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>Map</span><span class=p>{</span>
+		<span class=nx>v</span><span class=p>:</span>       <span class=nx>atomic</span><span class=p>.</span><span class=nx>Value</span><span class=p>{},</span>
+		<span class=c1>//writeMu: sync.Mutex{},
+</span><span class=c1></span>	<span class=p>}</span>
+	<span class=nx>res</span><span class=p>.</span><span class=nx>v</span><span class=p>.</span><span class=nf>Store</span><span class=p>(</span><span class=nb>make</span><span class=p>(</span><span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kt>string</span><span class=p>))</span>
+	<span class=k>return</span> <span class=nx>res</span>
+<span class=p>}</span>
 
-<span style=color:#000;font-weight:700>func</span> (m <span style=color:#000;font-weight:700>*</span>Map) <span style=color:#900;font-weight:700>Get</span>(key <span style=color:#458;font-weight:700>string</span>) <span style=color:#458;font-weight:700>string</span> {
-	m1 <span style=color:#000;font-weight:700>:=</span> m.v.<span style=color:#900;font-weight:700>Load</span>().(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#458;font-weight:700>string</span>)
-	<span style=color:#000;font-weight:700>return</span> m1[key]
-}
+<span class=kd>func</span> <span class=p>(</span><span class=nx>m</span> <span class=o>*</span><span class=nx>Map</span><span class=p>)</span> <span class=nf>Get</span><span class=p>(</span><span class=nx>key</span> <span class=kt>string</span><span class=p>)</span> <span class=kt>string</span> <span class=p>{</span>
+	<span class=nx>m1</span> <span class=o>:=</span> <span class=nx>m</span><span class=p>.</span><span class=nx>v</span><span class=p>.</span><span class=nf>Load</span><span class=p>().(</span><span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kt>string</span><span class=p>)</span>
+	<span class=k>return</span> <span class=nx>m1</span><span class=p>[</span><span class=nx>key</span><span class=p>]</span>
+<span class=p>}</span>
 
-<span style=color:#000;font-weight:700>func</span> (m <span style=color:#000;font-weight:700>*</span>Map) <span style=color:#900;font-weight:700>Put</span>(key, val <span style=color:#458;font-weight:700>string</span>) {
-	<span style=color:#998;font-style:italic>//m.writeMu.Lock() // synchronize with other potential writers
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>//defer m.writeMu.Unlock()
-</span><span style=color:#998;font-style:italic></span>	m1 <span style=color:#000;font-weight:700>:=</span> m.v.<span style=color:#900;font-weight:700>Load</span>().(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#458;font-weight:700>string</span>) <span style=color:#998;font-style:italic>// load current value of the data structure
-</span><span style=color:#998;font-style:italic></span>	m2 <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#458;font-weight:700>string</span>)        <span style=color:#998;font-style:italic>// create a new value
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>for</span> k, v <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> m1 {
-		m2[k] = v <span style=color:#998;font-style:italic>// copy all data from the current object to the new one
-</span><span style=color:#998;font-style:italic></span>	}
-	m2[key] = val <span style=color:#998;font-style:italic>// do the update that we need
-</span><span style=color:#998;font-style:italic></span>	m.v.<span style=color:#900;font-weight:700>Store</span>(m2) <span style=color:#998;font-style:italic>// atomically replace the current object with the new one
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// At this point all new readers start working with the new version.
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// The old version will be garbage collected once the existing readers
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#998;font-style:italic>// (if any) are done with it.
-</span><span style=color:#998;font-style:italic></span>}
+<span class=kd>func</span> <span class=p>(</span><span class=nx>m</span> <span class=o>*</span><span class=nx>Map</span><span class=p>)</span> <span class=nf>Put</span><span class=p>(</span><span class=nx>key</span><span class=p>,</span> <span class=nx>val</span> <span class=kt>string</span><span class=p>)</span> <span class=p>{</span>
+	<span class=c1>//m.writeMu.Lock() // synchronize with other potential writers
+</span><span class=c1></span>	<span class=c1>//defer m.writeMu.Unlock()
+</span><span class=c1></span>	<span class=nx>m1</span> <span class=o>:=</span> <span class=nx>m</span><span class=p>.</span><span class=nx>v</span><span class=p>.</span><span class=nf>Load</span><span class=p>().(</span><span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kt>string</span><span class=p>)</span> <span class=c1>// load current value of the data structure
+</span><span class=c1></span>	<span class=nx>m2</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>(</span><span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kt>string</span><span class=p>)</span>        <span class=c1>// create a new value
+</span><span class=c1></span>	<span class=k>for</span> <span class=nx>k</span><span class=p>,</span> <span class=nx>v</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>m1</span> <span class=p>{</span>
+		<span class=nx>m2</span><span class=p>[</span><span class=nx>k</span><span class=p>]</span> <span class=p>=</span> <span class=nx>v</span> <span class=c1>// copy all data from the current object to the new one
+</span><span class=c1></span>	<span class=p>}</span>
+	<span class=nx>m2</span><span class=p>[</span><span class=nx>key</span><span class=p>]</span> <span class=p>=</span> <span class=nx>val</span> <span class=c1>// do the update that we need
+</span><span class=c1></span>	<span class=nx>m</span><span class=p>.</span><span class=nx>v</span><span class=p>.</span><span class=nf>Store</span><span class=p>(</span><span class=nx>m2</span><span class=p>)</span> <span class=c1>// atomically replace the current object with the new one
+</span><span class=c1></span>	<span class=c1>// At this point all new readers start working with the new version.
+</span><span class=c1></span>	<span class=c1>// The old version will be garbage collected once the existing readers
+</span><span class=c1></span>	<span class=c1>// (if any) are done with it.
+</span><span class=c1></span><span class=p>}</span>
 
-<span style=color:#998;font-style:italic>// COW
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>() {
-	m <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>NewMap</span>()
-	m.<span style=color:#900;font-weight:700>Put</span>(<span style=color:#d14>&#34;key&#34;</span>, <span style=color:#d14>&#34;value&#34;</span>)
-	fmt.<span style=color:#900;font-weight:700>Println</span>(m.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;key&#34;</span>))
-}
+<span class=c1>// COW
+</span><span class=c1></span><span class=kd>func</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+	<span class=nx>m</span> <span class=o>:=</span> <span class=nf>NewMap</span><span class=p>()</span>
+	<span class=nx>m</span><span class=p>.</span><span class=nf>Put</span><span class=p>(</span><span class=s>&#34;key&#34;</span><span class=p>,</span> <span class=s>&#34;value&#34;</span><span class=p>)</span>
+	<span class=nx>fmt</span><span class=p>.</span><span class=nf>Println</span><span class=p>(</span><span class=nx>m</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;key&#34;</span><span class=p>))</span>
+<span class=p>}</span>
 </code></pre></div>
 </div>
 <div class=prev-next>

@@ -24,8 +24,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -249,26 +251,26 @@ September 7, 2024
 <h2 id=原因>原因</h2>
 <p>该Pod容忍了节点所有情况，当发生磁盘压力驱逐后，又被调度到改节点上，导致不停的创建pod同时不停的驱逐pod，然而又没有自动回收已驱逐的pod，导致pod泄露。</p>
 <p>即Deployment使用了：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>tolerations</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>effect</span>:<span style=color:#bbb> </span>NoExecute<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>operator</span>:<span style=color:#bbb> </span>Exists<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>effect</span>:<span style=color:#bbb> </span>NoSchedule<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>operator</span>:<span style=color:#bbb> </span>Exists<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>tolerations</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>effect</span><span class=p>:</span><span class=w> </span><span class=l>NoExecute</span><span class=w>
+</span><span class=w>    </span><span class=nt>operator</span><span class=p>:</span><span class=w> </span><span class=l>Exists</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>effect</span><span class=p>:</span><span class=w> </span><span class=l>NoSchedule</span><span class=w>
+</span><span class=w>    </span><span class=nt>operator</span><span class=p>:</span><span class=w> </span><span class=l>Exists</span><span class=w>
 </span></code></pre></div><p>并且<code>terminated-pod-gc-threshold</code>默认为<code>12500</code>个。</p>
 <h2 id=解决方案>解决方案</h2>
 <p>设置<code>kube-controller-manager-arg</code>参数：</p>
 <pre tabindex=0><code>--kube-controller-manager-arg=terminated-pod-gc-threshold=10
 </code></pre><p>和修改tolerations：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>tolerations</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>effect</span>:<span style=color:#bbb> </span>NoExecute<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>key</span>:<span style=color:#bbb> </span>node.kubernetes.io/not-ready<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>operator</span>:<span style=color:#bbb> </span>Exists<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>effect</span>:<span style=color:#bbb> </span>NoExecute<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>key</span>:<span style=color:#bbb> </span>node.kubernetes.io/unreachable<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>operator</span>:<span style=color:#bbb> </span>Exists<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>effect</span>:<span style=color:#bbb> </span>NoSchedule<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>key</span>:<span style=color:#bbb> </span>node.kubernetes.io/unschedulable<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>operator</span>:<span style=color:#bbb> </span>Exists<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>tolerations</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>effect</span><span class=p>:</span><span class=w> </span><span class=l>NoExecute</span><span class=w>
+</span><span class=w>    </span><span class=nt>key</span><span class=p>:</span><span class=w> </span><span class=l>node.kubernetes.io/not-ready</span><span class=w>
+</span><span class=w>    </span><span class=nt>operator</span><span class=p>:</span><span class=w> </span><span class=l>Exists</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>effect</span><span class=p>:</span><span class=w> </span><span class=l>NoExecute</span><span class=w>
+</span><span class=w>    </span><span class=nt>key</span><span class=p>:</span><span class=w> </span><span class=l>node.kubernetes.io/unreachable</span><span class=w>
+</span><span class=w>    </span><span class=nt>operator</span><span class=p>:</span><span class=w> </span><span class=l>Exists</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>effect</span><span class=p>:</span><span class=w> </span><span class=l>NoSchedule</span><span class=w>
+</span><span class=w>    </span><span class=nt>key</span><span class=p>:</span><span class=w> </span><span class=l>node.kubernetes.io/unschedulable</span><span class=w>
+</span><span class=w>    </span><span class=nt>operator</span><span class=p>:</span><span class=w> </span><span class=l>Exists</span><span class=w>
 </span></code></pre></div><p>因此，对于deployment来说，应该正确使用tolerations来避免这种情况。</p>
 </div>
 <div class=prev-next>

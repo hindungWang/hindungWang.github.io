@@ -21,8 +21,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -241,120 +243,120 @@ May 8, 2021
 <div class=post-content>
 <h2 id=题目>题目</h2>
 <p>实现如下结构体的深拷贝。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>type</span> Node <span style=color:#000;font-weight:700>struct</span> {
-	Data <span style=color:#458;font-weight:700>int</span>
-	Fields []<span style=color:#000;font-weight:700>*</span>Node
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>type</span> <span class=nx>Node</span> <span class=kd>struct</span> <span class=p>{</span>
+	<span class=nx>Data</span> <span class=kt>int</span>
+	<span class=nx>Fields</span> <span class=p>[]</span><span class=o>*</span><span class=nx>Node</span>
+<span class=p>}</span>
 </code></pre></div><p>即指针指向的内存也需要Copy一份。</p>
 <h2 id=解析>解析</h2>
 <p>观察结构体，由于Fields字段里存放的是指向Node结构体的指针切片，深拷贝时要考虑循环引用的问题，如：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>struct</span> a :
-  data: <span style=color:#099>1</span>
-  fields: b, c
-<span style=color:#000;font-weight:700>struct</span> b:
-  data: <span style=color:#099>2</span>
-  fields: c
-<span style=color:#000;font-weight:700>struct</span> c:
-  data: <span style=color:#099>3</span>
-  fields: a  <span style=color:#998;font-style:italic>// 这里循环引用了a， c-&gt;a-&gt;b, c-&gt;a
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>struct</span> <span class=nx>a</span> <span class=p>:</span>
+  <span class=nx>data</span><span class=p>:</span> <span class=mi>1</span>
+  <span class=nx>fields</span><span class=p>:</span> <span class=nx>b</span><span class=p>,</span> <span class=nx>c</span>
+<span class=kd>struct</span> <span class=nx>b</span><span class=p>:</span>
+  <span class=nx>data</span><span class=p>:</span> <span class=mi>2</span>
+  <span class=nx>fields</span><span class=p>:</span> <span class=nx>c</span>
+<span class=kd>struct</span> <span class=nx>c</span><span class=p>:</span>
+  <span class=nx>data</span><span class=p>:</span> <span class=mi>3</span>
+  <span class=nx>fields</span><span class=p>:</span> <span class=nx>a</span>  <span class=c1>// 这里循环引用了a， c-&gt;a-&gt;b, c-&gt;a
 </span></code></pre></div><p>可以考虑使用<code>map[*Node]*Node</code>来判断是否有环的情况，即用<code>map[src] = dst</code>来保存拷贝过的节点。</p>
 <h2 id=代码>代码</h2>
 <p>代码如下：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> main
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>main</span>
 
-<span style=color:#000;font-weight:700>import</span> (
-	<span style=color:#d14>&#34;go/ast&#34;</span>
-	<span style=color:#d14>&#34;go/token&#34;</span>
-)
+<span class=kn>import</span> <span class=p>(</span>
+	<span class=s>&#34;go/ast&#34;</span>
+	<span class=s>&#34;go/token&#34;</span>
+<span class=p>)</span>
 
-<span style=color:#000;font-weight:700>type</span> Node <span style=color:#000;font-weight:700>struct</span> {
-	Data <span style=color:#458;font-weight:700>int</span>
-	Fields []<span style=color:#000;font-weight:700>*</span>Node
-}
+<span class=kd>type</span> <span class=nx>Node</span> <span class=kd>struct</span> <span class=p>{</span>
+	<span class=nx>Data</span> <span class=kt>int</span>
+	<span class=nx>Fields</span> <span class=p>[]</span><span class=o>*</span><span class=nx>Node</span>
+<span class=p>}</span>
 
-<span style=color:#998;font-style:italic>// deep copy
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>var</span> M <span style=color:#000;font-weight:700>map</span>[<span style=color:#000;font-weight:700>*</span>Node]<span style=color:#000;font-weight:700>*</span>Node
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Dup</span>(src <span style=color:#000;font-weight:700>*</span>Node) <span style=color:#000;font-weight:700>*</span>Node {
-	<span style=color:#000;font-weight:700>if</span> src <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
-		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>
-	}
-	node <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Node{
-		Data: src.Data,
-		Fields: <span style=color:#000;font-weight:700>nil</span>,
-	}
-	M[src] = node
-	fields <span style=color:#000;font-weight:700>:=</span> []<span style=color:#000;font-weight:700>*</span>Node{}<span style=color:#998;font-style:italic>//make([]*Node, len(src.Fields))
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>for</span> i<span style=color:#000;font-weight:700>:=</span><span style=color:#099>0</span>;i&lt;<span style=color:#0086b3>len</span>(src.Fields);i<span style=color:#000;font-weight:700>++</span> {
-		<span style=color:#000;font-weight:700>var</span> tmp <span style=color:#000;font-weight:700>*</span>Node
-		<span style=color:#000;font-weight:700>if</span> src.Fields[i] <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-			<span style=color:#998;font-style:italic>// if exist, is loop
-</span><span style=color:#998;font-style:italic></span>			<span style=color:#000;font-weight:700>if</span> addr, ok <span style=color:#000;font-weight:700>:=</span> M[src.Fields[i]]; ok {
-				tmp = addr
-			} <span style=color:#000;font-weight:700>else</span> {
-				tmp = <span style=color:#900;font-weight:700>Dup</span>(src.Fields[i])
-			}
-		}
-		<span style=color:#000;font-weight:700>if</span> tmp <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-			fields = <span style=color:#0086b3>append</span>(fields, tmp)
-		}
-	}
-	node.Fields = fields
-	<span style=color:#000;font-weight:700>return</span> node
-}
+<span class=c1>// deep copy
+</span><span class=c1></span><span class=kd>var</span> <span class=nx>M</span> <span class=kd>map</span><span class=p>[</span><span class=o>*</span><span class=nx>Node</span><span class=p>]</span><span class=o>*</span><span class=nx>Node</span>
+<span class=kd>func</span> <span class=nf>Dup</span><span class=p>(</span><span class=nx>src</span> <span class=o>*</span><span class=nx>Node</span><span class=p>)</span> <span class=o>*</span><span class=nx>Node</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=nx>src</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=k>return</span> <span class=kc>nil</span>
+	<span class=p>}</span>
+	<span class=nx>node</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>Node</span><span class=p>{</span>
+		<span class=nx>Data</span><span class=p>:</span> <span class=nx>src</span><span class=p>.</span><span class=nx>Data</span><span class=p>,</span>
+		<span class=nx>Fields</span><span class=p>:</span> <span class=kc>nil</span><span class=p>,</span>
+	<span class=p>}</span>
+	<span class=nx>M</span><span class=p>[</span><span class=nx>src</span><span class=p>]</span> <span class=p>=</span> <span class=nx>node</span>
+	<span class=nx>fields</span> <span class=o>:=</span> <span class=p>[]</span><span class=o>*</span><span class=nx>Node</span><span class=p>{}</span><span class=c1>//make([]*Node, len(src.Fields))
+</span><span class=c1></span>	<span class=k>for</span> <span class=nx>i</span><span class=o>:=</span><span class=mi>0</span><span class=p>;</span><span class=nx>i</span><span class=p>&lt;</span><span class=nb>len</span><span class=p>(</span><span class=nx>src</span><span class=p>.</span><span class=nx>Fields</span><span class=p>);</span><span class=nx>i</span><span class=o>++</span> <span class=p>{</span>
+		<span class=kd>var</span> <span class=nx>tmp</span> <span class=o>*</span><span class=nx>Node</span>
+		<span class=k>if</span> <span class=nx>src</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+			<span class=c1>// if exist, is loop
+</span><span class=c1></span>			<span class=k>if</span> <span class=nx>addr</span><span class=p>,</span> <span class=nx>ok</span> <span class=o>:=</span> <span class=nx>M</span><span class=p>[</span><span class=nx>src</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]];</span> <span class=nx>ok</span> <span class=p>{</span>
+				<span class=nx>tmp</span> <span class=p>=</span> <span class=nx>addr</span>
+			<span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+				<span class=nx>tmp</span> <span class=p>=</span> <span class=nf>Dup</span><span class=p>(</span><span class=nx>src</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>])</span>
+			<span class=p>}</span>
+		<span class=p>}</span>
+		<span class=k>if</span> <span class=nx>tmp</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+			<span class=nx>fields</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>fields</span><span class=p>,</span> <span class=nx>tmp</span><span class=p>)</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+	<span class=nx>node</span><span class=p>.</span><span class=nx>Fields</span> <span class=p>=</span> <span class=nx>fields</span>
+	<span class=k>return</span> <span class=nx>node</span>
+<span class=p>}</span>
 
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>()  {
-	M = <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#000;font-weight:700>*</span>Node]<span style=color:#000;font-weight:700>*</span>Node)
+<span class=kd>func</span> <span class=nf>main</span><span class=p>()</span>  <span class=p>{</span>
+	<span class=nx>M</span> <span class=p>=</span> <span class=nb>make</span><span class=p>(</span><span class=kd>map</span><span class=p>[</span><span class=o>*</span><span class=nx>Node</span><span class=p>]</span><span class=o>*</span><span class=nx>Node</span><span class=p>)</span>
 
-	a1 <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Node{
-		Data:   <span style=color:#099>1</span>,
-		Fields: <span style=color:#000;font-weight:700>nil</span>,
-	}
-	a2 <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Node{
-		Data:   <span style=color:#099>2</span>,
-		Fields: <span style=color:#000;font-weight:700>nil</span>,
-	}
-	a3 <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Node{
-		Data:   <span style=color:#099>3</span>,
-		Fields: []<span style=color:#000;font-weight:700>*</span>Node{a1, a2},
-	}
-	a1.Fields = <span style=color:#0086b3>append</span>(a1.Fields, a3)
-	da3 <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>Dup</span>(a3)
-    <span style=color:#998;font-style:italic>// print ast tree
-</span><span style=color:#998;font-style:italic></span>	_ = ast.<span style=color:#900;font-weight:700>Print</span>(token.<span style=color:#900;font-weight:700>NewFileSet</span>(),a3)
-	_ = ast.<span style=color:#900;font-weight:700>Print</span>(token.<span style=color:#900;font-weight:700>NewFileSet</span>(),da3)
-}
+	<span class=nx>a1</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>Node</span><span class=p>{</span>
+		<span class=nx>Data</span><span class=p>:</span>   <span class=mi>1</span><span class=p>,</span>
+		<span class=nx>Fields</span><span class=p>:</span> <span class=kc>nil</span><span class=p>,</span>
+	<span class=p>}</span>
+	<span class=nx>a2</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>Node</span><span class=p>{</span>
+		<span class=nx>Data</span><span class=p>:</span>   <span class=mi>2</span><span class=p>,</span>
+		<span class=nx>Fields</span><span class=p>:</span> <span class=kc>nil</span><span class=p>,</span>
+	<span class=p>}</span>
+	<span class=nx>a3</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>Node</span><span class=p>{</span>
+		<span class=nx>Data</span><span class=p>:</span>   <span class=mi>3</span><span class=p>,</span>
+		<span class=nx>Fields</span><span class=p>:</span> <span class=p>[]</span><span class=o>*</span><span class=nx>Node</span><span class=p>{</span><span class=nx>a1</span><span class=p>,</span> <span class=nx>a2</span><span class=p>},</span>
+	<span class=p>}</span>
+	<span class=nx>a1</span><span class=p>.</span><span class=nx>Fields</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>a1</span><span class=p>.</span><span class=nx>Fields</span><span class=p>,</span> <span class=nx>a3</span><span class=p>)</span>
+	<span class=nx>da3</span> <span class=o>:=</span> <span class=nf>Dup</span><span class=p>(</span><span class=nx>a3</span><span class=p>)</span>
+    <span class=c1>// print ast tree
+</span><span class=c1></span>	<span class=nx>_</span> <span class=p>=</span> <span class=nx>ast</span><span class=p>.</span><span class=nf>Print</span><span class=p>(</span><span class=nx>token</span><span class=p>.</span><span class=nf>NewFileSet</span><span class=p>(),</span><span class=nx>a3</span><span class=p>)</span>
+	<span class=nx>_</span> <span class=p>=</span> <span class=nx>ast</span><span class=p>.</span><span class=nf>Print</span><span class=p>(</span><span class=nx>token</span><span class=p>.</span><span class=nf>NewFileSet</span><span class=p>(),</span><span class=nx>da3</span><span class=p>)</span>
+<span class=p>}</span>
 </code></pre></div><p>输出如下：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>    <span style=color:#998;font-style:italic>// a3
-</span><span style=color:#998;font-style:italic></span>     <span style=color:#099>0</span>  <span style=color:#000;font-weight:700>*</span>main.Node {
-     <span style=color:#099>1</span>  .  Data: <span style=color:#099>3</span>
-     <span style=color:#099>2</span>  .  Fields: []<span style=color:#000;font-weight:700>*</span>main.<span style=color:#900;font-weight:700>Node</span> (len = <span style=color:#099>2</span>) {
-     <span style=color:#099>3</span>  .  .  <span style=color:#099>0</span>: <span style=color:#000;font-weight:700>*</span>main.Node {
-     <span style=color:#099>4</span>  .  .  .  Data: <span style=color:#099>1</span>
-     <span style=color:#099>5</span>  .  .  .  Fields: []<span style=color:#000;font-weight:700>*</span>main.<span style=color:#900;font-weight:700>Node</span> (len = <span style=color:#099>1</span>) {
-     <span style=color:#099>6</span>  .  .  .  .  <span style=color:#099>0</span>: <span style=color:#000;font-weight:700>*</span>(obj <span style=color:#a61717;background-color:#e3d2d2>@</span> <span style=color:#099>0</span>) <span style=color:#998;font-style:italic>// 指向了0行的obj
-</span><span style=color:#998;font-style:italic></span>     <span style=color:#099>7</span>  .  .  .  }
-     <span style=color:#099>8</span>  .  .  }
-     <span style=color:#099>9</span>  .  .  <span style=color:#099>1</span>: <span style=color:#000;font-weight:700>*</span>main.Node {
-    <span style=color:#099>10</span>  .  .  .  Data: <span style=color:#099>2</span>
-    <span style=color:#099>11</span>  .  .  }
-    <span style=color:#099>12</span>  .  }
-    <span style=color:#099>13</span>  }
-    <span style=color:#998;font-style:italic>// da3
-</span><span style=color:#998;font-style:italic></span>     <span style=color:#099>0</span>  <span style=color:#000;font-weight:700>*</span>main.Node {
-     <span style=color:#099>1</span>  .  Data: <span style=color:#099>3</span>
-     <span style=color:#099>2</span>  .  Fields: []<span style=color:#000;font-weight:700>*</span>main.<span style=color:#900;font-weight:700>Node</span> (len = <span style=color:#099>2</span>) {
-     <span style=color:#099>3</span>  .  .  <span style=color:#099>0</span>: <span style=color:#000;font-weight:700>*</span>main.Node {
-     <span style=color:#099>4</span>  .  .  .  Data: <span style=color:#099>1</span>
-     <span style=color:#099>5</span>  .  .  .  Fields: []<span style=color:#000;font-weight:700>*</span>main.<span style=color:#900;font-weight:700>Node</span> (len = <span style=color:#099>1</span>) {
-     <span style=color:#099>6</span>  .  .  .  .  <span style=color:#099>0</span>: <span style=color:#000;font-weight:700>*</span>(obj <span style=color:#a61717;background-color:#e3d2d2>@</span> <span style=color:#099>0</span>)  <span style=color:#998;font-style:italic>// 同样指向了0行的obj
-</span><span style=color:#998;font-style:italic></span>     <span style=color:#099>7</span>  .  .  .  }
-     <span style=color:#099>8</span>  .  .  }
-     <span style=color:#099>9</span>  .  .  <span style=color:#099>1</span>: <span style=color:#000;font-weight:700>*</span>main.Node {
-    <span style=color:#099>10</span>  .  .  .  Data: <span style=color:#099>2</span>
-    <span style=color:#099>11</span>  .  .  .  Fields: []<span style=color:#000;font-weight:700>*</span>main.<span style=color:#900;font-weight:700>Node</span> (len = <span style=color:#099>0</span>) {}
-    <span style=color:#099>12</span>  .  .  }
-    <span style=color:#099>13</span>  .  }
-    <span style=color:#099>14</span>  }
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go>    <span class=c1>// a3
+</span><span class=c1></span>     <span class=mi>0</span>  <span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nx>Node</span> <span class=p>{</span>
+     <span class=mi>1</span>  <span class=p>.</span>  <span class=nx>Data</span><span class=p>:</span> <span class=mi>3</span>
+     <span class=mi>2</span>  <span class=p>.</span>  <span class=nx>Fields</span><span class=p>:</span> <span class=p>[]</span><span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nf>Node</span> <span class=p>(</span><span class=nx>len</span> <span class=p>=</span> <span class=mi>2</span><span class=p>)</span> <span class=p>{</span>
+     <span class=mi>3</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=mi>0</span><span class=p>:</span> <span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nx>Node</span> <span class=p>{</span>
+     <span class=mi>4</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=nx>Data</span><span class=p>:</span> <span class=mi>1</span>
+     <span class=mi>5</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=nx>Fields</span><span class=p>:</span> <span class=p>[]</span><span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nf>Node</span> <span class=p>(</span><span class=nx>len</span> <span class=p>=</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+     <span class=mi>6</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=mi>0</span><span class=p>:</span> <span class=o>*</span><span class=p>(</span><span class=nx>obj</span> <span class=err>@</span> <span class=mi>0</span><span class=p>)</span> <span class=c1>// 指向了0行的obj
+</span><span class=c1></span>     <span class=mi>7</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>}</span>
+     <span class=mi>8</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>}</span>
+     <span class=mi>9</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=mi>1</span><span class=p>:</span> <span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nx>Node</span> <span class=p>{</span>
+    <span class=mi>10</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=nx>Data</span><span class=p>:</span> <span class=mi>2</span>
+    <span class=mi>11</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>}</span>
+    <span class=mi>12</span>  <span class=p>.</span>  <span class=p>}</span>
+    <span class=mi>13</span>  <span class=p>}</span>
+    <span class=c1>// da3
+</span><span class=c1></span>     <span class=mi>0</span>  <span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nx>Node</span> <span class=p>{</span>
+     <span class=mi>1</span>  <span class=p>.</span>  <span class=nx>Data</span><span class=p>:</span> <span class=mi>3</span>
+     <span class=mi>2</span>  <span class=p>.</span>  <span class=nx>Fields</span><span class=p>:</span> <span class=p>[]</span><span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nf>Node</span> <span class=p>(</span><span class=nx>len</span> <span class=p>=</span> <span class=mi>2</span><span class=p>)</span> <span class=p>{</span>
+     <span class=mi>3</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=mi>0</span><span class=p>:</span> <span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nx>Node</span> <span class=p>{</span>
+     <span class=mi>4</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=nx>Data</span><span class=p>:</span> <span class=mi>1</span>
+     <span class=mi>5</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=nx>Fields</span><span class=p>:</span> <span class=p>[]</span><span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nf>Node</span> <span class=p>(</span><span class=nx>len</span> <span class=p>=</span> <span class=mi>1</span><span class=p>)</span> <span class=p>{</span>
+     <span class=mi>6</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=mi>0</span><span class=p>:</span> <span class=o>*</span><span class=p>(</span><span class=nx>obj</span> <span class=err>@</span> <span class=mi>0</span><span class=p>)</span>  <span class=c1>// 同样指向了0行的obj
+</span><span class=c1></span>     <span class=mi>7</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>}</span>
+     <span class=mi>8</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>}</span>
+     <span class=mi>9</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=mi>1</span><span class=p>:</span> <span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nx>Node</span> <span class=p>{</span>
+    <span class=mi>10</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=nx>Data</span><span class=p>:</span> <span class=mi>2</span>
+    <span class=mi>11</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=nx>Fields</span><span class=p>:</span> <span class=p>[]</span><span class=o>*</span><span class=nx>main</span><span class=p>.</span><span class=nf>Node</span> <span class=p>(</span><span class=nx>len</span> <span class=p>=</span> <span class=mi>0</span><span class=p>)</span> <span class=p>{}</span>
+    <span class=mi>12</span>  <span class=p>.</span>  <span class=p>.</span>  <span class=p>}</span>
+    <span class=mi>13</span>  <span class=p>.</span>  <span class=p>}</span>
+    <span class=mi>14</span>  <span class=p>}</span>
 </code></pre></div><p>再来调试看看运行时的地址情况：
 a3的信息如下：
 <img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gqb4iv6rl9j20iw0fr3z4.jpg alt=bd51ff320eef1f13f01579625118d58.png></p>
@@ -372,60 +374,60 @@ a3的信息如下：
 <h2 id=优化方向>优化方向</h2>
 <h3 id=方向一保留-nil-槽位--map-局部化>方向一：保留 nil 槽位 + map 局部化</h3>
 <p>两个问题一起修：预分配切片按槽位赋值（不丢 nil），map 在 <code>Dup</code> 内部创建（无全局脏数据）：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// deep copy
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Dup</span>(src <span style=color:#000;font-weight:700>*</span>Node) <span style=color:#000;font-weight:700>*</span>Node {
-	<span style=color:#000;font-weight:700>return</span> <span style=color:#900;font-weight:700>dup</span>(src, <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#000;font-weight:700>*</span>Node]<span style=color:#000;font-weight:700>*</span>Node))
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// deep copy
+</span><span class=c1></span><span class=kd>func</span> <span class=nf>Dup</span><span class=p>(</span><span class=nx>src</span> <span class=o>*</span><span class=nx>Node</span><span class=p>)</span> <span class=o>*</span><span class=nx>Node</span> <span class=p>{</span>
+	<span class=k>return</span> <span class=nf>dup</span><span class=p>(</span><span class=nx>src</span><span class=p>,</span> <span class=nb>make</span><span class=p>(</span><span class=kd>map</span><span class=p>[</span><span class=o>*</span><span class=nx>Node</span><span class=p>]</span><span class=o>*</span><span class=nx>Node</span><span class=p>))</span>
+<span class=p>}</span>
 
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>dup</span>(src <span style=color:#000;font-weight:700>*</span>Node, M <span style=color:#000;font-weight:700>map</span>[<span style=color:#000;font-weight:700>*</span>Node]<span style=color:#000;font-weight:700>*</span>Node) <span style=color:#000;font-weight:700>*</span>Node {
-	<span style=color:#000;font-weight:700>if</span> src <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
-		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>
-	}
-	node <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Node{Data: src.Data}
-	M[src] = node
-	fields <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>([]<span style=color:#000;font-weight:700>*</span>Node, <span style=color:#0086b3>len</span>(src.Fields)) <span style=color:#998;font-style:italic>// 预分配，保留 nil 槽位
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> src.Fields {
-		<span style=color:#000;font-weight:700>if</span> src.Fields[i] <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
-			<span style=color:#000;font-weight:700>continue</span>
-		}
-		<span style=color:#000;font-weight:700>if</span> addr, ok <span style=color:#000;font-weight:700>:=</span> M[src.Fields[i]]; ok { <span style=color:#998;font-style:italic>// 环或共享引用，直接复用
-</span><span style=color:#998;font-style:italic></span>			fields[i] = addr
-		} <span style=color:#000;font-weight:700>else</span> {
-			fields[i] = <span style=color:#900;font-weight:700>dup</span>(src.Fields[i], M)
-		}
-	}
-	node.Fields = fields
-	<span style=color:#000;font-weight:700>return</span> node
-}
+<span class=kd>func</span> <span class=nf>dup</span><span class=p>(</span><span class=nx>src</span> <span class=o>*</span><span class=nx>Node</span><span class=p>,</span> <span class=nx>M</span> <span class=kd>map</span><span class=p>[</span><span class=o>*</span><span class=nx>Node</span><span class=p>]</span><span class=o>*</span><span class=nx>Node</span><span class=p>)</span> <span class=o>*</span><span class=nx>Node</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=nx>src</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=k>return</span> <span class=kc>nil</span>
+	<span class=p>}</span>
+	<span class=nx>node</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>Node</span><span class=p>{</span><span class=nx>Data</span><span class=p>:</span> <span class=nx>src</span><span class=p>.</span><span class=nx>Data</span><span class=p>}</span>
+	<span class=nx>M</span><span class=p>[</span><span class=nx>src</span><span class=p>]</span> <span class=p>=</span> <span class=nx>node</span>
+	<span class=nx>fields</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>([]</span><span class=o>*</span><span class=nx>Node</span><span class=p>,</span> <span class=nb>len</span><span class=p>(</span><span class=nx>src</span><span class=p>.</span><span class=nx>Fields</span><span class=p>))</span> <span class=c1>// 预分配，保留 nil 槽位
+</span><span class=c1></span>	<span class=k>for</span> <span class=nx>i</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>src</span><span class=p>.</span><span class=nx>Fields</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=nx>src</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+			<span class=k>continue</span>
+		<span class=p>}</span>
+		<span class=k>if</span> <span class=nx>addr</span><span class=p>,</span> <span class=nx>ok</span> <span class=o>:=</span> <span class=nx>M</span><span class=p>[</span><span class=nx>src</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]];</span> <span class=nx>ok</span> <span class=p>{</span> <span class=c1>// 环或共享引用，直接复用
+</span><span class=c1></span>			<span class=nx>fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nx>addr</span>
+		<span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+			<span class=nx>fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nf>dup</span><span class=p>(</span><span class=nx>src</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>],</span> <span class=nx>M</span><span class=p>)</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+	<span class=nx>node</span><span class=p>.</span><span class=nx>Fields</span> <span class=p>=</span> <span class=nx>fields</span>
+	<span class=k>return</span> <span class=nx>node</span>
+<span class=p>}</span>
 </code></pre></div><h3 id=方向二迭代化避免栈溢出>方向二：迭代化，避免栈溢出</h3>
 <p>把递归改成显式栈的迭代写法，深链也能平稳跑完：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>DupIter</span>(src <span style=color:#000;font-weight:700>*</span>Node) <span style=color:#000;font-weight:700>*</span>Node {
-	<span style=color:#000;font-weight:700>if</span> src <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
-		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>
-	}
-	M <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>map</span>[<span style=color:#000;font-weight:700>*</span>Node]<span style=color:#000;font-weight:700>*</span>Node{src: {Data: src.Data}}
-	stack <span style=color:#000;font-weight:700>:=</span> []<span style=color:#000;font-weight:700>*</span>Node{src}
-	<span style=color:#000;font-weight:700>for</span> <span style=color:#0086b3>len</span>(stack) &gt; <span style=color:#099>0</span> {
-		s <span style=color:#000;font-weight:700>:=</span> stack[<span style=color:#0086b3>len</span>(stack)<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>]
-		stack = stack[:<span style=color:#0086b3>len</span>(stack)<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>]
-		d <span style=color:#000;font-weight:700>:=</span> M[s]
-		d.Fields = <span style=color:#0086b3>make</span>([]<span style=color:#000;font-weight:700>*</span>Node, <span style=color:#0086b3>len</span>(s.Fields))
-		<span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> s.Fields {
-			<span style=color:#000;font-weight:700>if</span> s.Fields[i] <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
-				<span style=color:#000;font-weight:700>continue</span>
-			}
-			<span style=color:#000;font-weight:700>if</span> dd, ok <span style=color:#000;font-weight:700>:=</span> M[s.Fields[i]]; ok {
-				d.Fields[i] = dd
-			} <span style=color:#000;font-weight:700>else</span> {
-				nd <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Node{Data: s.Fields[i].Data}
-				M[s.Fields[i]] = nd
-				d.Fields[i] = nd
-				stack = <span style=color:#0086b3>append</span>(stack, s.Fields[i])
-			}
-		}
-	}
-	<span style=color:#000;font-weight:700>return</span> M[src]
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>DupIter</span><span class=p>(</span><span class=nx>src</span> <span class=o>*</span><span class=nx>Node</span><span class=p>)</span> <span class=o>*</span><span class=nx>Node</span> <span class=p>{</span>
+	<span class=k>if</span> <span class=nx>src</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=k>return</span> <span class=kc>nil</span>
+	<span class=p>}</span>
+	<span class=nx>M</span> <span class=o>:=</span> <span class=kd>map</span><span class=p>[</span><span class=o>*</span><span class=nx>Node</span><span class=p>]</span><span class=o>*</span><span class=nx>Node</span><span class=p>{</span><span class=nx>src</span><span class=p>:</span> <span class=p>{</span><span class=nx>Data</span><span class=p>:</span> <span class=nx>src</span><span class=p>.</span><span class=nx>Data</span><span class=p>}}</span>
+	<span class=nx>stack</span> <span class=o>:=</span> <span class=p>[]</span><span class=o>*</span><span class=nx>Node</span><span class=p>{</span><span class=nx>src</span><span class=p>}</span>
+	<span class=k>for</span> <span class=nb>len</span><span class=p>(</span><span class=nx>stack</span><span class=p>)</span> <span class=p>&gt;</span> <span class=mi>0</span> <span class=p>{</span>
+		<span class=nx>s</span> <span class=o>:=</span> <span class=nx>stack</span><span class=p>[</span><span class=nb>len</span><span class=p>(</span><span class=nx>stack</span><span class=p>)</span><span class=o>-</span><span class=mi>1</span><span class=p>]</span>
+		<span class=nx>stack</span> <span class=p>=</span> <span class=nx>stack</span><span class=p>[:</span><span class=nb>len</span><span class=p>(</span><span class=nx>stack</span><span class=p>)</span><span class=o>-</span><span class=mi>1</span><span class=p>]</span>
+		<span class=nx>d</span> <span class=o>:=</span> <span class=nx>M</span><span class=p>[</span><span class=nx>s</span><span class=p>]</span>
+		<span class=nx>d</span><span class=p>.</span><span class=nx>Fields</span> <span class=p>=</span> <span class=nb>make</span><span class=p>([]</span><span class=o>*</span><span class=nx>Node</span><span class=p>,</span> <span class=nb>len</span><span class=p>(</span><span class=nx>s</span><span class=p>.</span><span class=nx>Fields</span><span class=p>))</span>
+		<span class=k>for</span> <span class=nx>i</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>s</span><span class=p>.</span><span class=nx>Fields</span> <span class=p>{</span>
+			<span class=k>if</span> <span class=nx>s</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+				<span class=k>continue</span>
+			<span class=p>}</span>
+			<span class=k>if</span> <span class=nx>dd</span><span class=p>,</span> <span class=nx>ok</span> <span class=o>:=</span> <span class=nx>M</span><span class=p>[</span><span class=nx>s</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]];</span> <span class=nx>ok</span> <span class=p>{</span>
+				<span class=nx>d</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nx>dd</span>
+			<span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+				<span class=nx>nd</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>Node</span><span class=p>{</span><span class=nx>Data</span><span class=p>:</span> <span class=nx>s</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>].</span><span class=nx>Data</span><span class=p>}</span>
+				<span class=nx>M</span><span class=p>[</span><span class=nx>s</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]]</span> <span class=p>=</span> <span class=nx>nd</span>
+				<span class=nx>d</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nx>nd</span>
+				<span class=nx>stack</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>stack</span><span class=p>,</span> <span class=nx>s</span><span class=p>.</span><span class=nx>Fields</span><span class=p>[</span><span class=nx>i</span><span class=p>])</span>
+			<span class=p>}</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=nx>M</span><span class=p>[</span><span class=nx>src</span><span class=p>]</span>
+<span class=p>}</span>
 </code></pre></div><p>实测 1 万层纯链也能顺利完成，且环、共享引用、nil 槽位的行为都与修正版一致。</p>
 <h3 id=方向三泛化到任意类型>方向三：泛化到任意类型</h3>
 <p>对于任意含环的数据结构，可以把 <code>map[*Node]*Node</code> 换成 <code>map[unsafe.Pointer]reflect.Value</code>，用反射写一个通用的记忆化深拷贝。序列化类的库都不行——见下一节。</p>
@@ -439,27 +441,27 @@ a3的信息如下：
 <h2 id=对比-k8s-的-deepcopy-gen>对比 k8s 的 deepcopy-gen</h2>
 <p>Kubernetes 用 <code>k8s.io/code-generator</code> 自动生成 <code>zz_generated.deepcopy.go</code>，每个类型生成 <code>DeepCopyInto(out *T)</code> 与 <code>DeepCopy() *T</code> 两个方法。有意思的是：<strong>它完全不做循环引用处理</strong>，靠的是约定而不是算法。</p>
 <p>生成的模式是纯递归，没有任何记忆化：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// *out = *in 先整体浅拷贝
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> (in <span style=color:#000;font-weight:700>*</span>Affinity) <span style=color:#900;font-weight:700>DeepCopyInto</span>(out <span style=color:#000;font-weight:700>*</span>Affinity) {
-	<span style=color:#000;font-weight:700>*</span>out = <span style=color:#000;font-weight:700>*</span>in
-	<span style=color:#000;font-weight:700>if</span> in.NodeAffinity <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {          <span style=color:#998;font-style:italic>// 指针字段：新建 + 递归
-</span><span style=color:#998;font-style:italic></span>		in, out <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>in.NodeAffinity, <span style=color:#000;font-weight:700>&amp;</span>out.NodeAffinity
-		<span style=color:#000;font-weight:700>*</span>out = <span style=color:#0086b3>new</span>(NodeAffinity)
-		(<span style=color:#000;font-weight:700>*</span>in).<span style=color:#900;font-weight:700>DeepCopyInto</span>(<span style=color:#000;font-weight:700>*</span>out)
-	}
-	<span style=color:#000;font-weight:700>return</span>
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// *out = *in 先整体浅拷贝
+</span><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>in</span> <span class=o>*</span><span class=nx>Affinity</span><span class=p>)</span> <span class=nf>DeepCopyInto</span><span class=p>(</span><span class=nx>out</span> <span class=o>*</span><span class=nx>Affinity</span><span class=p>)</span> <span class=p>{</span>
+	<span class=o>*</span><span class=nx>out</span> <span class=p>=</span> <span class=o>*</span><span class=nx>in</span>
+	<span class=k>if</span> <span class=nx>in</span><span class=p>.</span><span class=nx>NodeAffinity</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>          <span class=c1>// 指针字段：新建 + 递归
+</span><span class=c1></span>		<span class=nx>in</span><span class=p>,</span> <span class=nx>out</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>in</span><span class=p>.</span><span class=nx>NodeAffinity</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>out</span><span class=p>.</span><span class=nx>NodeAffinity</span>
+		<span class=o>*</span><span class=nx>out</span> <span class=p>=</span> <span class=nb>new</span><span class=p>(</span><span class=nx>NodeAffinity</span><span class=p>)</span>
+		<span class=p>(</span><span class=o>*</span><span class=nx>in</span><span class=p>).</span><span class=nf>DeepCopyInto</span><span class=p>(</span><span class=o>*</span><span class=nx>out</span><span class=p>)</span>
+	<span class=p>}</span>
+	<span class=k>return</span>
+<span class=p>}</span>
 </code></pre></div><p>对指针切片（对应本例的 <code>Fields []*Node</code>）生成的是：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>if</span> in.Fields <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-	in, out <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>in.Fields, <span style=color:#000;font-weight:700>&amp;</span>out.Fields
-	<span style=color:#000;font-weight:700>*</span>out = <span style=color:#0086b3>make</span>([]<span style=color:#000;font-weight:700>*</span>Node, <span style=color:#0086b3>len</span>(<span style=color:#000;font-weight:700>*</span>in))       <span style=color:#998;font-style:italic>// 预分配，按槽位赋值
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> <span style=color:#000;font-weight:700>*</span>in {
-		<span style=color:#000;font-weight:700>if</span> (<span style=color:#000;font-weight:700>*</span>in)[i] <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {              <span style=color:#998;font-style:italic>// 显式判空，nil 槽位被保留
-</span><span style=color:#998;font-style:italic></span>			(<span style=color:#000;font-weight:700>*</span>out)[i] = <span style=color:#0086b3>new</span>(Node)
-			(<span style=color:#000;font-weight:700>*</span>in)[i].<span style=color:#900;font-weight:700>DeepCopyInto</span>((<span style=color:#000;font-weight:700>*</span>out)[i])
-		}
-	}
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=k>if</span> <span class=nx>in</span><span class=p>.</span><span class=nx>Fields</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+	<span class=nx>in</span><span class=p>,</span> <span class=nx>out</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>in</span><span class=p>.</span><span class=nx>Fields</span><span class=p>,</span> <span class=o>&amp;</span><span class=nx>out</span><span class=p>.</span><span class=nx>Fields</span>
+	<span class=o>*</span><span class=nx>out</span> <span class=p>=</span> <span class=nb>make</span><span class=p>([]</span><span class=o>*</span><span class=nx>Node</span><span class=p>,</span> <span class=nb>len</span><span class=p>(</span><span class=o>*</span><span class=nx>in</span><span class=p>))</span>       <span class=c1>// 预分配，按槽位赋值
+</span><span class=c1></span>	<span class=k>for</span> <span class=nx>i</span> <span class=o>:=</span> <span class=k>range</span> <span class=o>*</span><span class=nx>in</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=p>(</span><span class=o>*</span><span class=nx>in</span><span class=p>)[</span><span class=nx>i</span><span class=p>]</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>              <span class=c1>// 显式判空，nil 槽位被保留
+</span><span class=c1></span>			<span class=p>(</span><span class=o>*</span><span class=nx>out</span><span class=p>)[</span><span class=nx>i</span><span class=p>]</span> <span class=p>=</span> <span class=nb>new</span><span class=p>(</span><span class=nx>Node</span><span class=p>)</span>
+			<span class=p>(</span><span class=o>*</span><span class=nx>in</span><span class=p>)[</span><span class=nx>i</span><span class=p>].</span><span class=nf>DeepCopyInto</span><span class=p>((</span><span class=o>*</span><span class=nx>out</span><span class=p>)[</span><span class=nx>i</span><span class=p>])</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+<span class=p>}</span>
 </code></pre></div><p>为什么不需要防环？因为 <strong>k8s API 对象被约定为树 / DAG，禁止指针环</strong>——需要引用别的对象的字段（如 <code>ObjectReference</code>、<code>SecretReference</code>）存的都是 name 这类字符串而非指针，物理上无法成环。反过来看：</p>
 <ul>
 <li>若真喂一个环进去，<code>DeepCopyInto</code> 会无限递归直接爆栈；</li>

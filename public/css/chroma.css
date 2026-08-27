@@ -1,0 +1,90 @@
+/* ================================================================
+   Syntax highlighting · GitHub Light 调色板
+   （pygmentsUseClasses 模式；深色配色见 assets/css/dark.css）
+   ================================================================ */
+
+/* 背景与整体 */
+.chroma {
+  color: #1F2328;
+  background-color: transparent;
+}
+.highlight pre.chroma {
+  color: #1F2328;
+}
+
+/* 行号 */
+.chroma .lnt, .chroma .ln {
+  margin-right: 0.4em;
+  padding: 0 0.4em 0 0;
+  color: #8C959F;
+}
+.chroma .lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
+.chroma .lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; width: auto; overflow: auto; display: block; }
+.chroma .hl { display: block; width: 100%; background-color: #FFF8C5; }
+
+/* 注释 */
+.chroma .c, .chroma .ch, .chroma .cm, .chroma .c1,
+.chroma .cs, .chroma .cp, .chroma .cpf {
+  color: #59636E;
+  font-style: italic;
+}
+
+/* 关键字 */
+.chroma .k, .chroma .kc, .chroma .kd, .chroma .kn,
+.chroma .kp, .chroma .kr {
+  color: #CF222E;
+}
+.chroma .kt {
+  color: #953800;
+}
+
+/* 名称 / 标识符 */
+.chroma .n, .chroma .nx { color: #1F2328; }
+.chroma .na { color: #0550AE; }                    /* 属性 */
+.chroma .nb { color: #0550AE; }                    /* 内建 */
+.chroma .bp { color: #59636E; }                    /* 内建伪类 */
+.chroma .nc { color: #953800; }                    /* 类名 */
+.chroma .no { color: #0550AE; }                    /* 常量 */
+.chroma .nd { color: #8250DF; font-weight: 600; }  /* 装饰器 */
+.chroma .ni { color: #8250DF; }                    /* 实体 */
+.chroma .ne { color: #8250DF; }                    /* 异常 */
+.chroma .nf, .chroma .fm { color: #8250DF; }       /* 函数 */
+.chroma .nl { color: #0550AE; }                    /* 标签 */
+.chroma .nn { color: #953800; }                    /* 命名空间 */
+.chroma .nt { color: #116329; }                    /* HTML 标签 */
+.chroma .nv, .chroma .vc, .chroma .vg, .chroma .vi, .chroma .vm { color: #1F2328; } /* 变量 */
+.chroma .py { color: #0550AE; }                    /* 属性 */
+
+/* 操作符 / 标点 */
+.chroma .o, .chroma .ow { color: #1F2328; font-weight: 600; }
+.chroma .p { color: #1F2328; }
+
+/* 字符串 */
+.chroma .s, .chroma .sa, .chroma .sb, .chroma .sc,
+.chroma .dl, .chroma .sd, .chroma .s2, .chroma .se,
+.chroma .sh, .chroma .si, .chroma .sx, .chroma .sr,
+.chroma .s1, .chroma .ss {
+  color: #0A3069;
+}
+
+/* 数字 */
+.chroma .m, .chroma .mb, .chroma .mf, .chroma .mh,
+.chroma .mi, .chroma .il, .chroma .mo {
+  color: #0550AE;
+}
+
+/* 通用 / 其他 */
+.chroma .g, .chroma .gd { color: #82071E; }
+.chroma .ge { font-style: italic; }
+.chroma .gr { color: #82071E; }
+.chroma .gh { color: #0550AE; font-weight: 600; }
+.chroma .gi { color: #116329; }
+.chroma .go { color: #59636E; }
+.chroma .gp { color: #59636E; }
+.chroma .gs { font-weight: 600; }
+.chroma .gu { color: #8250DF; font-weight: 600; }
+.chroma .gt { color: #82071E; }
+.chroma .gl { text-decoration: underline; }
+.chroma .w { color: #1F2328; }
+.chroma .err { color: #82071E; background-color: #FFEBE9; }
+.chroma .l, .chroma .ld { color: #0A3069; }

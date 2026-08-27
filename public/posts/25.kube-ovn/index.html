@@ -21,8 +21,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -313,57 +315,57 @@ April 27, 2023
 <h4 id=功能使用>功能使用</h4>
 <p>一些功能看起来比较复杂，但实际使用还是比较简单的，在对应的资源上打 Annotation 就可以了。此外即使不做任何配置，Kube-OVN 会带一个默认的子网，默认的分布式网关，以及内置的 Service 和 NetworkPolicy 实现。</p>
 <p>比如给POD固定地址：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>v1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>Pod<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>static-ip<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>annotations</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>ovn.kubernetes.io/ip_address</span>:<span style=color:#bbb> </span><span style=color:#099>10.16.0.15</span><span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>ovn.kubernetes.io/mac_address</span>:<span style=color:#bbb> </span><span style=color:#099>00</span>:<span style=color:#099>00</span>:<span style=color:#099>00</span>:<span style=color:#099>53</span>:6B:B6<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>containers</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>static-ip<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>image</span>:<span style=color:#bbb> </span>nginx:alpine<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>v1</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Pod</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>static-ip</span><span class=w>
+</span><span class=w>  </span><span class=nt>annotations</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>ovn.kubernetes.io/ip_address</span><span class=p>:</span><span class=w> </span><span class=m>10.16.0.15</span><span class=w>
+</span><span class=w>    </span><span class=nt>ovn.kubernetes.io/mac_address</span><span class=p>:</span><span class=w> </span><span class=m>00</span><span class=p>:</span><span class=m>00</span><span class=p>:</span><span class=m>00</span><span class=p>:</span><span class=m>53</span><span class=p>:</span><span class=l>6B:B6</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>containers</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>static-ip</span><span class=w>
+</span><span class=w>    </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>nginx:alpine</span><span class=w>
 </span></code></pre></div><p>或者IP池：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>ovn.kubernetes.io/ip_pool</span>:<span style=color:#bbb> </span><span style=color:#099>10.16.0.15</span>,<span style=color:#099>10.16.0.16</span>,<span style=color:#099>10.16.0.17</span><span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>ovn.kubernetes.io/ip_pool</span><span class=p>:</span><span class=w> </span><span class=m>10.16.0.15</span><span class=p>,</span><span class=m>10.16.0.16</span><span class=p>,</span><span class=m>10.16.0.17</span><span class=w>
 </span></code></pre></div><p>kube-ovn针对kubevirt虚拟机有做特定的处理，能让kubevirt虚拟机实例在生命周期内启停，升级，迁移等操作过程中地址固定不变。</p>
 <p>除此之外，还提供容器网络QoS设置、流量镜像等功能。</p>
 <p>创建VPC、Subnet等：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>kind</span>:<span style=color:#bbb> </span>Vpc<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>kubeovn.io/v1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>test-vpc-1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>namespaces</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- ns1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:#555>---</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>Subnet<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>kubeovn.io/v1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>net1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>vpc</span>:<span style=color:#bbb> </span>test-vpc-1<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>cidrBlock</span>:<span style=color:#bbb> </span><span style=color:#099>10.0.1.0</span>/24<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>protocol</span>:<span style=color:#bbb> </span>IPv4<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>namespaces</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- ns1<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Vpc</span><span class=w>
+</span><span class=w></span><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>kubeovn.io/v1</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>test-vpc-1</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>namespaces</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=l>ns1</span><span class=w>
+</span><span class=w></span><span class=nn>---</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Subnet</span><span class=w>
+</span><span class=w></span><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>kubeovn.io/v1</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>net1</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>vpc</span><span class=p>:</span><span class=w> </span><span class=l>test-vpc-1</span><span class=w>
+</span><span class=w>  </span><span class=nt>cidrBlock</span><span class=p>:</span><span class=w> </span><span class=m>10.0.1.0</span><span class=l>/24</span><span class=w>
+</span><span class=w>  </span><span class=nt>protocol</span><span class=p>:</span><span class=w> </span><span class=l>IPv4</span><span class=w>
+</span><span class=w>  </span><span class=nt>namespaces</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span>- <span class=l>ns1</span><span class=w>
 </span></code></pre></div><h3 id=kube-ovn架构及技术分析>kube-ovn架构及技术分析</h3>
 <p>kube-ovn通过监听自定义资源CR的创建，将这些配置翻译成网络配置并设置，主要是调用以下ovn命令行工具配置ovs：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// pkg/ovs/ovn.go
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>const</span> (
-	OvnNbCtl    = <span style=color:#d14>&#34;ovn-nbctl&#34;</span>
-	OvnSbCtl    = <span style=color:#d14>&#34;ovn-sbctl&#34;</span>
-	OVNIcNbCtl  = <span style=color:#d14>&#34;ovn-ic-nbctl&#34;</span>
-	OVNIcSbCtl  = <span style=color:#d14>&#34;ovn-ic-sbctl&#34;</span>
-	OvsVsCtl    = <span style=color:#d14>&#34;ovs-vsctl&#34;</span>
-	MayExist    = <span style=color:#d14>&#34;--may-exist&#34;</span>
-	IfExists    = <span style=color:#d14>&#34;--if-exists&#34;</span>
-	Policy      = <span style=color:#d14>&#34;--policy&#34;</span>
-	PolicyDstIP = <span style=color:#d14>&#34;dst-ip&#34;</span>
-	PolicySrcIP = <span style=color:#d14>&#34;src-ip&#34;</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// pkg/ovs/ovn.go
+</span><span class=c1></span><span class=kd>const</span> <span class=p>(</span>
+	<span class=nx>OvnNbCtl</span>    <span class=p>=</span> <span class=s>&#34;ovn-nbctl&#34;</span>
+	<span class=nx>OvnSbCtl</span>    <span class=p>=</span> <span class=s>&#34;ovn-sbctl&#34;</span>
+	<span class=nx>OVNIcNbCtl</span>  <span class=p>=</span> <span class=s>&#34;ovn-ic-nbctl&#34;</span>
+	<span class=nx>OVNIcSbCtl</span>  <span class=p>=</span> <span class=s>&#34;ovn-ic-sbctl&#34;</span>
+	<span class=nx>OvsVsCtl</span>    <span class=p>=</span> <span class=s>&#34;ovs-vsctl&#34;</span>
+	<span class=nx>MayExist</span>    <span class=p>=</span> <span class=s>&#34;--may-exist&#34;</span>
+	<span class=nx>IfExists</span>    <span class=p>=</span> <span class=s>&#34;--if-exists&#34;</span>
+	<span class=nx>Policy</span>      <span class=p>=</span> <span class=s>&#34;--policy&#34;</span>
+	<span class=nx>PolicyDstIP</span> <span class=p>=</span> <span class=s>&#34;dst-ip&#34;</span>
+	<span class=nx>PolicySrcIP</span> <span class=p>=</span> <span class=s>&#34;src-ip&#34;</span>
 
-	OVSDBWaitTimeout = <span style=color:#099>0</span>
-)
+	<span class=nx>OVSDBWaitTimeout</span> <span class=p>=</span> <span class=mi>0</span>
+<span class=p>)</span>
 </code></pre></div><p>整体架构如图所示：</p>
 <p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/kube-ovn.jpg alt=1></p>
 <p>相对于k8s网络要求来说，ovn的能力已经超出了这个范围。即在软件交换机层面实现网络打通，而且提供了更丰富的网络功能。</p>
@@ -371,27 +373,27 @@ April 27, 2023
 <p>ovs：单机软件，没有集群的概念，就好比docker或者其他容器运行时。</p>
 <p>ovn：相当于ovs的k8s，一个集中式的OVS控制面。从集群角度编排网络设施。</p>
 <p>当给一个pod分配ip地址的同时，ovn会更新对应的逻辑交换机端口：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#998;font-style:italic># 容器内</span>
-/ <span style=color:#998;font-style:italic># ip a</span>
-56: eth0@if57: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span style=color:#099>1400</span> qdisc noqueue state UP
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=c1># 容器内</span>
+/ <span class=c1># ip a</span>
+56: eth0@if57: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span class=m>1400</span> qdisc noqueue state UP
     link/ether 00:00:00:c4:e5:f9 brd ff:ff:ff:ff:ff:ff
     inet 10.16.0.5/16 brd 10.16.255.255 scope global eth0
        valid_lft forever preferred_lft forever
     inet6 fe80::200:ff:fec4:e5f9/64 scope link
        valid_lft forever preferred_lft forever
-/ <span style=color:#998;font-style:italic># route -n</span>
+/ <span class=c1># route -n</span>
 Kernel IP routing table
 Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
-0.0.0.0         10.16.0.1       0.0.0.0         UG    <span style=color:#099>0</span>      <span style=color:#099>0</span>        <span style=color:#099>0</span> eth0
-10.16.0.0       0.0.0.0         255.255.0.0     U     <span style=color:#099>0</span>      <span style=color:#099>0</span>        <span style=color:#099>0</span> eth0
-<span style=color:#998;font-style:italic># 节点上与之对应的虚拟网卡</span>
-<span style=color:#000;font-weight:700>[</span>root@vm25 ~<span style=color:#000;font-weight:700>]</span><span style=color:#998;font-style:italic># ip a</span>
-57: f254898cfaf5_h@if56: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#099>1400</span> qdisc noqueue master ovs-system state UP group default qlen <span style=color:#099>1000</span>
-    link/ether 62:ca:ab:20:7d:7b brd ff:ff:ff:ff:ff:ff link-netnsid <span style=color:#099>3</span>
+0.0.0.0         10.16.0.1       0.0.0.0         UG    <span class=m>0</span>      <span class=m>0</span>        <span class=m>0</span> eth0
+10.16.0.0       0.0.0.0         255.255.0.0     U     <span class=m>0</span>      <span class=m>0</span>        <span class=m>0</span> eth0
+<span class=c1># 节点上与之对应的虚拟网卡</span>
+<span class=o>[</span>root@vm25 ~<span class=o>]</span><span class=c1># ip a</span>
+57: f254898cfaf5_h@if56: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span class=m>1400</span> qdisc noqueue master ovs-system state UP group default qlen <span class=m>1000</span>
+    link/ether 62:ca:ab:20:7d:7b brd ff:ff:ff:ff:ff:ff link-netnsid <span class=m>3</span>
     inet6 fe80::60ca:abff:fe20:7d7b/64 scope link 
        valid_lft forever preferred_lft forever
-<span style=color:#998;font-style:italic># 节点上的ovs网桥连接状态</span>
-<span style=color:#000;font-weight:700>[</span>root@vm24 ~<span style=color:#000;font-weight:700>]</span><span style=color:#998;font-style:italic># kubectl ko vsctl vm25 show</span>
+<span class=c1># 节点上的ovs网桥连接状态</span>
+<span class=o>[</span>root@vm24 ~<span class=o>]</span><span class=c1># kubectl ko vsctl vm25 show</span>
 a0c00567-d1e1-4be8-b131-9e5dd1f014f8
     Bridge br-int
         fail_mode: secure
@@ -399,31 +401,31 @@ a0c00567-d1e1-4be8-b131-9e5dd1f014f8
         Port f254898cfaf5_h
             Interface f254898cfaf5_h
         ...
-    ovs_version: <span style=color:#d14>&#34;2.17.7&#34;</span>
+    ovs_version: <span class=s2>&#34;2.17.7&#34;</span>
 
-<span style=color:#998;font-style:italic># 查看ovs北向连接状态</span>
-<span style=color:#000;font-weight:700>[</span>root@vm24 ~<span style=color:#000;font-weight:700>]</span><span style=color:#998;font-style:italic># kubectl ko nbctl show</span>
-switch cf603059-294b-4147-a3b4-98ddb45cb051 <span style=color:#000;font-weight:700>(</span>ovn-default<span style=color:#000;font-weight:700>)</span> <span style=color:#998;font-style:italic># 虚拟交换机信息</span>
-    port static-mul-vm-ip.default   <span style=color:#998;font-style:italic># 连接到容器的端口</span>
-        addresses: <span style=color:#000;font-weight:700>[</span><span style=color:#d14>&#34;00:00:00:C4:E5:F9 10.16.0.5&#34;</span><span style=color:#000;font-weight:700>]</span>
+<span class=c1># 查看ovs北向连接状态</span>
+<span class=o>[</span>root@vm24 ~<span class=o>]</span><span class=c1># kubectl ko nbctl show</span>
+switch cf603059-294b-4147-a3b4-98ddb45cb051 <span class=o>(</span>ovn-default<span class=o>)</span> <span class=c1># 虚拟交换机信息</span>
+    port static-mul-vm-ip.default   <span class=c1># 连接到容器的端口</span>
+        addresses: <span class=o>[</span><span class=s2>&#34;00:00:00:C4:E5:F9 10.16.0.5&#34;</span><span class=o>]</span>
     ...
-switch 626913df-9994-42ad-96e3-330a8fec1f08 <span style=color:#000;font-weight:700>(</span>join<span style=color:#000;font-weight:700>)</span>
+switch 626913df-9994-42ad-96e3-330a8fec1f08 <span class=o>(</span>join<span class=o>)</span>
     port node-vm25
-        addresses: <span style=color:#000;font-weight:700>[</span><span style=color:#d14>&#34;00:00:00:72:50:54 100.64.0.3&#34;</span><span style=color:#000;font-weight:700>]</span>
+        addresses: <span class=o>[</span><span class=s2>&#34;00:00:00:72:50:54 100.64.0.3&#34;</span><span class=o>]</span>
     port node-vm24
-        addresses: <span style=color:#000;font-weight:700>[</span><span style=color:#d14>&#34;00:00:00:49:34:29 100.64.0.2&#34;</span><span style=color:#000;font-weight:700>]</span>
+        addresses: <span class=o>[</span><span class=s2>&#34;00:00:00:49:34:29 100.64.0.2&#34;</span><span class=o>]</span>
     port node-vm26
-        addresses: <span style=color:#000;font-weight:700>[</span><span style=color:#d14>&#34;00:00:00:0A:39:76 100.64.0.4&#34;</span><span style=color:#000;font-weight:700>]</span>
+        addresses: <span class=o>[</span><span class=s2>&#34;00:00:00:0A:39:76 100.64.0.4&#34;</span><span class=o>]</span>
     port join-ovn-cluster
         type: router
         router-port: ovn-cluster-join
-router e0926da7-aca3-4c41-821d-3bc5305ebf1c <span style=color:#000;font-weight:700>(</span>ovn-cluster<span style=color:#000;font-weight:700>)</span> <span style=color:#998;font-style:italic># 路由信息</span>
+router e0926da7-aca3-4c41-821d-3bc5305ebf1c <span class=o>(</span>ovn-cluster<span class=o>)</span> <span class=c1># 路由信息</span>
     port ovn-cluster-join
-        mac: <span style=color:#d14>&#34;00:00:00:42:79:A9&#34;</span>
-        networks: <span style=color:#000;font-weight:700>[</span><span style=color:#d14>&#34;100.64.0.1/16&#34;</span><span style=color:#000;font-weight:700>]</span>
+        mac: <span class=s2>&#34;00:00:00:42:79:A9&#34;</span>
+        networks: <span class=o>[</span><span class=s2>&#34;100.64.0.1/16&#34;</span><span class=o>]</span>
     port ovn-cluster-ovn-default
-        mac: <span style=color:#d14>&#34;00:00:00:BE:79:30&#34;</span>
-        networks: <span style=color:#000;font-weight:700>[</span><span style=color:#d14>&#34;10.16.0.1/16&#34;</span><span style=color:#000;font-weight:700>]</span>  <span style=color:#998;font-style:italic># 容器所指向的网关</span>
+        mac: <span class=s2>&#34;00:00:00:BE:79:30&#34;</span>
+        networks: <span class=o>[</span><span class=s2>&#34;10.16.0.1/16&#34;</span><span class=o>]</span>  <span class=c1># 容器所指向的网关</span>
 </code></pre></div><h2 id=多网卡方案>多网卡方案</h2>
 <p>目前主流的多网卡方案都是采用<a href=https://github.com/k8snetworkplumbingwg/multus-cni>multus-cni</a>来实现多网卡功能，multus-cni是英特尔公司开源的多网卡的解决方案。</p>
 <h3 id=部署>部署</h3>
@@ -431,73 +433,73 @@ router e0926da7-aca3-4c41-821d-3bc5305ebf1c <span style=color:#000;font-weight:7
 <p>构建高性能网络可以采用sr-iov、dpdk的方案。但这需要硬件网卡的支持。我们用multus和macvlan的方案实现pod多网卡的功能。</p>
 <p>macvlan是linux内核实现的功能，它可以实现虚拟化多个物理网络接口（NIC）并为每个虚拟接口分配一个唯一的MAC地址。</p>
 <p>开启macvlan需要内核编译并加载模块，可以使用以下方法：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#998;font-style:italic># 查看内核是否加载了 macvlan 模块</span>
-lsmod | grep macvlan 
-<span style=color:#998;font-style:italic># 加载 macvlan</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=c1># 查看内核是否加载了 macvlan 模块</span>
+lsmod <span class=p>|</span> grep macvlan 
+<span class=c1># 加载 macvlan</span>
 modprobe macvlan
 </code></pre></div><p>其余操作按照官网部署即可：https://github.com/k8snetworkplumbingwg/multus-cni/blob/master/docs/quickstart.md</p>
 <h3 id=功能使用-1>功能使用</h3>
 <p>首先创建一个NetworkAttachmentDefinition CR 用于配置POD的网卡。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>k8s.cni.cncf.io/v1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>NetworkAttachmentDefinition<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>macvlaneip<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>config</span>:<span style=color:#bbb> </span>&gt;-<span style=color:#d14>
-</span><span style=color:#d14>    {
-</span><span style=color:#d14>      &#34;cniVersion&#34;: &#34;0.3.0&#34;,
-</span><span style=color:#d14>      &#34;type&#34;: &#34;macvlan&#34;,
-</span><span style=color:#d14>      &#34;master&#34;: &#34;eth0&#34;,
-</span><span style=color:#d14>      &#34;mode&#34;: &#34;bridge&#34;,
-</span><span style=color:#d14>      &#34;ipam&#34;: {
-</span><span style=color:#d14>        &#34;type&#34;: &#34;kube-ovn&#34;,
-</span><span style=color:#d14>        &#34;server_socket&#34;: &#34;/run/openvswitch/kube-ovn-daemon.sock&#34;,
-</span><span style=color:#d14>        &#34;provider&#34;: &#34;macvlaneip.default&#34;
-</span><span style=color:#d14>      }
-</span><span style=color:#d14>    }</span><span style=color:#bbb>    
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>k8s.cni.cncf.io/v1</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>NetworkAttachmentDefinition</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>macvlaneip</span><span class=w>
+</span><span class=w>  </span><span class=nt>namespace</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>config</span><span class=p>:</span><span class=w> </span><span class=p>&gt;-</span><span class=sd>
+</span><span class=sd>    {
+</span><span class=sd>      &#34;cniVersion&#34;: &#34;0.3.0&#34;,
+</span><span class=sd>      &#34;type&#34;: &#34;macvlan&#34;,
+</span><span class=sd>      &#34;master&#34;: &#34;eth0&#34;,
+</span><span class=sd>      &#34;mode&#34;: &#34;bridge&#34;,
+</span><span class=sd>      &#34;ipam&#34;: {
+</span><span class=sd>        &#34;type&#34;: &#34;kube-ovn&#34;,
+</span><span class=sd>        &#34;server_socket&#34;: &#34;/run/openvswitch/kube-ovn-daemon.sock&#34;,
+</span><span class=sd>        &#34;provider&#34;: &#34;macvlaneip.default&#34;
+</span><span class=sd>      }
+</span><span class=sd>    }</span><span class=w>    
 </span></code></pre></div><p>这里直接对接的是kube-ovn插件。</p>
 <p>type表示所使用的多网卡的方案类型，macvlan、sriov。
 master是macvlan类型特有的配置，有5种模式。</p>
 <p>provider表示当前 NetworkAttachmentDefinition 的 <code>&lt;name>.&lt;namespace></code> , Kube-OVN 将会使用这些信息找到对应的 Subnet 资源。并从Subnet里分配IP。</p>
 <p>创建对应的Subnet和POD：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>kubeovn.io/v1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>Subnet<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>macvlaneip<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>cidrBlock</span>:<span style=color:#bbb> </span><span style=color:#099>192.168.101.0</span>/24<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>excludeIps</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- <span style=color:#099>192.168.101.1</span>..192.168.101.56<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- <span style=color:#099>192.168.101.59</span>..192.168.101.255<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>gateway</span>:<span style=color:#bbb> </span><span style=color:#099>192.168.101.1</span><span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>protocol</span>:<span style=color:#bbb> </span>IPv4<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>provider</span>:<span style=color:#bbb> </span>macvlaneip.default<span style=color:#bbb> </span><span style=color:#998;font-style:italic># 与上面的provider一致</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:#555>---</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>v1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>Pod<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>static-mul-eip<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>annotations</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>k8s.v1.cni.cncf.io/networks</span>:<span style=color:#bbb> </span>macvlaneip@nic1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>containers</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>static-ip<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>image</span>:<span style=color:#bbb> </span>nginx:alpine<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>kubeovn.io/v1</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Subnet</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>macvlaneip</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>cidrBlock</span><span class=p>:</span><span class=w> </span><span class=m>192.168.101.0</span><span class=l>/24</span><span class=w>
+</span><span class=w>  </span><span class=nt>excludeIps</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span>- <span class=m>192.168.101.1</span><span class=l>..192.168.101.56</span><span class=w>
+</span><span class=w>    </span>- <span class=m>192.168.101.59</span><span class=l>..192.168.101.255</span><span class=w>
+</span><span class=w>  </span><span class=nt>gateway</span><span class=p>:</span><span class=w> </span><span class=m>192.168.101.1</span><span class=w>
+</span><span class=w>  </span><span class=nt>protocol</span><span class=p>:</span><span class=w> </span><span class=l>IPv4</span><span class=w>
+</span><span class=w>  </span><span class=nt>provider</span><span class=p>:</span><span class=w> </span><span class=l>macvlaneip.default</span><span class=w> </span><span class=c># 与上面的provider一致</span><span class=w>
+</span><span class=w></span><span class=nn>---</span><span class=w>
+</span><span class=w></span><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>v1</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Pod</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>static-mul-eip</span><span class=w>
+</span><span class=w>  </span><span class=nt>namespace</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w>  </span><span class=nt>annotations</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>k8s.v1.cni.cncf.io/networks</span><span class=p>:</span><span class=w> </span><span class=l>macvlaneip@nic1</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>containers</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>static-ip</span><span class=w>
+</span><span class=w>      </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>nginx:alpine</span><span class=w>
 </span></code></pre></div><p>从容器中可以看到 nic1 是我们添加的网卡：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash> <span style=color:#998;font-style:italic># ip addr</span>
-1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span style=color:#099>65536</span> qdisc noqueue state UNKNOWN qlen <span style=color:#099>1000</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash> <span class=c1># ip addr</span>
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span class=m>65536</span> qdisc noqueue state UNKNOWN qlen <span class=m>1000</span>
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
     inet 127.0.0.1/8 scope host lo
        valid_lft forever preferred_lft forever
-2: tunl0@NONE: &lt;NOARP&gt; mtu <span style=color:#099>1480</span> qdisc noop state DOWN qlen <span style=color:#099>1000</span>
+2: tunl0@NONE: &lt;NOARP&gt; mtu <span class=m>1480</span> qdisc noop state DOWN qlen <span class=m>1000</span>
     link/ipip 0.0.0.0 brd 0.0.0.0
-3: nic1@tunl0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span style=color:#099>1500</span> qdisc noqueue state UP
+3: nic1@tunl0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span class=m>1500</span> qdisc noqueue state UP
     link/ether aa:1c:38:5f:82:be brd ff:ff:ff:ff:ff:ff
     inet 192.168.101.57/24 brd 192.168.101.255 scope global nic1
        valid_lft forever preferred_lft forever
-208: eth0@if209: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span style=color:#099>1400</span> qdisc noqueue state UP
+208: eth0@if209: &lt;BROADCAST,MULTICAST,UP,LOWER_UP,M-DOWN&gt; mtu <span class=m>1400</span> qdisc noqueue state UP
     link/ether 00:00:00:af:ee:fd brd ff:ff:ff:ff:ff:ff
     inet 10.16.0.127/16 brd 10.16.255.255 scope global eth0
        valid_lft forever preferred_lft forever
@@ -516,14 +518,14 @@ master是macvlan类型特有的配置，有5种模式。</p>
 <p>首先由kube-ovn-cni为virt-launcher POD通过veth pair（类似于管道通向两端）的方式将kube-ovn ovs 网桥 xxx_h 与容器中的 eth0 连接起来。</p>
 <p>然后kubevirt会将virt-launcher POD eth0网卡创建网桥k6t-eth0和tap0设备，tap0设备用于连接到VM中的eth0。</p>
 <p><strong>虚拟机层面</strong></p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>$ ip a
-1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span style=color:#099>65536</span> qdisc noqueue qlen <span style=color:#099>1</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>$ ip a
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span class=m>65536</span> qdisc noqueue qlen <span class=m>1</span>
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
     inet 127.0.0.1/8 scope host lo
        valid_lft forever preferred_lft forever
     inet6 ::1/128 scope host 
        valid_lft forever preferred_lft forever
-2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#099>1400</span> qdisc pfifo_fast qlen <span style=color:#099>1000</span>
+2: eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span class=m>1400</span> qdisc pfifo_fast qlen <span class=m>1000</span>
     link/ether 52:54:00:1f:04:35 brd ff:ff:ff:ff:ff:ff
     inet 10.0.2.2/24 brd 10.0.2.255 scope global eth0
        valid_lft forever preferred_lft forever
@@ -533,7 +535,7 @@ $ ip route
 default via 10.0.2.1 dev eth0 
 10.0.2.0/24 dev eth0  src 10.0.2.2 
 </code></pre></div><p><strong>POD 层面</strong></p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>bash-5.1$ ip route
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>bash-5.1$ ip route
 default via 10.16.0.1 dev eth0
 10.0.2.0/24 dev k6t-eth0 proto kernel scope link src 10.0.2.1
 10.16.0.0/16 dev eth0 proto kernel scope link src 10.16.0.25
@@ -541,180 +543,180 @@ bash-5.1$ ./brctl show
 bridge name     bridge id               STP enabled     interfaces
 k6t-eth0                8000.020000000000       no              tap0
 bash-5.1$ ip a
-1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span style=color:#099>65536</span> qdisc noqueue state UNKNOWN group default qlen <span style=color:#099>1000</span>
+1: lo: &lt;LOOPBACK,UP,LOWER_UP&gt; mtu <span class=m>65536</span> qdisc noqueue state UNKNOWN group default qlen <span class=m>1000</span>
     link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
     inet 127.0.0.1/8 scope host lo
        valid_lft forever preferred_lft forever
     inet6 ::1/128 scope host
        valid_lft forever preferred_lft forever
-2: k6t-eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#099>1400</span> qdisc noqueue state UP group default
+2: k6t-eth0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span class=m>1400</span> qdisc noqueue state UP group default
     link/ether 02:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff
     inet 10.0.2.1/24 brd 10.0.2.255 scope global k6t-eth0
        valid_lft forever preferred_lft forever
     inet6 fe80::ff:fe00:0/64 scope link
        valid_lft forever preferred_lft forever
-3: tap0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#099>1400</span> qdisc fq_codel master k6t-eth0 state UP group default qlen <span style=color:#099>1000</span>
+3: tap0: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span class=m>1400</span> qdisc fq_codel master k6t-eth0 state UP group default qlen <span class=m>1000</span>
     link/ether b6:87:36:f4:9b:8a brd ff:ff:ff:ff:ff:ff
     inet6 fe80::b487:36ff:fef4:9b8a/64 scope link
        valid_lft forever preferred_lft forever
-75: eth0@if76: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span style=color:#099>1400</span> qdisc noqueue state UP group default
-    link/ether 00:00:00:e6:52:13 brd ff:ff:ff:ff:ff:ff link-netnsid <span style=color:#099>0</span>
+75: eth0@if76: &lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu <span class=m>1400</span> qdisc noqueue state UP group default
+    link/ether 00:00:00:e6:52:13 brd ff:ff:ff:ff:ff:ff link-netnsid <span class=m>0</span>
     inet 10.16.0.25/16 brd 10.16.255.255 scope global eth0
        valid_lft forever preferred_lft forever
     inet6 fe80::200:ff:fee6:5213/64 scope link
        valid_lft forever preferred_lft forever
 </code></pre></div><p><strong>k8s节点层面</strong></p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml>[root@vm26 ~]# ip a<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>76: ef1d592ced89_h@if75</span>:<span style=color:#bbb> </span>&lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1400 qdisc noqueue master ovs-system state UP group default qlen 1000<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>link/ether e2:ed:1d:c1:8b:4e brd ff:ff:ff:ff:ff:ff link-netnsid 0<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>inet6 fe80::e0ed:1dff:fec1:8b4e/64 scope link <span style=color:#bbb>
-</span><span style=color:#bbb>       </span><span style=color:navy>valid_lft forever preferred_lft forever76: ef1d592ced89_h@if75</span>:<span style=color:#bbb> </span>&lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1400 qdisc noqueue master ovs-system state UP group default qlen 1000<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>link/ether e2:ed:1d:c1:8b:4e brd ff:ff:ff:ff:ff:ff link-netnsid 0<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>inet6 fe80::e0ed:1dff:fec1:8b4e/64 scope link <span style=color:#bbb>
-</span><span style=color:#bbb>       </span>valid_lft forever preferred_lft forever<span style=color:#bbb>
-</span><span style=color:#bbb></span>[root@vm24 ~]# kubectl ko vsctl vm26 show<span style=color:#bbb>
-</span><span style=color:#bbb></span>9a3df829-3706-4c1d-bd7a-85cc0c9061c5<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>Bridge br-int<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>fail_mode</span>:<span style=color:#bbb> </span>secure<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>datapath_type</span>:<span style=color:#bbb> </span>system<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>Port ef1d592ced89_h<span style=color:#bbb>
-</span><span style=color:#bbb>            </span>Interface ef1d592ced89_h<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>...<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>ovs_version</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;2.17.7&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:#998;font-style:italic># 查看ovn南向连接状态</span><span style=color:#bbb>
-</span><span style=color:#bbb></span>[root@vm24 ~]# kubectl ko sbctl show<span style=color:#bbb>
-</span><span style=color:#bbb></span>Chassis &#34;f1a48d0c-42b0-43ba-894c-09089e7e0df9&#34;<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>hostname</span>:<span style=color:#bbb> </span>vm24<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>Encap geneve<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>ip</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;192.168.101.24&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>options</span>:<span style=color:#bbb> </span>{csum=&#34;true&#34;}<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>Port_Binding cdi-deployment-69d44b67b5-65v7d.cdi<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>...<span style=color:#bbb>
-</span><span style=color:#bbb></span>Chassis &#34;a54d8da5-1c31-4180-bd39-bdc7bcaf41cc&#34;<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>hostname</span>:<span style=color:#bbb> </span>vm25<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>Encap geneve<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>ip</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;192.168.101.25&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>options</span>:<span style=color:#bbb> </span>{csum=&#34;true&#34;}<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>Port_Binding virt-operator-6dfbd947b4-fppk4.kubevirt<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>...<span style=color:#bbb>
-</span><span style=color:#bbb></span>Chassis &#34;5e051e73-b926-470d-9c99-8f1604b7bf8d&#34;<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>hostname</span>:<span style=color:#bbb> </span>vm26<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>Encap geneve<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>ip</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;192.168.101.26&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>options</span>:<span style=color:#bbb> </span>{csum=&#34;true&#34;}<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>Port_Binding testvm.default<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>...<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:#998;font-style:italic># 查看ovn北向连接状态</span><span style=color:#bbb>
-</span><span style=color:#bbb></span>[root@vm24 ~]# kubectl ko nbctl show<span style=color:#bbb>
-</span><span style=color:#bbb></span>switch cf603059-294b-4147-a3b4-98ddb45cb051 (ovn-default)<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>port testvm.default<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>addresses</span>:<span style=color:#bbb> </span>[<span style=color:#d14>&#34;00:00:00:E6:52:13 10.16.0.25&#34;</span>]<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>port virt-handler-hxbpw.kubevirt<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>addresses</span>:<span style=color:#bbb> </span>[<span style=color:#d14>&#34;00:00:00:CC:6D:4D 10.16.0.23&#34;</span>]<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>...<span style=color:#bbb>
-</span><span style=color:#bbb></span>switch 626913df-9994-42ad-96e3-330a8fec1f08 (join)<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>port node-vm25<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>addresses</span>:<span style=color:#bbb> </span>[<span style=color:#d14>&#34;00:00:00:72:50:54 100.64.0.3&#34;</span>]<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>port node-vm24<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>addresses</span>:<span style=color:#bbb> </span>[<span style=color:#d14>&#34;00:00:00:49:34:29 100.64.0.2&#34;</span>]<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>port node-vm26<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>addresses</span>:<span style=color:#bbb> </span>[<span style=color:#d14>&#34;00:00:00:0A:39:76 100.64.0.4&#34;</span>]<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>port join-ovn-cluster<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>type</span>:<span style=color:#bbb> </span>router<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>router-port</span>:<span style=color:#bbb> </span>ovn-cluster-join<span style=color:#bbb>
-</span><span style=color:#bbb></span>router e0926da7-aca3-4c41-821d-3bc5305ebf1c (ovn-cluster)<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>port ovn-cluster-join<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>mac</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;00:00:00:42:79:A9&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>networks</span>:<span style=color:#bbb> </span>[<span style=color:#d14>&#34;100.64.0.1/16&#34;</span>]<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>port ovn-cluster-ovn-default<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>mac</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;00:00:00:BE:79:30&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>networks</span>:<span style=color:#bbb> </span>[<span style=color:#d14>&#34;10.16.0.1/16&#34;</span>]<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=p>[</span><span class=l>root@vm26 ~]# ip a</span><span class=w>
+</span><span class=w></span><span class=nt>76: ef1d592ced89_h@if75</span><span class=p>:</span><span class=w> </span><span class=l>&lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1400 qdisc noqueue master ovs-system state UP group default qlen 1000</span><span class=w>
+</span><span class=w>    </span><span class=l>link/ether e2:ed:1d:c1:8b:4e brd ff:ff:ff:ff:ff:ff link-netnsid 0</span><span class=w>
+</span><span class=w>    </span><span class=l>inet6 fe80::e0ed:1dff:fec1:8b4e/64 scope link </span><span class=w>
+</span><span class=w>       </span><span class=nt>valid_lft forever preferred_lft forever76: ef1d592ced89_h@if75</span><span class=p>:</span><span class=w> </span><span class=l>&lt;BROADCAST,MULTICAST,UP,LOWER_UP&gt; mtu 1400 qdisc noqueue master ovs-system state UP group default qlen 1000</span><span class=w>
+</span><span class=w>    </span><span class=l>link/ether e2:ed:1d:c1:8b:4e brd ff:ff:ff:ff:ff:ff link-netnsid 0</span><span class=w>
+</span><span class=w>    </span><span class=l>inet6 fe80::e0ed:1dff:fec1:8b4e/64 scope link </span><span class=w>
+</span><span class=w>       </span><span class=l>valid_lft forever preferred_lft forever</span><span class=w>
+</span><span class=w></span><span class=p>[</span><span class=l>root@vm24 ~]# kubectl ko vsctl vm26 show</span><span class=w>
+</span><span class=w></span><span class=l>9a3df829-3706-4c1d-bd7a-85cc0c9061c5</span><span class=w>
+</span><span class=w>    </span><span class=l>Bridge br-int</span><span class=w>
+</span><span class=w>        </span><span class=nt>fail_mode</span><span class=p>:</span><span class=w> </span><span class=l>secure</span><span class=w>
+</span><span class=w>        </span><span class=nt>datapath_type</span><span class=p>:</span><span class=w> </span><span class=l>system</span><span class=w>
+</span><span class=w>        </span><span class=l>Port ef1d592ced89_h</span><span class=w>
+</span><span class=w>            </span><span class=l>Interface ef1d592ced89_h</span><span class=w>
+</span><span class=w>        </span><span class=l>...</span><span class=w>
+</span><span class=w>    </span><span class=nt>ovs_version</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;2.17.7&#34;</span><span class=w>
+</span><span class=w></span><span class=c># 查看ovn南向连接状态</span><span class=w>
+</span><span class=w></span><span class=p>[</span><span class=l>root@vm24 ~]# kubectl ko sbctl show</span><span class=w>
+</span><span class=w></span><span class=l>Chassis &#34;f1a48d0c-42b0-43ba-894c-09089e7e0df9&#34;</span><span class=w>
+</span><span class=w>    </span><span class=nt>hostname</span><span class=p>:</span><span class=w> </span><span class=l>vm24</span><span class=w>
+</span><span class=w>    </span><span class=l>Encap geneve</span><span class=w>
+</span><span class=w>        </span><span class=nt>ip</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;192.168.101.24&#34;</span><span class=w>
+</span><span class=w>        </span><span class=nt>options</span><span class=p>:</span><span class=w> </span>{<span class=l>csum=&#34;true&#34;}</span><span class=w>
+</span><span class=w>    </span><span class=l>Port_Binding cdi-deployment-69d44b67b5-65v7d.cdi</span><span class=w>
+</span><span class=w>    </span><span class=l>...</span><span class=w>
+</span><span class=w></span><span class=l>Chassis &#34;a54d8da5-1c31-4180-bd39-bdc7bcaf41cc&#34;</span><span class=w>
+</span><span class=w>    </span><span class=nt>hostname</span><span class=p>:</span><span class=w> </span><span class=l>vm25</span><span class=w>
+</span><span class=w>    </span><span class=l>Encap geneve</span><span class=w>
+</span><span class=w>        </span><span class=nt>ip</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;192.168.101.25&#34;</span><span class=w>
+</span><span class=w>        </span><span class=nt>options</span><span class=p>:</span><span class=w> </span>{<span class=l>csum=&#34;true&#34;}</span><span class=w>
+</span><span class=w>    </span><span class=l>Port_Binding virt-operator-6dfbd947b4-fppk4.kubevirt</span><span class=w>
+</span><span class=w>    </span><span class=l>...</span><span class=w>
+</span><span class=w></span><span class=l>Chassis &#34;5e051e73-b926-470d-9c99-8f1604b7bf8d&#34;</span><span class=w>
+</span><span class=w>    </span><span class=nt>hostname</span><span class=p>:</span><span class=w> </span><span class=l>vm26</span><span class=w>
+</span><span class=w>    </span><span class=l>Encap geneve</span><span class=w>
+</span><span class=w>        </span><span class=nt>ip</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;192.168.101.26&#34;</span><span class=w>
+</span><span class=w>        </span><span class=nt>options</span><span class=p>:</span><span class=w> </span>{<span class=l>csum=&#34;true&#34;}</span><span class=w>
+</span><span class=w>    </span><span class=l>Port_Binding testvm.default</span><span class=w>
+</span><span class=w>    </span><span class=l>...</span><span class=w>
+</span><span class=w></span><span class=c># 查看ovn北向连接状态</span><span class=w>
+</span><span class=w></span><span class=p>[</span><span class=l>root@vm24 ~]# kubectl ko nbctl show</span><span class=w>
+</span><span class=w></span><span class=l>switch cf603059-294b-4147-a3b4-98ddb45cb051 (ovn-default)</span><span class=w>
+</span><span class=w>    </span><span class=l>port testvm.default</span><span class=w>
+</span><span class=w>        </span><span class=nt>addresses</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=s2>&#34;00:00:00:E6:52:13 10.16.0.25&#34;</span><span class=p>]</span><span class=w>
+</span><span class=w>    </span><span class=l>port virt-handler-hxbpw.kubevirt</span><span class=w>
+</span><span class=w>        </span><span class=nt>addresses</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=s2>&#34;00:00:00:CC:6D:4D 10.16.0.23&#34;</span><span class=p>]</span><span class=w>
+</span><span class=w>    </span><span class=l>...</span><span class=w>
+</span><span class=w></span><span class=l>switch 626913df-9994-42ad-96e3-330a8fec1f08 (join)</span><span class=w>
+</span><span class=w>    </span><span class=l>port node-vm25</span><span class=w>
+</span><span class=w>        </span><span class=nt>addresses</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=s2>&#34;00:00:00:72:50:54 100.64.0.3&#34;</span><span class=p>]</span><span class=w>
+</span><span class=w>    </span><span class=l>port node-vm24</span><span class=w>
+</span><span class=w>        </span><span class=nt>addresses</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=s2>&#34;00:00:00:49:34:29 100.64.0.2&#34;</span><span class=p>]</span><span class=w>
+</span><span class=w>    </span><span class=l>port node-vm26</span><span class=w>
+</span><span class=w>        </span><span class=nt>addresses</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=s2>&#34;00:00:00:0A:39:76 100.64.0.4&#34;</span><span class=p>]</span><span class=w>
+</span><span class=w>    </span><span class=l>port join-ovn-cluster</span><span class=w>
+</span><span class=w>        </span><span class=nt>type</span><span class=p>:</span><span class=w> </span><span class=l>router</span><span class=w>
+</span><span class=w>        </span><span class=nt>router-port</span><span class=p>:</span><span class=w> </span><span class=l>ovn-cluster-join</span><span class=w>
+</span><span class=w></span><span class=l>router e0926da7-aca3-4c41-821d-3bc5305ebf1c (ovn-cluster)</span><span class=w>
+</span><span class=w>    </span><span class=l>port ovn-cluster-join</span><span class=w>
+</span><span class=w>        </span><span class=nt>mac</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;00:00:00:42:79:A9&#34;</span><span class=w>
+</span><span class=w>        </span><span class=nt>networks</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=s2>&#34;100.64.0.1/16&#34;</span><span class=p>]</span><span class=w>
+</span><span class=w>    </span><span class=l>port ovn-cluster-ovn-default</span><span class=w>
+</span><span class=w>        </span><span class=nt>mac</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;00:00:00:BE:79:30&#34;</span><span class=w>
+</span><span class=w>        </span><span class=nt>networks</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=s2>&#34;10.16.0.1/16&#34;</span><span class=p>]</span><span class=w>
 </span></code></pre></div><p>目前kubevirt支持的配置：</p>
 <h3 id=pod网络桥接方式>pod网络，桥接方式</h3>
 <p>在网桥模式下，虚拟机通过一个 linux网桥连接到网络后端。这种方式会导致pod没有ip（给了虚拟机），在使用第三方mesh网络如Istio会不兼容，官网有提示。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>    </span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>domain</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>devices</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>interfaces</span>:<span style=color:#bbb> </span><span style=color:#998;font-style:italic># 前端</span><span style=color:#bbb>
-</span><span style=color:#bbb>            </span>- <span style=color:navy>bridge</span>:<span style=color:#bbb> </span>{}<span style=color:#bbb>
-</span><span style=color:#bbb>              </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb>              </span><span style=color:navy>ports</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>                </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>ssh<span style=color:#bbb>
-</span><span style=color:#bbb>                  </span><span style=color:navy>port</span>:<span style=color:#bbb> </span><span style=color:#099>22</span><span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>networks</span>:<span style=color:#bbb> </span><span style=color:#998;font-style:italic># 后端</span><span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>pod</span>:<span style=color:#bbb> </span>{}<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>domain</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>devices</span><span class=p>:</span><span class=w>
+</span><span class=w>          </span><span class=nt>interfaces</span><span class=p>:</span><span class=w> </span><span class=c># 前端</span><span class=w>
+</span><span class=w>            </span>- <span class=nt>bridge</span><span class=p>:</span><span class=w> </span>{}<span class=w>
+</span><span class=w>              </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w>              </span><span class=nt>ports</span><span class=p>:</span><span class=w>
+</span><span class=w>                </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>ssh</span><span class=w>
+</span><span class=w>                  </span><span class=nt>port</span><span class=p>:</span><span class=w> </span><span class=m>22</span><span class=w>
+</span><span class=w>      </span><span class=nt>networks</span><span class=p>:</span><span class=w> </span><span class=c># 后端</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w>          </span><span class=nt>pod</span><span class=p>:</span><span class=w> </span>{}<span class=w>
 </span></code></pre></div><h3 id=pod网络masquerade伪装方式>pod网络，masquerade(伪装)方式</h3>
 <p>在伪装模式下，KubeVirt 将内部 IP 地址分配（DHCP）给虚拟机，并将它们隐藏在 NAT 之后。所有退出虚拟机的通信都是使用 pod IP 地址进行NAT的。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>    </span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>domain</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>devices</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>interfaces</span>:<span style=color:#bbb> </span><span style=color:#998;font-style:italic># 前端</span><span style=color:#bbb>
-</span><span style=color:#bbb>            </span>- <span style=color:navy>masquerade</span>:<span style=color:#bbb> </span>{}<span style=color:#bbb>
-</span><span style=color:#bbb>              </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb>              </span><span style=color:navy>ports</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>                </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>ssh<span style=color:#bbb>
-</span><span style=color:#bbb>                  </span><span style=color:navy>port</span>:<span style=color:#bbb> </span><span style=color:#099>22</span><span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>networks</span>:<span style=color:#bbb> </span><span style=color:#998;font-style:italic># 后端</span><span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>pod</span>:<span style=color:#bbb> </span>{}<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>domain</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>devices</span><span class=p>:</span><span class=w>
+</span><span class=w>          </span><span class=nt>interfaces</span><span class=p>:</span><span class=w> </span><span class=c># 前端</span><span class=w>
+</span><span class=w>            </span>- <span class=nt>masquerade</span><span class=p>:</span><span class=w> </span>{}<span class=w>
+</span><span class=w>              </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w>              </span><span class=nt>ports</span><span class=p>:</span><span class=w>
+</span><span class=w>                </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>ssh</span><span class=w>
+</span><span class=w>                  </span><span class=nt>port</span><span class=p>:</span><span class=w> </span><span class=m>22</span><span class=w>
+</span><span class=w>      </span><span class=nt>networks</span><span class=p>:</span><span class=w> </span><span class=c># 后端</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w>          </span><span class=nt>pod</span><span class=p>:</span><span class=w> </span>{}<span class=w>
 </span></code></pre></div><h3 id=vm热迁移>VM热迁移</h3>
 <p>KubeVirt热迁移在固定 IP 的场景下，由于 KubeVirt 在热迁移中使用 default network 进行状态的同步，通过结合 multus-cni 将业务网络和迁移网络分离，可以在功能层面实现热迁移过程中的地址固定。</p>
 <p>使用kube-ovn注解可以使pod或vm固定ip：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>kubevirt.io/v1alpha3<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>VirtualMachine<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>testvm<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>template</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>annotations</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>ovn.kubernetes.io/ip_address</span>:<span style=color:#bbb> </span><span style=color:#099>10.16.0.15</span><span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>kubevirt.io/v1alpha3</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>VirtualMachine</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>testvm</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>template</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>annotations</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>ovn.kubernetes.io/ip_address</span><span class=p>:</span><span class=w> </span><span class=m>10.16.0.15</span><span class=w>
 </span></code></pre></div><p>kube-ovn针对kubevirt场景提供了<code>--keep-vm-ip=true</code>参数，能够在VM生命周期内保持IP不变。</p>
 <h3 id=网络直通与高性能网络>网络直通与高性能网络</h3>
 <p>由于VM网络可以直接使用POD网络，所以通过multus-cni可以对POD/VM配置多个网卡。在某些场景下，如需要给POD/VM分配一个节点网段的IP就需要挂载直通网络到POD/VM，主流的方案有以下几种：</p>
 <h4 id=macvtap--multus>macvtap + multus</h4>
 <p>macvtap是kubevirt官方推行的一种方式，能够分配给VM一个MAC使VM与k8s节点处于L2同一层网络。</p>
 <p>目前仍属于特性开关阶段。试了一下能够分配MAC但是无IP。、</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>k8s.cni.cncf.io/v1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>NetworkAttachmentDefinition<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>dataplane<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>config</span>:<span style=color:#bbb> </span>&gt;-<span style=color:#d14>
-</span><span style=color:#d14>    { &#34;cniVersion&#34;: &#34;0.3.1&#34;, &#34;name&#34;: &#34;dataplane&#34;, &#34;type&#34;: &#34;macvtap&#34;, &#34;mtu&#34;: 1500
-</span><span style=color:#d14>    }</span><span style=color:#bbb>    
-</span><span style=color:#bbb></span><span style=color:#555>---</span><span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>domain</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>devices</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>interfaces</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>            </span>- <span style=color:navy>macvtap</span>:<span style=color:#bbb> </span>{}<span style=color:#bbb>
-</span><span style=color:#bbb>              </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>attachnet<span style=color:#bbb>
-</span><span style=color:#bbb>            </span>- <span style=color:navy>masquerade</span>:<span style=color:#bbb> </span>{}<span style=color:#bbb>
-</span><span style=color:#bbb>              </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>networks</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>multus</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>            </span><span style=color:navy>networkName</span>:<span style=color:#bbb> </span>dataplane<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>attachnet<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>pod</span>:<span style=color:#bbb> </span>{}<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>k8s.cni.cncf.io/v1</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>NetworkAttachmentDefinition</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>dataplane</span><span class=w>
+</span><span class=w>  </span><span class=nt>namespace</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>config</span><span class=p>:</span><span class=w> </span><span class=p>&gt;-</span><span class=sd>
+</span><span class=sd>    { &#34;cniVersion&#34;: &#34;0.3.1&#34;, &#34;name&#34;: &#34;dataplane&#34;, &#34;type&#34;: &#34;macvtap&#34;, &#34;mtu&#34;: 1500
+</span><span class=sd>    }</span><span class=w>    
+</span><span class=w></span><span class=nn>---</span><span class=w>
+</span><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>domain</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>devices</span><span class=p>:</span><span class=w>
+</span><span class=w>          </span><span class=nt>interfaces</span><span class=p>:</span><span class=w>
+</span><span class=w>            </span>- <span class=nt>macvtap</span><span class=p>:</span><span class=w> </span>{}<span class=w>
+</span><span class=w>              </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>attachnet</span><span class=w>
+</span><span class=w>            </span>- <span class=nt>masquerade</span><span class=p>:</span><span class=w> </span>{}<span class=w>
+</span><span class=w>              </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w>      </span><span class=nt>networks</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>multus</span><span class=p>:</span><span class=w>
+</span><span class=w>            </span><span class=nt>networkName</span><span class=p>:</span><span class=w> </span><span class=l>dataplane</span><span class=w>
+</span><span class=w>          </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>attachnet</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w>          </span><span class=nt>pod</span><span class=p>:</span><span class=w> </span>{}<span class=w>
 </span></code></pre></div><h4 id=macvlan--multus--桥接--单网卡>macvlan + multus + 桥接 + 单网卡</h4>
 <p>macvlan方式在POD上能正常工作，但是由于kubevirt VM网络的特性，会占用POD的MAC（官网有解释），导致无法正确配置POD网络。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#bbb>    </span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>domain</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>devices</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>interfaces</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>            </span>- <span style=color:navy>bridge</span>:<span style=color:#bbb> </span>{}<span style=color:#bbb>
-</span><span style=color:#bbb>              </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb>              </span><span style=color:navy>ports</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>                </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>ssh<span style=color:#bbb>
-</span><span style=color:#bbb>                  </span><span style=color:navy>port</span>:<span style=color:#bbb> </span><span style=color:#099>22</span><span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>networks</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>multus</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>            </span><span style=color:navy>networkName</span>:<span style=color:#bbb> </span>default/macvlaneip<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>domain</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>devices</span><span class=p>:</span><span class=w>
+</span><span class=w>          </span><span class=nt>interfaces</span><span class=p>:</span><span class=w>
+</span><span class=w>            </span>- <span class=nt>bridge</span><span class=p>:</span><span class=w> </span>{}<span class=w>
+</span><span class=w>              </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w>              </span><span class=nt>ports</span><span class=p>:</span><span class=w>
+</span><span class=w>                </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>ssh</span><span class=w>
+</span><span class=w>                  </span><span class=nt>port</span><span class=p>:</span><span class=w> </span><span class=m>22</span><span class=w>
+</span><span class=w>      </span><span class=nt>networks</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>multus</span><span class=p>:</span><span class=w>
+</span><span class=w>            </span><span class=nt>networkName</span><span class=p>:</span><span class=w> </span><span class=l>default/macvlaneip</span><span class=w>
+</span><span class=w>          </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
 </span></code></pre></div><h4 id=ipvlan--multus--桥接--单网卡>ipvlan + multus + 桥接 + 单网卡</h4>
 <p>ipvlan需要Linux内核高版本支持，与macvlan一样同样存在问题。</p>
 <p><a href=https://kubevirt.io/user-guide/virtual_machines/interfaces_and_networks/#invalid-cnis-for-secondary-networks>invalid-cnis-for-secondary-network</a></p>

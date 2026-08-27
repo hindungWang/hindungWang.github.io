@@ -21,8 +21,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -316,7 +318,7 @@ June 1, 2021
 <img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/002T8chSgy1gr2r3bnr1bj60dd0b5my602.jpg alt></p>
 <h2 id=iptable相关命令>iptable相关命令</h2>
 <p>查看iptables规则：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>iptables -L, --list <span style=color:#000;font-weight:700>[</span>chain<span style=color:#000;font-weight:700>]</span> 列出链 chain 上面的所有规则，如果没有指定链，列出表上所有链的所有规则
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>iptables -L, --list <span class=o>[</span>chain<span class=o>]</span> 列出链 chain 上面的所有规则，如果没有指定链，列出表上所有链的所有规则
 </code></pre></div><p>参考<a href=https://wangchujiang.com/linux-command/c/iptables.html>https://wangchujiang.com/linux-command/c/iptables.html</a></p>
 </div>
 <div class=prev-next>

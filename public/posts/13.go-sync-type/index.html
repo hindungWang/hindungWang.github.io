@@ -21,8 +21,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -289,21 +291,21 @@ May 11, 2021
 <p>当然，Pool并不适用于一些短命的对象池化。</p>
 <p>相当于拿出来，做操作，再放回去，操作过的东西放回去的时候是啥样，拿出来的时候就是啥样的。也就是说，拿出来用的时候需要初始化数据或者清空。
 如Gin的源码：<a href=https://github.com/gin-gonic/gin/blob/v1.7.1/gin.go#L439>https://github.com/gin-gonic/gin/blob/v1.7.1/gin.go#L439</a></p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// ServeHTTP conforms to the http.Handler interface.
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> (engine <span style=color:#000;font-weight:700>*</span>Engine) <span style=color:#900;font-weight:700>ServeHTTP</span>(w http.ResponseWriter, req <span style=color:#000;font-weight:700>*</span>http.Request) {
-    <span style=color:#998;font-style:italic>// get Context from pool
-</span><span style=color:#998;font-style:italic></span>	c <span style=color:#000;font-weight:700>:=</span> engine.pool.<span style=color:#900;font-weight:700>Get</span>().(<span style=color:#000;font-weight:700>*</span>Context)
-    <span style=color:#998;font-style:italic>// reset
-</span><span style=color:#998;font-style:italic></span>	c.writermem.<span style=color:#900;font-weight:700>reset</span>(w)
-	c.Request = req
-	c.<span style=color:#900;font-weight:700>reset</span>()
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// ServeHTTP conforms to the http.Handler interface.
+</span><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>engine</span> <span class=o>*</span><span class=nx>Engine</span><span class=p>)</span> <span class=nf>ServeHTTP</span><span class=p>(</span><span class=nx>w</span> <span class=nx>http</span><span class=p>.</span><span class=nx>ResponseWriter</span><span class=p>,</span> <span class=nx>req</span> <span class=o>*</span><span class=nx>http</span><span class=p>.</span><span class=nx>Request</span><span class=p>)</span> <span class=p>{</span>
+    <span class=c1>// get Context from pool
+</span><span class=c1></span>	<span class=nx>c</span> <span class=o>:=</span> <span class=nx>engine</span><span class=p>.</span><span class=nx>pool</span><span class=p>.</span><span class=nf>Get</span><span class=p>().(</span><span class=o>*</span><span class=nx>Context</span><span class=p>)</span>
+    <span class=c1>// reset
+</span><span class=c1></span>	<span class=nx>c</span><span class=p>.</span><span class=nx>writermem</span><span class=p>.</span><span class=nf>reset</span><span class=p>(</span><span class=nx>w</span><span class=p>)</span>
+	<span class=nx>c</span><span class=p>.</span><span class=nx>Request</span> <span class=p>=</span> <span class=nx>req</span>
+	<span class=nx>c</span><span class=p>.</span><span class=nf>reset</span><span class=p>()</span>
 
-    <span style=color:#998;font-style:italic>// use c
-</span><span style=color:#998;font-style:italic></span>	engine.<span style=color:#900;font-weight:700>handleHTTPRequest</span>(c)
+    <span class=c1>// use c
+</span><span class=c1></span>	<span class=nx>engine</span><span class=p>.</span><span class=nf>handleHTTPRequest</span><span class=p>(</span><span class=nx>c</span><span class=p>)</span>
 
-    <span style=color:#998;font-style:italic>// put back
-</span><span style=color:#998;font-style:italic></span>	engine.pool.<span style=color:#900;font-weight:700>Put</span>(c)
-}
+    <span class=c1>// put back
+</span><span class=c1></span>	<span class=nx>engine</span><span class=p>.</span><span class=nx>pool</span><span class=p>.</span><span class=nf>Put</span><span class=p>(</span><span class=nx>c</span><span class=p>)</span>
+<span class=p>}</span>
 </code></pre></div><h2 id=syncwaitgroup>sync.WaitGroup</h2>
 <p>一个WaitGroup等待一个goroutine的集合完成。
 主的goroutine调用Add来设置要等待的goroutine的数量。

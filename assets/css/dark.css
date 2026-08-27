@@ -128,11 +128,19 @@ body.post-page .toc-title,
 body.post-page .posts-nav h3 {
   color: var(--md-muted) !important;
 }
+body.post-page .post-tags .post-tag {
+  border-color: rgba(255, 255, 255, 0.2) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+}
 body.post-page .post-tags .post-tag a {
-  color: var(--md-muted) !important;
+  color: var(--md-text) !important;
+}
+body.post-page .post-tags .post-tag:hover {
+  border-color: var(--md-accent) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 body.post-page .post-tags .post-tag a:hover {
-  color: var(--md-text) !important;
+  color: var(--md-accent) !important;
 }
 
 /* 正文链接：Medium 风格下划线 */
@@ -144,18 +152,37 @@ body.post-page .post-content a:hover {
   border-bottom-color: var(--md-text) !important;
 }
 
-/* 代码块：扁平深灰 */
-body.post-page .post-content pre {
-  background: var(--md-code-bg) !important;
-  color: #E6E6E6 !important;
+/* 代码块：深灰卡片（语法配色见文末 GitHub Dark 调色板） */
+.post-content .highlight {
+  background: #242424 !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
-/* 深色模式下语法着色统一压平为单色（Medium 式 monochrome） */
-body.post-page .post-content .highlight pre span {
-  color: #E6E6E6 !important;
+.post-content .highlight pre {
+  background: transparent !important;
+  color: #E6EDF3 !important;
+}
+.post-content .code-header {
+  border-bottom-color: rgba(255, 255, 255, 0.09) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
+.post-content .code-lang {
+  color: #9198A1 !important;
+}
+.post-content .code-copy {
+  color: #9198A1 !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+.post-content .code-copy:hover {
+  color: var(--md-text) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}
+.post-content .code-copy.copied {
+  color: var(--md-accent) !important;
+  border-color: var(--md-accent) !important;
 }
 body.post-page .post-content :not(pre) > code {
-  background: var(--md-code-bg) !important;
-  color: #E6E6E6 !important;
+  background: #242424 !important;
+  color: #E6EDF3 !important;
 }
 
 /* 标题 */
@@ -210,3 +237,69 @@ body.post-page .post-toc a.active {
 #reading-progress {
   background: var(--md-accent) !important;
 }
+
+/* ================================================================
+   深色模式 · 代码语法配色（GitHub Dark 调色板）
+   加载顺序晚于 chroma.css，同优先级按顺序覆盖
+   ================================================================ */
+.chroma {
+  color: #E6EDF3;
+}
+.highlight pre.chroma {
+  color: #E6EDF3;
+}
+
+.chroma .lnt, .chroma .ln { color: #8B949E; }
+.chroma .hl { background-color: #3A2D0C; }
+
+.chroma .c, .chroma .ch, .chroma .cm, .chroma .c1,
+.chroma .cs, .chroma .cp, .chroma .cpf {
+  color: #9198A1;
+  font-style: italic;
+}
+
+.chroma .k, .chroma .kc, .chroma .kd, .chroma .kn,
+.chroma .kp, .chroma .kr { color: #FF7B72; }
+.chroma .kt { color: #FFA657; }
+
+.chroma .n, .chroma .nx { color: #E6EDF3; }
+.chroma .na { color: #79C0FF; }
+.chroma .nb { color: #79C0FF; }
+.chroma .bp { color: #9198A1; }
+.chroma .nc { color: #FFA657; }
+.chroma .no { color: #79C0FF; }
+.chroma .nd { color: #D2A8FF; font-weight: 600; }
+.chroma .ni { color: #D2A8FF; }
+.chroma .ne { color: #D2A8FF; }
+.chroma .nf, .chroma .fm { color: #D2A8FF; }
+.chroma .nl { color: #79C0FF; }
+.chroma .nn { color: #FFA657; }
+.chroma .nt { color: #7EE787; }
+.chroma .nv, .chroma .vc, .chroma .vg, .chroma .vi, .chroma .vm { color: #E6EDF3; }
+.chroma .py { color: #79C0FF; }
+
+.chroma .o, .chroma .ow { color: #E6EDF3; font-weight: 600; }
+.chroma .p { color: #E6EDF3; }
+
+.chroma .s, .chroma .sa, .chroma .sb, .chroma .sc,
+.chroma .dl, .chroma .sd, .chroma .s2, .chroma .se,
+.chroma .sh, .chroma .si, .chroma .sx, .chroma .sr,
+.chroma .s1, .chroma .ss { color: #A5D6FF; }
+
+.chroma .m, .chroma .mb, .chroma .mf, .chroma .mh,
+.chroma .mi, .chroma .il, .chroma .mo { color: #79C0FF; }
+
+.chroma .g, .chroma .gd { color: #FFA198; }
+.chroma .ge { font-style: italic; }
+.chroma .gr { color: #FFA198; }
+.chroma .gh { color: #79C0FF; font-weight: 600; }
+.chroma .gi { color: #7EE787; }
+.chroma .go { color: #9198A1; }
+.chroma .gp { color: #9198A1; }
+.chroma .gs { font-weight: 600; }
+.chroma .gu { color: #D2A8FF; font-weight: 600; }
+.chroma .gt { color: #FFA198; }
+.chroma .gl { text-decoration: underline; }
+.chroma .w { color: #E6EDF3; }
+.chroma .err { color: #FFA198; background-color: #451A1A; }
+.chroma .l, .chroma .ld { color: #A5D6FF; }

@@ -21,8 +21,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -254,13 +256,13 @@ August 27, 2020
 </ul>
 <h2 id=算法原理>算法原理</h2>
 <p>使用<em>统一不重复系统编号的服务器+毫秒级时间戳+递增序列化</em>生成64bit长整型数字：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>+-</span>&gt;<span style=color:#099>1</span>bit not use
-<span style=color:#000;font-weight:700>+</span>
-<span style=color:#099>000000000000000000000000000000000000000000000000000000000000000</span>  = <span style=color:#099>64</span> bit
- <span style=color:#000;font-weight:700>&lt;--------------------------------------</span>&gt;<span style=color:#000;font-weight:700>&lt;---+----</span>&gt;<span style=color:#000;font-weight:700>&lt;----------</span>&gt;
- <span style=color:#099>41</span>bit millisecond timestamp = <span style=color:#099>69</span> years      |  <span style=color:#099>12</span>bit Inc num = <span style=color:#099>4096</span>
-                                             v
-                           <span style=color:#099>10</span>bit machine ID= <span style=color:#099>1024</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=o>+-</span><span class=p>&gt;</span><span class=mi>1</span><span class=nx>bit</span> <span class=nx>not</span> <span class=nx>use</span>
+<span class=o>+</span>
+<span class=mo>000000000000000000000000000000000000000000000000000000000000000</span>  <span class=p>=</span> <span class=mi>64</span> <span class=nx>bit</span>
+ <span class=o>&lt;--------------------------------------</span><span class=p>&gt;</span><span class=o>&lt;---+----</span><span class=p>&gt;</span><span class=o>&lt;----------</span><span class=p>&gt;</span>
+ <span class=mi>41</span><span class=nx>bit</span> <span class=nx>millisecond</span> <span class=nx>timestamp</span> <span class=p>=</span> <span class=mi>69</span> <span class=nx>years</span>      <span class=p>|</span>  <span class=mi>12</span><span class=nx>bit</span> <span class=nx>Inc</span> <span class=nx>num</span> <span class=p>=</span> <span class=mi>4096</span>
+                                             <span class=nx>v</span>
+                           <span class=mi>10</span><span class=nx>bit</span> <span class=nx>machine</span> <span class=nx>ID</span><span class=p>=</span> <span class=mi>1024</span>
 </code></pre></div><p>64bit整数由以下部分组成：</p>
 <ul>
 <li>第一位置零，1为负数，故不用；</li>
@@ -272,55 +274,55 @@ August 27, 2020
 <p>机器ID保证了系统内的机器唯一性，时间戳和递增序列号保证了时序递增。</p>
 <h2 id=实现思路>实现思路</h2>
 <p>了解了唯一ID的结构之后就可以简单实现雪花算法（伪代码）：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>machineID  <span style=color:#a61717;background-color:#e3d2d2>#</span> 机器ID
-n          <span style=color:#a61717;background-color:#e3d2d2>#</span> 递增序列
-now <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>time</span>().<span style=color:#900;font-weight:700>now</span>().<span style=color:#900;font-weight:700>Unix</span>()
-<span style=color:#000;font-weight:700>if</span> now <span style=color:#000;font-weight:700>==</span> last {    <span style=color:#a61717;background-color:#e3d2d2>#</span> 如果是同1毫秒内
-   n<span style=color:#000;font-weight:700>++</span>              <span style=color:#a61717;background-color:#e3d2d2>#</span> 自增1
-   <span style=color:#000;font-weight:700>if</span> n &gt; <span style=color:#099>4095</span> {    <span style=color:#a61717;background-color:#e3d2d2>#</span> 超过4095<span style=color:#a61717;background-color:#e3d2d2>，</span>则等待下一毫秒
-      now = <span style=color:#900;font-weight:700>nexttime</span>()
-      n = <span style=color:#099>0</span>
-   }
-} <span style=color:#000;font-weight:700>else</span> {
-  n = <span style=color:#099>0</span>
-  last = now
-}
-ID = now <span style=color:#000;font-weight:700>&lt;&lt;</span> <span style=color:#099>22</span> | mashineID <span style=color:#000;font-weight:700>&lt;&lt;</span> <span style=color:#099>12</span> | n  <span style=color:#a61717;background-color:#e3d2d2>#</span> 将结果拼接为64bit之后转换成十进制
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>machineID</span>  <span class=err>#</span> <span class=nx>机器ID</span>
+<span class=nx>n</span>          <span class=err>#</span> <span class=nx>递增序列</span>
+<span class=nx>now</span> <span class=o>:=</span> <span class=nf>time</span><span class=p>().</span><span class=nf>now</span><span class=p>().</span><span class=nf>Unix</span><span class=p>()</span>
+<span class=k>if</span> <span class=nx>now</span> <span class=o>==</span> <span class=nx>last</span> <span class=p>{</span>    <span class=err>#</span> <span class=nx>如果是同1毫秒内</span>
+   <span class=nx>n</span><span class=o>++</span>              <span class=err>#</span> <span class=nx>自增1</span>
+   <span class=k>if</span> <span class=nx>n</span> <span class=p>&gt;</span> <span class=mi>4095</span> <span class=p>{</span>    <span class=err>#</span> <span class=nx>超过4095</span><span class=err>，</span><span class=nx>则等待下一毫秒</span>
+      <span class=nx>now</span> <span class=p>=</span> <span class=nf>nexttime</span><span class=p>()</span>
+      <span class=nx>n</span> <span class=p>=</span> <span class=mi>0</span>
+   <span class=p>}</span>
+<span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+  <span class=nx>n</span> <span class=p>=</span> <span class=mi>0</span>
+  <span class=nx>last</span> <span class=p>=</span> <span class=nx>now</span>
+<span class=p>}</span>
+<span class=nx>ID</span> <span class=p>=</span> <span class=nx>now</span> <span class=o>&lt;&lt;</span> <span class=mi>22</span> <span class=p>|</span> <span class=nx>mashineID</span> <span class=o>&lt;&lt;</span> <span class=mi>12</span> <span class=p>|</span> <span class=nx>n</span>  <span class=err>#</span> <span class=nx>将结果拼接为64bit之后转换成十进制</span>
 </code></pre></div><h2 id=深入源代码>深入源代码</h2>
 <p>雪花生成算法见：<a href=https://github.com/bwmarrin/snowflake>snowflake</a></p>
 <p>代码主要生成部分:</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// Generate creates and returns a unique snowflake ID
-</span><span style=color:#998;font-style:italic>// To help guarantee uniqueness
-</span><span style=color:#998;font-style:italic>// - Make sure your system is keeping accurate system time
-</span><span style=color:#998;font-style:italic>// - Make sure you never have multiple nodes running with the same node ID
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> (n <span style=color:#000;font-weight:700>*</span>Node) <span style=color:#900;font-weight:700>Generate</span>() ID {
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// Generate creates and returns a unique snowflake ID
+</span><span class=c1>// To help guarantee uniqueness
+</span><span class=c1>// - Make sure your system is keeping accurate system time
+</span><span class=c1>// - Make sure you never have multiple nodes running with the same node ID
+</span><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>n</span> <span class=o>*</span><span class=nx>Node</span><span class=p>)</span> <span class=nf>Generate</span><span class=p>()</span> <span class=nx>ID</span> <span class=p>{</span>
  
-    n.mu.<span style=color:#900;font-weight:700>Lock</span>()
+    <span class=nx>n</span><span class=p>.</span><span class=nx>mu</span><span class=p>.</span><span class=nf>Lock</span><span class=p>()</span>
  
-    now <span style=color:#000;font-weight:700>:=</span> time.<span style=color:#900;font-weight:700>Since</span>(n.epoch).<span style=color:#900;font-weight:700>Nanoseconds</span>() <span style=color:#000;font-weight:700>/</span> <span style=color:#099>1000000</span>
+    <span class=nx>now</span> <span class=o>:=</span> <span class=nx>time</span><span class=p>.</span><span class=nf>Since</span><span class=p>(</span><span class=nx>n</span><span class=p>.</span><span class=nx>epoch</span><span class=p>).</span><span class=nf>Nanoseconds</span><span class=p>()</span> <span class=o>/</span> <span class=mi>1000000</span>
  
-    <span style=color:#000;font-weight:700>if</span> now <span style=color:#000;font-weight:700>==</span> n.time {           <span style=color:#998;font-style:italic>// 如果是同一毫秒内
-</span><span style=color:#998;font-style:italic></span>        n.step = (n.step <span style=color:#000;font-weight:700>+</span> <span style=color:#099>1</span>) <span style=color:#000;font-weight:700>&amp;</span> n.stepMask  <span style=color:#998;font-style:italic>// 自增1并校验是否超过4095
-</span><span style=color:#998;font-style:italic></span> 
-        <span style=color:#000;font-weight:700>if</span> n.step <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> {
-            <span style=color:#000;font-weight:700>for</span> now <span style=color:#000;font-weight:700>&lt;=</span> n.time {
-                now = time.<span style=color:#900;font-weight:700>Since</span>(n.epoch).<span style=color:#900;font-weight:700>Nanoseconds</span>() <span style=color:#000;font-weight:700>/</span> <span style=color:#099>1000000</span>
-            }
-        }
-    } <span style=color:#000;font-weight:700>else</span> {   <span style=color:#998;font-style:italic>// 不在同一ms
-</span><span style=color:#998;font-style:italic></span>        n.step = <span style=color:#099>0</span>
-    }
+    <span class=k>if</span> <span class=nx>now</span> <span class=o>==</span> <span class=nx>n</span><span class=p>.</span><span class=nx>time</span> <span class=p>{</span>           <span class=c1>// 如果是同一毫秒内
+</span><span class=c1></span>        <span class=nx>n</span><span class=p>.</span><span class=nx>step</span> <span class=p>=</span> <span class=p>(</span><span class=nx>n</span><span class=p>.</span><span class=nx>step</span> <span class=o>+</span> <span class=mi>1</span><span class=p>)</span> <span class=o>&amp;</span> <span class=nx>n</span><span class=p>.</span><span class=nx>stepMask</span>  <span class=c1>// 自增1并校验是否超过4095
+</span><span class=c1></span> 
+        <span class=k>if</span> <span class=nx>n</span><span class=p>.</span><span class=nx>step</span> <span class=o>==</span> <span class=mi>0</span> <span class=p>{</span>
+            <span class=k>for</span> <span class=nx>now</span> <span class=o>&lt;=</span> <span class=nx>n</span><span class=p>.</span><span class=nx>time</span> <span class=p>{</span>
+                <span class=nx>now</span> <span class=p>=</span> <span class=nx>time</span><span class=p>.</span><span class=nf>Since</span><span class=p>(</span><span class=nx>n</span><span class=p>.</span><span class=nx>epoch</span><span class=p>).</span><span class=nf>Nanoseconds</span><span class=p>()</span> <span class=o>/</span> <span class=mi>1000000</span>
+            <span class=p>}</span>
+        <span class=p>}</span>
+    <span class=p>}</span> <span class=k>else</span> <span class=p>{</span>   <span class=c1>// 不在同一ms
+</span><span class=c1></span>        <span class=nx>n</span><span class=p>.</span><span class=nx>step</span> <span class=p>=</span> <span class=mi>0</span>
+    <span class=p>}</span>
  
-    n.time = now
-    <span style=color:#998;font-style:italic>// 拼接64bit
-</span><span style=color:#998;font-style:italic></span>    r <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>ID</span>((now)<span style=color:#000;font-weight:700>&lt;&lt;</span>n.timeShift |
-        (n.node <span style=color:#000;font-weight:700>&lt;&lt;</span> n.nodeShift) |
-        (n.step),
-                )
+    <span class=nx>n</span><span class=p>.</span><span class=nx>time</span> <span class=p>=</span> <span class=nx>now</span>
+    <span class=c1>// 拼接64bit
+</span><span class=c1></span>    <span class=nx>r</span> <span class=o>:=</span> <span class=nf>ID</span><span class=p>((</span><span class=nx>now</span><span class=p>)</span><span class=o>&lt;&lt;</span><span class=nx>n</span><span class=p>.</span><span class=nx>timeShift</span> <span class=p>|</span>
+        <span class=p>(</span><span class=nx>n</span><span class=p>.</span><span class=nx>node</span> <span class=o>&lt;&lt;</span> <span class=nx>n</span><span class=p>.</span><span class=nx>nodeShift</span><span class=p>)</span> <span class=p>|</span>
+        <span class=p>(</span><span class=nx>n</span><span class=p>.</span><span class=nx>step</span><span class=p>),</span>
+                <span class=p>)</span>
  
-    n.mu.<span style=color:#900;font-weight:700>Unlock</span>()
-    <span style=color:#000;font-weight:700>return</span> r
-}
+    <span class=nx>n</span><span class=p>.</span><span class=nx>mu</span><span class=p>.</span><span class=nf>Unlock</span><span class=p>()</span>
+    <span class=k>return</span> <span class=nx>r</span>
+<span class=p>}</span>
 </code></pre></div><h2 id=总结>总结</h2>
 <p>雪花算法不难理解并且简单能够自己实现，这大概是这个算法被广泛使用的一个原因吧，此外，雪花算法对系统的时钟依赖性很高，如果有某个系统时钟不同步，可能会生成同一时间戳的ID值。</p>
 <p><strong>参考</strong></p>

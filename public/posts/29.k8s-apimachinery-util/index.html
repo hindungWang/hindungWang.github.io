@@ -27,8 +27,10 @@ pkg/util ├── cache # LRU带过期时间的 ├── diff ├── dump �
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -249,8 +251,8 @@ June 12, 2024
 <p>源码来自 <a href=https://github.com/kubernetes/apimachinery>https://github.com/kubernetes/apimachinery</a>，同样也包含了常用的方法。</p>
 <h2 id=项目结构>项目结构</h2>
 <p>如下图所示：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>pkg/util
-├── cache   <span style=color:#998;font-style:italic># LRU带过期时间的</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>pkg/util
+├── cache   <span class=c1># LRU带过期时间的</span>
 ├── diff
 ├── dump
 ├── duration
@@ -274,35 +276,35 @@ June 12, 2024
 ├── uuid
 ├── validation
 ├── version
-├── <span style=color:#0086b3>wait</span>     <span style=color:#998;font-style:italic># 定时轮训的一些方法</span>
+├── <span class=nb>wait</span>     <span class=c1># 定时轮训的一些方法</span>
 ├── waitgroup
 └── yaml
 </code></pre></div><h2 id=使用方法>使用方法</h2>
 <h3 id=polluntilcontextcancel>PollUntilContextCancel</h3>
 <p><code>PollUntilContextCancel</code>方法用于定时执行一个函数，直到超时或者条件满足。</p>
 <p>方法签名：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// ctx 上下文，可以传入带有超时控制的 ctx
-</span><span style=color:#998;font-style:italic>// interval 执行 condition 的之间间隔
-</span><span style=color:#998;font-style:italic>// immediate 当 condition 返回 ture, nil 时是否立即停止轮训
-</span><span style=color:#998;font-style:italic>// condition 被执行的函数
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>PollUntilContextCancel</span>(ctx context.Context, interval time.Duration, immediate <span style=color:#458;font-weight:700>bool</span>, condition ConditionWithContextFunc) <span style=color:#458;font-weight:700>error</span> {
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// ctx 上下文，可以传入带有超时控制的 ctx
+</span><span class=c1>// interval 执行 condition 的之间间隔
+</span><span class=c1>// immediate 当 condition 返回 ture, nil 时是否立即停止轮训
+</span><span class=c1>// condition 被执行的函数
+</span><span class=c1></span><span class=kd>func</span> <span class=nf>PollUntilContextCancel</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>interval</span> <span class=nx>time</span><span class=p>.</span><span class=nx>Duration</span><span class=p>,</span> <span class=nx>immediate</span> <span class=kt>bool</span><span class=p>,</span> <span class=nx>condition</span> <span class=nx>ConditionWithContextFunc</span><span class=p>)</span> <span class=kt>error</span> <span class=p>{</span>
+<span class=p>}</span>
 
-<span style=color:#998;font-style:italic>// 被执行函数格式，done 控制是否继续轮训，err 用于控制函数执行的错误 
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>type</span> ConditionWithContextFunc <span style=color:#000;font-weight:700>func</span>(context.Context) (done <span style=color:#458;font-weight:700>bool</span>, err <span style=color:#458;font-weight:700>error</span>)
+<span class=c1>// 被执行函数格式，done 控制是否继续轮训，err 用于控制函数执行的错误 
+</span><span class=c1></span><span class=kd>type</span> <span class=nx>ConditionWithContextFunc</span> <span class=kd>func</span><span class=p>(</span><span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span> <span class=p>(</span><span class=nx>done</span> <span class=kt>bool</span><span class=p>,</span> <span class=nx>err</span> <span class=kt>error</span><span class=p>)</span>
 
 </code></pre></div><p>例子：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>import</span> <span style=color:#d14>&#34;k8s.io/apimachinery/pkg/util/wait&#34;</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>import</span> <span class=s>&#34;k8s.io/apimachinery/pkg/util/wait&#34;</span>
 
-deadlineCtx, deadlineCancel <span style=color:#000;font-weight:700>:=</span> context.<span style=color:#900;font-weight:700>WithTimeout</span>(ctx, timeout)
-err <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>PollUntilContextCancel</span>(deadlineCtx, time.Second, <span style=color:#000;font-weight:700>true</span>, <span style=color:#000;font-weight:700>func</span>(context.Context) (<span style=color:#458;font-weight:700>bool</span>, <span style=color:#458;font-weight:700>error</span>) {
-          <span style=color:#998;font-style:italic>// TODO
-</span><span style=color:#998;font-style:italic></span>					<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>true</span>, <span style=color:#000;font-weight:700>nil</span>
-				})
+<span class=nx>deadlineCtx</span><span class=p>,</span> <span class=nx>deadlineCancel</span> <span class=o>:=</span> <span class=nx>context</span><span class=p>.</span><span class=nf>WithTimeout</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>timeout</span><span class=p>)</span>
+<span class=nx>err</span> <span class=o>:=</span> <span class=nf>PollUntilContextCancel</span><span class=p>(</span><span class=nx>deadlineCtx</span><span class=p>,</span> <span class=nx>time</span><span class=p>.</span><span class=nx>Second</span><span class=p>,</span> <span class=kc>true</span><span class=p>,</span> <span class=kd>func</span><span class=p>(</span><span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span> <span class=p>(</span><span class=kt>bool</span><span class=p>,</span> <span class=kt>error</span><span class=p>)</span> <span class=p>{</span>
+          <span class=c1>// TODO
+</span><span class=c1></span>					<span class=k>return</span> <span class=kc>true</span><span class=p>,</span> <span class=kc>nil</span>
+				<span class=p>})</span>
 </code></pre></div><h3 id=forever>Forever</h3>
 <p><code>Forever</code>方法用于每隔一段时间执行一次 f 。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Forever</span>(f <span style=color:#000;font-weight:700>func</span>(), period time.Duration) {
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>Forever</span><span class=p>(</span><span class=nx>f</span> <span class=kd>func</span><span class=p>(),</span> <span class=nx>period</span> <span class=nx>time</span><span class=p>.</span><span class=nx>Duration</span><span class=p>)</span> <span class=p>{</span>
+<span class=p>}</span>
 </code></pre></div>
 </div>
 <div class=prev-next>

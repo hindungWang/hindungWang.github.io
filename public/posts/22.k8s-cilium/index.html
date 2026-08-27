@@ -24,8 +24,10 @@ L2 - 数据链路层：在物理地址（如 MAC 地址）上提供 …">
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -396,21 +398,21 @@ November 15, 2023
 <h2 id=安装和配置>安装和配置</h2>
 <h3 id=cilium-安装的步骤和方法>Cilium 安装的步骤和方法</h3>
 <p>采用手动安装的方式：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#998;font-style:italic># 安装cilium-cli</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=c1># 安装cilium-cli</span>
 wget https://github.com/cilium/cilium-cli/releases/download/v0.15.0/cilium-linux-amd64.tar.gz
 tar zvxfC /usr/bin/cilium-linux-amd64.tar.gz
-<span style=color:#998;font-style:italic># 安装cilium chart</span>
+<span class=c1># 安装cilium chart</span>
 helm repo add cilium https://helm.cilium.io
 helm repo update
 helm install cilium cilium/cilium  --namespace cilium  --kubeconfig config --create-namespace
-<span style=color:#998;font-style:italic># 升级</span>
-helm upgrade --install cilium charts/cilium/1.14.3   <span style=color:#d14>\
-</span><span style=color:#d14></span>  --namespace cilium  <span style=color:#d14>\
-</span><span style=color:#d14></span>  --kubeconfig config <span style=color:#d14>\
-</span><span style=color:#d14></span>  --create-namespace  
+<span class=c1># 升级</span>
+helm upgrade --install cilium charts/cilium/1.14.3   <span class=se>\
+</span><span class=se></span>  --namespace cilium  <span class=se>\
+</span><span class=se></span>  --kubeconfig config <span class=se>\
+</span><span class=se></span>  --create-namespace  
 </code></pre></div><p>检查安装：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>cilium  status --wait --namespace cilium
-cilium connectivity <span style=color:#0086b3>test</span> -n cilium  --curl-image cilium/alpine-curl:v1.7.0 --json-mock-image cilium/json-mock:v1.3.5 --performance-image cilium/network-perf:a816f935930cb2b40ba43230643da4d5751a5711  --dns-test-server-image rancher/mirrored-coredns-coredns:1.9.0
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>cilium  status --wait --namespace cilium
+cilium connectivity <span class=nb>test</span> -n cilium  --curl-image cilium/alpine-curl:v1.7.0 --json-mock-image cilium/json-mock:v1.3.5 --performance-image cilium/network-perf:a816f935930cb2b40ba43230643da4d5751a5711  --dns-test-server-image rancher/mirrored-coredns-coredns:1.9.0
 </code></pre></div><h3 id=网络策略负载均衡和其他高级功能>网络策略、负载均衡和其他高级功能</h3>
 <h4 id=ipam>IPAM</h4>
 <p>IPAM负责分配和管理网络端点（容器或其它）的IP地址。支持几种方法：</p>
@@ -428,85 +430,85 @@ cilium connectivity <span style=color:#0086b3>test</span> -n cilium  --curl-imag
 <h4 id=网络策略>网络策略</h4>
 <p>K8S标准的NetworkPolicy，可以用来指定L3/L4 ingress策略，以及受限的egress策略。CiliumNetworkPolicy同k8s自身的NetworkPolicy实现一样，默认全通，规则的生效是所见即所得，根据实际情况对规则进行Merge。Cilium网络策略支持L7层，扩展了原生策略的能力。</p>
 <p>如：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;cilium.io/v2&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>CiliumNetworkPolicy<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>example<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>endpointSelector</span>:<span style=color:#bbb>  </span><span style=color:#998;font-style:italic># 作用的对象集合</span><span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>a</span>:<span style=color:#bbb> </span>b<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>ingress</span>:<span style=color:#bbb>          </span><span style=color:#998;font-style:italic># 入方向</span><span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>fromEndpoints</span>:<span style=color:#bbb>  </span><span style=color:#998;font-style:italic># 从哪里来</span><span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- <span style=color:navy>matchLabels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>c</span>:<span style=color:#bbb> </span>d<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>...<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>egress</span>:<span style=color:#bbb>           </span><span style=color:#998;font-style:italic># 出方向</span><span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>toEndpoints</span>:<span style=color:#bbb>    </span><span style=color:#998;font-style:italic># 到哪里去</span><span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- <span style=color:navy>matchLabels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>e</span>:<span style=color:#bbb> </span>f<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>...<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;cilium.io/v2&#34;</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>CiliumNetworkPolicy</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>example</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>endpointSelector</span><span class=p>:</span><span class=w>  </span><span class=c># 作用的对象集合</span><span class=w>
+</span><span class=w>    </span><span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>a</span><span class=p>:</span><span class=w> </span><span class=l>b</span><span class=w>
+</span><span class=w>  </span><span class=nt>ingress</span><span class=p>:</span><span class=w>          </span><span class=c># 入方向</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>fromEndpoints</span><span class=p>:</span><span class=w>  </span><span class=c># 从哪里来</span><span class=w>
+</span><span class=w>    </span>- <span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>c</span><span class=p>:</span><span class=w> </span><span class=l>d</span><span class=w>
+</span><span class=w>  </span><span class=l>...</span><span class=w>
+</span><span class=w>  </span><span class=nt>egress</span><span class=p>:</span><span class=w>           </span><span class=c># 出方向</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>toEndpoints</span><span class=p>:</span><span class=w>    </span><span class=c># 到哪里去</span><span class=w>
+</span><span class=w>    </span>- <span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>e</span><span class=p>:</span><span class=w> </span><span class=l>f</span><span class=w>
+</span><span class=w>  </span><span class=l>...</span><span class=w>
 </span></code></pre></div><h5 id=l3策略>L3策略</h5>
 <p><strong>基于端点标签</strong>：示例说明<strong>只允许</strong>从标签为 <code>app=app1</code> 的端点通信到标签为 <code>app=nginx</code> 的终端点。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;cilium.io/v2&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>CiliumNetworkPolicy<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>l3-rule-allow-app1-to-nginx<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>endpointSelector</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>nginx<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>ingress</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>fromEndpoints</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- <span style=color:navy>matchLabels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>app1<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;cilium.io/v2&#34;</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>CiliumNetworkPolicy</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>l3-rule-allow-app1-to-nginx</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>endpointSelector</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>nginx</span><span class=w>
+</span><span class=w>  </span><span class=nt>ingress</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>fromEndpoints</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span>- <span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>app1</span><span class=w>
 </span></code></pre></div><p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/p1.png alt></p>
 <p><strong>基于svc（理解上有点问题）</strong>：示例说明<strong>允许</strong>所有标签为<code>app=app1</code>的终端点与kubernetes命名空间<code>default</code>下的服务<code>nginx</code>的所有端点通信。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;cilium.io/v2&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>CiliumNetworkPolicy<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>l3-rule-allow-app1-to-nginx-svc<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>endpointSelector</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>app1<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>egress</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>toServices</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- <span style=color:navy>k8sService</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>serviceName</span>:<span style=color:#bbb> </span>nginx<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;cilium.io/v2&#34;</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>CiliumNetworkPolicy</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>l3-rule-allow-app1-to-nginx-svc</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>endpointSelector</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>app1</span><span class=w>
+</span><span class=w>  </span><span class=nt>egress</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>toServices</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span>- <span class=nt>k8sService</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>serviceName</span><span class=p>:</span><span class=w> </span><span class=l>nginx</span><span class=w>
+</span><span class=w>        </span><span class=nt>namespace</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
 </span></code></pre></div><p>预期：app1通nginx，实际：居然是app1不通，app2通</p>
 <p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/p2.png alt></p>
 <p><strong>基于实体身份标识</strong>：示例说明<strong>允许</strong><code>app=app1</code>的端点到本地主机的所有通信，到其他的主机则拒绝。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;cilium.io/v2&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>CiliumNetworkPolicy<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;app1-to-host&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>endpointSelector</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>app1<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>egress</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- <span style=color:navy>toEntities</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span>- host<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;cilium.io/v2&#34;</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>CiliumNetworkPolicy</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;app1-to-host&#34;</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>endpointSelector</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>app1</span><span class=w>
+</span><span class=w>  </span><span class=nt>egress</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span>- <span class=nt>toEntities</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span>- <span class=l>host</span><span class=w>
 </span></code></pre></div><p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/p3.png alt></p>
 <p>除了host，还包括一些内置的实体身份：remote-node、kube-apiserver、ingress等等。</p>
 <p>除了以上几种，还有基于 DNS，IP/CIDR等方式。</p>
 <h5 id=l4策略>L4策略</h5>
 <p>限制端口上TCP连接：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;cilium.io/v2&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>CiliumNetworkPolicy<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;l4-rule&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>endpointSelector</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>app1<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>egress</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span>- <span style=color:navy>toPorts</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span>- <span style=color:navy>ports</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>port</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;80&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>protocol</span>:<span style=color:#bbb> </span>TCP<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;cilium.io/v2&#34;</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>CiliumNetworkPolicy</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;l4-rule&#34;</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>endpointSelector</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>app1</span><span class=w>
+</span><span class=w>  </span><span class=nt>egress</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span>- <span class=nt>toPorts</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span>- <span class=nt>ports</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>port</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;80&#34;</span><span class=w>
+</span><span class=w>          </span><span class=nt>protocol</span><span class=p>:</span><span class=w> </span><span class=l>TCP</span><span class=w>
 </span></code></pre></div><p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/p4.png alt></p>
 <h5 id=l7策略>L7策略</h5>
 <p><strong>基于HTTP（包括gRPC）</strong></p>
@@ -514,17 +516,17 @@ cilium connectivity <span style=color:#0086b3>test</span> -n cilium  --curl-imag
 <p>除此之外，还支持Kafka（beta）。</p>
 <h4 id=负载均衡>负载均衡</h4>
 <p>我们启用了替换kube-proxy功能，因此节点上可以完全去掉kube-proxy组件，并且可以在cilium观察服务：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>root@master01:/home/cilium# cilium service list
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>root@master01:/home/cilium# cilium service list
 ID   Frontend                Service Type   Backend
-<span style=color:#099>3</span>    10.43.0.1:443           ClusterIP      <span style=color:teal>1</span> <span style=color:#000;font-weight:700>=</span>&gt; 192.168.101.181:6443 <span style=color:#000;font-weight:700>(</span>active<span style=color:#000;font-weight:700>)</span>
-<span style=color:#099>4</span>    10.43.78.28:80          ClusterIP      <span style=color:teal>1</span> <span style=color:#000;font-weight:700>=</span>&gt; 10.42.0.142:8080 <span style=color:#000;font-weight:700>(</span>active<span style=color:#000;font-weight:700>)</span>
-<span style=color:#099>5</span>    10.43.95.36:443         ClusterIP      <span style=color:teal>1</span> <span style=color:#000;font-weight:700>=</span>&gt; 10.42.1.148:8443 <span style=color:#000;font-weight:700>(</span>active<span style=color:#000;font-weight:700>)</span>
-                                            <span style=color:teal>2</span> <span style=color:#000;font-weight:700>=</span>&gt; 10.42.0.248:8443 <span style=color:#000;font-weight:700>(</span>active<span style=color:#000;font-weight:700>)</span>
-<span style=color:#099>6</span>    10.43.0.10:53           ClusterIP      <span style=color:teal>1</span> <span style=color:#000;font-weight:700>=</span>&gt; 10.42.1.81:53 <span style=color:#000;font-weight:700>(</span>active<span style=color:#000;font-weight:700>)</span>
-                                            <span style=color:teal>2</span> <span style=color:#000;font-weight:700>=</span>&gt; 10.42.0.165:53 <span style=color:#000;font-weight:700>(</span>active<span style=color:#000;font-weight:700>)</span>
-<span style=color:#099>7</span>    10.43.0.10:9153         ClusterIP      <span style=color:teal>1</span> <span style=color:#000;font-weight:700>=</span>&gt; 10.42.1.81:9153 <span style=color:#000;font-weight:700>(</span>active<span style=color:#000;font-weight:700>)</span>
-                                            <span style=color:teal>2</span> <span style=color:#000;font-weight:700>=</span>&gt; 10.42.0.165:9153 <span style=color:#000;font-weight:700>(</span>active<span style=color:#000;font-weight:700>)</span>
-<span style=color:#099>8</span>    10.43.166.103:443       ClusterIP      <span style=color:teal>1</span> <span style=color:#000;font-weight:700>=</span>&gt; 10.42.0.123:4443 <span style=color:#000;font-weight:700>(</span>active<span style=color:#000;font-weight:700>)</span>
+<span class=m>3</span>    10.43.0.1:443           ClusterIP      <span class=nv>1</span> <span class=o>=</span>&gt; 192.168.101.181:6443 <span class=o>(</span>active<span class=o>)</span>
+<span class=m>4</span>    10.43.78.28:80          ClusterIP      <span class=nv>1</span> <span class=o>=</span>&gt; 10.42.0.142:8080 <span class=o>(</span>active<span class=o>)</span>
+<span class=m>5</span>    10.43.95.36:443         ClusterIP      <span class=nv>1</span> <span class=o>=</span>&gt; 10.42.1.148:8443 <span class=o>(</span>active<span class=o>)</span>
+                                            <span class=nv>2</span> <span class=o>=</span>&gt; 10.42.0.248:8443 <span class=o>(</span>active<span class=o>)</span>
+<span class=m>6</span>    10.43.0.10:53           ClusterIP      <span class=nv>1</span> <span class=o>=</span>&gt; 10.42.1.81:53 <span class=o>(</span>active<span class=o>)</span>
+                                            <span class=nv>2</span> <span class=o>=</span>&gt; 10.42.0.165:53 <span class=o>(</span>active<span class=o>)</span>
+<span class=m>7</span>    10.43.0.10:9153         ClusterIP      <span class=nv>1</span> <span class=o>=</span>&gt; 10.42.1.81:9153 <span class=o>(</span>active<span class=o>)</span>
+                                            <span class=nv>2</span> <span class=o>=</span>&gt; 10.42.0.165:9153 <span class=o>(</span>active<span class=o>)</span>
+<span class=m>8</span>    10.43.166.103:443       ClusterIP      <span class=nv>1</span> <span class=o>=</span>&gt; 10.42.0.123:4443 <span class=o>(</span>active<span class=o>)</span>
 </code></pre></div><h4 id=集群网络>集群网络</h4>
 <p>Cluster Mesh将网络数据路径延伸到多个集群，支持以下特性：</p>
 <ul>
@@ -558,10 +560,10 @@ ID   Frontend                Service Type   Backend
     --set k8sServiceHost=${API_SERVER_IP} \
     --set k8sServicePort=${API_SERVER_PORT}
 </code></pre><p>检查是否生效：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>cilium status --verbose 
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>cilium status --verbose 
 KubeProxyReplacement Details:
   ...
-  XDP Acceleration:       Native  <span style=color:#998;font-style:italic># 表示已开启XDP</span>
+  XDP Acceleration:       Native  <span class=c1># 表示已开启XDP</span>
   ...
 </code></pre></div><p>测试结果：</p>
 <table>
@@ -648,35 +650,35 @@ KubeProxyReplacement Details:
 <p>限制：内核版本需要大于等于5.2，需要网卡支持本地XDP的驱动程序。</p>
 <h4 id=带宽限速>带宽限速</h4>
 <p>利用Cilium的带宽管理器，可以有效的在EDT（Earliest Departure Time）、eBPF的帮助下，管理每个Pod的带宽占用。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>apiVersion</span>:<span style=color:#bbb> </span>apps/v1<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>kind</span>:<span style=color:#bbb> </span>Deployment<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>name</span>:<span style=color:#bbb> </span>qperf<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>namespace</span>:<span style=color:#bbb> </span>default<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>labels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>qperf<span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>replicas</span>:<span style=color:#bbb> </span><span style=color:#099>4</span><span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>selector</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>matchLabels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>qperf<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>template</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>creationTimestamp</span>:<span style=color:#bbb> </span><span style=color:#000;font-weight:700>null</span><span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>labels</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>app</span>:<span style=color:#bbb> </span>qperf<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>annotations</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span><span style=color:navy>kubernetes.io/egress-bandwidth</span>:<span style=color:#bbb> </span>10M<span style=color:#bbb> </span><span style=color:#998;font-style:italic># 使用方法</span><span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>containers</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>qperf<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>image</span>:<span style=color:#bbb> </span>hxd/qperf<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>apps/v1</span><span class=w>
+</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Deployment</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>qperf</span><span class=w>
+</span><span class=w>  </span><span class=nt>namespace</span><span class=p>:</span><span class=w> </span><span class=l>default</span><span class=w>
+</span><span class=w>  </span><span class=nt>labels</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>qperf</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>replicas</span><span class=p>:</span><span class=w> </span><span class=m>4</span><span class=w>
+</span><span class=w>  </span><span class=nt>selector</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>matchLabels</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>qperf</span><span class=w>
+</span><span class=w>  </span><span class=nt>template</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>creationTimestamp</span><span class=p>:</span><span class=w> </span><span class=kc>null</span><span class=w>
+</span><span class=w>      </span><span class=nt>labels</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>qperf</span><span class=w>
+</span><span class=w>      </span><span class=nt>annotations</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span><span class=nt>kubernetes.io/egress-bandwidth</span><span class=p>:</span><span class=w> </span><span class=l>10M</span><span class=w> </span><span class=c># 使用方法</span><span class=w>
+</span><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>containers</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>qperf</span><span class=w>
+</span><span class=w>          </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>hxd/qperf</span><span class=w>
 </span></code></pre></div><p>结果：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>/ <span style=color:#998;font-style:italic># qperf -t 60  10.42.1.69 -ub -oo msg_size:4K -vu tcp_bw</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>/ <span class=c1># qperf -t 60  10.42.1.69 -ub -oo msg_size:4K -vu tcp_bw</span>
 tcp_bw:
-    <span style=color:teal>bw</span>        <span style=color:#000;font-weight:700>=</span>  9.6 Mb/sec
-    <span style=color:teal>msg_size</span>  <span style=color:#000;font-weight:700>=</span>    <span style=color:#099>4</span> KiB <span style=color:#000;font-weight:700>(</span>4,096<span style=color:#000;font-weight:700>)</span>
-    <span style=color:#0086b3>time</span>      <span style=color:#000;font-weight:700>=</span>   <span style=color:#099>60</span> sec
+    <span class=nv>bw</span>        <span class=o>=</span>  9.6 Mb/sec
+    <span class=nv>msg_size</span>  <span class=o>=</span>    <span class=m>4</span> KiB <span class=o>(</span>4,096<span class=o>)</span>
+    <span class=nb>time</span>      <span class=o>=</span>   <span class=m>60</span> sec
 </code></pre></div><h4 id=bgp>BGP</h4>
 <p>IPv6 BIG TCP，Kernel >= 5.19</p>
 <p>IPv4 BIG TCP，Kernel >= 6.3</p>
@@ -685,8 +687,8 @@ tcp_bw:
 <h2 id=rke-支持>RKE 支持</h2>
 <p>RKE目前不支持选择安装 Cilium 网络插件。支持的话需要修改rke代码。</p>
 <p>可以将网络设置为none，然后使用helm安装。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>network</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>plugin</span>:<span style=color:#bbb> </span>none<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>network</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>plugin</span><span class=p>:</span><span class=w> </span><span class=l>none</span><span class=w>
 </span></code></pre></div><p>此外，如果需要启用替换kube-proxy，需要在rke安装时，跳过部署kube-proxy（有可能导致部署失败），或者手动docker stop kube-proxy。</p>
 <h2 id=cni-对比>CNI 对比</h2>
 <p>Cilium 与其他常见的 Kubernetes 网络插件进行对比，总体矩阵：</p>
@@ -938,12 +940,12 @@ tcp_bw:
 <h2 id=虚拟化支持>虚拟化支持</h2>
 <p>对于k8s+kubevirt+cilium的场景，cilium除了给pod/vm提供网络功能外，还支持XDP等功能。</p>
 <p>virtio_net开启XDP依赖的内核版本 >= 4.10，并且可能需要开启multiqueue模式，在virtio类型的虚拟机上部署，正常启动XDP：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#998;font-style:italic># ethtool -i eth0</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=c1># ethtool -i eth0</span>
 driver: virtio_net
 ...
-<span style=color:#998;font-style:italic># cilium status</span>
+<span class=c1># cilium status</span>
 ...
-KubeProxyReplacement:    True   <span style=color:#000;font-weight:700>[</span>eth0 192.168.242.27 <span style=color:#000;font-weight:700>(</span>Direct Routing<span style=color:#000;font-weight:700>)]</span>
+KubeProxyReplacement:    True   <span class=o>[</span>eth0 192.168.242.27 <span class=o>(</span>Direct Routing<span class=o>)]</span>
 ...
 KubeProxyReplacement Details:
   Status:                 True

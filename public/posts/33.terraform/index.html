@@ -24,8 +24,10 @@ Terraform通过插件的机制，将各个云厂商的OpenAPI抽象为Provider�
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -396,261 +398,261 @@ TF_PLUGIN_MAGIC_COOKIE=d602bf8f19cb4ca9872b2</p>
 <h3 id=实现一个provider>实现一个Provider</h3>
 <p>通过对go-plugin工具以及Terraform源码的了解，我们可以简单实现一个Provider。
 主程序只需plugin.Serve方法即可：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-golang data-lang=golang><span style=color:#000;font-weight:700>package</span> main
-<span style=color:#000;font-weight:700>import</span> (
-	<span style=color:#d14>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema&#34;</span>
-	<span style=color:#d14>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/plugin&#34;</span>
-	<span style=color:#d14>&#34;github.com/hindungWang/terraform-provider-wincloud/wincloud&#34;</span>
-)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>main</span>() {
-	plugin.<span style=color:#900;font-weight:700>Serve</span>(<span style=color:#000;font-weight:700>&amp;</span>plugin.ServeOpts{
-		ProviderFunc: <span style=color:#000;font-weight:700>func</span>() <span style=color:#000;font-weight:700>*</span>schema.Provider {
-			<span style=color:#000;font-weight:700>return</span> wincloud.<span style=color:#900;font-weight:700>Provider</span>()
-		},
-	})
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-golang data-lang=golang><span class=kn>package</span> <span class=nx>main</span>
+<span class=kn>import</span> <span class=p>(</span>
+	<span class=s>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema&#34;</span>
+	<span class=s>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/plugin&#34;</span>
+	<span class=s>&#34;github.com/hindungWang/terraform-provider-wincloud/wincloud&#34;</span>
+<span class=p>)</span>
+<span class=kd>func</span> <span class=nf>main</span><span class=p>()</span> <span class=p>{</span>
+	<span class=nx>plugin</span><span class=p>.</span><span class=nf>Serve</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>plugin</span><span class=p>.</span><span class=nx>ServeOpts</span><span class=p>{</span>
+		<span class=nx>ProviderFunc</span><span class=p>:</span> <span class=kd>func</span><span class=p>()</span> <span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Provider</span> <span class=p>{</span>
+			<span class=k>return</span> <span class=nx>wincloud</span><span class=p>.</span><span class=nf>Provider</span><span class=p>()</span>
+		<span class=p>},</span>
+	<span class=p>})</span>
+<span class=p>}</span>
 </code></pre></div><p>data_source用于检索资源，同步云上的资源状态到本地并作为数据源，以供其他资源引用。
 通过定义data_source的Schema来定义、识别、引用和存储云上数据资源的属性。
 dataSourceVirtualMachineRead方法则是我们要实现的查询改资源的方法</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> wincloud
-<span style=color:#000;font-weight:700>import</span> (
-	<span style=color:#d14>&#34;context&#34;</span>
-	<span style=color:#d14>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/diag&#34;</span>
-	<span style=color:#d14>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema&#34;</span>
-	<span style=color:#d14>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/clients&#34;</span>
-	<span style=color:#d14>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/utils&#34;</span>
-)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>dataSourceVirtualMachine</span>() <span style=color:#000;font-weight:700>*</span>schema.Resource {
-	<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>&amp;</span>schema.Resource{
-		ReadContext: dataSourceVirtualMachineRead, <span style=color:#998;font-style:italic>// 查询
-</span><span style=color:#998;font-style:italic></span>		Schema: <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#000;font-weight:700>*</span>schema.Schema{
-			<span style=color:#d14>&#34;uuid&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:     schema.TypeString,
-				Required: <span style=color:#000;font-weight:700>true</span>,
-			},
-			<span style=color:#d14>&#34;name&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:     schema.TypeString,
-				Computed: <span style=color:#000;font-weight:700>true</span>,
-			},
-			<span style=color:#d14>&#34;user_uuid&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:     schema.TypeString,
-				Computed: <span style=color:#000;font-weight:700>true</span>,
-			},
-      <span style=color:#000;font-weight:700>...</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>wincloud</span>
+<span class=kn>import</span> <span class=p>(</span>
+	<span class=s>&#34;context&#34;</span>
+	<span class=s>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/diag&#34;</span>
+	<span class=s>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema&#34;</span>
+	<span class=s>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/clients&#34;</span>
+	<span class=s>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/utils&#34;</span>
+<span class=p>)</span>
+<span class=kd>func</span> <span class=nf>dataSourceVirtualMachine</span><span class=p>()</span> <span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Resource</span> <span class=p>{</span>
+	<span class=k>return</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Resource</span><span class=p>{</span>
+		<span class=nx>ReadContext</span><span class=p>:</span> <span class=nx>dataSourceVirtualMachineRead</span><span class=p>,</span> <span class=c1>// 查询
+</span><span class=c1></span>		<span class=nx>Schema</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+			<span class=s>&#34;uuid&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>     <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Required</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+			<span class=p>},</span>
+			<span class=s>&#34;name&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>     <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Computed</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+			<span class=p>},</span>
+			<span class=s>&#34;user_uuid&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>     <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Computed</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+			<span class=p>},</span>
+      <span class=o>...</span>
 
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>dataSourceVirtualMachineRead</span>(ctx context.Context, d <span style=color:#000;font-weight:700>*</span>schema.ResourceData, m <span style=color:#000;font-weight:700>interface</span>{}) diag.Diagnostics {
-	<span style=color:#000;font-weight:700>var</span> diags diag.Diagnostics
-	c <span style=color:#000;font-weight:700>:=</span> m.(<span style=color:#000;font-weight:700>*</span>clients.Client)
-	vmUuid <span style=color:#000;font-weight:700>:=</span> d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;uuid&#34;</span>).(<span style=color:#458;font-weight:700>string</span>)
-	vm, err <span style=color:#000;font-weight:700>:=</span> c.<span style=color:#900;font-weight:700>GetVirtualMachine</span>(vmUuid)
-	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-		<span style=color:#000;font-weight:700>return</span> diag.<span style=color:#900;font-weight:700>FromErr</span>(err)
-	}
-	data, err <span style=color:#000;font-weight:700>:=</span> utils.<span style=color:#900;font-weight:700>ToMap</span>(vm, <span style=color:#d14>&#34;schema&#34;</span>)
-	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-		diags = <span style=color:#0086b3>append</span>(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  <span style=color:#d14>&#34;Unable to set virtual machine values&#34;</span>,
-			Detail:   err.<span style=color:#900;font-weight:700>Error</span>(),
-		})
-		<span style=color:#000;font-weight:700>return</span> diags
-	}
-	<span style=color:#000;font-weight:700>for</span> k, v <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> data {
-		<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>:=</span> d.<span style=color:#900;font-weight:700>Set</span>(k, v); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-			<span style=color:#000;font-weight:700>return</span> diag.<span style=color:#900;font-weight:700>FromErr</span>(err)
-		}
-	}
-	d.<span style=color:#900;font-weight:700>SetId</span>(vmUuid)
-	<span style=color:#000;font-weight:700>return</span> diags
-}
+<span class=kd>func</span> <span class=nf>dataSourceVirtualMachineRead</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>d</span> <span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>ResourceData</span><span class=p>,</span> <span class=nx>m</span> <span class=kd>interface</span><span class=p>{})</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostics</span> <span class=p>{</span>
+	<span class=kd>var</span> <span class=nx>diags</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostics</span>
+	<span class=nx>c</span> <span class=o>:=</span> <span class=nx>m</span><span class=p>.(</span><span class=o>*</span><span class=nx>clients</span><span class=p>.</span><span class=nx>Client</span><span class=p>)</span>
+	<span class=nx>vmUuid</span> <span class=o>:=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;uuid&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>)</span>
+	<span class=nx>vm</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>c</span><span class=p>.</span><span class=nf>GetVirtualMachine</span><span class=p>(</span><span class=nx>vmUuid</span><span class=p>)</span>
+	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=k>return</span> <span class=nx>diag</span><span class=p>.</span><span class=nf>FromErr</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+	<span class=p>}</span>
+	<span class=nx>data</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>utils</span><span class=p>.</span><span class=nf>ToMap</span><span class=p>(</span><span class=nx>vm</span><span class=p>,</span> <span class=s>&#34;schema&#34;</span><span class=p>)</span>
+	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=nx>diags</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>diags</span><span class=p>,</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostic</span><span class=p>{</span>
+			<span class=nx>Severity</span><span class=p>:</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Error</span><span class=p>,</span>
+			<span class=nx>Summary</span><span class=p>:</span>  <span class=s>&#34;Unable to set virtual machine values&#34;</span><span class=p>,</span>
+			<span class=nx>Detail</span><span class=p>:</span>   <span class=nx>err</span><span class=p>.</span><span class=nf>Error</span><span class=p>(),</span>
+		<span class=p>})</span>
+		<span class=k>return</span> <span class=nx>diags</span>
+	<span class=p>}</span>
+	<span class=k>for</span> <span class=nx>k</span><span class=p>,</span> <span class=nx>v</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>data</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Set</span><span class=p>(</span><span class=nx>k</span><span class=p>,</span> <span class=nx>v</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+			<span class=k>return</span> <span class=nx>diag</span><span class=p>.</span><span class=nf>FromErr</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+	<span class=nx>d</span><span class=p>.</span><span class=nf>SetId</span><span class=p>(</span><span class=nx>vmUuid</span><span class=p>)</span>
+	<span class=k>return</span> <span class=nx>diags</span>
+<span class=p>}</span>
 </code></pre></div><p>对应的 tf 代码为：</p>
 <p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315131633.png alt></p>
 <p>resource则是我们要创建的资源，通过定义resource的Schema来定义、识别、引用和存储云上资源的属性。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>package</span> wincloud
-<span style=color:#000;font-weight:700>import</span> (
-	<span style=color:#d14>&#34;context&#34;</span>
-	<span style=color:#d14>&#34;strings&#34;</span>
-	<span style=color:#d14>&#34;time&#34;</span>
-	<span style=color:#d14>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/diag&#34;</span>
-	<span style=color:#d14>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema&#34;</span>
-	<span style=color:#d14>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/clients&#34;</span>
-	<span style=color:#d14>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/types&#34;</span>
-	<span style=color:#d14>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/utils&#34;</span>
-)
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>resourceVirtualMachine</span>() <span style=color:#000;font-weight:700>*</span>schema.Resource {
-	<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>&amp;</span>schema.Resource{
-		CreateContext: resourceVirtualMachineCreate, <span style=color:#998;font-style:italic>// 创建
-</span><span style=color:#998;font-style:italic></span>		ReadContext:   resourceVirtualMachineRead,  <span style=color:#998;font-style:italic>// 读取
-</span><span style=color:#998;font-style:italic></span>		UpdateContext: resourceVirtualMachineUpdate, <span style=color:#998;font-style:italic>// 更新
-</span><span style=color:#998;font-style:italic></span>		DeleteContext: resourceVirtualMachineDelete, <span style=color:#998;font-style:italic>// 删除
-</span><span style=color:#998;font-style:italic></span>		Schema: <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#000;font-weight:700>*</span>schema.Schema{
-			<span style=color:#d14>&#34;last_updated&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:     schema.TypeString,
-				Optional: <span style=color:#000;font-weight:700>true</span>,
-				Computed: <span style=color:#000;font-weight:700>true</span>,
-			},
-			<span style=color:#d14>&#34;uuid&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:     schema.TypeString,
-				Computed: <span style=color:#000;font-weight:700>true</span>,
-			},
-			<span style=color:#d14>&#34;name&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:     schema.TypeString,
-				Required: <span style=color:#000;font-weight:700>true</span>,
-			},
-			<span style=color:#d14>&#34;auto_start&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:     schema.TypeBool,
-				Optional: <span style=color:#000;font-weight:700>true</span>,
-			},
-			<span style=color:#d14>&#34;host_name&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:     schema.TypeString,
-				Required: <span style=color:#000;font-weight:700>true</span>,
-			},
-      <span style=color:#000;font-weight:700>...</span>
-}
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>resourceVirtualMachineCreate</span>(ctx context.Context, d <span style=color:#000;font-weight:700>*</span>schema.ResourceData, m <span style=color:#000;font-weight:700>interface</span>{}) diag.Diagnostics {
-	c <span style=color:#000;font-weight:700>:=</span> m.(<span style=color:#000;font-weight:700>*</span>clients.Client)
-	vm <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>types.CreateVirtualMachineRequest{}
-	vm.Name = d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;name&#34;</span>).(<span style=color:#458;font-weight:700>string</span>)
-	vm.AutoStart = d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;auto_start&#34;</span>).(<span style=color:#458;font-weight:700>bool</span>)
-	vm.StoragePoolID = d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;storage_pool_id&#34;</span>).(<span style=color:#458;font-weight:700>string</span>)
-	vm.NetworkAreaUUID = d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;network_area_uuid&#34;</span>).(<span style=color:#458;font-weight:700>string</span>)
-	vm.CallSource = d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;call_source&#34;</span>).(<span style=color:#458;font-weight:700>string</span>)
-	vm.MetaData = types.MetaData{
-		NetworkType:  d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;meta_data_network_type&#34;</span>).(<span style=color:#458;font-weight:700>string</span>),
-		TempleteUUID: d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;meta_data_templete_uuid&#34;</span>).(<span style=color:#458;font-weight:700>string</span>),
-		TempleteName: d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;meta_data_templete_name&#34;</span>).(<span style=color:#458;font-weight:700>string</span>),
-	}
-	pas <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>([]types.PrivateNetworksArray, <span style=color:#099>0</span>)
-	ns <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>([]types.Networks, <span style=color:#099>0</span>)
-	<span style=color:#000;font-weight:700>if</span> d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;private_networks_array&#34;</span>) <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-		private_networks_array <span style=color:#000;font-weight:700>:=</span> d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;private_networks_array&#34;</span>).([]<span style=color:#000;font-weight:700>interface</span>{})
-		<span style=color:#000;font-weight:700>for</span> _, item <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> private_networks_array {
-			i <span style=color:#000;font-weight:700>:=</span> item.(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#000;font-weight:700>interface</span>{})
-			pas = <span style=color:#0086b3>append</span>(pas, types.PrivateNetworksArray{
-				VpcNetworkUUID: i[<span style=color:#d14>&#34;vpc_network_uuid&#34;</span>].(<span style=color:#458;font-weight:700>string</span>),
-			})
-		}
-	}
-	<span style=color:#000;font-weight:700>if</span> d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;networks&#34;</span>) <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-		networks <span style=color:#000;font-weight:700>:=</span> d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;networks&#34;</span>).([]<span style=color:#000;font-weight:700>interface</span>{})
-		<span style=color:#000;font-weight:700>for</span> _, item <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> networks {
-			i <span style=color:#000;font-weight:700>:=</span> item.(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#000;font-weight:700>interface</span>{})
-			ns = <span style=color:#0086b3>append</span>(ns, types.Networks{
-				IP:          i[<span style=color:#d14>&#34;ip&#34;</span>].(<span style=color:#458;font-weight:700>string</span>),
-				NetworkID:   i[<span style=color:#d14>&#34;network_id&#34;</span>].(<span style=color:#458;font-weight:700>string</span>),
-				NetworkUUID: i[<span style=color:#d14>&#34;network_uuid&#34;</span>].(<span style=color:#458;font-weight:700>string</span>),
-			})
-		}
-	}
-	vm.PrivateNetworksArray = pas
-	vm.Networks = ns
-	uuid, err <span style=color:#000;font-weight:700>:=</span> c.<span style=color:#900;font-weight:700>CreateVirtualMachines</span>(vm)
-	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-		<span style=color:#000;font-weight:700>return</span> diag.<span style=color:#900;font-weight:700>FromErr</span>(err)
-	}
-	d.<span style=color:#900;font-weight:700>SetId</span>(uuid)
-	<span style=color:#000;font-weight:700>return</span> <span style=color:#900;font-weight:700>resourceVirtualMachineRead</span>(ctx, d, m)
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>wincloud</span>
+<span class=kn>import</span> <span class=p>(</span>
+	<span class=s>&#34;context&#34;</span>
+	<span class=s>&#34;strings&#34;</span>
+	<span class=s>&#34;time&#34;</span>
+	<span class=s>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/diag&#34;</span>
+	<span class=s>&#34;github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema&#34;</span>
+	<span class=s>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/clients&#34;</span>
+	<span class=s>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/types&#34;</span>
+	<span class=s>&#34;github.com/hindungWang/terraform-provider-wincloud/pkg/utils&#34;</span>
+<span class=p>)</span>
+<span class=kd>func</span> <span class=nf>resourceVirtualMachine</span><span class=p>()</span> <span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Resource</span> <span class=p>{</span>
+	<span class=k>return</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Resource</span><span class=p>{</span>
+		<span class=nx>CreateContext</span><span class=p>:</span> <span class=nx>resourceVirtualMachineCreate</span><span class=p>,</span> <span class=c1>// 创建
+</span><span class=c1></span>		<span class=nx>ReadContext</span><span class=p>:</span>   <span class=nx>resourceVirtualMachineRead</span><span class=p>,</span>  <span class=c1>// 读取
+</span><span class=c1></span>		<span class=nx>UpdateContext</span><span class=p>:</span> <span class=nx>resourceVirtualMachineUpdate</span><span class=p>,</span> <span class=c1>// 更新
+</span><span class=c1></span>		<span class=nx>DeleteContext</span><span class=p>:</span> <span class=nx>resourceVirtualMachineDelete</span><span class=p>,</span> <span class=c1>// 删除
+</span><span class=c1></span>		<span class=nx>Schema</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+			<span class=s>&#34;last_updated&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>     <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Optional</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+				<span class=nx>Computed</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+			<span class=p>},</span>
+			<span class=s>&#34;uuid&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>     <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Computed</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+			<span class=p>},</span>
+			<span class=s>&#34;name&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>     <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Required</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+			<span class=p>},</span>
+			<span class=s>&#34;auto_start&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>     <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeBool</span><span class=p>,</span>
+				<span class=nx>Optional</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+			<span class=p>},</span>
+			<span class=s>&#34;host_name&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>     <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Required</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+			<span class=p>},</span>
+      <span class=o>...</span>
+<span class=p>}</span>
+<span class=kd>func</span> <span class=nf>resourceVirtualMachineCreate</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>d</span> <span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>ResourceData</span><span class=p>,</span> <span class=nx>m</span> <span class=kd>interface</span><span class=p>{})</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostics</span> <span class=p>{</span>
+	<span class=nx>c</span> <span class=o>:=</span> <span class=nx>m</span><span class=p>.(</span><span class=o>*</span><span class=nx>clients</span><span class=p>.</span><span class=nx>Client</span><span class=p>)</span>
+	<span class=nx>vm</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>types</span><span class=p>.</span><span class=nx>CreateVirtualMachineRequest</span><span class=p>{}</span>
+	<span class=nx>vm</span><span class=p>.</span><span class=nx>Name</span> <span class=p>=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;name&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>)</span>
+	<span class=nx>vm</span><span class=p>.</span><span class=nx>AutoStart</span> <span class=p>=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;auto_start&#34;</span><span class=p>).(</span><span class=kt>bool</span><span class=p>)</span>
+	<span class=nx>vm</span><span class=p>.</span><span class=nx>StoragePoolID</span> <span class=p>=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;storage_pool_id&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>)</span>
+	<span class=nx>vm</span><span class=p>.</span><span class=nx>NetworkAreaUUID</span> <span class=p>=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;network_area_uuid&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>)</span>
+	<span class=nx>vm</span><span class=p>.</span><span class=nx>CallSource</span> <span class=p>=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;call_source&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>)</span>
+	<span class=nx>vm</span><span class=p>.</span><span class=nx>MetaData</span> <span class=p>=</span> <span class=nx>types</span><span class=p>.</span><span class=nx>MetaData</span><span class=p>{</span>
+		<span class=nx>NetworkType</span><span class=p>:</span>  <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;meta_data_network_type&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>),</span>
+		<span class=nx>TempleteUUID</span><span class=p>:</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;meta_data_templete_uuid&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>),</span>
+		<span class=nx>TempleteName</span><span class=p>:</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;meta_data_templete_name&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>),</span>
+	<span class=p>}</span>
+	<span class=nx>pas</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>([]</span><span class=nx>types</span><span class=p>.</span><span class=nx>PrivateNetworksArray</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span>
+	<span class=nx>ns</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>([]</span><span class=nx>types</span><span class=p>.</span><span class=nx>Networks</span><span class=p>,</span> <span class=mi>0</span><span class=p>)</span>
+	<span class=k>if</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;private_networks_array&#34;</span><span class=p>)</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=nx>private_networks_array</span> <span class=o>:=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;private_networks_array&#34;</span><span class=p>).([]</span><span class=kd>interface</span><span class=p>{})</span>
+		<span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>item</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>private_networks_array</span> <span class=p>{</span>
+			<span class=nx>i</span> <span class=o>:=</span> <span class=nx>item</span><span class=p>.(</span><span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{})</span>
+			<span class=nx>pas</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>pas</span><span class=p>,</span> <span class=nx>types</span><span class=p>.</span><span class=nx>PrivateNetworksArray</span><span class=p>{</span>
+				<span class=nx>VpcNetworkUUID</span><span class=p>:</span> <span class=nx>i</span><span class=p>[</span><span class=s>&#34;vpc_network_uuid&#34;</span><span class=p>].(</span><span class=kt>string</span><span class=p>),</span>
+			<span class=p>})</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+	<span class=k>if</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;networks&#34;</span><span class=p>)</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=nx>networks</span> <span class=o>:=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;networks&#34;</span><span class=p>).([]</span><span class=kd>interface</span><span class=p>{})</span>
+		<span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>item</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>networks</span> <span class=p>{</span>
+			<span class=nx>i</span> <span class=o>:=</span> <span class=nx>item</span><span class=p>.(</span><span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=kd>interface</span><span class=p>{})</span>
+			<span class=nx>ns</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>ns</span><span class=p>,</span> <span class=nx>types</span><span class=p>.</span><span class=nx>Networks</span><span class=p>{</span>
+				<span class=nx>IP</span><span class=p>:</span>          <span class=nx>i</span><span class=p>[</span><span class=s>&#34;ip&#34;</span><span class=p>].(</span><span class=kt>string</span><span class=p>),</span>
+				<span class=nx>NetworkID</span><span class=p>:</span>   <span class=nx>i</span><span class=p>[</span><span class=s>&#34;network_id&#34;</span><span class=p>].(</span><span class=kt>string</span><span class=p>),</span>
+				<span class=nx>NetworkUUID</span><span class=p>:</span> <span class=nx>i</span><span class=p>[</span><span class=s>&#34;network_uuid&#34;</span><span class=p>].(</span><span class=kt>string</span><span class=p>),</span>
+			<span class=p>})</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+	<span class=nx>vm</span><span class=p>.</span><span class=nx>PrivateNetworksArray</span> <span class=p>=</span> <span class=nx>pas</span>
+	<span class=nx>vm</span><span class=p>.</span><span class=nx>Networks</span> <span class=p>=</span> <span class=nx>ns</span>
+	<span class=nx>uuid</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>c</span><span class=p>.</span><span class=nf>CreateVirtualMachines</span><span class=p>(</span><span class=nx>vm</span><span class=p>)</span>
+	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=k>return</span> <span class=nx>diag</span><span class=p>.</span><span class=nf>FromErr</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+	<span class=p>}</span>
+	<span class=nx>d</span><span class=p>.</span><span class=nf>SetId</span><span class=p>(</span><span class=nx>uuid</span><span class=p>)</span>
+	<span class=k>return</span> <span class=nf>resourceVirtualMachineRead</span><span class=p>(</span><span class=nx>ctx</span><span class=p>,</span> <span class=nx>d</span><span class=p>,</span> <span class=nx>m</span><span class=p>)</span>
+<span class=p>}</span>
 
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>resourceVirtualMachineRead</span>(ctx context.Context, d <span style=color:#000;font-weight:700>*</span>schema.ResourceData, m <span style=color:#000;font-weight:700>interface</span>{}) diag.Diagnostics {
-	<span style=color:#000;font-weight:700>var</span> diags diag.Diagnostics
-	c <span style=color:#000;font-weight:700>:=</span> m.(<span style=color:#000;font-weight:700>*</span>clients.Client)
-	vmUuid <span style=color:#000;font-weight:700>:=</span> d.<span style=color:#900;font-weight:700>Id</span>()
-	<span style=color:#000;font-weight:700>var</span> loop = <span style=color:#099>0</span>
-	vm, err <span style=color:#000;font-weight:700>:=</span> c.<span style=color:#900;font-weight:700>GetVirtualMachine</span>(vmUuid)
-	<span style=color:#000;font-weight:700>for</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> loop &lt; <span style=color:#099>10</span> {
-		<span style=color:#000;font-weight:700>if</span> strings.<span style=color:#900;font-weight:700>Contains</span>(err.<span style=color:#900;font-weight:700>Error</span>(), <span style=color:#d14>&#34;20002&#34;</span>) {
-			vm, err = c.<span style=color:#900;font-weight:700>GetVirtualMachine</span>(vmUuid)
-			time.<span style=color:#900;font-weight:700>Sleep</span>(<span style=color:#099>1</span> <span style=color:#000;font-weight:700>*</span> time.Minute)
-		} <span style=color:#000;font-weight:700>else</span> {
-			<span style=color:#000;font-weight:700>return</span> diag.<span style=color:#900;font-weight:700>FromErr</span>(err)
-		}
-		loop<span style=color:#000;font-weight:700>++</span>
-	}
-	data, err <span style=color:#000;font-weight:700>:=</span> utils.<span style=color:#900;font-weight:700>ToMap</span>(vm, <span style=color:#d14>&#34;schema&#34;</span>)
-	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-		diags = <span style=color:#0086b3>append</span>(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  <span style=color:#d14>&#34;Unable to set virtual machine values&#34;</span>,
-			Detail:   err.<span style=color:#900;font-weight:700>Error</span>(),
-		})
-		<span style=color:#000;font-weight:700>return</span> diags
-	}
-	<span style=color:#000;font-weight:700>for</span> k, v <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> data {
-		<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>:=</span> d.<span style=color:#900;font-weight:700>Set</span>(k, v); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-			<span style=color:#000;font-weight:700>return</span> diag.<span style=color:#900;font-weight:700>FromErr</span>(err)
-		}
-	}
-	<span style=color:#000;font-weight:700>return</span> diags
-}
+<span class=kd>func</span> <span class=nf>resourceVirtualMachineRead</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>d</span> <span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>ResourceData</span><span class=p>,</span> <span class=nx>m</span> <span class=kd>interface</span><span class=p>{})</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostics</span> <span class=p>{</span>
+	<span class=kd>var</span> <span class=nx>diags</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostics</span>
+	<span class=nx>c</span> <span class=o>:=</span> <span class=nx>m</span><span class=p>.(</span><span class=o>*</span><span class=nx>clients</span><span class=p>.</span><span class=nx>Client</span><span class=p>)</span>
+	<span class=nx>vmUuid</span> <span class=o>:=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Id</span><span class=p>()</span>
+	<span class=kd>var</span> <span class=nx>loop</span> <span class=p>=</span> <span class=mi>0</span>
+	<span class=nx>vm</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>c</span><span class=p>.</span><span class=nf>GetVirtualMachine</span><span class=p>(</span><span class=nx>vmUuid</span><span class=p>)</span>
+	<span class=k>for</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=o>&amp;&amp;</span> <span class=nx>loop</span> <span class=p>&lt;</span> <span class=mi>10</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=nx>strings</span><span class=p>.</span><span class=nf>Contains</span><span class=p>(</span><span class=nx>err</span><span class=p>.</span><span class=nf>Error</span><span class=p>(),</span> <span class=s>&#34;20002&#34;</span><span class=p>)</span> <span class=p>{</span>
+			<span class=nx>vm</span><span class=p>,</span> <span class=nx>err</span> <span class=p>=</span> <span class=nx>c</span><span class=p>.</span><span class=nf>GetVirtualMachine</span><span class=p>(</span><span class=nx>vmUuid</span><span class=p>)</span>
+			<span class=nx>time</span><span class=p>.</span><span class=nf>Sleep</span><span class=p>(</span><span class=mi>1</span> <span class=o>*</span> <span class=nx>time</span><span class=p>.</span><span class=nx>Minute</span><span class=p>)</span>
+		<span class=p>}</span> <span class=k>else</span> <span class=p>{</span>
+			<span class=k>return</span> <span class=nx>diag</span><span class=p>.</span><span class=nf>FromErr</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+		<span class=p>}</span>
+		<span class=nx>loop</span><span class=o>++</span>
+	<span class=p>}</span>
+	<span class=nx>data</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>utils</span><span class=p>.</span><span class=nf>ToMap</span><span class=p>(</span><span class=nx>vm</span><span class=p>,</span> <span class=s>&#34;schema&#34;</span><span class=p>)</span>
+	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=nx>diags</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>diags</span><span class=p>,</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostic</span><span class=p>{</span>
+			<span class=nx>Severity</span><span class=p>:</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Error</span><span class=p>,</span>
+			<span class=nx>Summary</span><span class=p>:</span>  <span class=s>&#34;Unable to set virtual machine values&#34;</span><span class=p>,</span>
+			<span class=nx>Detail</span><span class=p>:</span>   <span class=nx>err</span><span class=p>.</span><span class=nf>Error</span><span class=p>(),</span>
+		<span class=p>})</span>
+		<span class=k>return</span> <span class=nx>diags</span>
+	<span class=p>}</span>
+	<span class=k>for</span> <span class=nx>k</span><span class=p>,</span> <span class=nx>v</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>data</span> <span class=p>{</span>
+		<span class=k>if</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Set</span><span class=p>(</span><span class=nx>k</span><span class=p>,</span> <span class=nx>v</span><span class=p>);</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+			<span class=k>return</span> <span class=nx>diag</span><span class=p>.</span><span class=nf>FromErr</span><span class=p>(</span><span class=nx>err</span><span class=p>)</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=nx>diags</span>
+<span class=p>}</span>
 
 </code></pre></div><p>定义好data_source和resource之后需要组合为Provider对象，提供给plugin.Serve。
 至此，Terraform core会帮我们执行从.tf语句解析到RPC调用再到Cloud API调用的完整调用链，并形成一个State用于保存当前的资源状态。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Provider</span>() <span style=color:#000;font-weight:700>*</span>schema.Provider {
-	<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>&amp;</span>schema.Provider{
-		Schema: <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#000;font-weight:700>*</span>schema.Schema{
-			<span style=color:#d14>&#34;username&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:        schema.TypeString,
-				Optional:    <span style=color:#000;font-weight:700>true</span>,
-				DefaultFunc: schema.<span style=color:#900;font-weight:700>EnvDefaultFunc</span>(<span style=color:#d14>&#34;WINCLOUD_USERNAME&#34;</span>, <span style=color:#000;font-weight:700>nil</span>),
-			},
-			<span style=color:#d14>&#34;password&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:        schema.TypeString,
-				Optional:    <span style=color:#000;font-weight:700>true</span>,
-				Sensitive:   <span style=color:#000;font-weight:700>true</span>,
-				DefaultFunc: schema.<span style=color:#900;font-weight:700>EnvDefaultFunc</span>(<span style=color:#d14>&#34;WINCLOUD_PASSWORD&#34;</span>, <span style=color:#000;font-weight:700>nil</span>),
-			},
-			<span style=color:#d14>&#34;token&#34;</span>: <span style=color:#000;font-weight:700>&amp;</span>schema.Schema{
-				Type:        schema.TypeString,
-				Optional:    <span style=color:#000;font-weight:700>true</span>,
-				Sensitive:   <span style=color:#000;font-weight:700>true</span>,
-				DefaultFunc: schema.<span style=color:#900;font-weight:700>EnvDefaultFunc</span>(<span style=color:#d14>&#34;WINCLOUD_TOKEN&#34;</span>, <span style=color:#000;font-weight:700>nil</span>),
-			},
-		},
-		ResourcesMap: <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#000;font-weight:700>*</span>schema.Resource{
-			<span style=color:#d14>&#34;wincloud_virtualmachine&#34;</span>: <span style=color:#900;font-weight:700>resourceVirtualMachine</span>(),
-			<span style=color:#d14>&#34;wincloud_objectstorage&#34;</span>:  <span style=color:#900;font-weight:700>resourceObjectStorage</span>(),
-		},
-		DataSourcesMap: <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#000;font-weight:700>*</span>schema.Resource{
-			<span style=color:#d14>&#34;wincloud_virtualmachine&#34;</span>: <span style=color:#900;font-weight:700>dataSourceVirtualMachine</span>(),
-			<span style=color:#d14>&#34;wincloud_objectstorage&#34;</span>:  <span style=color:#900;font-weight:700>dataSourceObjectStorage</span>(),
-		},
-		ConfigureContextFunc: providerConfigure,
-	}
-}
-<span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>providerConfigure</span>(ctx context.Context, d <span style=color:#000;font-weight:700>*</span>schema.ResourceData) (<span style=color:#000;font-weight:700>interface</span>{}, diag.Diagnostics) {
-	username <span style=color:#000;font-weight:700>:=</span> d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;username&#34;</span>).(<span style=color:#458;font-weight:700>string</span>)
-	password <span style=color:#000;font-weight:700>:=</span> d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;password&#34;</span>).(<span style=color:#458;font-weight:700>string</span>)
-	token <span style=color:#000;font-weight:700>:=</span> d.<span style=color:#900;font-weight:700>Get</span>(<span style=color:#d14>&#34;token&#34;</span>).(<span style=color:#458;font-weight:700>string</span>)
-	<span style=color:#998;font-style:italic>// Warning or errors can be collected in a slice type
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>var</span> diags diag.Diagnostics
-	<span style=color:#000;font-weight:700>if</span> token <span style=color:#000;font-weight:700>!=</span> <span style=color:#d14>&#34;&#34;</span> {
-		<span style=color:#000;font-weight:700>return</span> clients.<span style=color:#900;font-weight:700>NewClientWithToken</span>(token), diags
-	}
-	<span style=color:#000;font-weight:700>if</span> username <span style=color:#000;font-weight:700>==</span> <span style=color:#d14>&#34;&#34;</span> <span style=color:#000;font-weight:700>||</span> password <span style=color:#000;font-weight:700>==</span> <span style=color:#d14>&#34;&#34;</span> {
-		diags = <span style=color:#0086b3>append</span>(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  <span style=color:#d14>&#34;Unable to create Wincloud client&#34;</span>,
-			Detail:   <span style=color:#d14>&#34;No username or password&#34;</span>,
-		})
-		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, diags
-	}
-	c, err <span style=color:#000;font-weight:700>:=</span> clients.<span style=color:#900;font-weight:700>NewClient</span>(username, password)
-	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-		diags = <span style=color:#0086b3>append</span>(diags, diag.Diagnostic{
-			Severity: diag.Error,
-			Summary:  <span style=color:#d14>&#34;Unable to create Wincloud client&#34;</span>,
-			Detail:   fmt.<span style=color:#900;font-weight:700>Sprintf</span>(<span style=color:#d14>&#34;Unable to auth user for authenticated Wincloud client: %s&#34;</span>, err.<span style=color:#900;font-weight:700>Error</span>()),
-		})
-		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, diags
-	}
-	<span style=color:#000;font-weight:700>return</span> c, diags
-}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>Provider</span><span class=p>()</span> <span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Provider</span> <span class=p>{</span>
+	<span class=k>return</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Provider</span><span class=p>{</span>
+		<span class=nx>Schema</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+			<span class=s>&#34;username&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>        <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Optional</span><span class=p>:</span>    <span class=kc>true</span><span class=p>,</span>
+				<span class=nx>DefaultFunc</span><span class=p>:</span> <span class=nx>schema</span><span class=p>.</span><span class=nf>EnvDefaultFunc</span><span class=p>(</span><span class=s>&#34;WINCLOUD_USERNAME&#34;</span><span class=p>,</span> <span class=kc>nil</span><span class=p>),</span>
+			<span class=p>},</span>
+			<span class=s>&#34;password&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>        <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Optional</span><span class=p>:</span>    <span class=kc>true</span><span class=p>,</span>
+				<span class=nx>Sensitive</span><span class=p>:</span>   <span class=kc>true</span><span class=p>,</span>
+				<span class=nx>DefaultFunc</span><span class=p>:</span> <span class=nx>schema</span><span class=p>.</span><span class=nf>EnvDefaultFunc</span><span class=p>(</span><span class=s>&#34;WINCLOUD_PASSWORD&#34;</span><span class=p>,</span> <span class=kc>nil</span><span class=p>),</span>
+			<span class=p>},</span>
+			<span class=s>&#34;token&#34;</span><span class=p>:</span> <span class=o>&amp;</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Schema</span><span class=p>{</span>
+				<span class=nx>Type</span><span class=p>:</span>        <span class=nx>schema</span><span class=p>.</span><span class=nx>TypeString</span><span class=p>,</span>
+				<span class=nx>Optional</span><span class=p>:</span>    <span class=kc>true</span><span class=p>,</span>
+				<span class=nx>Sensitive</span><span class=p>:</span>   <span class=kc>true</span><span class=p>,</span>
+				<span class=nx>DefaultFunc</span><span class=p>:</span> <span class=nx>schema</span><span class=p>.</span><span class=nf>EnvDefaultFunc</span><span class=p>(</span><span class=s>&#34;WINCLOUD_TOKEN&#34;</span><span class=p>,</span> <span class=kc>nil</span><span class=p>),</span>
+			<span class=p>},</span>
+		<span class=p>},</span>
+		<span class=nx>ResourcesMap</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Resource</span><span class=p>{</span>
+			<span class=s>&#34;wincloud_virtualmachine&#34;</span><span class=p>:</span> <span class=nf>resourceVirtualMachine</span><span class=p>(),</span>
+			<span class=s>&#34;wincloud_objectstorage&#34;</span><span class=p>:</span>  <span class=nf>resourceObjectStorage</span><span class=p>(),</span>
+		<span class=p>},</span>
+		<span class=nx>DataSourcesMap</span><span class=p>:</span> <span class=kd>map</span><span class=p>[</span><span class=kt>string</span><span class=p>]</span><span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>Resource</span><span class=p>{</span>
+			<span class=s>&#34;wincloud_virtualmachine&#34;</span><span class=p>:</span> <span class=nf>dataSourceVirtualMachine</span><span class=p>(),</span>
+			<span class=s>&#34;wincloud_objectstorage&#34;</span><span class=p>:</span>  <span class=nf>dataSourceObjectStorage</span><span class=p>(),</span>
+		<span class=p>},</span>
+		<span class=nx>ConfigureContextFunc</span><span class=p>:</span> <span class=nx>providerConfigure</span><span class=p>,</span>
+	<span class=p>}</span>
+<span class=p>}</span>
+<span class=kd>func</span> <span class=nf>providerConfigure</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>d</span> <span class=o>*</span><span class=nx>schema</span><span class=p>.</span><span class=nx>ResourceData</span><span class=p>)</span> <span class=p>(</span><span class=kd>interface</span><span class=p>{},</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostics</span><span class=p>)</span> <span class=p>{</span>
+	<span class=nx>username</span> <span class=o>:=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;username&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>)</span>
+	<span class=nx>password</span> <span class=o>:=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;password&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>)</span>
+	<span class=nx>token</span> <span class=o>:=</span> <span class=nx>d</span><span class=p>.</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;token&#34;</span><span class=p>).(</span><span class=kt>string</span><span class=p>)</span>
+	<span class=c1>// Warning or errors can be collected in a slice type
+</span><span class=c1></span>	<span class=kd>var</span> <span class=nx>diags</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostics</span>
+	<span class=k>if</span> <span class=nx>token</span> <span class=o>!=</span> <span class=s>&#34;&#34;</span> <span class=p>{</span>
+		<span class=k>return</span> <span class=nx>clients</span><span class=p>.</span><span class=nf>NewClientWithToken</span><span class=p>(</span><span class=nx>token</span><span class=p>),</span> <span class=nx>diags</span>
+	<span class=p>}</span>
+	<span class=k>if</span> <span class=nx>username</span> <span class=o>==</span> <span class=s>&#34;&#34;</span> <span class=o>||</span> <span class=nx>password</span> <span class=o>==</span> <span class=s>&#34;&#34;</span> <span class=p>{</span>
+		<span class=nx>diags</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>diags</span><span class=p>,</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostic</span><span class=p>{</span>
+			<span class=nx>Severity</span><span class=p>:</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Error</span><span class=p>,</span>
+			<span class=nx>Summary</span><span class=p>:</span>  <span class=s>&#34;Unable to create Wincloud client&#34;</span><span class=p>,</span>
+			<span class=nx>Detail</span><span class=p>:</span>   <span class=s>&#34;No username or password&#34;</span><span class=p>,</span>
+		<span class=p>})</span>
+		<span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>diags</span>
+	<span class=p>}</span>
+	<span class=nx>c</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>clients</span><span class=p>.</span><span class=nf>NewClient</span><span class=p>(</span><span class=nx>username</span><span class=p>,</span> <span class=nx>password</span><span class=p>)</span>
+	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=nx>diags</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>diags</span><span class=p>,</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Diagnostic</span><span class=p>{</span>
+			<span class=nx>Severity</span><span class=p>:</span> <span class=nx>diag</span><span class=p>.</span><span class=nx>Error</span><span class=p>,</span>
+			<span class=nx>Summary</span><span class=p>:</span>  <span class=s>&#34;Unable to create Wincloud client&#34;</span><span class=p>,</span>
+			<span class=nx>Detail</span><span class=p>:</span>   <span class=nx>fmt</span><span class=p>.</span><span class=nf>Sprintf</span><span class=p>(</span><span class=s>&#34;Unable to auth user for authenticated Wincloud client: %s&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>.</span><span class=nf>Error</span><span class=p>()),</span>
+		<span class=p>})</span>
+		<span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>diags</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=nx>c</span><span class=p>,</span> <span class=nx>diags</span>
+<span class=p>}</span>
 </code></pre></div><p>整个过程就是将 tf 代码翻译为 cloud api 调用：
 <img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315131922.png alt></p>
 <h3 id=tf项目格式>tf项目格式</h3>
 <p>一般来说tf项目格式按照这种方式组织：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>.
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>.
 └── tf/
         ├── versions.tf   存放版本相关的变量
         ├── variables.tf  定义的变量

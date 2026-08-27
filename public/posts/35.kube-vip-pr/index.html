@@ -21,8 +21,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -248,27 +250,27 @@ January 20, 2026
 <h2 id=背景>背景</h2>
 <p>问题出自我当时自建的 IPv6-only 环境：单网卡 VM（<code>ens3</code>），Calico + BGP，两个 TOR 交换机同时通告 <code>::/0</code>。kube-vip 走"自动探测默认网关接口"路径时直接崩溃。</p>
 <p>核心排查代码：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#a61717;background-color:#e3d2d2>#</span> ip <span style=color:#000;font-weight:700>-</span>j <span style=color:#000;font-weight:700>-</span><span style=color:#099>6</span> route show ::<span style=color:#000;font-weight:700>/</span><span style=color:#099>0</span>
-[{<span style=color:#d14>&#34;dst&#34;</span>:<span style=color:#d14>&#34;default&#34;</span>,<span style=color:#d14>&#34;protocol&#34;</span>:<span style=color:#d14>&#34;static&#34;</span>,<span style=color:#d14>&#34;metric&#34;</span>:<span style=color:#099>1024</span>,<span style=color:#d14>&#34;flags&#34;</span>:[],
-  <span style=color:#d14>&#34;nexthops&#34;</span>:[
-    {<span style=color:#d14>&#34;gateway&#34;</span>:<span style=color:#d14>&#34;2242::192:168:242:254&#34;</span>,<span style=color:#d14>&#34;dev&#34;</span>:<span style=color:#d14>&#34;ens3&#34;</span>,<span style=color:#d14>&#34;weight&#34;</span>:<span style=color:#099>1</span>,<span style=color:#d14>&#34;flags&#34;</span>:[]},
-    {<span style=color:#d14>&#34;gateway&#34;</span>:<span style=color:#d14>&#34;fe80::aaaa:bbbb:cccc:dddd&#34;</span>,<span style=color:#d14>&#34;dev&#34;</span>:<span style=color:#d14>&#34;ens3&#34;</span>,<span style=color:#d14>&#34;weight&#34;</span>:<span style=color:#099>1</span>,<span style=color:#d14>&#34;flags&#34;</span>:[]}
-  ]}]
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=err>#</span> <span class=nx>ip</span> <span class=o>-</span><span class=nx>j</span> <span class=o>-</span><span class=mi>6</span> <span class=nx>route</span> <span class=nx>show</span> <span class=p>::</span><span class=o>/</span><span class=mi>0</span>
+<span class=p>[{</span><span class=s>&#34;dst&#34;</span><span class=p>:</span><span class=s>&#34;default&#34;</span><span class=p>,</span><span class=s>&#34;protocol&#34;</span><span class=p>:</span><span class=s>&#34;static&#34;</span><span class=p>,</span><span class=s>&#34;metric&#34;</span><span class=p>:</span><span class=mi>1024</span><span class=p>,</span><span class=s>&#34;flags&#34;</span><span class=p>:[],</span>
+  <span class=s>&#34;nexthops&#34;</span><span class=p>:[</span>
+    <span class=p>{</span><span class=s>&#34;gateway&#34;</span><span class=p>:</span><span class=s>&#34;2242::192:168:242:254&#34;</span><span class=p>,</span><span class=s>&#34;dev&#34;</span><span class=p>:</span><span class=s>&#34;ens3&#34;</span><span class=p>,</span><span class=s>&#34;weight&#34;</span><span class=p>:</span><span class=mi>1</span><span class=p>,</span><span class=s>&#34;flags&#34;</span><span class=p>:[]},</span>
+    <span class=p>{</span><span class=s>&#34;gateway&#34;</span><span class=p>:</span><span class=s>&#34;fe80::aaaa:bbbb:cccc:dddd&#34;</span><span class=p>,</span><span class=s>&#34;dev&#34;</span><span class=p>:</span><span class=s>&#34;ens3&#34;</span><span class=p>,</span><span class=s>&#34;weight&#34;</span><span class=p>:</span><span class=mi>1</span><span class=p>,</span><span class=s>&#34;flags&#34;</span><span class=p>:[]}</span>
+  <span class=p>]}]</span>
 </code></pre></div><p>默认路由是<strong>一条逻辑路由</strong>（<code>RTA_MULTIPATH</code>），带两个 nexthop。</p>
 <h2 id=根因分析>根因分析</h2>
 <p><code>pkg/vip/util.go</code> 里的 <code>GetDefaultGatewayInterface</code> 逻辑如下：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>routes, err <span style=color:#000;font-weight:700>:=</span> netlink.<span style=color:#900;font-weight:700>RouteList</span>(<span style=color:#000;font-weight:700>nil</span>, syscall.AF_INET)   <span style=color:#998;font-style:italic>// 拉一次 IPv4
-</span><span style=color:#998;font-style:italic></span>routes6, err <span style=color:#000;font-weight:700>:=</span> netlink.<span style=color:#900;font-weight:700>RouteList</span>(<span style=color:#000;font-weight:700>nil</span>, syscall.AF_INET6) <span style=color:#998;font-style:italic>// 再拉一次 IPv6
-</span><span style=color:#998;font-style:italic></span>routes = <span style=color:#0086b3>append</span>(routes, routes6<span style=color:#000;font-weight:700>...</span>)
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>routes</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>netlink</span><span class=p>.</span><span class=nf>RouteList</span><span class=p>(</span><span class=kc>nil</span><span class=p>,</span> <span class=nx>syscall</span><span class=p>.</span><span class=nx>AF_INET</span><span class=p>)</span>   <span class=c1>// 拉一次 IPv4
+</span><span class=c1></span><span class=nx>routes6</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>netlink</span><span class=p>.</span><span class=nf>RouteList</span><span class=p>(</span><span class=kc>nil</span><span class=p>,</span> <span class=nx>syscall</span><span class=p>.</span><span class=nx>AF_INET6</span><span class=p>)</span> <span class=c1>// 再拉一次 IPv6
+</span><span class=c1></span><span class=nx>routes</span> <span class=p>=</span> <span class=nb>append</span><span class=p>(</span><span class=nx>routes</span><span class=p>,</span> <span class=nx>routes6</span><span class=o>...</span><span class=p>)</span>
 
-<span style=color:#000;font-weight:700>for</span> _, route <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> routes {
-    <span style=color:#000;font-weight:700>if</span> route.Dst <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>||</span> route.Dst.<span style=color:#900;font-weight:700>String</span>() <span style=color:#000;font-weight:700>==</span> <span style=color:#d14>&#34;0.0.0.0/0&#34;</span> <span style=color:#000;font-weight:700>||</span> route.Dst.<span style=color:#900;font-weight:700>String</span>() <span style=color:#000;font-weight:700>==</span> <span style=color:#d14>&#34;::/0&#34;</span> {
-        <span style=color:#000;font-weight:700>if</span> route.LinkIndex <span style=color:#000;font-weight:700>&lt;=</span> <span style=color:#099>0</span> {
-            <span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, errors.<span style=color:#900;font-weight:700>New</span>(<span style=color:#d14>&#34;Found default route but could not determine interface&#34;</span>)
-        }
-        <span style=color:#000;font-weight:700>return</span> net.<span style=color:#900;font-weight:700>InterfaceByIndex</span>(route.LinkIndex)
-    }
-}
+<span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>route</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>routes</span> <span class=p>{</span>
+    <span class=k>if</span> <span class=nx>route</span><span class=p>.</span><span class=nx>Dst</span> <span class=o>==</span> <span class=kc>nil</span> <span class=o>||</span> <span class=nx>route</span><span class=p>.</span><span class=nx>Dst</span><span class=p>.</span><span class=nf>String</span><span class=p>()</span> <span class=o>==</span> <span class=s>&#34;0.0.0.0/0&#34;</span> <span class=o>||</span> <span class=nx>route</span><span class=p>.</span><span class=nx>Dst</span><span class=p>.</span><span class=nf>String</span><span class=p>()</span> <span class=o>==</span> <span class=s>&#34;::/0&#34;</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=nx>route</span><span class=p>.</span><span class=nx>LinkIndex</span> <span class=o>&lt;=</span> <span class=mi>0</span> <span class=p>{</span>
+            <span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>errors</span><span class=p>.</span><span class=nf>New</span><span class=p>(</span><span class=s>&#34;Found default route but could not determine interface&#34;</span><span class=p>)</span>
+        <span class=p>}</span>
+        <span class=k>return</span> <span class=nx>net</span><span class=p>.</span><span class=nf>InterfaceByIndex</span><span class=p>(</span><span class=nx>route</span><span class=p>.</span><span class=nx>LinkIndex</span><span class=p>)</span>
+    <span class=p>}</span>
+<span class=p>}</span>
 </code></pre></div><p>问题就在这：</p>
 <ol>
 <li>对 multipath 路由，<code>vishvananda/netlink</code> 返回<strong>一条</strong> <code>Route</code>，但顶层 <code>LinkIndex</code> 是 0，真正的出口在 <code>route.MultiPath</code> 里每个 nexthop 的 <code>LinkIndex</code>；</li>
@@ -277,19 +279,19 @@ January 20, 2026
 </ol>
 <h2 id=修复方案>修复方案</h2>
 <h3 id=第一版处理-multipath-取-nexthop>第一版：处理 MultiPath 取 nexthop</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>idx <span style=color:#000;font-weight:700>:=</span> route.LinkIndex
-<span style=color:#000;font-weight:700>if</span> idx <span style=color:#000;font-weight:700>&lt;=</span> <span style=color:#099>0</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>len</span>(route.MultiPath) &gt; <span style=color:#099>0</span> {
-    <span style=color:#000;font-weight:700>for</span> _, nh <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> route.MultiPath {
-        <span style=color:#000;font-weight:700>if</span> nh.LinkIndex &gt; <span style=color:#099>0</span> {
-            idx = nh.LinkIndex
-            <span style=color:#000;font-weight:700>break</span>
-        }
-    }
-}
-<span style=color:#000;font-weight:700>if</span> idx <span style=color:#000;font-weight:700>&lt;=</span> <span style=color:#099>0</span> {
-    <span style=color:#000;font-weight:700>continue</span>
-}
-<span style=color:#000;font-weight:700>return</span> net.<span style=color:#900;font-weight:700>InterfaceByIndex</span>(idx)
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>idx</span> <span class=o>:=</span> <span class=nx>route</span><span class=p>.</span><span class=nx>LinkIndex</span>
+<span class=k>if</span> <span class=nx>idx</span> <span class=o>&lt;=</span> <span class=mi>0</span> <span class=o>&amp;&amp;</span> <span class=nb>len</span><span class=p>(</span><span class=nx>route</span><span class=p>.</span><span class=nx>MultiPath</span><span class=p>)</span> <span class=p>&gt;</span> <span class=mi>0</span> <span class=p>{</span>
+    <span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>nh</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>route</span><span class=p>.</span><span class=nx>MultiPath</span> <span class=p>{</span>
+        <span class=k>if</span> <span class=nx>nh</span><span class=p>.</span><span class=nx>LinkIndex</span> <span class=p>&gt;</span> <span class=mi>0</span> <span class=p>{</span>
+            <span class=nx>idx</span> <span class=p>=</span> <span class=nx>nh</span><span class=p>.</span><span class=nx>LinkIndex</span>
+            <span class=k>break</span>
+        <span class=p>}</span>
+    <span class=p>}</span>
+<span class=p>}</span>
+<span class=k>if</span> <span class=nx>idx</span> <span class=o>&lt;=</span> <span class=mi>0</span> <span class=p>{</span>
+    <span class=k>continue</span>
+<span class=p>}</span>
+<span class=k>return</span> <span class=nx>net</span><span class=p>.</span><span class=nf>InterfaceByIndex</span><span class=p>(</span><span class=nx>idx</span><span class=p>)</span>
 </code></pre></div><p>这是问题本身的解药，但 maintainer <code>Cellebyte</code> 在 review 里指出了两个更深的问题。</p>
 <h3 id=顺着-review-演进>顺着 review 演进</h3>
 <p><strong>意见 1（性能）</strong>：原来每次都会把 IPv4 + IPv6 的路由表<strong>全部</strong>拉出来再拼接，在大路由表上很低效。</p>
@@ -298,56 +300,56 @@ January 20, 2026
 <p><strong>意见 4（错误处理）</strong>：不要用 <code>errors.New("...")</code> 吞掉底层错误，要 <code>fmt.Errorf("listing routes: %w", err)</code> 包裹；两个地址族都找不到时，把两者的错误合并 wrap 返回。</p>
 <p><strong>意见 5（细节）</strong>：<code>net.InterfaceByIndex(idx)</code> 丢了 error 返回值，应写成 <code>return net.InterfaceByIndex(idx), nil</code>；注释笔误也一并修正。</p>
 <h2 id=最终代码>最终代码</h2>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=color:#998;font-style:italic>// GetDefaultGatewayInterface return default gateway interface link
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>GetDefaultGatewayInterface</span>() (iface <span style=color:#000;font-weight:700>*</span>net.Interface, err <span style=color:#458;font-weight:700>error</span>) {
-	<span style=color:#998;font-style:italic>// Attempt IPv4 first (usually the default)
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>if</span> iface, err = <span style=color:#900;font-weight:700>getDefaultRoute</span>(syscall.AF_INET); err <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
-		<span style=color:#000;font-weight:700>return</span> iface, <span style=color:#000;font-weight:700>nil</span>
-	}
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// GetDefaultGatewayInterface return default gateway interface link
+</span><span class=c1></span><span class=kd>func</span> <span class=nf>GetDefaultGatewayInterface</span><span class=p>()</span> <span class=p>(</span><span class=nx>iface</span> <span class=o>*</span><span class=nx>net</span><span class=p>.</span><span class=nx>Interface</span><span class=p>,</span> <span class=nx>err</span> <span class=kt>error</span><span class=p>)</span> <span class=p>{</span>
+	<span class=c1>// Attempt IPv4 first (usually the default)
+</span><span class=c1></span>	<span class=k>if</span> <span class=nx>iface</span><span class=p>,</span> <span class=nx>err</span> <span class=p>=</span> <span class=nf>getDefaultRoute</span><span class=p>(</span><span class=nx>syscall</span><span class=p>.</span><span class=nx>AF_INET</span><span class=p>);</span> <span class=nx>err</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=k>return</span> <span class=nx>iface</span><span class=p>,</span> <span class=kc>nil</span>
+	<span class=p>}</span>
 
-	<span style=color:#998;font-style:italic>// If the IPv4 default route is not found, then attempt IPv6 default route.
-</span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>if</span> iface, err = <span style=color:#900;font-weight:700>getDefaultRoute</span>(syscall.AF_INET6); err <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
-		<span style=color:#000;font-weight:700>return</span> iface, <span style=color:#000;font-weight:700>nil</span>
-	}
+	<span class=c1>// If the IPv4 default route is not found, then attempt IPv6 default route.
+</span><span class=c1></span>	<span class=k>if</span> <span class=nx>iface</span><span class=p>,</span> <span class=nx>err</span> <span class=p>=</span> <span class=nf>getDefaultRoute</span><span class=p>(</span><span class=nx>syscall</span><span class=p>.</span><span class=nx>AF_INET6</span><span class=p>);</span> <span class=nx>err</span> <span class=o>==</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=k>return</span> <span class=nx>iface</span><span class=p>,</span> <span class=kc>nil</span>
+	<span class=p>}</span>
 
-	<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, fmt.<span style=color:#900;font-weight:700>Errorf</span>(<span style=color:#d14>&#34;unable to find interface with default route: %w&#34;</span>, err)
-}
+	<span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Errorf</span><span class=p>(</span><span class=s>&#34;unable to find interface with default route: %w&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+<span class=p>}</span>
 
-<span style=color:#998;font-style:italic>// getDefaultRoute attempts to find the default route for the specified address family.
-</span><span style=color:#998;font-style:italic></span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>getDefaultRoute</span>(family <span style=color:#458;font-weight:700>int</span>) (<span style=color:#000;font-weight:700>*</span>net.Interface, <span style=color:#458;font-weight:700>error</span>) {
-	<span style=color:#998;font-style:italic>// only search for default routes
-</span><span style=color:#998;font-style:italic></span>	filter <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>netlink.Route{Dst: <span style=color:#000;font-weight:700>nil</span>}
-	mask <span style=color:#000;font-weight:700>:=</span> netlink.RT_FILTER_DST
+<span class=c1>// getDefaultRoute attempts to find the default route for the specified address family.
+</span><span class=c1></span><span class=kd>func</span> <span class=nf>getDefaultRoute</span><span class=p>(</span><span class=nx>family</span> <span class=kt>int</span><span class=p>)</span> <span class=p>(</span><span class=o>*</span><span class=nx>net</span><span class=p>.</span><span class=nx>Interface</span><span class=p>,</span> <span class=kt>error</span><span class=p>)</span> <span class=p>{</span>
+	<span class=c1>// only search for default routes
+</span><span class=c1></span>	<span class=nx>filter</span> <span class=o>:=</span> <span class=o>&amp;</span><span class=nx>netlink</span><span class=p>.</span><span class=nx>Route</span><span class=p>{</span><span class=nx>Dst</span><span class=p>:</span> <span class=kc>nil</span><span class=p>}</span>
+	<span class=nx>mask</span> <span class=o>:=</span> <span class=nx>netlink</span><span class=p>.</span><span class=nx>RT_FILTER_DST</span>
 
-	routes, err <span style=color:#000;font-weight:700>:=</span> netlink.<span style=color:#900;font-weight:700>RouteListFiltered</span>(family, filter, mask)
-	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
-		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, fmt.<span style=color:#900;font-weight:700>Errorf</span>(<span style=color:#d14>&#34;listing routes: %w&#34;</span>, err)
-	}
+	<span class=nx>routes</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>netlink</span><span class=p>.</span><span class=nf>RouteListFiltered</span><span class=p>(</span><span class=nx>family</span><span class=p>,</span> <span class=nx>filter</span><span class=p>,</span> <span class=nx>mask</span><span class=p>)</span>
+	<span class=k>if</span> <span class=nx>err</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=p>{</span>
+		<span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>fmt</span><span class=p>.</span><span class=nf>Errorf</span><span class=p>(</span><span class=s>&#34;listing routes: %w&#34;</span><span class=p>,</span> <span class=nx>err</span><span class=p>)</span>
+	<span class=p>}</span>
 
-	<span style=color:#000;font-weight:700>for</span> _, route <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> routes {
-		<span style=color:#998;font-style:italic>// double check
-</span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>if</span> route.Dst <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> route.Dst.<span style=color:#900;font-weight:700>String</span>() <span style=color:#000;font-weight:700>!=</span> <span style=color:#d14>&#34;0.0.0.0/0&#34;</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> route.Dst.<span style=color:#900;font-weight:700>String</span>() <span style=color:#000;font-weight:700>!=</span> <span style=color:#d14>&#34;::/0&#34;</span> {
-			<span style=color:#000;font-weight:700>continue</span>
-		}
+	<span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>route</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>routes</span> <span class=p>{</span>
+		<span class=c1>// double check
+</span><span class=c1></span>		<span class=k>if</span> <span class=nx>route</span><span class=p>.</span><span class=nx>Dst</span> <span class=o>!=</span> <span class=kc>nil</span> <span class=o>&amp;&amp;</span> <span class=nx>route</span><span class=p>.</span><span class=nx>Dst</span><span class=p>.</span><span class=nf>String</span><span class=p>()</span> <span class=o>!=</span> <span class=s>&#34;0.0.0.0/0&#34;</span> <span class=o>&amp;&amp;</span> <span class=nx>route</span><span class=p>.</span><span class=nx>Dst</span><span class=p>.</span><span class=nf>String</span><span class=p>()</span> <span class=o>!=</span> <span class=s>&#34;::/0&#34;</span> <span class=p>{</span>
+			<span class=k>continue</span>
+		<span class=p>}</span>
 
-		idx <span style=color:#000;font-weight:700>:=</span> route.LinkIndex
+		<span class=nx>idx</span> <span class=o>:=</span> <span class=nx>route</span><span class=p>.</span><span class=nx>LinkIndex</span>
 
-		<span style=color:#998;font-style:italic>// handle MultiPath
-</span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>if</span> idx <span style=color:#000;font-weight:700>&lt;=</span> <span style=color:#099>0</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>len</span>(route.MultiPath) &gt; <span style=color:#099>0</span> {
-			<span style=color:#000;font-weight:700>for</span> _, nh <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> route.MultiPath {
-				<span style=color:#000;font-weight:700>if</span> nh.LinkIndex &gt; <span style=color:#099>0</span> {
-					idx = nh.LinkIndex
-					<span style=color:#000;font-weight:700>break</span>
-				}
-			}
-		}
+		<span class=c1>// handle MultiPath
+</span><span class=c1></span>		<span class=k>if</span> <span class=nx>idx</span> <span class=o>&lt;=</span> <span class=mi>0</span> <span class=o>&amp;&amp;</span> <span class=nb>len</span><span class=p>(</span><span class=nx>route</span><span class=p>.</span><span class=nx>MultiPath</span><span class=p>)</span> <span class=p>&gt;</span> <span class=mi>0</span> <span class=p>{</span>
+			<span class=k>for</span> <span class=nx>_</span><span class=p>,</span> <span class=nx>nh</span> <span class=o>:=</span> <span class=k>range</span> <span class=nx>route</span><span class=p>.</span><span class=nx>MultiPath</span> <span class=p>{</span>
+				<span class=k>if</span> <span class=nx>nh</span><span class=p>.</span><span class=nx>LinkIndex</span> <span class=p>&gt;</span> <span class=mi>0</span> <span class=p>{</span>
+					<span class=nx>idx</span> <span class=p>=</span> <span class=nx>nh</span><span class=p>.</span><span class=nx>LinkIndex</span>
+					<span class=k>break</span>
+				<span class=p>}</span>
+			<span class=p>}</span>
+		<span class=p>}</span>
 
-		<span style=color:#000;font-weight:700>if</span> idx &gt; <span style=color:#099>0</span> {
-			<span style=color:#000;font-weight:700>return</span> net.<span style=color:#900;font-weight:700>InterfaceByIndex</span>(idx)
-		}
-	}
-	<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, errors.<span style=color:#900;font-weight:700>New</span>(<span style=color:#d14>&#34;default route not found&#34;</span>)
-}
+		<span class=k>if</span> <span class=nx>idx</span> <span class=p>&gt;</span> <span class=mi>0</span> <span class=p>{</span>
+			<span class=k>return</span> <span class=nx>net</span><span class=p>.</span><span class=nf>InterfaceByIndex</span><span class=p>(</span><span class=nx>idx</span><span class=p>)</span>
+		<span class=p>}</span>
+	<span class=p>}</span>
+	<span class=k>return</span> <span class=kc>nil</span><span class=p>,</span> <span class=nx>errors</span><span class=p>.</span><span class=nf>New</span><span class=p>(</span><span class=s>&#34;default route not found&#34;</span><span class=p>)</span>
+<span class=p>}</span>
 </code></pre></div><p>改动集中在一个文件 <code>pkg/vip/util.go</code>：<strong>+39 / -14</strong>，只影响 <code>GetDefaultGatewayInterface</code> 一条路径，向后兼容单 nexthop 环境。</p>
 <h2 id=验证>验证</h2>
 <p>修复后在原环境里 VIP 正常工作，NDP 广播持续发包：</p>

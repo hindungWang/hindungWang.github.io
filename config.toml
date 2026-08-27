@@ -3,8 +3,9 @@ defaultContentLanguage = "cn-zh"
 enableEmoji = true
 enableRobotsTXT = true
 languageCode = "cn-zh"
-# Choose one of emacs, trac or perldoc, monokai
+# Syntax highlighting: class-based tokens, colors defined in static/css/chroma.css
 pygmentsStyle = "github"
+pygmentsUseClasses = true
 theme = "gokarna"
 title = "Hindung's Blog"
 

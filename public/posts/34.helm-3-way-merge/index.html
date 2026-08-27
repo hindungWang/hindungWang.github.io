@@ -24,8 +24,10 @@
 <link rel=stylesheet type=text/css href=/css/normalize.min.css media=print>
 <link rel=stylesheet type=text/css href=/css/main.min.css>
 <link rel=stylesheet type=text/css href=/css/posts-nav.css>
+<link rel=stylesheet type=text/css href=/css/chroma.css>
 <link id=dark-theme rel=stylesheet href=/css/dark.min.css>
 <script src=/js/bundle.min.4ebcf867d90c30eb0ddad45ea3a07c1aa7fa4a1049453f29452bab3829c86c8b.js integrity="sha256-Trz4Z9kMMOsN2tReo6B8Gqf6ShBJRT8pRSurOCnIbIs="></script>
+<script defer src=/js/code-block.js></script>
 <link rel=icon type=image/png href=/favicon.png>
 <link rel=apple-touch-icon href=/favicon.png>
 </head>
@@ -252,17 +254,17 @@ September 16, 2025
 <p>由于疏忽，我在 <code>values.yaml</code> 里写上了 <code>env</code>，又在 <code>deployment.yaml</code> 模板里 <code>range</code> 了一次，结果 YAML 里出现<strong>同名双份</strong> env：</p>
 <ul>
 <li>既在 <code>values.yaml</code> 里写了
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>env</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>SERVER_IP<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>value</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;1.2.3.4&#34;</span><span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>env</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>SERVER_IP</span><span class=w>
+</span><span class=w>    </span><span class=nt>value</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;1.2.3.4&#34;</span><span class=w>
 </span></code></pre></div></li>
 <li>又在 <code>deployment.yaml</code> 模板里 <code>range</code> 了一次：
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>env</span>:<span style=color:#bbb>
-</span><span style=color:#bbb></span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>SERVER_IP<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>value</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;1.2.3.4&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:#555>...</span><span style=color:#bbb>
-</span><span style=color:#bbb></span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>SERVER_IP     <span style=color:#bbb> </span><span style=color:#998;font-style:italic># 重复</span><span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>value</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;1.2.3.4&#34;</span><span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>env</span><span class=p>:</span><span class=w>
+</span><span class=w></span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>SERVER_IP</span><span class=w>
+</span><span class=w>  </span><span class=nt>value</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;1.2.3.4&#34;</span><span class=w>
+</span><span class=w></span><span class=nn>...</span><span class=w>
+</span><span class=w></span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>SERVER_IP     </span><span class=w> </span><span class=c># 重复</span><span class=w>
+</span><span class=w>  </span><span class=nt>value</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;1.2.3.4&#34;</span><span class=w>
 </span></code></pre></div></li>
 <li>运行时有效值只认后一条，同时抛警告（警告来自 kubelet 启动容器时）：
 <pre tabindex=0><code>spec.template.spec.containers[0].env[11]: hides previous definition of &quot;SERVER_IP&quot;
@@ -335,22 +337,22 @@ Helm 在升级时从 Kubernetes API Server 读取当前对象，表示"现在集
 <h3 id=3-补丁如何生成strategic-merge-patch-与-merge-key>3. 补丁如何生成：strategic merge patch 与 merge key</h3>
 <p>在 Helm 的 Go 代码中，对内置结构化资源，补丁生成逻辑位于 <code>pkg/kube/client.go</code> 附近，使用 Kubernetes 的 <code>strategicpatch.CreateThreeWayMergePatch</code>，patch 类型为 <code>types.StrategicMergePatchType</code> <a href=https://github.com/helm/helm/blob/main/pkg/kube/client.go>Helm client.go</a>。</p>
 <p><strong>这个函数不是"old 与 new 两路求差、再把结果打到 live"</strong>。它做的是<strong>两个 diff 相加</strong>（源码注释原话：&ldquo;patch 是 current→modified 的增改，加上 original→modified 的删除&rdquo;，见 <a href=https://github.com/kubernetes/apimachinery/blob/master/pkg/util/strategicpatch/patch.go#L2123>apimachinery patch.go</a>）。</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go>oldData     <span style=color:#000;font-weight:700>:=</span> json.<span style=color:#900;font-weight:700>Marshal</span>(oldObj)      <span style=color:#998;font-style:italic>// 上次 release 保存的 manifest（= original）
-</span><span style=color:#998;font-style:italic></span>newData     <span style=color:#000;font-weight:700>:=</span> json.<span style=color:#900;font-weight:700>Marshal</span>(newObj)      <span style=color:#998;font-style:italic>// 本次渲染结果（= modified / target）
-</span><span style=color:#998;font-style:italic></span>currentData <span style=color:#000;font-weight:700>:=</span> json.<span style=color:#900;font-weight:700>Marshal</span>(liveObj)     <span style=color:#998;font-style:italic>// 从 API Server 读取的 live object（= current）
-</span><span style=color:#998;font-style:italic></span>
-<span style=color:#998;font-style:italic>// 内部实际是：
-</span><span style=color:#998;font-style:italic>//  deletions := diffMaps(old,      new)   // 只取&#34;删除&#34;：old 有、new 没有 → 生成 $patch: delete
-</span><span style=color:#998;font-style:italic>//  delta     := diffMaps(live,     new)   // 只取&#34;增改&#34;：live 缺/不同、new 有 → 生成增补项
-</span><span style=color:#998;font-style:italic>//  patch     := mergeMap(deletions, delta) // 两者拼成最终 patch
-</span><span style=color:#998;font-style:italic></span>
-patch, _ <span style=color:#000;font-weight:700>:=</span> strategicpatch.<span style=color:#900;font-weight:700>CreateThreeWayMergePatch</span>(
-    oldData,
-    newData,
-    currentData,
-    patchMeta, <span style=color:#998;font-style:italic>// 来自 OpenAPI / Go struct tag 的 patch metadata，决定 list 按哪个 merge key 合并
-</span><span style=color:#998;font-style:italic></span>    overwrite,
-)
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>oldData</span>     <span class=o>:=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Marshal</span><span class=p>(</span><span class=nx>oldObj</span><span class=p>)</span>      <span class=c1>// 上次 release 保存的 manifest（= original）
+</span><span class=c1></span><span class=nx>newData</span>     <span class=o>:=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Marshal</span><span class=p>(</span><span class=nx>newObj</span><span class=p>)</span>      <span class=c1>// 本次渲染结果（= modified / target）
+</span><span class=c1></span><span class=nx>currentData</span> <span class=o>:=</span> <span class=nx>json</span><span class=p>.</span><span class=nf>Marshal</span><span class=p>(</span><span class=nx>liveObj</span><span class=p>)</span>     <span class=c1>// 从 API Server 读取的 live object（= current）
+</span><span class=c1></span>
+<span class=c1>// 内部实际是：
+</span><span class=c1>//  deletions := diffMaps(old,      new)   // 只取&#34;删除&#34;：old 有、new 没有 → 生成 $patch: delete
+</span><span class=c1>//  delta     := diffMaps(live,     new)   // 只取&#34;增改&#34;：live 缺/不同、new 有 → 生成增补项
+</span><span class=c1>//  patch     := mergeMap(deletions, delta) // 两者拼成最终 patch
+</span><span class=c1></span>
+<span class=nx>patch</span><span class=p>,</span> <span class=nx>_</span> <span class=o>:=</span> <span class=nx>strategicpatch</span><span class=p>.</span><span class=nf>CreateThreeWayMergePatch</span><span class=p>(</span>
+    <span class=nx>oldData</span><span class=p>,</span>
+    <span class=nx>newData</span><span class=p>,</span>
+    <span class=nx>currentData</span><span class=p>,</span>
+    <span class=nx>patchMeta</span><span class=p>,</span> <span class=c1>// 来自 OpenAPI / Go struct tag 的 patch metadata，决定 list 按哪个 merge key 合并
+</span><span class=c1></span>    <span class=nx>overwrite</span><span class=p>,</span>
+<span class=p>)</span>
 </code></pre></div><p>这样拆成两份就明白了：</p>
 <ul>
 <li><strong>删除部分 <code>diff(old → new)</code></strong>：负责"Helm 想删掉什么"——old 里有的、new 里没有（或多出）的项目在这里被判为删除。</li>
@@ -394,12 +396,12 @@ patch, _ <span style=color:#000;font-weight:700>:=</span> strategicpatch.<span s
 </tbody>
 </table>
 <p><strong>规则一：Helm 声明并改变的字段，按 new 收敛</strong></p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#998;font-style:italic># old manifest / # live state / # new manifest</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>annotations</span>:<span style=color:#bbb>        </span><span style=color:navy>metadata</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>a</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;1&#34;</span><span style=color:#bbb>              </span><span style=color:navy>annotations</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>                        </span><span style=color:navy>a</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;2&#34;</span><span style=color:#bbb>     </span><span style=color:navy>a</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;2&#34;</span><span style=color:#bbb>
-</span><span style=color:#bbb>                        </span><span style=color:navy>b</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;3&#34;</span><span style=color:#bbb>     </span><span style=color:navy>b</span>:<span style=color:#bbb> </span><span style=color:#d14>&#34;3&#34;</span><span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=c># old manifest / # live state / # new manifest</span><span class=w>
+</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>annotations</span><span class=p>:</span><span class=w>        </span><span class=nt>metadata</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>a</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;1&#34;</span><span class=w>              </span><span class=nt>annotations</span><span class=p>:</span><span class=w>
+</span><span class=w>                        </span><span class=nt>a</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;2&#34;</span><span class=w>     </span><span class=nt>a</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;2&#34;</span><span class=w>
+</span><span class=w>                        </span><span class=nt>b</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;3&#34;</span><span class=w>     </span><span class=nt>b</span><span class=p>:</span><span class=w> </span><span class=s2>&#34;3&#34;</span><span class=w>
 </span></code></pre></div><p>即使 new 与 old 中 <code>a</code> 都是 <code>"1"</code>，live 中的 <code>a</code> 被改成 <code>"2"</code>，三路合并仍会把 <code>a</code> 拉回 <code>"1"</code>，因为 <code>a</code> 是 Helm 声明过的字段。这是预期行为：你让 Helm 管理并声明了 <code>a</code>，Helm 就会把它收敛到 Chart 中的值 <a href=https://github.com/helm/helm/issues/9937>Helm issue #9937</a>。</p>
 <p><strong>规则二：Helm 没声明、live 中额外存在的字段，尽量保留</strong></p>
 <p>如果字段不在 old/new 中，而是 live 里由 webhook、controller 或人工添加，例如 <code>b: "3"</code>，三路合并通常会保留它，不会主动删除。</p>
@@ -437,7 +439,7 @@ patch, _ <span style=color:#000;font-weight:700>:=</span> strategicpatch.<span s
 <ul>
 <li>
 <p><strong>删除部分 <code>diff(旧 → 新)</code></strong>：旧里 2 条同名 <code>SERVER_IP</code>、新里 1 条 → 多的那条成了"孤儿"，被判删：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=color:#d14>&#34;env&#34;</span><span style=color:#a61717;background-color:#e3d2d2>:</span>[{<span style=color:navy>&#34;$patch&#34;</span>:<span style=color:#d14>&#34;delete&#34;</span>,<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;SERVER_IP&#34;</span>}]
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=s2>&#34;env&#34;</span><span class=err>:</span><span class=p>[{</span><span class=nt>&#34;$patch&#34;</span><span class=p>:</span><span class=s2>&#34;delete&#34;</span><span class=p>,</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;SERVER_IP&#34;</span><span class=p>}]</span>
 </code></pre></div></li>
 <li>
 <p><strong>增改部分 <code>diff(live → 新)</code></strong>：live 1 条 vs 新 1 条，完全相等 → <strong>无事可做，没有"加回"指令</strong>。</p>
@@ -494,12 +496,12 @@ patch, _ <span style=color:#000;font-weight:700>:=</span> strategicpatch.<span s
 <hr>
 <h2 id=六如何亲手抓到真正的-patch>六、如何亲手抓到真正的 patch</h2>
 <h3 id=1-打开-helm-的-kube-client-调试日志>1. 打开 Helm 的 kube-client 调试日志</h3>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>helm upgrade demo ./chart -n cloud --v<span style=color:#000;font-weight:700>=</span><span style=color:#099>6</span>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash>helm upgrade demo ./chart -n cloud --v<span class=o>=</span><span class=m>6</span>
 </code></pre></div><p>日志会输出类似：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=color:#a61717;background-color:#e3d2d2>client.go:</span><span style=color:#099>693</span><span style=color:#a61717;background-color:#e3d2d2>:</span> [<span style=color:#a61717;background-color:#e3d2d2>debug</span>] <span style=color:#a61717;background-color:#e3d2d2>Patch</span> <span style=color:#a61717;background-color:#e3d2d2>Deployment</span> <span style=color:#d14>&#34;notify&#34;</span> <span style=color:#a61717;background-color:#e3d2d2>in</span> <span style=color:#a61717;background-color:#e3d2d2>namespace</span> <span style=color:#a61717;background-color:#e3d2d2>cloud</span>
-<span style=color:#a61717;background-color:#e3d2d2>I</span><span style=color:#099>0908</span> <span style=color:#099>10</span><span style=color:#a61717;background-color:#e3d2d2>:</span><span style=color:#099>09</span><span style=color:#a61717;background-color:#e3d2d2>:</span><span style=color:#099>0</span><span style=color:#099>8.651304</span> <span style=color:#099>1679687</span> <span style=color:#a61717;background-color:#e3d2d2>request.go:</span><span style=color:#099>1212</span><span style=color:#a61717;background-color:#e3d2d2>]</span> <span style=color:#a61717;background-color:#e3d2d2>Request</span> <span style=color:#a61717;background-color:#e3d2d2>Body:</span> {<span style=color:navy>&#34;spec&#34;</span>:{<span style=color:navy>&#34;replicas&#34;</span>:<span style=color:#099>2</span>,<span style=color:navy>&#34;strategy&#34;</span>:<span style=color:#000;font-weight:700>null</span>,<span style=color:navy>&#34;template&#34;</span>:{<span style=color:navy>&#34;spec&#34;</span>:{<span style=color:navy>&#34;$setElementOrder/containers&#34;</span>:[{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;notify&#34;</span>}],<span style=color:navy>&#34;$setElementOrder/initContainers&#34;</span>:[{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;init-lib&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;init-app&#34;</span>}],<span style=color:navy>&#34;affinity&#34;</span>:{<span style=color:navy>&#34;podAntiAffinity&#34;</span>:{<span style=color:navy>&#34;requiredDuringSchedulingIgnoredDuringExecution&#34;</span>:[{<span style=color:navy>&#34;labelSelector&#34;</span>:{<span style=color:navy>&#34;matchExpressions&#34;</span>:[{<span style=color:navy>&#34;key&#34;</span>:<span style=color:#d14>&#34;app.kubernetes.io/name&#34;</span>,<span style=color:navy>&#34;operator&#34;</span>:<span style=color:#d14>&#34;In&#34;</span>,<span style=color:navy>&#34;values&#34;</span>:[<span style=color:#d14>&#34;notify&#34;</span>]}]},<span style=color:navy>&#34;topologyKey&#34;</span>:<span style=color:#d14>&#34;kubernetes.io/hostname&#34;</span>}]}},<span style=color:navy>&#34;containers&#34;</span>:[{<span style=color:navy>&#34;$setElementOrder/env&#34;</span>:[{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;EUREKA_OPTS&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;SERVER_IP&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;MIN_HEAP_SIZE&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;MAX_HEAP_SIZE&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;STACK_SIZE&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;META_SIZE&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;MAX_META_SIZE&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;JAVA_OPTS&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;REDIS_SENTINEL_NODES&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;DEBUG&#34;</span>},{<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;EXTEND_JAVA_OPTS&#34;</span>}],<span style=color:navy>&#34;env&#34;</span>:[{<span style=color:navy>&#34;$patch&#34;</span>:<span style=color:#d14>&#34;delete&#34;</span>,<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;SERVER_IP&#34;</span>}],<span style=color:navy>&#34;image&#34;</span>:<span style=color:#d14>&#34;xxx&#34;</span>,<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;notify&#34;</span>}],<span style=color:navy>&#34;initContainers&#34;</span>:[{<span style=color:navy>&#34;image&#34;</span>:<span style=color:#d14>&#34;xxx&#34;</span>,<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;init-lib&#34;</span>},{<span style=color:navy>&#34;image&#34;</span>:<span style=color:#d14>&#34;xxx&#34;</span>,<span style=color:navy>&#34;name&#34;</span>:<span style=color:#d14>&#34;init-app&#34;</span>}]}}}}
-<span style=color:#a61717;background-color:#e3d2d2>I</span><span style=color:#099>0908</span> <span style=color:#099>10</span><span style=color:#a61717;background-color:#e3d2d2>:</span><span style=color:#099>09</span><span style=color:#a61717;background-color:#e3d2d2>:</span><span style=color:#099>0</span><span style=color:#099>8.651430</span> <span style=color:#099>1679687</span> <span style=color:#a61717;background-color:#e3d2d2>round_trippers.go:</span><span style=color:#099>466</span><span style=color:#a61717;background-color:#e3d2d2>]</span> <span style=color:#a61717;background-color:#e3d2d2>curl</span> <span style=color:#a61717;background-color:#e3d2d2>-v</span> <span style=color:#a61717;background-color:#e3d2d2>-XPATCH</span>  <span style=color:#a61717;background-color:#e3d2d2>-H</span> <span style=color:#d14>&#34;Accept: application/json&#34;</span> <span style=color:#a61717;background-color:#e3d2d2>-H</span> <span style=color:#d14>&#34;Content-Type: application/strategic-merge-patch+json&#34;</span> <span style=color:#a61717;background-color:#e3d2d2>-H</span> <span style=color:#d14>&#34;User-Agent: Helm/3.14.0&#34;</span> <span style=color:#a61717;background-color:#e3d2d2>&#39;https:</span><span style=color:#998;font-style:italic>//127.0.0.1:6443/apis/apps/v1/namespaces/cloud/deployments/notify?fieldManager=helm&#39;
-</span><span style=color:#998;font-style:italic></span><span style=color:#a61717;background-color:#e3d2d2>I</span><span style=color:#099>0908</span> <span style=color:#099>10</span><span style=color:#a61717;background-color:#e3d2d2>:</span><span style=color:#099>09</span><span style=color:#a61717;background-color:#e3d2d2>:</span><span style=color:#099>0</span><span style=color:#099>8.735670</span> <span style=color:#099>1679687</span> <span style=color:#a61717;background-color:#e3d2d2>round_trippers.go:</span><span style=color:#099>553</span><span style=color:#a61717;background-color:#e3d2d2>]</span> <span style=color:#a61717;background-color:#e3d2d2>PATCH</span> <span style=color:#a61717;background-color:#e3d2d2>https:</span><span style=color:#998;font-style:italic>//127.0.0.1:6443/apis/apps/v1/namespaces/cloud/deployments/notify?fieldManager=helm 200 OK in 84 milliseconds
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=err>client.go:</span><span class=mi>693</span><span class=err>:</span> <span class=p>[</span><span class=err>debug</span><span class=p>]</span> <span class=err>Patch</span> <span class=err>Deployment</span> <span class=s2>&#34;notify&#34;</span> <span class=err>in</span> <span class=err>namespace</span> <span class=err>cloud</span>
+<span class=err>I</span><span class=mi>0908</span> <span class=mi>10</span><span class=err>:</span><span class=mi>09</span><span class=err>:</span><span class=mi>0</span><span class=mf>8.651304</span> <span class=mi>1679687</span> <span class=err>request.go:</span><span class=mi>1212</span><span class=err>]</span> <span class=err>Request</span> <span class=err>Body:</span> <span class=p>{</span><span class=nt>&#34;spec&#34;</span><span class=p>:{</span><span class=nt>&#34;replicas&#34;</span><span class=p>:</span><span class=mi>2</span><span class=p>,</span><span class=nt>&#34;strategy&#34;</span><span class=p>:</span><span class=kc>null</span><span class=p>,</span><span class=nt>&#34;template&#34;</span><span class=p>:{</span><span class=nt>&#34;spec&#34;</span><span class=p>:{</span><span class=nt>&#34;$setElementOrder/containers&#34;</span><span class=p>:[{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;notify&#34;</span><span class=p>}],</span><span class=nt>&#34;$setElementOrder/initContainers&#34;</span><span class=p>:[{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;init-lib&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;init-app&#34;</span><span class=p>}],</span><span class=nt>&#34;affinity&#34;</span><span class=p>:{</span><span class=nt>&#34;podAntiAffinity&#34;</span><span class=p>:{</span><span class=nt>&#34;requiredDuringSchedulingIgnoredDuringExecution&#34;</span><span class=p>:[{</span><span class=nt>&#34;labelSelector&#34;</span><span class=p>:{</span><span class=nt>&#34;matchExpressions&#34;</span><span class=p>:[{</span><span class=nt>&#34;key&#34;</span><span class=p>:</span><span class=s2>&#34;app.kubernetes.io/name&#34;</span><span class=p>,</span><span class=nt>&#34;operator&#34;</span><span class=p>:</span><span class=s2>&#34;In&#34;</span><span class=p>,</span><span class=nt>&#34;values&#34;</span><span class=p>:[</span><span class=s2>&#34;notify&#34;</span><span class=p>]}]},</span><span class=nt>&#34;topologyKey&#34;</span><span class=p>:</span><span class=s2>&#34;kubernetes.io/hostname&#34;</span><span class=p>}]}},</span><span class=nt>&#34;containers&#34;</span><span class=p>:[{</span><span class=nt>&#34;$setElementOrder/env&#34;</span><span class=p>:[{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;EUREKA_OPTS&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;SERVER_IP&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;MIN_HEAP_SIZE&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;MAX_HEAP_SIZE&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;STACK_SIZE&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;META_SIZE&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;MAX_META_SIZE&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;JAVA_OPTS&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;REDIS_SENTINEL_NODES&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;DEBUG&#34;</span><span class=p>},{</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;EXTEND_JAVA_OPTS&#34;</span><span class=p>}],</span><span class=nt>&#34;env&#34;</span><span class=p>:[{</span><span class=nt>&#34;$patch&#34;</span><span class=p>:</span><span class=s2>&#34;delete&#34;</span><span class=p>,</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;SERVER_IP&#34;</span><span class=p>}],</span><span class=nt>&#34;image&#34;</span><span class=p>:</span><span class=s2>&#34;xxx&#34;</span><span class=p>,</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;notify&#34;</span><span class=p>}],</span><span class=nt>&#34;initContainers&#34;</span><span class=p>:[{</span><span class=nt>&#34;image&#34;</span><span class=p>:</span><span class=s2>&#34;xxx&#34;</span><span class=p>,</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;init-lib&#34;</span><span class=p>},{</span><span class=nt>&#34;image&#34;</span><span class=p>:</span><span class=s2>&#34;xxx&#34;</span><span class=p>,</span><span class=nt>&#34;name&#34;</span><span class=p>:</span><span class=s2>&#34;init-app&#34;</span><span class=p>}]}}}}</span>
+<span class=err>I</span><span class=mi>0908</span> <span class=mi>10</span><span class=err>:</span><span class=mi>09</span><span class=err>:</span><span class=mi>0</span><span class=mf>8.651430</span> <span class=mi>1679687</span> <span class=err>round_trippers.go:</span><span class=mi>466</span><span class=err>]</span> <span class=err>curl</span> <span class=err>-v</span> <span class=err>-XPATCH</span>  <span class=err>-H</span> <span class=s2>&#34;Accept: application/json&#34;</span> <span class=err>-H</span> <span class=s2>&#34;Content-Type: application/strategic-merge-patch+json&#34;</span> <span class=err>-H</span> <span class=s2>&#34;User-Agent: Helm/3.14.0&#34;</span> <span class=err>&#39;https:</span><span class=c1>//127.0.0.1:6443/apis/apps/v1/namespaces/cloud/deployments/notify?fieldManager=helm&#39;
+</span><span class=c1></span><span class=err>I</span><span class=mi>0908</span> <span class=mi>10</span><span class=err>:</span><span class=mi>09</span><span class=err>:</span><span class=mi>0</span><span class=mf>8.735670</span> <span class=mi>1679687</span> <span class=err>round_trippers.go:</span><span class=mi>553</span><span class=err>]</span> <span class=err>PATCH</span> <span class=err>https:</span><span class=c1>//127.0.0.1:6443/apis/apps/v1/namespaces/cloud/deployments/notify?fieldManager=helm 200 OK in 84 milliseconds
 </span></code></pre></div><p>这里可清楚看到 Helm 发的是 <strong>PATCH</strong>（<code>strategic-merge-patch</code> Content-Type）而非全量 PUT，同时 <code>$setElementOrder/env</code> 里明确列出了 <code>SERVER_IP</code>，<code>env</code> 里则是 <code>$patch: delete</code>。</p>
 <h3 id=2-审计日志--抓包>2. 审计日志 / 抓包</h3>
 <p>开启 apiserver 的 <strong>Audit</strong> 或给 kube-apiserver 抓包，Content-Type 为 <code>application/strategic-merge-patch+json</code> 的 PATCH 体即是最终 patch。</p>
@@ -591,38 +593,38 @@ patch, _ <span style=color:#000;font-weight:700>:=</span> strategicpatch.<span s
 <hr>
 <h2 id=十一完整例子一sidecar-保留>十一、完整例子一：sidecar 保留</h2>
 <p>假设 Helm chart 原始 Deployment：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#998;font-style:italic># old / new manifest（new 只改了 image tag）</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>template</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>containers</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>app<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>image</span>:<span style=color:#bbb> </span>demo:v1  <span style=color:#bbb> </span><span style=color:#998;font-style:italic># new 里是 demo:v2</span><span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=c># old / new manifest（new 只改了 image tag）</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>template</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>containers</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>app</span><span class=w>
+</span><span class=w>          </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>demo:v1  </span><span class=w> </span><span class=c># new 里是 demo:v2</span><span class=w>
 </span></code></pre></div><p>集群中经过 service mesh 注入后，live 变成：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#998;font-style:italic># live state</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>template</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>containers</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>app<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>image</span>:<span style=color:#bbb> </span>demo:v1<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>istio-proxy<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>image</span>:<span style=color:#bbb> </span>proxy:v1<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=c># live state</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>template</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>containers</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>app</span><span class=w>
+</span><span class=w>          </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>demo:v1</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>istio-proxy</span><span class=w>
+</span><span class=w>          </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>proxy:v1</span><span class=w>
 </span></code></pre></div><p>Converge 后最终 live 为：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>template</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>    </span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>      </span><span style=color:navy>containers</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>app<span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>image</span>:<span style=color:#bbb> </span>demo:v2     <span style=color:#bbb> </span><span style=color:#998;font-style:italic># Helm 本次声明的变化</span><span style=color:#bbb>
-</span><span style=color:#bbb>        </span>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>istio-proxy  <span style=color:#bbb> </span><span style=color:#998;font-style:italic># live 里的外部注入，被保留</span><span style=color:#bbb>
-</span><span style=color:#bbb>          </span><span style=color:navy>image</span>:<span style=color:#bbb> </span>proxy:v1<span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>template</span><span class=p>:</span><span class=w>
+</span><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>      </span><span class=nt>containers</span><span class=p>:</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>app</span><span class=w>
+</span><span class=w>          </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>demo:v2     </span><span class=w> </span><span class=c># Helm 本次声明的变化</span><span class=w>
+</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>istio-proxy  </span><span class=w> </span><span class=c># live 里的外部注入，被保留</span><span class=w>
+</span><span class=w>          </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>proxy:v1</span><span class=w>
 </span></code></pre></div><p>三路合并看到：<code>app</code> 从 v1 到 v2 是 Helm 本次声明的变化；<code>istio-proxy</code> 存在于 live 而 old/new 都没有，是外部系统添加的；Deployment 的 <code>containers</code> 是按 <code>name</code> 合并的 list——于是只改镜像、保留 sidecar <a href=https://helm.sh/docs/v3/faq/changes_since_helm2>Helm FAQ</a>。</p>
 <hr>
 <h2 id=十二完整例子二手工改-replicas-被纠正>十二、完整例子二：手工改 replicas 被纠正</h2>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=color:#998;font-style:italic># old manifest / # new manifest    # live（被人 kubectl scale 成 0）</span><span style=color:#bbb>
-</span><span style=color:#bbb></span><span style=color:navy>spec</span>:<span style=color:#bbb>                              </span><span style=color:navy>spec</span>:<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>replicas: 3                        replicas</span>:<span style=color:#bbb> </span><span style=color:#099>0</span><span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml><span class=c># old manifest / # new manifest    # live（被人 kubectl scale 成 0）</span><span class=w>
+</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>                              </span><span class=nt>spec</span><span class=p>:</span><span class=w>
+</span><span class=w>  </span><span class=nt>replicas: 3                        replicas</span><span class=p>:</span><span class=w> </span><span class=m>0</span><span class=w>
 </span></code></pre></div><p>两路 diff 会发现 old 和 new 没有差异，因此不修改 live；三路 diff 会发现 live 与 old/new 不一致，且 <code>replicas</code> 是 Helm 声明字段，于是生成 patch 把副本数改回 3。</p>
 <p>这类场景体现三路合并的另一面：<strong>它不是盲目保留所有 live drift，而是会把 Helm 管理字段收敛回 Chart 期望状态</strong>。</p>
 <hr>
@@ -655,8 +657,8 @@ patch, _ <span style=color:#000;font-weight:700>:=</span> strategicpatch.<span s
 <li>
 <p><strong>模板里显式清空字段</strong>
 想把不要的 env 清掉而不是删 key，模板里写成：</p>
-<div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml>- <span style=color:navy>name</span>:<span style=color:#bbb> </span>SERVER_IP<span style=color:#bbb>
-</span><span style=color:#bbb>  </span><span style=color:navy>value</span>:<span style=color:#bbb> </span><span style=color:#000;font-weight:700>null</span><span style=color:#bbb>
+<div class=highlight><pre tabindex=0 class=chroma><code class=language-yaml data-lang=yaml>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>SERVER_IP</span><span class=w>
+</span><span class=w>  </span><span class=nt>value</span><span class=p>:</span><span class=w> </span><span class=kc>null</span><span class=w>
 </span></code></pre></div><p>这样 merge 会识别为"字段清空"，不会误删其它 env。</p>
 </li>
 <li>
