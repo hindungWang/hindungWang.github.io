@@ -38,6 +38,9 @@
   var el = document.getElementById("game-agent-chat");
   if (!el) return;
 
+  /* render() 初始化的 DOM 引用（必须声明，脚本处于 "use strict" 模式） */
+  var bodyEl, inputEl, sendBtn, statusEl;
+
   /* 用 Hugo shortcode 注入的 data-* 属性覆盖默认配置（config.toml [params.gameAgent]） */
   (function mergeDataConfig() {
     var d = el.dataset || {};
