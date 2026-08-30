@@ -217,3 +217,36 @@
   .gac-msg { max-width: 88%; }
   .gac-send { padding: 10px 14px; }
 }
+/* ---- Markdown 元素 ---- */
+.gac-msg strong { color: inherit; font-weight: 700; }
+.gac-msg em { font-style: italic; }
+.gac-msg code {
+  background: rgba(127, 127, 127, 0.15);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 12.5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.gac-msg pre {
+  background: rgba(127, 127, 127, 0.12);
+  border-radius: 8px;
+  padding: 9px 11px;
+  margin: 6px 0;
+  overflow-x: auto;
+}
+.gac-msg pre code { background: none; padding: 0; font-size: 12.5px; white-space: pre; }
+.gac-msg h1, .gac-msg h2, .gac-msg h3, .gac-msg h4 {
+  margin: 8px 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.gac-msg ul { margin: 4px 0; padding-left: 18px; }
+.gac-msg li { margin: 2px 0; }
+.gac-msg blockquote {
+  margin: 5px 0;
+  padding: 4px 10px;
+  border-left: 3px solid var(--gac-border);
+  color: var(--gac-muted);
+}
+.gac-msg a { color: #2f81f7; text-decoration: underline; }

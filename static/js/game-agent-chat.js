@@ -78,6 +78,48 @@
     return CONFIG.mock || (CONFIG.mockWhenUnconfigured && !isConfigFilled());
   }
 
+  /* ---------- Markdown 渲染（先转义 HTML 再应用格式，防 XSS） ---------- */
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function inlineMd(raw) {
+    var t = escapeHtml(raw);
+    t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+    t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    return t;
+  }
+
+  function mdRender(text) {
+    var lines = String(text).split("\n");
+    var out = [], inList = false, inCode = false, codeBuf = [];
+    function closeList() { if (inList) { out.push("</ul>"); inList = false; } }
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (/^\s*```/.test(line)) {
+        if (inCode) { out.push("<pre><code>" + escapeHtml(codeBuf.join("\n")) + "</code></pre>"); codeBuf = []; inCode = false; }
+        else { closeList(); inCode = true; }
+        continue;
+      }
+      if (inCode) { codeBuf.push(line); continue; }
+      var h = line.match(/^(#{1,4})\s+(.*)/);
+      if (h) { closeList(); out.push("<h" + h[1].length + ">" + inlineMd(h[2]) + "</h" + h[1].length + ">"); continue; }
+      var li = line.match(/^\s*(?:[-*]|\d+\.)\s+(.*)/);
+      if (li) { if (!inList) { out.push("<ul>"); inList = true; } out.push("<li>" + inlineMd(li[1]) + "</li>"); continue; }
+      closeList();
+      var q = line.match(/^\s*>\s+(.*)/);
+      if (q) { out.push("<blockquote>" + inlineMd(q[1]) + "</blockquote>"); continue; }
+      out.push(inlineMd(line));
+    }
+    closeList();
+    if (inCode) out.push("<pre><code>" + escapeHtml(codeBuf.join("\n")) + "</code></pre>");
+    return out.join("\n");
+  }
+
   /* ---------- 渲染 ---------- */
   function render() {
     el.innerHTML =
@@ -126,7 +168,11 @@
   function appendMsg(role, text) {
     var div = document.createElement("div");
     div.className = "gac-msg " + role;
-    div.textContent = text;
+    if (role === "agent") {
+      div.innerHTML = mdRender(text); // agent 回复渲染 Markdown
+    } else {
+      div.textContent = text; // 用户消息保持纯文本
+    }
     bodyEl.appendChild(div);
     scrollToBottom();
     return div;
@@ -153,7 +199,7 @@
     var i = 0;
     var timer = setInterval(function () {
       i = Math.min(chars.length, i + step);
-      div.textContent = chars.slice(0, i).join("");
+      div.innerHTML = mdRender(chars.slice(0, i).join("")); // 逐字渲染 Markdown
       scrollToBottom();
       if (i >= chars.length) clearInterval(timer);
     }, 16);
