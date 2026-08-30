@@ -141,6 +141,24 @@
     return div;
   }
 
+  /* 打字机效果：回复文本按码点逐字打出（安全处理 emoji/多字节），总时长自适应约 0.3~2.5s */
+  function typewriterAppend(text) {
+    var div = document.createElement("div");
+    div.className = "gac-msg agent";
+    bodyEl.appendChild(div);
+    var chars = Array.from(text || "");
+    if (chars.length === 0) { scrollToBottom(); return; }
+    var totalMs = Math.max(300, Math.min(2500, chars.length * 14));
+    var step = Math.max(1, Math.ceil(chars.length / (totalMs / 16)));
+    var i = 0;
+    var timer = setInterval(function () {
+      i = Math.min(chars.length, i + step);
+      div.textContent = chars.slice(0, i).join("");
+      scrollToBottom();
+      if (i >= chars.length) clearInterval(timer);
+    }, 16);
+  }
+
   function showTyping() {
     var t = document.createElement("div");
     t.className = "gac-typing";
@@ -281,7 +299,7 @@
     sendMessage(text)
       .then(function (reply) {
         typing.remove();
-        appendMsg("agent", reply);
+        typewriterAppend(reply); // 回复逐字打出
         statusEl.textContent = "· 在线";
       })
       .catch(function (err) {
