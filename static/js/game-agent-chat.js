@@ -101,16 +101,31 @@
 
   function mdRender(text) {
     var lines = String(text).split("\n");
-    var out = [], inList = false, inCode = false, codeBuf = [];
+    var out = [], inList = false, inCode = false, codeBuf = [], tableBuf = [];
     function closeList() { if (inList) { out.push("</ul>"); inList = false; } }
+    function flushTable() {
+      if (tableBuf.length === 0) return;
+      var cells = function (ln) { return ln.replace(/^\s*\|/, "").replace(/\|\s*$/, "").split("|").map(function (c) { return c.trim(); }); };
+      var header = cells(tableBuf[0]);
+      var rows = tableBuf.slice(1).map(cells).filter(function (r) {
+        return !(r.length > 0 && r.every(function (c) { return /^[-: ]+$/.test(c); })); // 去掉分隔行
+      });
+      var html = "<table><thead><tr>" + header.map(function (h) { return "<th>" + inlineMd(h) + "</th>"; }).join("") + "</tr></thead><tbody>";
+      html += rows.map(function (r) { return "<tr>" + r.map(function (c) { return "<td>" + inlineMd(c) + "</td>"; }).join("") + "</tr>"; }).join("");
+      html += "</tbody></table>";
+      out.push(html);
+      tableBuf = [];
+    }
     for (var i = 0; i < lines.length; i++) {
       var line = lines[i];
       if (/^\s*```/.test(line)) {
         if (inCode) { out.push("<pre><code>" + escapeHtml(codeBuf.join("\n")) + "</code></pre>"); codeBuf = []; inCode = false; }
-        else { closeList(); inCode = true; }
+        else { closeList(); flushTable(); inCode = true; }
         continue;
       }
       if (inCode) { codeBuf.push(line); continue; }
+      if (/^\s*\|/.test(line)) { closeList(); tableBuf.push(line); continue; } // 表格行
+      flushTable();
       var h = line.match(/^(#{1,4})\s+(.*)/);
       if (h) { closeList(); out.push("<h" + h[1].length + ">" + inlineMd(h[2]) + "</h" + h[1].length + ">"); continue; }
       var li = line.match(/^\s*(?:[-*]|\d+\.)\s+(.*)/);
@@ -121,6 +136,7 @@
       out.push(inlineMd(line));
     }
     closeList();
+    flushTable();
     if (inCode) out.push("<pre><code>" + escapeHtml(codeBuf.join("\n")) + "</code></pre>");
     return out.join("\n");
   }
