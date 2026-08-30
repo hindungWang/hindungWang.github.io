@@ -205,13 +205,18 @@
 
   async function pollReply(id) {
     if (!id) throw new Error("网关未返回任务 id");
-    var url = CONFIG.baseUrl.replace(/\/+$/, "") + (CONFIG.replyEndpoint || CONFIG.chatEndpoint) + "?id=" + encodeURIComponent(id);
+    var url = CONFIG.baseUrl.replace(/\/+$/, "") + (CONFIG.replyEndpoint || CONFIG.chatEndpoint);
     var deadline = Date.now() + CONFIG.pollTimeoutMs;
     var lastErr = null;
     while (Date.now() < deadline) {
       await sleep(CONFIG.pollIntervalMs);
       try {
-        var resp = await fetch(url, { headers: headers() });
+        // 轮询用 POST 携带 id：ngrok 对浏览器 GET 会弹访问警告页（无 CORS 头），POST 不受影响
+        var resp = await fetch(url, {
+          method: "POST",
+          headers: headers(),
+          body: JSON.stringify({ id: id })
+        });
         if (!resp.ok) { lastErr = new Error("HTTP " + resp.status); continue; }
         var data = await resp.json().catch(function () { return {}; });
         if (typeof data.reply === "string") return data.reply;
