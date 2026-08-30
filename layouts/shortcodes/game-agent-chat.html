@@ -1,3 +1,8 @@
-<div id="game-agent-chat"></div>
+<div id="game-agent-chat"
+  {{ with .Site.Params.gameAgent.baseUrl }}data-base-url="{{ . }}"{{ end }}
+  {{ with .Site.Params.gameAgent.token }}data-token="{{ . }}"{{ end }}
+  {{ with .Site.Params.gameAgent.replyMode }}data-reply-mode="{{ . }}"{{ end }}
+  {{ with .Site.Params.gameAgent.mock }}data-mock="{{ . }}"{{ end }}
+></div>
 <link rel="stylesheet" href="{{ "/css/game-agent-chat.css" | relURL }}">
 <script src="{{ "/js/game-agent-chat.js" | relURL }}"></script>

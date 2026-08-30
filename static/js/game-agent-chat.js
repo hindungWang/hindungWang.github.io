@@ -19,7 +19,7 @@
     // 回复模式：
     //   "sync" — 网关一次请求直接返回 {reply}（默认）
     //   "poll" — 网关先返回 {id}，再用 GET {replyEndpoint}?id=<id> 轮询直到返回 {reply} 或超时
-    replyMode: "sync",
+    replyMode: "poll",
     pollIntervalMs: 1500,
     pollTimeoutMs: 60000,
     // UI
@@ -37,6 +37,27 @@
 
   var el = document.getElementById("game-agent-chat");
   if (!el) return;
+
+  /* 用 Hugo shortcode 注入的 data-* 属性覆盖默认配置（config.toml [params.gameAgent]） */
+  (function mergeDataConfig() {
+    var d = el.dataset || {};
+    if (d.baseUrl) CONFIG.baseUrl = d.baseUrl;
+    if (d.token) CONFIG.token = d.token;
+    if (d.replyMode) CONFIG.replyMode = d.replyMode;
+    if (d.mock === "true") CONFIG.mock = true;
+    if (d.mock === "false") CONFIG.mock = false;
+  })();
+
+  /* 访客标识：localStorage 持久化，随请求上传，网关按此隔离每个访客的记忆 */
+  function visitorId() {
+    var k = "gac-visitor-id";
+    var v = localStorage.getItem(k);
+    if (!v) {
+      v = "v" + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
+      try { localStorage.setItem(k, v); } catch (e) { /* 隐私模式等场景降级为会话内 id */ }
+    }
+    return v;
+  }
 
   var MSG = ""; // 后续填充
 
@@ -148,7 +169,7 @@
     var resp = await fetch(url, {
       method: "POST",
       headers: headers(),
-      body: JSON.stringify({ message: text })
+      body: JSON.stringify({ message: text, visitorId: visitorId() })
     });
 
     var data = null;

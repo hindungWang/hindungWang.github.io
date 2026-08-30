@@ -132,9 +132,12 @@
 <h2 id=在线试玩>在线试玩</h2>
 <p>直接在下面的窗口里用自然语言跟它对话——它收到的每条指令都会经过我的消息网关路由到 Agent，实时返回结果。</p>
 <blockquote>
-<p>网关尚未接入：当前窗口是<strong>本地演示模式</strong>，回复为模拟数据，可用来预览交互效果。等网关就绪后会自动切换到真实 Agent。</p>
+<p>演示模式：当前页面展示的是<strong>本地演示数据</strong>（config.toml 里网关 token 未配置）。真实链路已就绪：
+本窗口 → 公网网关（remotedialer 隧道）→ 我电脑上的 stray 核心 → 回复。由于网关目前是
+IP + 自签证书，浏览器需要先信任该证书才能直连；配置好 <code>config.toml</code> 的
+<code>[params.gameAgent] token</code> 后会自动切换到真实 Agent。</p>
 </blockquote>
-<div id=game-agent-chat></div>
+<div id=game-agent-chat data-base-url=https://wrongly-disrupt-outreach.ngrok-free.dev data-token=92091a6d9b7f1f212523b393a6ec23655920f5170e564904 data-reply-mode=poll></div>
 <link rel=stylesheet href=/css/game-agent-chat.css>
 <script src=/js/game-agent-chat.js></script>
 <h2 id=试玩提示>试玩提示</h2>

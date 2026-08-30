@@ -24,6 +24,14 @@ title = "Hindung's Blog"
     <link rel="apple-touch-icon" href="/favicon.png" />
   """
 
+  # 消息网关配置（game-agent-chat 组件读取）
+  # 注意：baseUrl/token 会随构建渲染进公开页面；token 是低权限的，真正防护靠网关限流。
+  # token 留空时聊天窗自动进入本地演示模式。
+  [params.gameAgent]
+    baseUrl = "https://wrongly-disrupt-outreach.ngrok-free.dev"   # 公网网关（ngrok 静态域名，可信证书，访客零配置）
+    token = "92091a6d9b7f1f212523b393a6ec23655920f5170e564904"   # 网关 Bearer token；留空 = 演示模式
+    replyMode = "poll"                  # poll（推荐）/ sync
+
   socialIcons = [
     {name = "twitter", url = "https://example.com"},
     {name = "linkedin", url = "https://example.com"},
