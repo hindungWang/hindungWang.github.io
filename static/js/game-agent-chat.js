@@ -169,11 +169,20 @@
     }
 
     var url = CONFIG.baseUrl.replace(/\/+$/, "") + CONFIG.chatEndpoint;
-    var resp = await fetch(url, {
-      method: "POST",
-      headers: headers(),
-      body: JSON.stringify({ message: text, visitorId: visitorId() })
-    });
+    var resp = null, lastErr = null;
+    for (var attempt = 0; attempt < 2 && !resp; attempt++) {
+      try {
+        resp = await fetch(url, {
+          method: "POST",
+          headers: headers(),
+          body: JSON.stringify({ message: text, visitorId: visitorId() })
+        });
+      } catch (e) {
+        lastErr = e; // 瞬时网络/CORS 抖动，重试一次
+        await sleep(800);
+      }
+    }
+    if (!resp) throw lastErr || new Error("网络请求失败");
 
     var data = null;
     try { data = await resp.json(); } catch (e) { /* 非 JSON 响应 */ }
@@ -198,14 +207,22 @@
     if (!id) throw new Error("网关未返回任务 id");
     var url = CONFIG.baseUrl.replace(/\/+$/, "") + (CONFIG.replyEndpoint || CONFIG.chatEndpoint) + "?id=" + encodeURIComponent(id);
     var deadline = Date.now() + CONFIG.pollTimeoutMs;
+    var lastErr = null;
     while (Date.now() < deadline) {
       await sleep(CONFIG.pollIntervalMs);
-      var resp = await fetch(url, { headers: headers() });
-      if (!resp.ok) continue;
-      var data = await resp.json().catch(function () { return {}; });
-      if (typeof data.reply === "string") return data.reply;
-      if (data.status === "done" && data.result) return data.result;
+      try {
+        var resp = await fetch(url, { headers: headers() });
+        if (!resp.ok) { lastErr = new Error("HTTP " + resp.status); continue; }
+        var data = await resp.json().catch(function () { return {}; });
+        if (typeof data.reply === "string") return data.reply;
+        if (data.status === "done" && data.result) return data.result;
+        lastErr = null; // 一次成功的轮询清除之前的瞬时错误
+      } catch (e) {
+        // 瞬时网络/CORS 抖动（如网关边缘偶发错误页）：继续轮询，不中断整个对话
+        lastErr = e;
+      }
     }
+    if (lastErr) throw lastErr;
     throw new Error("等待回复超时，请重试。");
   }
 
