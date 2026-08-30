@@ -51,13 +51,15 @@
     if (d.mock === "false") CONFIG.mock = false;
   })();
 
-  /* 访客标识：localStorage 持久化，随请求上传，网关按此隔离每个访客的记忆 */
+  /* 访客标识：localStorage 持久化，随请求上传，网关按此隔离每个访客的记忆。
+   * 同一浏览器刷新/重开页面都保持同一 id；仅换浏览器/设备/清缓存/隐私模式会生成新 id。 */
   function visitorId() {
     var k = "gac-visitor-id";
-    var v = localStorage.getItem(k);
+    var v = null;
+    try { v = localStorage.getItem(k); } catch (e) { /* 存储不可用（隐私模式等） */ }
     if (!v) {
       v = "v" + Math.random().toString(36).slice(2, 12) + Date.now().toString(36);
-      try { localStorage.setItem(k, v); } catch (e) { /* 隐私模式等场景降级为会话内 id */ }
+      try { localStorage.setItem(k, v); } catch (e) { /* 降级为会话内 id */ }
     }
     return v;
   }
