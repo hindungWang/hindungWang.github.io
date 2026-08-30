@@ -90,6 +90,8 @@
   function inlineMd(raw) {
     var t = escapeHtml(raw);
     t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
+    // 图片 ![alt](url) 必须在链接之前处理（只允许 http/https，防注入）
+    t = t.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">');
     t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
     t = t.replace(/~~([^~]+)~~/g, "<del>$1</del>");
     t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
