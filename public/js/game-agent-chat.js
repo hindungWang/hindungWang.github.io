@@ -89,6 +89,7 @@
     var t = escapeHtml(raw);
     t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
     t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/~~([^~]+)~~/g, "<del>$1</del>");
     t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
     t = t.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
     return t;
