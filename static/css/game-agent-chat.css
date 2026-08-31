@@ -274,3 +274,10 @@
 }
 .gac-msg th { background: rgba(127, 127, 127, 0.12); }
 .gac-msg table code { font-size: 12px; }
+
+/* ---- Markdown 分割线 ---- */
+.gac-msg hr {
+  border: none;
+  border-top: 1px solid var(--gac-border);
+  margin: 10px 0;
+}

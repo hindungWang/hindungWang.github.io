@@ -128,6 +128,8 @@
       flushTable();
       var h = line.match(/^(#{1,4})\s+(.*)/);
       if (h) { closeList(); out.push("<h" + h[1].length + ">" + inlineMd(h[2]) + "</h" + h[1].length + ">"); continue; }
+      // 分割线 --- / *** / ___
+      if (/^\s*([-*_])\1{2,}\s*$/.test(line)) { closeList(); out.push("<hr>"); continue; }
       var li = line.match(/^\s*(?:[-*]|\d+\.)\s+(.*)/);
       if (li) { if (!inList) { out.push("<ul>"); inList = true; } out.push("<li>" + inlineMd(li[1]) + "</li>"); continue; }
       closeList();
