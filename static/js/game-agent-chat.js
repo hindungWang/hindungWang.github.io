@@ -80,11 +80,33 @@
     return CONFIG.mock || (CONFIG.mockWhenUnconfigured && !isConfigFilled());
   }
 
-  /* ---------- Markdown 渲染（先转义 HTML 再应用格式，防 XSS） ---------- */
+  /* ---------- Markdown 渲染 ----------
+   * 首选标准解析：marked（GFM：表格/删除线/嵌套列表/图片/分割线）+ DOMPurify（XSS 净化）。
+   * CDN 不可用时回退到内置简易渲染器（mdRender）。 */
   function escapeHtml(s) {
     return String(s)
       .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function renderMarkdown(text) {
+    if (window.marked && window.DOMPurify) {
+      try {
+        var raw = window.marked.parse(String(text));
+        return window.DOMPurify.sanitize(raw);
+      } catch (e) { /* 解析失败回退简易渲染 */ }
+    }
+    return mdRender(text);
+  }
+
+  /* 链接新窗口打开（DOMPurify 净化后补属性） */
+  if (window.DOMPurify) {
+    window.DOMPurify.addHook("afterSanitizeAttributes", function (node) {
+      if (node.tagName === "A") {
+        node.setAttribute("target", "_blank");
+        node.setAttribute("rel", "noopener noreferrer");
+      }
+    });
   }
 
   function inlineMd(raw) {
@@ -192,7 +214,8 @@
     var div = document.createElement("div");
     div.className = "gac-msg " + role;
     if (role === "agent") {
-      div.innerHTML = mdRender(text); // agent 回复渲染 Markdown
+      div.className += " md";
+      div.innerHTML = renderMarkdown(text); // agent 回复渲染 Markdown（标准解析）
     } else {
       div.textContent = text; // 用户消息保持纯文本
     }
@@ -213,7 +236,7 @@
   /* 打字机效果：回复文本按码点逐字打出（安全处理 emoji/多字节），总时长自适应约 0.3~2.5s */
   function typewriterAppend(text) {
     var div = document.createElement("div");
-    div.className = "gac-msg agent";
+    div.className = "gac-msg agent md";
     bodyEl.appendChild(div);
     var chars = Array.from(text || "");
     if (chars.length === 0) { scrollToBottom(); return; }
@@ -222,7 +245,7 @@
     var i = 0;
     var timer = setInterval(function () {
       i = Math.min(chars.length, i + step);
-      div.innerHTML = mdRender(chars.slice(0, i).join("")); // 逐字渲染 Markdown
+      div.innerHTML = renderMarkdown(chars.slice(0, i).join("")); // 逐字渲染 Markdown
       scrollToBottom();
       if (i >= chars.length) clearInterval(timer);
     }, 16);

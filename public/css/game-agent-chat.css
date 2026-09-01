@@ -281,3 +281,9 @@
   border-top: 1px solid var(--gac-border);
   margin: 10px 0;
 }
+
+/* ---- 标准 Markdown（marked 渲染）---- */
+.gac-msg.md { white-space: normal; } /* 标准解析后由块级元素排版，避免 pre-wrap 造成多余空格 */
+.gac-msg.md p { margin: 4px 0; }
+.gac-msg.md > *:first-child { margin-top: 0; }
+.gac-msg.md > *:last-child { margin-bottom: 0; }
