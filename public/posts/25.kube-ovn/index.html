@@ -723,7 +723,7 @@ bash-5.1$ ip a
 <p>有待研究的方案：</p>
 <ul>
 <li>sriov + multus</li>
-<li>dpdk结合：目前kube-von的dpdk方案还不成熟，只有商用版提供。</li>
+<li>dpdk结合：目前kube-ovn的dpdk方案还不成熟，只有商用版提供。</li>
 <li>underlay模式打通pod和VM和k8s节点的网络</li>
 </ul>
 <p>以上方式均直接与节点上的物理网络直接联通，所以网络流向是无法经过ovn的ovs，从而也无法做到隔离的要求。因此需要考虑一种既能高效给VM分配网络也能对网络设备进行策略和限制的方法。目前没有成熟的方案。</p>

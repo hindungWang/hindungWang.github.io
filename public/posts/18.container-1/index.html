@@ -246,7 +246,7 @@ July 23, 2021
 <p>仔细想想，“装”东西即在某种程度上与其他物体隔离开来了。所以称这个「装东西的东西」为容器。</p>
 <p>是吧！那现在所说的“容器”到底是啥概念，他能装什么东西，又把什么东西在某种程度上隔离开？</p>
 <p>我的理解就是：「把资源隔离开的东西」。</p>
-<p>资源泛指OS上的资源，如CPU、内存、设备、文件系统等等。如何进行隔离呢？Linux内核提供了某种机制能让上诉所说的“资源”隔离开来，即Namespace和CGroups。</p>
+<p>资源泛指OS上的资源，如CPU、内存、设备、文件系统等等。如何进行隔离呢？Linux内核提供了某种机制能让上述所说的“资源”隔离开来，即Namespace和CGroups。</p>
 <p>容器技术就是基于这两个内核特性进行设计和开发。</p>
 <h3 id=namespace>Namespace</h3>
 <p>命名空间在<a href=https://en.wikipedia.org/wiki/Namespace>维基百科</a>上的广义解释是：</p>
@@ -304,7 +304,7 @@ July 23, 2021
 <p>可以通过命令 <code>$ ll /sys/fs/cgroup/</code> 查看控制组中有哪些资源被控制。</p>
 <p>Linux Kernel 4.19（2018年10月）引入了cgroup对OOMKiller实现的认识，该功能增加了将cgroup作为单个单元杀死的能力，从而保证了工作负载的完整性。</p>
 <h2 id=容器镜像>容器镜像</h2>
-<p>容器镜像是就是容器的快照。</p>
+<p>容器镜像就是容器的快照。</p>
 <p>对于docker 镜像来说，他可以通过Dockerfile构建。</p>
 <p>镜像的实现原理是UnionFs（联合文件系统）：</p>
 <p>“Union文件系统（UnionFs）是一种分层、轻量级并且高性能的文件系统，他支持对文件系统的修改作为一次提交来一层层的叠加，同时可以将不同目录挂载到同一个虚拟文件系统下（ unite several directories into a single virtual filesystem”</p>
@@ -321,7 +321,7 @@ July 23, 2021
 <p>而容器则像是操作系统的一个个进程，他们通过容器进行隔离。</p>
 <p>容器技术就像是一个「对在Linux上运行的相关进程进行分组，让每个进程都在独立的用户空间中运行」的技术。</p>
 <p>原则上，从安全性的角度来看，容器方法对执行环境的控制比虚拟服务器更容易受到攻击。</p>
-<p>除非操作系统或虚拟机监控程序中存在某些漏洞，否则虚拟服务器不太可能影响其他虚拟环境，但是由于容器之间的关系只是一个进程，因此它将影响其他容器（进程）。环境。</p>
+<p>除非操作系统或虚拟机监控程序中存在某些漏洞，否则虚拟服务器不太可能影响其他虚拟环境，但是由于容器之间的关系只是一个进程，因此它会影响到同主机上的其他容器（进程）。</p>
 <p>参考文章：</p>
 <p><a href=https://qiita.com/tajima_taso/items/28938415846dcc2e83ff>原理原則で理解するDocker</a></p>
 <p><a href=https://www.infoq.com/articles/build-a-container-golang/>Build Your Own Container Using Less than 100 Lines of Go</a></p>

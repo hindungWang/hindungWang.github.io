@@ -267,7 +267,7 @@ September 23, 2020
 </span><span class=c1>//          a[i]
 </span><span class=c1>//          /  \
 </span><span class=c1>//    a[2i+1]  a[2i+2]
-</span></code></pre></div><p>而container/heap包采用的是a[0]作为对顶，故左子、右子节点以及父节点表示为a[2i+1]、a[2i+2]、a[(i-1)/2]。</p>
+</span></code></pre></div><p>而container/heap包采用的是a[0]作为堆顶，故左子、右子节点以及父节点表示为a[2i+1]、a[2i+2]、a[(i-1)/2]。</p>
 <h2 id=containerheap源码>container/heap源码</h2>
 <p>container/heap包是Go内置的接口，如下所示：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// The Interface type describes the requirements
@@ -370,7 +370,7 @@ September 23, 2020
 	<span class=k>return</span> <span class=nx>i</span> <span class=p>&gt;</span> <span class=nx>i0</span>
 <span class=p>}</span>
 </code></pre></div><h3 id=简单使用>简单使用</h3>
-<p>由以上源码可知，要实现一个heap数据结构，需要实现Len()、Less()（根据这里控制大顶堆还是小顶堆）、Swap()、Push()、Pop()、Fix()(或Update())方法，其中Fix方法是可选的。Fix方法主要是传入元素和元素所在数组的index，并且下沉该元素。</p>
+<p>由以上源码可知，要实现一个heap数据结构，必须实现Len()、Less()（根据这里控制大顶堆还是小顶堆）、Swap()、Push()、Pop()五个方法；<code>Fix()</code> 和 <code>Update()</code> 是<strong>可选</strong>的便捷方法——当堆内某个元素的值发生变化后，用它们将该元素在堆中<strong>上浮或下沉</strong>到正确位置，而不用先 Remove 再 Push。</p>
 <p>下面实现一个简单的[]int数组构成的heap。</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>heap</span>
 
@@ -429,13 +429,13 @@ September 23, 2020
 <span class=kd>type</span> <span class=nx>Data</span> <span class=kd>struct</span> <span class=p>{</span>
 	<span class=nx>key</span> <span class=kt>int</span>
 	<span class=nx>value</span> <span class=kt>int</span>
-	<span class=nx>wight</span> <span class=kt>int</span>
+	<span class=nx>weight</span> <span class=kt>int</span>
 <span class=p>}</span>
 
 <span class=kd>type</span> <span class=nx>DataHeap</span> <span class=p>[]</span><span class=nx>Data</span>
  
 <span class=kd>func</span> <span class=p>(</span><span class=nx>h</span> <span class=nx>DataHeap</span><span class=p>)</span> <span class=nf>Len</span><span class=p>()</span> <span class=kt>int</span>           <span class=p>{</span> <span class=k>return</span> <span class=nb>len</span><span class=p>(</span><span class=nx>h</span><span class=p>)</span> <span class=p>}</span>
-<span class=kd>func</span> <span class=p>(</span><span class=nx>h</span> <span class=nx>DataHeap</span><span class=p>)</span> <span class=nf>Less</span><span class=p>(</span><span class=nx>i</span><span class=p>,</span> <span class=nx>j</span> <span class=kt>int</span><span class=p>)</span> <span class=kt>bool</span> <span class=p>{</span> <span class=k>return</span> <span class=nx>h</span><span class=p>[</span><span class=nx>i</span><span class=p>].</span><span class=nx>wight</span> <span class=p>&lt;</span> <span class=nx>h</span><span class=p>[</span><span class=nx>j</span><span class=p>].</span><span class=nx>wight</span> <span class=p>}</span>
+<span class=kd>func</span> <span class=p>(</span><span class=nx>h</span> <span class=nx>DataHeap</span><span class=p>)</span> <span class=nf>Less</span><span class=p>(</span><span class=nx>i</span><span class=p>,</span> <span class=nx>j</span> <span class=kt>int</span><span class=p>)</span> <span class=kt>bool</span> <span class=p>{</span> <span class=k>return</span> <span class=nx>h</span><span class=p>[</span><span class=nx>i</span><span class=p>].</span><span class=nx>weight</span> <span class=p>&lt;</span> <span class=nx>h</span><span class=p>[</span><span class=nx>j</span><span class=p>].</span><span class=nx>weight</span> <span class=p>}</span>
 <span class=kd>func</span> <span class=p>(</span><span class=nx>h</span> <span class=nx>DataHeap</span><span class=p>)</span> <span class=nf>Swap</span><span class=p>(</span><span class=nx>i</span><span class=p>,</span> <span class=nx>j</span> <span class=kt>int</span><span class=p>)</span>      <span class=p>{</span> <span class=nx>h</span><span class=p>[</span><span class=nx>i</span><span class=p>],</span> <span class=nx>h</span><span class=p>[</span><span class=nx>j</span><span class=p>]</span> <span class=p>=</span> <span class=nx>h</span><span class=p>[</span><span class=nx>j</span><span class=p>],</span> <span class=nx>h</span><span class=p>[</span><span class=nx>i</span><span class=p>]</span> <span class=p>}</span>
 
 <span class=kd>func</span> <span class=p>(</span><span class=nx>h</span> <span class=o>*</span><span class=nx>DataHeap</span><span class=p>)</span> <span class=nf>Push</span><span class=p>(</span><span class=nx>x</span> <span class=kd>interface</span><span class=p>{})</span> <span class=p>{</span>

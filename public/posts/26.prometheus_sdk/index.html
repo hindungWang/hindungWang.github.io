@@ -281,7 +281,7 @@ July 19, 2023
 <p><code>my_histogram_sum</code>：表示所有数据的总和。</p>
 <p><code>my_histogram_count</code>：表示所有数据的数量。</p>
 <h3 id=summary>Summary</h3>
-<p>Summary 指标是一种用于度量数据分布情况的指标类型，它类似于 Histogram 指标，也将数据分成多个桶，但每个桶代表的不是数据的数量，而是数据的分位数。</p>
+<p>Summary 指标是一种用于度量数据分布情况的指标类型，它类似于 Histogram 指标，会暴露多组分位数（quantile），但<strong>不预定义桶</strong>——而是在运行期用滑动窗口内的数据动态估计各分位数的值。</p>
 <p>先来理解一下中位数和分位数：</p>
 <p>大小排列后：<code>2, 3, 5, 6, 7, 8, 9</code>。位于中间的数值是 <code>6</code>，因此它是这组数据的中位数。</p>
 <p>大小排列后：
@@ -294,7 +294,7 @@ July 19, 2023
 <p>……</p>
 <p><code>my_summary_sum</code>：表示所有数据的总和。</p>
 <p><code>my_summary_count</code>：表示所有数据的数量。</p>
-<p>与 Histogram 指标不同的是，Summary 指标不需要定义固定的桶，而是在运行时根据数据动态计算每个分位数的值。</p>
+<p>与 Histogram 指标不同的是，Summary 指标没有可配置的桶和累计值（<code>_bucket</code>），而是在运行时按滑动窗口动态估计各分位数的值——它由客户端直接聚合，因此<strong>无法在 Prometheus 服务端对多个实例做分位数合并</strong>（聚合 <code>quantile</code> 无意义），这是与 Histogram 的本质差异。</p>
 <h2 id=4-实例如何使用prometheus-go客户端库>4. 实例：如何使用Prometheus Go客户端库</h2>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>main</span>
 
@@ -472,7 +472,7 @@ main.main.func1()
 created by main.main
         /root/hxd/code/metrics-example/main.go:51 +0x32
 exit status 2
-</code></pre><p>因此最好定义metric之后不要在在代码逻辑上动态修改Label的值，或者修改之后需要重新注册：<code>prometheus.MustRegister(counter)</code>。
+</code></pre><p>因此最好定义metric之后不要在代码逻辑上动态修改Label的值，或者修改之后需要重新注册：<code>prometheus.MustRegister(counter)</code>。
 但是也不建议这么做。实际上Prometheus已经帮我们处理好了这个指标的注册过程（上面提到的prometheus/promauto包），因此，在使用时应该提前定义好指标以及label，然后注册到对应的Registry。在使用时，用<code>CounterVec.WithLabelValues()</code>方法实例化一个维度的指标并维护值。</p>
 <p>也可以设计一个collector或者直接引入第三方collector获得metric能力。</p>
 <p>如：</p>

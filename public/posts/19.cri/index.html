@@ -245,11 +245,10 @@ June 1, 2021
 <ul>
 <li>CR，即Container Runtime，容器运行时</li>
 <li>CRI，即Container Runtime Interface，容器运行时接口，实现该系列接口以实现容器功能</li>
-<li>OCI，即Open Container Initiative：开口容器倡议，是建立围绕容器格式和运行时的开放式行业标准的明确目的的开放式的治理结构。</li>
+<li>OCI，即Open Container Initiative：开放容器倡议，是建立围绕容器格式和运行时的开放式行业标准的明确目的的开放式的治理结构。</li>
 </ul>
-<p>OCI 目前包含两个规范：运行时规范（runtime-spec）和镜像规范（image-spec）。运行时规范概述了如何运行在磁盘上解压缩的“文件系统包”。</p>
-<p>现在清楚了，OCI定义了一种规范，即怎么做如何做。而CR是这个规范的实践并定义了一系列接口CRI，只要实现了该接口就能使用这个CR。</p>
-<p>比如CR有很多种，如runc、lxc等，但他们都提供了统一的CRI，其他实现了这个CRI的组件如kubelet在runc和lxc间切换是无感的。</p>
+<p>OCI 目前包含两个规范：运行时规范（runtime-spec）和镜像规范（image-spec）。运行时规范概述了如何运行在磁盘上解压缩的"文件系统包"。</p>
+<p>现在清楚了三者的层次关系：<strong>OCI 定义底层容器格式/运行时的规范</strong>（怎么做）；<strong>CRI 是 Kubernetes 定义的容器运行时接口</strong>（kubelet 通过 gRPC 调用），由 containerd、cri-o 等<strong>高级运行时</strong>实现；<strong>CR（Container Runtime）是具体的运行时实现</strong>。OCI 的 runc、lxc 这类低级运行时只负责"起一个容器"，<strong>不直接提供 CRI</strong>——是 containerd/cri-o 这类高级运行时把两者桥接起来：对外实现 CRI 供 kubelet 调用，对内调用 runc/lxc 按 OCI 规范执行。因此 kubelet 在 containerd 与 cri-o 之间切换是无感的，但对 runc/lxc 的切换感知在高级运行时这一层。</p>
 <h2 id=低级low-level容器运行时>低级（low-level）容器运行时</h2>
 <p>我理解的low-level是一系列操作容器的行为在很底层，比如通过Linux内核接口创建各个Namespace以及生成Cgroup等操作。把这些行为打包就是一个低级的运行时的内容。或者说低级容器运行时干了啥。</p>
 <h2 id=高级high-level容器运行时>高级（high-level）容器运行时</h2>
@@ -291,7 +290,6 @@ June 1, 2021
 <li>停止容器RuntimeService.StopContainer</li>
 </ul>
 <p>等操作。</p>
-<h2 id=实现一个容器运行时>实现一个容器运行时</h2>
 <h2 id=参考链接>参考链接</h2>
 <p><a href=https://www.ianlewis.org/en/container-runtimes-part-1-introduction-container-r>Container Runtimes Part 1: An Introduction to Container Runtimes</a></p>
 <p><a href=https://opencontainers.org/>opencontainers.org</a></p>
@@ -312,7 +310,6 @@ June 1, 2021
 <li><a href=#低级low-level容器运行时>低级（low-level）容器运行时</a></li>
 <li><a href=#高级high-level容器运行时>高级（high-level）容器运行时</a></li>
 <li><a href=#k8s-与-cri>K8s 与 CRI</a></li>
-<li><a href=#实现一个容器运行时>实现一个容器运行时</a></li>
 <li><a href=#参考链接>参考链接</a></li>
 </ul>
 </nav>

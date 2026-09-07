@@ -247,7 +247,7 @@ August 1, 2020
 <p>goroutine, to execute tasks <em>independently</em>, potentially in parallel.
 channels, for <em>communication</em>, <em>synchronization</em> between goroutine.</p>
 </blockquote>
-<p>正如上面说的，goroutine是独立地，可能并行地执行任务。channel是服务与goroutine之间的通讯，同步等。</p>
+<p>正如上面说的，goroutine是独立地，可能并行地执行任务。channel是服务于goroutine之间的通信，同步等。</p>
 <p>Go语言的并发模型是基于CSP的， Golang从CSP中吸收了Process/Channel。</p>
 <p>channel是一种：</p>
 <ul>
@@ -265,17 +265,17 @@ channels, for <em>communication</em>, <em>synchronization</em> between goroutine
 <h3 id=channel的基本使用>channel的基本使用</h3>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>var</span> <span class=nx>ch</span> <span class=kd>chan</span> <span class=kt>int</span> <span class=c1>//声明一个int类型的channel，注意，该语句仅声明，不初始化channel
 </span><span class=c1></span>
-<span class=nx>ch</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>(</span><span class=kd>chan</span> <span class=kt>int</span><span class=p>)</span> <span class=c1>//创建一个无缓冲的int型的channel，无缓冲的channel当放入1个元素后，后续的输入便会阻塞
+<span class=nx>ch</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>(</span><span class=kd>chan</span> <span class=kt>int</span><span class=p>)</span> <span class=c1>//创建一个无缓冲的int型的channel，无缓冲channel的发送会一直阻塞，直到有接收方准备好并完成接收
 </span><span class=c1></span>
 <span class=nx>ch</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>(</span><span class=kd>chan</span> <span class=kt>int</span><span class=p>,</span> <span class=mi>10</span><span class=p>)</span> <span class=c1>//创建一个缓冲区大小为10的int型的channel
 </span><span class=c1></span>
-<span class=nx>ch</span> <span class=o>&lt;-</span> <span class=nx>x</span> <span class=c1>//将x发送到channel中，如果channel缓冲区满，则阻塞当前goroutine
+<span class=nx>ch</span> <span class=o>&lt;-</span> <span class=nx>x</span> <span class=c1>//将x发送到channel中，如果channel缓冲区满（无缓冲则始终视为满），则阻塞当前goroutine直到有接收方
 </span><span class=c1></span>
-<span class=o>&lt;-</span> <span class=nx>ch</span> <span class=c1>//从channel中接收一个值，如果缓冲区为空，则阻塞
+<span class=o>&lt;-</span> <span class=nx>ch</span> <span class=c1>//从channel中接收一个值，如果缓冲区为空，则阻塞直到有数据
 </span><span class=c1></span>
-<span class=nx>x</span> <span class=p>=</span> <span class=o>&lt;-</span> <span class=nx>ch</span> <span class=c1>//从channel中接收一个值并存到x中，如果缓冲区为空，则阻塞
+<span class=nx>x</span> <span class=p>=</span> <span class=o>&lt;-</span> <span class=nx>ch</span> <span class=c1>//从channel中接收一个值并存到x中，如果缓冲区为空，则阻塞直到有数据
 </span><span class=c1></span>
-<span class=nx>x</span><span class=p>,</span> <span class=nx>ok</span> <span class=p>=</span> <span class=o>&lt;-</span> <span class=nx>ch</span> <span class=c1>//从channel中接收一个值，如果channel关闭了，那么ok为false（在没有defaultselect语句的前提下），在channel未关闭且为空的情况下，会阻塞
+<span class=nx>x</span><span class=p>,</span> <span class=nx>ok</span> <span class=p>=</span> <span class=o>&lt;-</span> <span class=nx>ch</span> <span class=c1>//从channel中接收一个值，如果channel已关闭，则ok为false；channel未关闭且为空时，会阻塞直到有数据
 </span><span class=c1></span>
 <span class=nb>close</span><span class=p>(</span><span class=nx>ch</span><span class=p>)</span> <span class=c1>//关闭channel
 </span><span class=c1></span>
@@ -283,7 +283,7 @@ channels, for <em>communication</em>, <em>synchronization</em> between goroutine
 </span></code></pre></div><h4 id=无缓冲区的channel>无缓冲区的channel</h4>
 <p>从无缓存的channel中读取消息会阻塞，直到goroutine向channel中发送消息；同理，向无缓存的channel 中发送消息也会阻塞，直到有goroutine从channel中读取消息。</p>
 <h4 id=有缓冲区的channel>有缓冲区的channel</h4>
-<p>有缓存的channe 的构造方式为指定make函数的第二个参数，该参数为channel缓存的容量。</p>
+<p>有缓存的channel的构造方式为指定make函数的第二个参数，该参数为channel缓存的容量。</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>ch</span> <span class=o>:=</span> <span class=nb>make</span><span class=p>(</span><span class=kd>chan</span> <span class=kt>int</span><span class=p>,</span> <span class=mi>10</span><span class=p>)</span>
 </code></pre></div><p>有缓存的channel实现了一个阻塞队列(采用环形数组实现)。当缓存未满时，向channel中发送消息时不会阻塞，当缓存满时，发送操作将被阻塞，直到有其他goroutine从中读取消息；相应的，当channel中消息不为空时，读取消息不会出现阻塞，当channel为空时，读取操作会造成阻塞，直到有goroutine向channel中写入消息。</p>
 <h4 id=只读只写的channel>只读/只写的channel</h4>
@@ -322,8 +322,8 @@ channel的数据结构表示</p>
 </span><span class=c1></span>    <span class=nx>elemtype</span> <span class=o>*</span><span class=nx>_type</span> <span class=c1>// element type： channel存放元素的类型
 </span><span class=c1></span>    <span class=nx>sendx</span>    <span class=kt>uint</span>   <span class=c1>// send index： 环形队列中下一次发送元素的索引
 </span><span class=c1></span>    <span class=nx>recvx</span>    <span class=kt>uint</span>   <span class=c1>// receive index： 环形队列中下一次接收元素的索引
-</span><span class=c1></span>    <span class=nx>recvq</span>    <span class=nx>waitq</span>  <span class=c1>// list of recv waiters  ： recv的goroutinue的等待队列
-</span><span class=c1></span>    <span class=nx>sendq</span>    <span class=nx>waitq</span>  <span class=c1>// list of send waiters  ： send的goroutinue的等待队列
+</span><span class=c1></span>    <span class=nx>recvq</span>    <span class=nx>waitq</span>  <span class=c1>// list of recv waiters  ： recv的goroutine的等待队列
+</span><span class=c1></span>    <span class=nx>sendq</span>    <span class=nx>waitq</span>  <span class=c1>// list of send waiters  ： send的goroutine的等待队列
 </span><span class=c1></span>
     <span class=c1>// lock protects all fields in hchan, as well as several
 </span><span class=c1></span>    <span class=c1>// fields in sudogs blocked on this channel.
@@ -377,8 +377,8 @@ make channel的实现</p>
 </code></pre></div><p>可以看得出来，make channel里面主要是要申请环形队列的内存块，也就是为什么channel不能用new来实现的原因了。</p>
 <p>并且make channel申请数据的堆内存，所以我们可以直接传递channel对象而不是channel的指针。</p>
 <h4 id=channel的send方法>channel的send方法</h4>
-<p>我们通过上面的图来表示发送和接受的流程，刚开始的时候，缓冲区都是空的。如果开始发送，那么变成下面这种状态，并且sendx开始累加。</p>
-<p>缓冲区发送满了以后就是这种状态：</p>
+<p>我们通过上面描述的状态流转来理解发送和接收的流程：刚开始的时候，缓冲区都是空的；开始发送后，数据进入环形队列，sendx 开始累加。</p>
+<p>缓冲区发送满了以后（sendx 追平 recvx）就会阻塞后续的发送方。</p>
 <p>channel send的源代码：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>chansend</span><span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>hchan</span><span class=p>,</span> <span class=nx>ep</span> <span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>,</span> <span class=nx>block</span> <span class=kt>bool</span><span class=p>,</span> <span class=nx>callerpc</span> <span class=kt>uintptr</span><span class=p>)</span> <span class=kt>bool</span> <span class=p>{</span>
     <span class=c1>//如果想一个nil的channel发送数据，会调用gopark将当前的goroutine休眠，
@@ -503,13 +503,12 @@ make channel的实现</p>
 </code></pre></div><p>从上面的代码可以看到基本发送流程</p>
 <ul>
 <li>获取同步锁，对缓冲队列进行加锁</li>
-<li>如果有等待的goroutinue，那么数据直接发送给这个接收goroutine，数据拷贝1次</li>
+<li>如果有等待的goroutine，那么数据直接发送给这个接收goroutine，数据拷贝1次</li>
 <li>如果缓冲队列没有满，将发送的数据拷贝到队列中，sendx加1</li>
 <li>如果缓冲队列满了，那么将发送goroutine放到发送阻塞队列中</li>
 </ul>
 <h4 id=channel的recv方法>channel的recv方法</h4>
-<p>在发送的章节，我们已经把缓冲区里面存放了数据，然后就是接受的goroutinue开始接受数据了。
-image.png</p>
+<p>在发送的章节，我们已经把缓冲区里面存放了数据，然后就是接收的goroutine开始接收数据了。</p>
 <p>直到把数据读完阻塞为止。</p>
 <p>channel recv的源代码：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kd>func</span> <span class=nf>chanrecv</span><span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>hchan</span><span class=p>,</span> <span class=nx>ep</span> <span class=nx>unsafe</span><span class=p>.</span><span class=nx>Pointer</span><span class=p>,</span> <span class=nx>block</span> <span class=kt>bool</span><span class=p>)</span> <span class=p>(</span><span class=nx>selected</span><span class=p>,</span> <span class=nx>received</span> <span class=kt>bool</span><span class=p>)</span> <span class=p>{</span>
@@ -986,15 +985,11 @@ image.png</p>
 </ul>
 <h3 id=发送和接收的阻塞>发送和接收的阻塞</h3>
 <p>我们从前面可以看到，如果发送的时候，接收端没有准备好，或者缓冲区队列是满的，那么就会将当前的goroutine阻塞，然后等待唤醒。 这个主要是涉及到了goroutine的底层模型以及调度机制，这里主要简单描述一下channel对象中sudog对象是如何工作的。</p>
-<p>image.png</p>
-<p>这里举一个发送的例子，如果给一个缓冲区已经满了的channel发送数据，就会生成一个sudog对象，sudog对象里面封装的就是发送goroutine， 这个goroutine被阻塞。
-image.png</p>
-<p>如果这时候recv的goroutine开始接受数据，那么找到被阻塞的send goroutine的sudog， 然后把sudog的队列的数据塞到缓冲区队列里面，并且激活这个sudog对象，让里面的goroutine成为runnable。
-image.png
-总结</p>
-<p>回到刚开始的那句话：
-image.png
-这个需要大家好好体会一下goroutine和channel是如何实现这个思想的，并且从分析源码中，我们可以看到使用channel对象的一些常见问题：</p>
+<p>这里举一个发送的例子，如果给一个缓冲区已经满了的channel发送数据，就会生成一个sudog对象，sudog对象里面封装的就是发送goroutine， 这个goroutine被阻塞。</p>
+<p>如果这时候recv的goroutine开始接收数据，那么找到被阻塞的send goroutine的sudog， 然后把sudog的队列的数据塞到缓冲区队列里面，并且激活这个sudog对象，让里面的goroutine成为runnable。</p>
+<p>总结</p>
+<p>回到刚开始的那句话——channel 与 goroutine 正是通过阻塞/唤醒实现了同步与通信：</p>
+<p>这个需要大家好好体会一下goroutine和channel是如何实现这个思想的，并且从分析源码中，我们可以看到使用channel对象的一些常见问题：</p>
 <ul>
 <li>给一个nil channel发送数据，造成永远阻塞</li>
 <li>从一个nil channel接收数据，造成永远阻塞</li>

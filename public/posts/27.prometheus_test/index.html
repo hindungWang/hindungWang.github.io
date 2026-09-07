@@ -243,16 +243,17 @@ September 1, 2023
 <h1 id=prometheus性能压测与高可用设计>Prometheus性能压测与高可用设计</h1>
 <h2 id=prometheus原理>Prometheus原理</h2>
 <h3 id=名词>名词</h3>
-<p><strong>Series（系列）</strong> 是指具有相同标签集的一组时间序列。它们是根据标签的组合唯一确定的。<code>&lt;指标名称>{&lt;标签键>=&lt;标签值>, ...}</code>，如：</p>
+<p><strong>Series（系列）</strong> 是<strong>指标名 + 一组唯一标签键值对</strong>，对应<strong>一条</strong>时间序列（有序 <code>(时间戳, 数值)</code> 点列）。同标签不同指标名是两个 series。如：</p>
 <pre tabindex=0><code>|&lt;------------------------Series--------------------------&gt;|
 avalanche_metric_0_0{cycle_id=&quot;0&quot;,label_key_0=&quot;label_val_0&quot;} 18
-</code></pre><p><strong>Sample（样本）</strong> 是指一个数据点，它包含了一个时间戳和相应的数值。样本是 Prometheus 时间序列数据的基本单位。每个样本都与一个唯一的时间序列(Series)标识符相关联，该标识符由一组键值对（标签）唯一确定。这些标签可以用来标识和区分不同的时间序列。<code>&lt;时间戳> &lt;数值></code>，如：</p>
+</code></pre><p><strong>Sample（样本）</strong> 是指一个数据点，它包含了一个时间戳和相应的数值。样本是 Prometheus 时间序列数据的基本单位。<code>&lt;指标名>{&lt;标签集>}</code> 唯一确定一个 series，series 下每个 <code>&lt;时间戳> &lt;数值></code> 就是一个 sample。如：</p>
 <pre tabindex=0><code>|&lt;------------------------------Series--------------------&gt;|&lt;--时间戳-&gt;|&lt;值&gt;
 avalanche_metric_0_0{cycle_id=&quot;0&quot;,label_key_0=&quot;label_val_0&quot;} @125465645  2   -&gt; 一个Sample
                                                              @125465646  5
                                                              ...
 </code></pre><h2 id=prometheus缺点>Prometheus缺点</h2>
 <p>原生Prometheus并不支持高可用，也不能做横向扩缩容，当集群规模较大时，单一Prometheus会出现性能瓶颈，无法正常采集数据。</p>
+<p>需要说明的是，这是 Prometheus 的<strong>设计选择</strong>（单机 TSDB + 生态扩展），而非缺陷：官方不做内置集群，高可用靠部署模式（双实例 + Query 去重），扩展靠分片（hashmod 抓取分流）或外部组件（Thanos / Mimir / VictoriaMetrics）。</p>
 <p>在集群场景下 单一Prometheus只能查询本地的指标，而不能跨区域查询，因此需要一个统一的管理。</p>
 <h2 id=单节点prometheus性能压测>单节点Prometheus性能压测</h2>
 <h3 id=压测环境>压测环境</h3>
@@ -326,7 +327,7 @@ avalanche_metric_0_0{cycle_id=&quot;0&quot;,label_key_0=&quot;label_val_0&quot;}
 </tr>
 </tbody>
 </table>
-<p>avalanche是一个Prometheus压测工具，可以生成特定series个数的merics。</p>
+<p>avalanche是一个Prometheus压测工具，可以生成特定series个数的metrics。</p>
 <p>target数量可以根据ServiceMonitor进行模拟。</p>
 <p>同理也可以模拟ServiceDiscovery的个数。</p>
 <h3 id=观测方法>观测方法</h3>
@@ -390,6 +391,7 @@ avalanche_metric_0_0{cycle_id=&quot;0&quot;,label_key_0=&quot;label_val_0&quot;}
 </tbody>
 </table>
 <p><strong>5000个sd时prometheus-config-reloader不停重启，导致Prometheus重启，无法观测</strong></p>
+<p>这里需要说明瓶颈归属：这是 <strong>prometheus-operator 的 config-reloader 侧瓶颈</strong>（sd 过多 → ConfigMap 过大 → reload 慢/超时 → 重启循环），而不是 Prometheus 本身——在评估监控系统负载时，要把采集端与配置下发组件区分开看。</p>
 <p>sd与endpoint比例：1:51 (0/51 active targets)</p>
 <table>
 <thead>
@@ -557,6 +559,7 @@ avalanche_metric_0_0{cycle_id=&quot;0&quot;,label_key_0=&quot;label_val_0&quot;}
 </tbody>
 </table>
 <p>总结：target数量影响负载不大，一般不会成为瓶颈，一般来说5k target已经是很巨大的集群规模了</p>
+<p>需要说明测试方法：本组 target 测试固定了每 target 的 series 数，真正该关注的量纲是"<strong>总 series 数 × 抓取频率</strong>"，target 数本身的开销远小于其承载的 series，因此结论能把 target 数与 series 总量解耦。</p>
 <h4 id=series相关性>series相关性</h4>
 <p>数据结果：</p>
 <table>
@@ -606,6 +609,8 @@ avalanche_metric_0_0{cycle_id=&quot;0&quot;,label_key_0=&quot;label_val_0&quot;}
 </tbody>
 </table>
 <p>总结：500w时内存暴增；大约 500 个节点以上集群的指标会出现内存增大</p>
+<p>需要说明测试环境边界：500w series 时节点挂掉，受限于测试环境 <strong>8C/24G + 机械盘</strong>（写速率 ~10MB/s、IOPS ~260）——500w series 时 WAL 写放大极大，瓶颈很可能是磁盘 IOPS，而不完全是 Prometheus 内存。在内存充足（active series × ~1-3KB/series）+ SSD 的场景下，单机可支撑更高的量级，因此该结论仅在上述环境边界内成立。</p>
+<p>这一结果也与理论自洽：100w series、30s 抓取、2h 一个 block = 100w × 240 samples ≈ 2.4 亿样本，gorilla 压缩后平均 ~1-2 字节/sample，约 240-480MB/block，与上文实测单块 ~400MB 吻合。</p>
 <p><em>注：目前在开发环境，三个节点的k8s集群总共有180k series，预计每个节点约60k series</em></p>
 <h2 id=thanos高可用方案以及性能压测>Thanos高可用方案以及性能压测</h2>
 <h3 id=thanos原理>Thanos原理</h3>
@@ -669,9 +674,12 @@ master03   Ready      controlplane,etcd,worker   98d   v1.23.6   192.168.231.114
 <img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/down.png alt></p>
 <h4 id=总结>总结</h4>
 <p>停掉一个节点也能保持监控不断，就不必说随机停掉一个POD的结果了，因此，正常情况下Receiver模式能够很好做到HA。</p>
-<p>历史数据出现缺失是因为挂掉的节点正好存储了那一部分的数据，没来得及存储到minio，但是不影响最新的数据，等节点启动会恢复该段数据。（可以引入compactor组件解决）</p>
-<p>这是最接近无状态的方法，远程写入具有其他风险和后果，即使崩溃，也会在积极情况下丢失几秒钟的指标数据。</p>
+<p>需要说明演练边界：本次测试只验证了"down 节点监控不断"，且<strong>未配置 Receiver hashring 副本（replication factor）</strong>——如果只做数据打散而没有副本，挂掉一个 Receiver 节点时，该段数据在恢复前同样不完整。生产环境要做到真正的 HA，需要配置 replication factor，并补上"节点恢复后数据补齐"的观测（WAL 回放 → 数据补全），才算完整闭环。</p>
+<p>历史数据出现缺失是因为挂掉的节点正好存储了那一部分的数据，没来得及存储到minio，但是不影响最新的数据，等节点启动会恢复该段数据。</p>
+<p>这里补充一下数据缺失的机制：节点 down 时，WAL 里<strong>尚未固化成 block</strong>（最近约 2h）的数据来不及上传到对象存储，因此这部分历史会暂时缺失。Compactor 的职责是降采样（downsampling）、合并小 block、清理 tombstone、按 retention 删过期数据——它<strong>不负责补数/恢复数据</strong>。节点只是重启时，WAL 会在启动时回放，数据自动恢复（Prometheus 崩溃恢复机制）；若节点/磁盘彻底丢失，最近 2h 数据确实会丢，需要通过 <strong>Receiver 多副本</strong>（remote-write 实时推送 + hashring replication factor）或<strong>双实例采集 + Query 去重</strong>来兜底。对告警实时性场景而言，告警评估用的是实时数据，丢失"最近 2h 历史"通常可以接受。</p>
+<p>在 Receiver 模式下，采集端 Prometheus <strong>仍然要写本地 WAL</strong>（先写本地再 remote-write），并非真正无状态；本地崩溃时只丢几秒（remote-write buffer），因为数据已实时推到 Receiver/对象存储。但 <strong>Receiver 本身是有状态的</strong>——hashring 上某节点挂了，该段数据在恢复前不完整，除非配置了 replication factor（副本）。真正"轻量无状态"的是 push-only 场景（avalanche 这类直接 remote-write，或 Prometheus agent mode）。</p>
 <p><em>但是使用Receiver模式占用的资源很大，组件多，从监控上看整个HA大概需要30+GiB内存和3+Core CPU</em></p>
+<p>这些额外开销来自 remote-write 接收、hashring 分发和更大的 WAL。两种模式的选型不是"谁更好"，而是取决于网络拓扑：<strong>Receiver 适合"采集端无法直连对象存储 / 边缘跨网络"的场景</strong>（用副本因子换取更小的丢失窗口）；<strong>Sidecar 适合"Prometheus 能直连对象存储"的场景</strong>（组件更少、开销更低）。</p>
 <h2 id=sidecar模式>Sidecar模式</h2>
 <h3 id=压测方法-2>压测方法</h3>
 <h4 id=100w-series-1>100w series</h4>
@@ -685,6 +693,7 @@ master03   Ready      controlplane,etcd,worker   98d   v1.23.6   192.168.231.114
 <p>资源使用情况：</p>
 <p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-300w.png alt></p>
 <p><em>由于查询走的是Thanos的Query，因此也很快P99在300ms以内</em></p>
+<p>这里的测试条件是<strong>近期数据、低并发、近 24h 范围</strong>内的查询；Thanos Query 查询对象存储中的老数据（StoreAPI）会明显变慢，历史深查询需要加 Query response cache，必要时配合 downsampling。</p>
 <h4 id=400w-series>400w series</h4>
 <p>资源使用情况：</p>
 <p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-400w.png alt></p>
@@ -694,7 +703,7 @@ master03   Ready      controlplane,etcd,worker   98d   v1.23.6   192.168.231.114
 <p><em>单节点测试时500w series同样会有这样的问题</em></p>
 <h3 id=高可用测试-1>高可用测试</h3>
 <h4 id=随机down一个节点-1>随机down一个节点</h4>
-<p>上面压测将mater02打挂了，但是监控依然在：
+<p>上面压测将master02打挂了，但是监控依然在：
 <img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-down-master02-node.png alt></p>
 <p>其他组件监控：
 <img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/sidecar-down-api-server.png alt></p>
@@ -702,14 +711,15 @@ master03   Ready      controlplane,etcd,worker   98d   v1.23.6   192.168.231.114
 <p>这并不意味着Prometheus可以完全无状态，因为如果崩溃并重新启动，将会丢失约2小时的指标数据，因此强烈建议为Prometheus提供持久磁盘。</p>
 <p><em>Sidecar模式组件少，占用的资源也相对较少，因此持久化存储+Sidecar模式是一个很好的选择</em></p>
 <p>从100w series数据结果也可以看出，receiver模式由于加载了remote-write模块，对应的内存和cpu占用比较多。而sidecar模式则不会有这些开销。</p>
-<h2 id=alertmaneger-ha>Alertmaneger HA</h2>
-<p>由于Alermanager集群可以做到告警消息的去重(Gossip协议)，因此可以直接对接到多个Prometheus实例，这样就能使用原生的PrometheusRule进行告警规则管理。</p>
+<h2 id=alertmanager-ha>Alertmanager HA</h2>
+<p>由于Alertmanager集群可以做到告警消息的去重(Gossip协议)，因此可以直接对接到多个Prometheus实例，这样就能使用原生的PrometheusRule进行告警规则管理。</p>
+<p>具体来说，Gossip（memberlist）在这里是<strong>同步机制</strong>，去重是它带来的<strong>结果</strong>：Alertmanager 集群通过 Gossip 协议同步"谁已通知过"的状态和静默（silences），从而实现<strong>同一告警只通知一次（去重）</strong>、多实例静默一致以及 flapping 抑制。</p>
 <p>Thanos提供了一个Ruler组件，用来实现与PrometheusRule相同的功能。因此对于这个集成，两种方案各有利弊：</p>
 <ul>
 <li>使用PrometheusRule可以与目前现有的业务逻辑相匹配，不用改动太多，但是由于规则是作用在Prometheus本身，因此一般只具有2h的数据（也满足了告警实时要求），对于一些特殊的告警如需要查询多个区域或者很长时间范围的情况就不支持；</li>
-<li>Thanos Ruler可以统一管理各个Prometheus产生的数据并且对接到Alertmanger，缺点就是引入新的组件，维护成本增加</li>
+<li>Thanos Ruler可以统一管理各个Prometheus产生的数据并且对接到Alertmanager，缺点就是引入新的组件，维护成本增加</li>
 </ul>
-<h3 id=alermanager压力测试>Alermanager压力测试</h3>
+<h3 id=alertmanager压力测试>Alertmanager压力测试</h3>
 <h4 id=1w-alerts>1w+ alerts</h4>
 <p>创建1w+ PrometheusRule，观察alertmanager资源使用情况：</p>
 <table>
@@ -853,6 +863,7 @@ master03   Ready      controlplane,etcd,worker   98d   v1.23.6   192.168.231.114
 </tbody>
 </table>
 <p><em>占用的cpu比较多</em></p>
+<p>需要说明：这里压的是 <strong>PrometheusRule 规则数量</strong>（1w/3w/10w/20w 条规则），而不是活跃告警数。Prometheus 默认每 15s 评估一次所有规则，<strong>每条规则 ≈ 一次查询</strong>，20w 条规则 = 每 15s 执行 20w 次查询 → CPU 打满。因此<strong>规则数量必须受控</strong>——20w 规则本身就是极端不合理的配置（正常集群只有几十到几百条），实战应使用 recording rules 预聚合、按需调整 evaluation_interval，并按集群级/应用级对规则分层。</p>
 <h4 id=20w-alerts>20w+ alerts</h4>
 <table>
 <thead>
@@ -1091,9 +1102,9 @@ dd <span class=k>if</span><span class=o>=</span>/dev/zero <span class=nv>of</spa
 </li>
 </ul>
 </li>
-<li><a href=#alertmaneger-ha>Alertmaneger HA</a>
+<li><a href=#alertmanager-ha>Alertmanager HA</a>
 <ul>
-<li><a href=#alermanager压力测试>Alermanager压力测试</a>
+<li><a href=#alertmanager压力测试>Alertmanager压力测试</a>
 <ul>
 <li><a href=#1w-alerts>1w+ alerts</a></li>
 <li><a href=#3w-alerts>3w+ alerts</a></li>

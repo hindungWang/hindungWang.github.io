@@ -234,12 +234,12 @@
   }
 
   /* 打字机效果：回复文本按码点逐字打出（安全处理 emoji/多字节），总时长自适应约 0.3~2.5s */
-  function typewriterAppend(text) {
+  function typewriterAppend(text, onDone) {
     var div = document.createElement("div");
     div.className = "gac-msg agent md";
     bodyEl.appendChild(div);
     var chars = Array.from(text || "");
-    if (chars.length === 0) { scrollToBottom(); return; }
+    if (chars.length === 0) { scrollToBottom(); if (onDone) onDone(); return; }
     var totalMs = Math.max(300, Math.min(2500, chars.length * 14));
     var step = Math.max(1, Math.ceil(chars.length / (totalMs / 16)));
     var i = 0;
@@ -247,7 +247,10 @@
       i = Math.min(chars.length, i + step);
       div.innerHTML = renderMarkdown(chars.slice(0, i).join("")); // 逐字渲染 Markdown
       scrollToBottom();
-      if (i >= chars.length) clearInterval(timer);
+      if (i >= chars.length) {
+        clearInterval(timer);
+        if (onDone) onDone();
+      }
     }, 16);
   }
 
@@ -264,6 +267,62 @@
     bodyEl.scrollTop = bodyEl.scrollHeight;
   }
 
+  /* ---------- 富内容块（blocks）渲染 ---------- */
+  function safeUrl(u) {
+    return /^https?:\/\//i.test(String(u || "")) ? String(u) : "";
+  }
+  function gameCardHtml(b) {
+    var cover = safeUrl(b.cover);
+    var video = safeUrl(b.video);
+    var offPct = "";
+    if (b.origin_price > 0 && b.price > 0 && b.price < b.origin_price) {
+      offPct = "-" + Math.round((1 - b.price / b.origin_price) * 100) + "%";
+    }
+    var h = '<div class="gac-card">';
+    if (cover) {
+      h += '<div class="gac-card-cover"><img src="' + cover + '" alt="' + escapeHtml(b.name || "") + '" loading="lazy">';
+      if (offPct) h += '<div class="gac-card-off">' + offPct + "</div>";
+      h += "</div>";
+    } else if (offPct) {
+      h += '<div class="gac-card-off-float">' + offPct + "</div>";
+    }
+    h += '<div class="gac-card-body">';
+    h += '<div class="gac-card-name">' + escapeHtml(b.name || "") + "</div>";
+    if (b.en_name) h += '<div class="gac-card-en">' + escapeHtml(b.en_name) + "</div>";
+    if (b.price > 0) {
+      h += '<div class="gac-card-prices"><span class="gac-card-now">¥' + escapeHtml(String(b.price)) + "</span>";
+      if (b.origin_price > 0) h += '<span class="gac-card-old">¥' + escapeHtml(String(b.origin_price)) + "</span>";
+      h += "</div>";
+    }
+    h += '<div class="gac-card-chips">';
+    if (b.rating) h += '<span class="gac-card-chip">⭐ ' + escapeHtml(String(b.rating)) + "</span>";
+    if (b.platform) h += '<span class="gac-card-chip">' + escapeHtml(String(b.platform)) + "</span>";
+    if (b.remaining) h += '<span class="gac-card-chip">⏳ ' + escapeHtml(String(b.remaining)) + "</span>";
+    h += "</div>";
+    if (video) {
+      h += '<a class="gac-card-btn" href="' + video + '" target="_blank" rel="noopener noreferrer">🎬 看预告 / 演示</a>';
+    }
+    h += "</div></div>";
+    return h;
+  }
+  function renderBlocks(blocks) {
+    if (!Array.isArray(blocks) || blocks.length === 0) return;
+    var wrap = document.createElement("div");
+    wrap.className = "gac-blocks";
+    blocks.forEach(function (b) {
+      var div = document.createElement("div");
+      div.className = "gac-block gac-block-" + (b && b.type ? escapeHtml(String(b.type)) : "unknown");
+      if (b && b.type === "game_card") {
+        div.innerHTML = gameCardHtml(b);
+      } else {
+        div.textContent = JSON.stringify(b); // 未知块降级为文本
+      }
+      wrap.appendChild(div);
+    });
+    bodyEl.appendChild(wrap);
+    scrollToBottom();
+  }
+
   /* ---------- 网络层 ---------- */
   function headers() {
     return {
@@ -275,7 +334,7 @@
   async function sendMessage(text) {
     if (mockEnabled()) {
       await sleep(CONFIG.mockDelayMs);
-      return mockReply(text);
+      return { reply: mockReply(text), blocks: [] };
     }
 
     var url = CONFIG.baseUrl.replace(/\/+$/, "") + CONFIG.chatEndpoint;
@@ -307,10 +366,10 @@
     if (CONFIG.replyMode === "poll") {
       return await pollReply(data.id);
     }
-    if (typeof data.reply === "string") return data.reply;
-    if (data.reply) return JSON.stringify(data.reply);
+    if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [] };
+    if (data.reply) return { reply: JSON.stringify(data.reply), blocks: [] };
     if (data.error) throw new Error(data.error);
-    return JSON.stringify(data);
+    return { reply: JSON.stringify(data), blocks: [] };
   }
 
   async function pollReply(id) {
@@ -329,8 +388,8 @@
         });
         if (!resp.ok) { lastErr = new Error("HTTP " + resp.status); continue; }
         var data = await resp.json().catch(function () { return {}; });
-        if (typeof data.reply === "string") return data.reply;
-        if (data.status === "done" && data.result) return data.result;
+        if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [] };
+        if (data.status === "done" && data.result) return { reply: data.result, blocks: [] };
         lastErr = null; // 一次成功的轮询清除之前的瞬时错误
       } catch (e) {
         // 瞬时网络/CORS 抖动（如网关边缘偶发错误页）：继续轮询，不中断整个对话
@@ -389,9 +448,12 @@
 
     var typing = showTyping();
     sendMessage(text)
-      .then(function (reply) {
+      .then(function (res) {
         typing.remove();
-        typewriterAppend(reply); // 回复逐字打出
+        // 回复逐字打出，完成后渲染富块（游戏卡片等）
+        typewriterAppend(res.reply, function () {
+          renderBlocks(res.blocks || []);
+        });
         statusEl.textContent = "· 在线";
       })
       .catch(function (err) {

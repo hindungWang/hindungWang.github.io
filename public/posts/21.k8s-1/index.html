@@ -286,7 +286,7 @@ June 1, 2021
 每个控制器通过kube-apiserver组件提供的接口实时监控整个集群每个资源对象的当前状态，当因发生各种故障而导致系统状态出现变化时，会尝试将系统状态修复到“期望状态”。</li>
 </ul>
 <h2 id=scheduler>Scheduler</h2>
-<p>负责调度POD在某个节点上运行。Kubelet上报节点信息，Scheduler通过监控这些信息，当有新的POD需要调度时，会根据这些节点信息进行调度算法计算最有节点。</p>
+<p>负责调度POD在某个节点上运行。Kubelet上报节点信息，Scheduler通过监控这些信息，当有新的POD需要调度时，会根据这些节点信息进行调度算法计算最优节点。</p>
 <p>调度算法分为两种，分别为预选调度算法和优选调度算法。除调度策略外，Kubernetes还支持优先级调度、抢占机制及亲和性调度等功能。</p>
 <p>kube-scheduler组件支持高可用性（即多实例同时运行），即基于Etcd集群上的分布式锁实现领导者选举机制，多实例同时运行，通过kube-apiserver提供的资源锁进行选举竞争。抢先获取锁的实例被称为Leader节点（即领导者节点），并运行kube-scheduler组件的主逻辑；而未获取锁的实例被称为Candidate节点（即候选节点），运行时处于阻塞状态。在Leader节点因某些原因退出后，Candidate节点则通过领导者选举机制参与竞选，成为Leader节点后接替kube-scheduler的工作。</p>
 <h2 id=kubelet>Kubelet</h2>
@@ -314,7 +314,7 @@ June 1, 2021
 <p>具体可以参考：<a href=https://kubernetes.io/zh/docs/concepts/services-networking/service/>services-networking</a></p>
 <h2 id=cri容器运行时组件>CRI容器运行时组件</h2>
 <p>CRI 在 Kubernetes 1.5 中引入，充当kubelet和容器运行时之间的桥梁。</p>
-<p>即kubelet需要跟Contaner Runtime交互去管理容器的生命周期。</p>
+<p>即kubelet需要跟Container Runtime交互去管理容器的生命周期。</p>
 </div>
 <div class=prev-next>
 </div><svg id="btt-button" class="arrow-logo" xmlns="http://www.w3.org/2000/svg" height="1em" viewBox="0 0 384 512" onclick="scrollToTop()" title="Go to top"><path d="M177 159.7l136 136c9.4 9.4 9.4 24.6.0 33.9l-22.6 22.6c-9.4 9.4-24.6 9.4-33.9.0L160 255.9l-96.4 96.4c-9.4 9.4-24.6 9.4-33.9.0L7 329.7c-9.4-9.4-9.4-24.6.0-33.9l136-136c9.4-9.5 24.6-9.5 34-.1z"/></svg>

@@ -257,7 +257,7 @@ March 15, 2025
 <li>创建虚拟机</li>
 <li>加安全组</li>
 <li>配置安全组规则，挂载LB</li>
-<li>B端口配置、会话保持、健康检查配置</li>
+<li>LB端口配置、会话保持、健康检查配置</li>
 </ul>
 <p>使用 Terraform 的方式：</p>
 <ul>
@@ -287,7 +287,7 @@ March 15, 2025
 <li>支持运算操作</li>
 <li>数据结构丰富</li>
 </ul>
-<p>语法开起来和NGINX的配置差不多。它以.tf文件名为结尾。
+<p>语法看起来和NGINX的配置差不多。它以.tf文件名为结尾。
 有良好的可读性，比如右边的配置，这个resource表示一个aws vpc资源，并给他设置一个地址块；</p>
 <p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315124504.png alt></p>
 <p><em>Block代表某种对象的配置，如资源。Argument为一个名称分配一个值。Expresssion表示一个值，可以是字面意思，也可以是通过引用和组合其他值。</em></p>
@@ -362,7 +362,7 @@ Terraform支持三种集合：
 这个插件定义了两个接口Plugin和GRPC Plugin，定义了服务端和客户端的RPC方法，插件的提供者需要实现Server方法，而插件的使用者需要实现Client方法。
 Terraform实现的是基于GRPC的插件接口。</p>
 <h4 id=关键结构体>关键结构体</h4>
-<p>Plugin.ClientConfig结构体用于舒适化一个插件客户端所需的配置信息，包含了与服务端链接的握手信息，命令行等信息。
+<p>Plugin.ClientConfig结构体用于初始化一个插件客户端所需的配置信息，包含了与服务端链接的握手信息，命令行等信息。
 包含了插件路径，端口范围等等，一旦插件Client被创建这些信息都不可修改。
 Cmd结构体用于启动二进制插件的命令行，里面记录了该进程的信息。
 同时，插件的Server端也有类似的结构体用于初始化一个插件服务端进程，</p>
@@ -413,7 +413,7 @@ TF_PLUGIN_MAGIC_COOKIE=d602bf8f19cb4ca9872b2</p>
 <span class=p>}</span>
 </code></pre></div><p>data_source用于检索资源，同步云上的资源状态到本地并作为数据源，以供其他资源引用。
 通过定义data_source的Schema来定义、识别、引用和存储云上数据资源的属性。
-dataSourceVirtualMachineRead方法则是我们要实现的查询改资源的方法</p>
+dataSourceVirtualMachineRead方法则是我们要实现的查询该资源的方法</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=kn>package</span> <span class=nx>wincloud</span>
 <span class=kn>import</span> <span class=p>(</span>
 	<span class=s>&#34;context&#34;</span>
@@ -665,9 +665,9 @@ dataSourceVirtualMachineRead方法则是我们要实现的查询改资源的方�
         └── external/           脚本文件
                  └── name-generator.py
 
-</code></pre></div><p>Terraform会遍历当前目录下所有以.tf为结尾的文件并解析，而.var结尾的文件会被当做是变量的赋值文件（类似于helm chart的Value.yaml文件）。</p>
-<p>Modle 模块是包含一组Terraform代码的文件夹。为了更好的重用我们的代码，可以把这些tf文件打包成一个模块。
-Root Model：即是执行Terraform plan/apply命令的文件夹。
+</code></pre></div><p>Terraform会遍历当前目录下所有以.tf为结尾的文件并解析，而以.tfvars（含.auto.tfvars）结尾的文件会被当做是变量的赋值文件（类似于helm chart的values.yaml文件）。</p>
+<p>Module 模块是包含一组Terraform代码的文件夹。为了更好的重用我们的代码，可以把这些tf文件打包成一个模块。
+Root Module：即是执行Terraform plan/apply命令的文件夹。
 如果模块含有多个嵌入模块，那么应避免它们彼此之间的引用，由根模块负责组合它们。一个examples文件夹用来给出一个调用样例。</p>
 <p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/20250315132154.png alt></p>
 <p>使用模块只需要在tf文件中添加model代码块：

@@ -305,7 +305,7 @@ April 1, 2021
 <span class=p>}</span>
 </code></pre></div><p>代码存在问题：1、每次发请求都会创建一次连接；2、请求结束后没有及时释放连接；3、导致tcp连接暴涨</p>
 <p>原因：实例化transport时没有处理连接池问题，导致每次初始化都会使用新的连接。如果没有默认transport，实例化的client会使用一个default的transport，并且已经实现了池化。</p>
-<p>此外，如果请求的body没有完全读出，将会导致tcp连接不能服用。</p>
+<p>此外，如果请求的body没有完全读出，将会导致tcp连接不能复用。</p>
 <h2 id=野生goroutine没有recover导致整个程序退出>野生goroutine没有recover导致整个程序退出</h2>
 <p>使用gin时虽然会有上层的recover会对panic异常做兜底，但是对于自己定义的goroutine如果没有做recover就会导致整个程序垮掉：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>r</span><span class=p>.</span><span class=nf>GET</span><span class=p>(</span><span class=s>&#34;/panic1&#34;</span><span class=p>,</span> <span class=kd>func</span> <span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>gin</span><span class=p>.</span><span class=nx>Context</span><span class=p>)</span> <span class=p>{</span>
@@ -348,10 +348,11 @@ April 1, 2021
 	<span class=k>for</span> <span class=nx>i</span> <span class=o>:=</span> <span class=mi>0</span><span class=p>;</span> <span class=nx>i</span> <span class=p>&lt;</span> <span class=mi>10</span><span class=p>;</span> <span class=nx>i</span><span class=o>++</span><span class=p>{</span>
 		<span class=c1>//fmt.Printf(&#34;i=%d\n&#34;, i)
 </span><span class=c1></span>		<span class=nx>b</span> <span class=o>:=</span> <span class=p>[]</span><span class=nb>byte</span><span class=p>(</span><span class=s>&#34;id2&#34;</span><span class=p>)</span>
-		<span class=c1>// 字面值为 id2，map计算 hash 时使用该字面值，即 b 的内容 &#34;id2&#34;
-</span><span class=c1></span>		<span class=c1>// 从而 ，每次计算的是 hash(&#34;id2&#34;)，但实际内存中的值是 &#34;id1&#34;，
-</span><span class=c1></span>		<span class=c1>// 从而每次 hash都会分配不同的桶存储 k/v，但实际 k 的值为 &#34;id1&#34;
-</span><span class=c1></span>		<span class=c1>// *str 直接指向 b 的内存，再转成 *string，再取值
+		<span class=c1>// 坑：b 是局部变量，每次循环复用同一块底层数组。
+</span><span class=c1></span>		<span class=c1>// 字符串转换 *(*string)(unsafe.Pointer(&amp;b)) 让 string 的 data 指针直接指向 b 的底层数组，
+</span><span class=c1></span>		<span class=c1>// 而 b 的内容在下一轮循环被覆盖成 &#34;id1&#34;，于是 map 里存的 key 引用着同一块被反复改写的内存，
+</span><span class=c1></span>		<span class=c1>// 最终所有 key 的值都会变成最后一次写入的 &#34;id1&#34;（map 计算 hash 用字面值 &#34;id2&#34;，取 key 却是 &#34;id1&#34;）。
+</span><span class=c1></span>		<span class=c1>// 正确做法：每次循环用 string(b) 拷贝一份独立的字符串。
 </span><span class=c1></span>		<span class=nx>str</span> <span class=o>:=</span> <span class=o>*</span><span class=p>(</span><span class=o>*</span><span class=kt>string</span><span class=p>)(</span><span class=nx>unsafe</span><span class=p>.</span><span class=nf>Pointer</span><span class=p>(</span><span class=o>&amp;</span><span class=nx>b</span><span class=p>))</span>
 		<span class=nx>m</span><span class=p>[</span><span class=nx>str</span><span class=p>]</span><span class=o>++</span>
 		<span class=nx>b</span><span class=p>[</span><span class=mi>2</span><span class=p>]</span> <span class=p>=</span> <span class=sc>&#39;1&#39;</span>  <span class=c1>// 修改指向的内存的值，变为 id1

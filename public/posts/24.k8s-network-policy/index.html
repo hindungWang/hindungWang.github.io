@@ -323,7 +323,7 @@ November 15, 2023
 </span><span class=w>            </span><span class=nt>cidr</span><span class=p>:</span><span class=w> </span><span class=m>172.17.0.0</span><span class=l>/16</span><span class=w>
 </span><span class=w>            </span><span class=nt>except</span><span class=p>:</span><span class=w> </span><span class=c># 排除</span><span class=w>
 </span><span class=w>            </span>- <span class=m>172.17.1.0</span><span class=l>/24</span><span class=w>
-</span></code></pre></div><p>默认情况下，规则的生效是<code>只允许</code>策略，规则声明则允许，规则外的默认阻塞。即：<code>只允许</code>从含有<code>user: alice</code>标签的命名空间中含有<code>role: client</code>标签的pod并且ip为<code>172.17.0.0/16</code>且不能在<code>172.17.1.0/24</code>范围内的流量<code>进来</code>。</p>
+</span></code></pre></div><p>默认情况下，规则的生效是<code>只允许</code>策略，规则声明则允许，规则外的默认阻塞。需要注意：上面 <code>from</code> 列表中的 <code>namespaceSelector</code>、<code>podSelector</code>、<code>ipBlock</code> 三项是**「或（OR）」关系**——只要命中其中任意一项的流量就会被放行，而不是同时满足。若希望多个条件同时满足，需把它们放在同一个 <code>podSelector</code>/<code>namespaceSelector</code> 项内或用多条规则叠加。</p>
 <h3 id=默认策略>默认策略</h3>
 <p>默认情况下，如果名字空间中不存在任何策略，则所有进出该名字空间中 Pod 的流量都被允许。</p>
 <h3 id=更改默认策略>更改默认策略</h3>

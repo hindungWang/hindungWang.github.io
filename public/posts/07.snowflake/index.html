@@ -276,7 +276,7 @@ August 27, 2020
 <p>了解了唯一ID的结构之后就可以简单实现雪花算法（伪代码）：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>machineID</span>  <span class=err>#</span> <span class=nx>机器ID</span>
 <span class=nx>n</span>          <span class=err>#</span> <span class=nx>递增序列</span>
-<span class=nx>now</span> <span class=o>:=</span> <span class=nf>time</span><span class=p>().</span><span class=nf>now</span><span class=p>().</span><span class=nf>Unix</span><span class=p>()</span>
+<span class=nx>now</span> <span class=o>:=</span> <span class=nx>time</span><span class=p>.</span><span class=nf>Now</span><span class=p>().</span><span class=nf>Unix</span><span class=p>()</span>
 <span class=k>if</span> <span class=nx>now</span> <span class=o>==</span> <span class=nx>last</span> <span class=p>{</span>    <span class=err>#</span> <span class=nx>如果是同1毫秒内</span>
    <span class=nx>n</span><span class=o>++</span>              <span class=err>#</span> <span class=nx>自增1</span>
    <span class=k>if</span> <span class=nx>n</span> <span class=p>&gt;</span> <span class=mi>4095</span> <span class=p>{</span>    <span class=err>#</span> <span class=nx>超过4095</span><span class=err>，</span><span class=nx>则等待下一毫秒</span>

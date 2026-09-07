@@ -241,7 +241,7 @@ May 16, 2021
 </div>
 <div class=post-content>
 <h2 id=前言>前言</h2>
-<p><a href>前面🔗</a>说过，Cond实现了一个条件变量，是等待或宣布一个事件发生的goroutines的汇合点。</p>
+<p><a href=/posts/13.go-sync-type/>上一篇文章：Go源码解读之sync中的基本类型和使用场景</a> 里提过，Cond实现了一个条件变量，是等待或宣布一个事件发生的goroutines的汇合点。</p>
 <p>就是说，使用sync.Cond可以做到多个协程等待某个协程通知的场景。</p>
 <p>使用channel可以实现一读一写的场景，而Cond则实现多读一写的场景。</p>
 <h2 id=源码解析>源码解析</h2>
@@ -256,12 +256,13 @@ May 16, 2021
 <span class=c1>// 等待L的解锁并挂起goroutine
 </span><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>Cond</span><span class=p>)</span> <span class=nf>Wait</span><span class=p>()</span> <span class=p>{}</span>
 
-<span class=c1>// 唤醒1个因c阻塞的goroutine，
-</span><span class=c1>// 如果在Signal之后才Wait会导致all goroutines are asleep - deadlock
+<span class=c1>// 唤醒1个因c阻塞的goroutine
+</span><span class=c1>// 注意：如果目标 goroutine 尚未进入 Wait（即 Signal 发生在 Wait 之前），
+</span><span class=c1>// 这次 Signal 会丢失；若此后没有其他协程再唤醒，可能造成 all goroutines are asleep - deadlock
 </span><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>Cond</span><span class=p>)</span> <span class=nf>Signal</span><span class=p>()</span> <span class=p>{}</span>
 
 <span class=c1>// 唤醒所有因c阻塞的goroutine
-</span><span class=c1>// 如果在Broadcast之后才Wait会导致all goroutines are asleep - deadlock
+</span><span class=c1>// 同理，若在 Broadcast 之后才 Wait，后续进入 Wait 的协程可能永远等不到唤醒
 </span><span class=c1></span><span class=kd>func</span> <span class=p>(</span><span class=nx>c</span> <span class=o>*</span><span class=nx>Cond</span><span class=p>)</span> <span class=nf>Broadcast</span><span class=p>()</span> <span class=p>{}</span>
 </code></pre></div><p>因此，在Signal或者Broadcast前要先保证目标的协程已经进入了Wait状态，否则会导致死锁。因为Signal或者Broadcast只唤醒当前正在被Wait阻塞的协程。</p>
 <p><a href=https://go.googlesource.com/go/+/go1.16.4/src/sync/cond.go#21>Cond的定义</a>：</p>

@@ -285,7 +285,7 @@ June 12, 2024
 <p>方法签名：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=c1>// ctx 上下文，可以传入带有超时控制的 ctx
 </span><span class=c1>// interval 执行 condition 的之间间隔
-</span><span class=c1>// immediate 当 condition 返回 ture, nil 时是否立即停止轮训
+</span><span class=c1>// immediate 当 condition 返回 true, nil 时是否立即停止轮询
 </span><span class=c1>// condition 被执行的函数
 </span><span class=c1></span><span class=kd>func</span> <span class=nf>PollUntilContextCancel</span><span class=p>(</span><span class=nx>ctx</span> <span class=nx>context</span><span class=p>.</span><span class=nx>Context</span><span class=p>,</span> <span class=nx>interval</span> <span class=nx>time</span><span class=p>.</span><span class=nx>Duration</span><span class=p>,</span> <span class=nx>immediate</span> <span class=kt>bool</span><span class=p>,</span> <span class=nx>condition</span> <span class=nx>ConditionWithContextFunc</span><span class=p>)</span> <span class=kt>error</span> <span class=p>{</span>
 <span class=p>}</span>

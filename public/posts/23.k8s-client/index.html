@@ -3,17 +3,17 @@
 <meta name=viewport content="width=device-width,initial-scale=1">
 <style>:root{--accent-color:#FF4D4D;--font-size:1.1rem}</style>
 <title>K8s client-go初始化的几种方法</title>
-<meta name=description content="经常用到的集中k8s client的初始化方法，这里总结备忘📝一下">
+<meta name=description content="经常用到的几种k8s client的初始化方法，这里总结备忘📝一下">
 <meta name=keywords content="blog,gokarna,hugo,Kubernetes,Go">
 <meta property="og:url" content="https://hindungwang.github.io/posts/23.k8s-client/">
 <meta property="og:type" content="website">
 <meta property="og:title" content="K8s client-go初始化的几种方法">
-<meta property="og:description" content="经常用到的集中k8s client的初始化方法，这里总结备忘📝一下">
+<meta property="og:description" content="经常用到的几种k8s client的初始化方法，这里总结备忘📝一下">
 <meta property="og:image" content="https://github.com/hindungWang.png">
 <meta property="og:image:secure_url" content="https://github.com/hindungWang.png">
 <meta name=twitter:card content="summary_large_image">
 <meta name=twitter:title content="K8s client-go初始化的几种方法">
-<meta name=twitter:description content="经常用到的集中k8s client的初始化方法，这里总结备忘📝一下">
+<meta name=twitter:description content="经常用到的几种k8s client的初始化方法，这里总结备忘📝一下">
 <meta property="twitter:domain" content="https://hindungwang.github.io/posts/23.k8s-client/">
 <meta property="twitter:url" content="https://hindungwang.github.io/posts/23.k8s-client/">
 <meta name=twitter:image content="https://github.com/hindungWang.png">
@@ -231,7 +231,7 @@
 <div class="post container">
 <div class=post-header-section>
 <h1>K8s client-go初始化的几种方法</h1>
-<small role=doc-subtitle>经常用到的集中k8s client的初始化方法，这里总结备忘📝一下</small>
+<small role=doc-subtitle>经常用到的几种k8s client的初始化方法，这里总结备忘📝一下</small>
 <p class=post-date>
 July 19, 2022
 </p>
@@ -250,7 +250,7 @@ July 19, 2022
 <p>可以通过ClientSet客户端获得：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>client</span> <span class=o>:=</span> <span class=nx>cli</span><span class=p>.</span><span class=nf>CoreV1</span><span class=p>().</span><span class=nf>RESTClient</span><span class=p>().(</span><span class=o>*</span><span class=nx>rest</span><span class=p>.</span><span class=nx>RESTClient</span><span class=p>)</span>
 </code></pre></div><h3 id=clientset>ClientSet</h3>
-<p>Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要制定Group、Version，然后根据Resource获取。</p>
+<p>Clientset是调用Kubernetes资源对象最常用的client，可以操作所有的资源对象，包含RESTClient。需要指定Group、Version，然后根据Resource获取。</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>clientset</span><span class=p>,</span><span class=nx>err</span> <span class=o>:=</span> <span class=nx>kubernetes</span><span class=p>.</span><span class=nf>NewForConfig</span><span class=p>(</span><span class=nx>config</span><span class=p>)</span>
 <span class=nx>sa</span><span class=p>,</span> <span class=nx>err</span> <span class=o>:=</span> <span class=nx>clientset</span><span class=p>.</span><span class=nf>CoreV1</span><span class=p>().</span><span class=nf>ServiceAccounts</span><span class=p>(</span><span class=s>&#34;kube-system&#34;</span><span class=p>).</span><span class=nf>Get</span><span class=p>(</span><span class=s>&#34;kube-shell-admin&#34;</span><span class=p>,</span> <span class=nx>metav1</span><span class=p>.</span><span class=nx>GetOptions</span><span class=p>{})</span>
 </code></pre></div><h3 id=dynamicclient>DynamicClient</h3>
@@ -259,7 +259,7 @@ July 19, 2022
 <span class=nx>gvr</span> <span class=o>:=</span> <span class=nx>schema</span><span class=p>.</span><span class=nx>GroupVersionResource</span><span class=p>{</span><span class=nx>Version</span><span class=p>:</span> <span class=s>&#34;v1&#34;</span><span class=p>,</span><span class=nx>Resource</span><span class=p>:</span> <span class=s>&#34;pods&#34;</span><span class=p>}</span>
 <span class=nx>unstructObjList</span><span class=p>,</span><span class=nx>err</span> <span class=o>:=</span> <span class=nx>dynamicClient</span><span class=p>.</span><span class=nf>Resource</span><span class=p>(</span><span class=nx>gvr</span><span class=p>).</span><span class=nf>Namespace</span><span class=p>(</span><span class=s>&#34;dev&#34;</span><span class=p>).</span><span class=nf>List</span><span class=p>(</span><span class=nx>context</span><span class=p>.</span><span class=nf>TODO</span><span class=p>(),</span><span class=nx>metav1</span><span class=p>.</span><span class=nx>ListOptions</span><span class=p>{</span><span class=nx>Limit</span><span class=p>:</span> <span class=mi>100</span><span class=p>})</span>
 </code></pre></div><h3 id=discoveryclient>DiscoveryClient</h3>
-<p>DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用户本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DisconversyClient实现的。</p>
+<p>DiscoveryClient是发现客户端，主要用于发现kubernetes API Server所支持的资源组、资源版本、资源信息。除此之外，还可以将这些信息存储到本地，用于本地缓存，以减轻对Kubernetes API Server访问的压力。 kubectl的api-versions和api-resources命令输出也是通过DiscoveryClient实现的。</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-go data-lang=go><span class=nx>discoveryClient</span><span class=p>,</span><span class=nx>err</span> <span class=o>:=</span> <span class=nx>discovery</span><span class=p>.</span><span class=nf>NewDiscoveryClientForConfig</span><span class=p>(</span><span class=nx>config</span><span class=p>)</span>
 <span class=nx>APIGroup</span><span class=p>,</span><span class=nx>APIResourceListSlice</span><span class=p>,</span><span class=nx>err</span> <span class=o>:=</span> <span class=nx>discoveryClient</span><span class=p>.</span><span class=nf>ServerGroupsAndResources</span><span class=p>()</span>
 </code></pre></div><p>这几种客户端的初始化都涉及到了入参config，即<code>*rest.Config</code>，这个是用于初始化客户端的所有配置信息。</p>

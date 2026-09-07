@@ -269,7 +269,7 @@ May 11, 2021
 <li>当给定key的条目仅被写入一次却被读取多次时，例如在仅增长的高速缓存中</li>
 <li>当多个goroutine读取，写入和覆盖的key都不相关时</li>
 </ul>
-<p>在这两种情况下，与与单独的Mutex或RWMutex + map 相比，使用Map可以显着减少锁争用。</p>
+<p>在这两种情况下，与单独的Mutex或RWMutex + map 相比，使用Map可以显着减少锁争用。</p>
 <h2 id=syncmutex>sync.Mutex</h2>
 <p>Mutex是一个相互排斥的锁。Mutex的零值是一个解锁的Mutex。</p>
 <p>当调用Lock方法进行加锁时，如果锁已在使用中，则goroutine会阻塞，直到锁可用为止。

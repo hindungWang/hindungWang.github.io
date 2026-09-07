@@ -323,7 +323,7 @@ July 23, 2020
 <tr>
 <td>ENTRYPOINT</td>
 <td style=text-align:right>容器入口点，不可被<code>docker run</code>覆盖</td>
-<td style=text-align:center><code>ENTRYPOIN</code>T [“executable”, “param1”, “param2”]或<code>ENTRYPOINT command param1 param2</code></td>
+<td style=text-align:center><code>ENTRYPOINT</code> [“executable”, “param1”, “param2”]或<code>ENTRYPOINT command param1 param2</code></td>
 <td style=text-align:center><code>ENTRYPOINT entrypoint.sh</code></td>
 </tr>
 <tr>
@@ -355,7 +355,7 @@ July 23, 2020
 </span><span class=se></span>    <span class=o>&amp;&amp;</span> make <span class=se>\
 </span><span class=se></span>    <span class=o>&amp;&amp;</span> make install <span class=se>\ </span>     <span class=err>
 </span><span class=err></span>    <span class=o>&amp;&amp;</span> rm -rf /usr/src/*      <span class=c1># 在哪层引入，就在哪层清理</span><span class=err>
-</span></code></pre></div><p>此外，如果在<code>ADD</code>，<code>COPY</code>指令中添加了多余的文件，此后在其他层删除掉改文件或文件夹虽然文件删除了，但是镜像大小是不变或增加的：</p>
+</span></code></pre></div><p>此外，如果在<code>ADD</code>，<code>COPY</code>指令中添加了多余的文件，此后在其他层删除掉该文件或文件夹虽然文件删除了，但是镜像大小是不变或增加的：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-Dockerfile data-lang=Dockerfile><span class=k>FROM</span><span class=s> busybox</span><span class=err>
 </span><span class=err></span><span class=k>ADD</span> . /root        <span class=c1># busytest0 157MB</span><span class=err>
 </span><span class=err></span><span class=k>RUN</span> rm -rf /root   <span class=c1># busytest1 157MB</span><span class=err>
@@ -390,7 +390,7 @@ July 23, 2020
 </span></code></pre></div><p>分阶段构建有时候对一些<code>C</code>程序和大型的<code>Go</code>程序来说，凡是有依赖动态运行库的程序进行分阶段构建就很头疼，因为复制过来的可执行文件可能需要某个动态库的支持。</p>
 <p>与之相对的解决办法是：静态编译或者复制动态库。</p>
 <p>静态编译是一个不错的方法，但是如果某种原因不适合静态编译，比如分阶段编译等等，这就需要拷贝库文件了。</p>
-<p>就像某些程序，编译出来的可执行文件只有十几<code>kb</code>，其他的都是以动态库的形势存在，那么怎么寻找应用对应的依赖库呢？</p>
+<p>就像某些程序，编译出来的可执行文件只有十几<code>kb</code>，其他的都是以动态库的形式存在，那么怎么寻找应用对应的依赖库呢？</p>
 <p>使用<code>ldd</code>命令，该命令可以查询对应的库文件：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-shell data-lang=shell><span class=c1># ldd /usr/local/freeswitch/bin/freeswitch</span>
         linux-vdso.so.1 <span class=o>=</span>&gt;  <span class=o>(</span>0x00007ffd0bb61000<span class=o>)</span>
@@ -563,7 +563,7 @@ Count   Total Space  Path                                    -rwxr-xr-x         
 <td style=text-align:right>33</td>
 <td style=text-align:center>67.21</td>
 <td style=text-align:center>稳定版本</td>
-<td style=text-align:center>dpkg/apt，pacman</td>
+<td style=text-align:center>dnf/yum，rpm</td>
 </tr>
 <tr>
 <td>-</td>

@@ -287,3 +287,34 @@
 .gac-msg.md p { margin: 4px 0; }
 .gac-msg.md > *:first-child { margin-top: 0; }
 .gac-msg.md > *:last-child { margin-bottom: 0; }
+
+/* ---- 富内容块：游戏卡片（game_card） ---- */
+.gac-block { margin: 4px 0 12px; }
+.gac-card {
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--gac-bg);
+  border: 1px solid var(--gac-border);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+}
+.gac-card-cover { position: relative; }
+.gac-card-cover img { width: 100%; display: block; height: auto; max-height: 260px; object-fit: cover; }
+.gac-card-off {
+  position: absolute; right: 10px; top: 10px;
+  background: #e03333; color: #fff; font-weight: 800; font-size: 20px;
+  padding: 3px 10px; border-radius: 8px; transform: rotate(3deg);
+}
+.gac-card-off-float { margin: 8px 0 0 8px; display: inline-block; background: #e03333; color:#fff; font-weight:800; padding: 3px 10px; border-radius: 8px; }
+.gac-card-body { padding: 12px 14px 14px; }
+.gac-card-name { font-size: 17px; font-weight: 800; color: var(--gac-bubble-agent-text); }
+.gac-card-en { font-size: 11px; opacity: 0.55; letter-spacing: 1px; margin: 2px 0 8px; }
+.gac-card-prices { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
+.gac-card-now { color: #ffd23f; font-size: 22px; font-weight: 900; }
+.gac-card-old { color: #8a8f98; text-decoration: line-through; font-size: 13px; }
+.gac-card-chips { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
+.gac-card-chip { background: rgba(127, 127, 127, 0.16); padding: 2px 9px; border-radius: 10px; }
+.gac-card-btn {
+  display: block; text-align: center; margin-top: 10px; padding: 8px;
+  border-radius: 8px; background: #2f6f4f; color: #fff; font-size: 13px; text-decoration: none;
+}
+.gac-card-btn:hover { filter: brightness(1.1); }

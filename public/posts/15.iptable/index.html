@@ -245,7 +245,7 @@ June 1, 2021
 <p>参考<a href=https://zh.wikipedia.org/wiki/Iptables>维基百科</a>：iptables是运行在用户空间的应用软件，通过控制Linux内核netfilter模块，来管理网络数据包的处理和转发。</p>
 <h2 id=iptables规则>iptables规则</h2>
 <p>iptables主要有raw、mangle、filter、nat这几个表，对应几个规则：PREROUTING 、INPUT 、FORWARD 、OUTPUT、POSTROUTING 。</p>
-<p>NAT 包括 SNAT （源地址转换）和 DNAT （目的地址转换）。两者的区别在于做地址转换是在路由前还是路由后，SNAT和DNAT总是成对出现的。</p>
+<p>NAT 包括 SNAT （源地址转换）和 DNAT （目的地址转换）。SNAT 修改报文的源地址，作用于 POSTROUTING 链（路由后、发出前）；DNAT 修改报文的目的地址，作用于 PREROUTING 链（路由前）。两者通常配合使用以实现双向通信，但<strong>并非总是成对出现</strong>——例如仅做内网出口上网时只需 SNAT，仅做端口映射时只需 DNAT。</p>
 <p>对应的含义可以简单理解为：</p>
 <table>
 <thead>
@@ -256,11 +256,6 @@ June 1, 2021
 </tr>
 </thead>
 <tbody>
-<tr>
-<td style=text-align:left>表名</td>
-<td style=text-align:left>用途</td>
-<td style=text-align:left>包含的规则</td>
-</tr>
 <tr>
 <td style=text-align:left>raw</td>
 <td style=text-align:left>关闭nat表上启用的连接追踪机制</td>

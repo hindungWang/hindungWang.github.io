@@ -270,7 +270,7 @@ July 23, 2020
 <span class=kd>func</span> <span class=p>(</span><span class=nx>a</span> <span class=o>*</span><span class=nx>Admin</span><span class=p>)</span> <span class=nf>notify</span><span class=p>()</span> <span class=p>{</span>
 　 <span class=nx>fmt</span><span class=p>.</span><span class=nf>Printf</span><span class=p>(</span><span class=s>&#34;Sending admin name %s\n&#34;</span><span class=p>,</span> <span class=nx>a</span><span class=p>.</span><span class=nx>name</span><span class=p>)</span>
 <span class=p>}</span>
-</code></pre></div><p>这种实现是<code>DuckType</code>：类型不需要显式声明它实现了某个接口：接口被隐式地实现。多个类型可以实现同一个接。</p>
+</code></pre></div><p>这种实现是<code>DuckType</code>：类型不需要显式声明它实现了某个接口：接口被隐式地实现。多个类型可以实现同一个接口。</p>
 <p>在调用<code>notify</code>的地方实现如下方法，即可实现多态性，即面向接口编程：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-Go data-lang=Go><span class=kd>func</span> <span class=nf>sendNotify</span><span class=p>(</span><span class=nx>n</span> <span class=nx>Notifier</span><span class=p>)</span> <span class=p>{</span>
    <span class=nx>n</span><span class=p>.</span><span class=nf>notify</span><span class=p>()</span>
@@ -342,7 +342,7 @@ July 23, 2020
     <span class=nx>any</span> <span class=p>=</span> <span class=s>&#34;hello&#34;</span>
     <span class=o>...</span>
 </code></pre></div><h2 id=interface的实现>Interface的实现</h2>
-<p>任何<code>interface</code>类型，在内存中都是2个机器字长（world），32位机器上是8<code>Byte</code>，64位机器上是16<code>Byte</code>。</p>
+<p>任何<code>interface</code>类型，在内存中都是2个机器字长（word），32位机器上是8<code>Byte</code>，64位机器上是16<code>Byte</code>。</p>
 <p>空<code>interface</code>的源码(src\runtime\runtime2.go line 197左右)：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-Go data-lang=Go><span class=kd>type</span> <span class=nx>eface</span> <span class=kd>struct</span> <span class=p>{</span>
 	<span class=nx>_type</span> <span class=o>*</span><span class=nx>_type</span>          <span class=c1>// 类型指针
@@ -383,8 +383,8 @@ July 23, 2020
 <p><code>interfacetype</code>类型，src\runtime\type.go line 390左右：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-Go data-lang=Go><span class=kd>type</span> <span class=nx>interfacetype</span> <span class=kd>struct</span> <span class=p>{</span>
 	<span class=nx>typ</span>     <span class=nx>_type</span>       <span class=c1>// 包装了 _type 类型
-</span><span class=c1></span>	<span class=nx>pkgpath</span> <span class=nx>name</span>        <span class=c1>// 接口所定义的函数列表
-</span><span class=c1></span>	<span class=nx>mhdr</span>    <span class=p>[]</span><span class=nx>imethod</span>   <span class=c1>// 记录定义了接口的包名
+</span><span class=c1></span>	<span class=nx>pkgpath</span> <span class=nx>name</span>        <span class=c1>// 记录定义了接口的包名
+</span><span class=c1></span>	<span class=nx>mhdr</span>    <span class=p>[]</span><span class=nx>imethod</span>   <span class=c1>// 接口所定义的函数列表
 </span><span class=c1></span><span class=p>}</span>
 </code></pre></div><h3 id=interface的构造过程>Interface的构造过程</h3>
 <p>先来看看这个例子（方便观察加上了行号）：</p>
@@ -496,7 +496,7 @@ July 23, 2020
                                  <span class=p>|</span>  fun  <span class=p>|</span> ---&gt; *Binary.String
                                  +<span class=o>=======</span>+
 </code></pre></div><p>那么对于<code>s</code>来说 <code>itab</code>中的<code>inter</code>表示的是<code>Stringer</code>这个接口，<code>type</code>表示的是<code>Binary</code>这个动态类型，<code>fun</code>函数表中存放的就是<code>Binary</code>中实现了<code>String</code>而接口的方法地址。</p>
-<p>对于接口的<code>type-switch</code>，返回的就是静态类型 对于反射里面的<code>TypeOf</code>，返回的是动态类型，也就是数据真实的类型。</p>
+<p>对于接口的<code>type-switch</code>（如 <code>v := x.(type)</code>），<code>v</code> 得到的和反射里 <code>reflect.TypeOf</code> 返回的都是<strong>动态类型</strong>（即接口里实际存储的具体类型），二者本质相同。接口被赋值为某个具体类型的值后，其内部保存的是该具体类型的类型信息，因此静态声明的接口类型与运行时的动态类型要区分开。</p>
 <p>对于调用<code>s.String()</code>方法，其实就是 <code>s.itab->fun[0]</code>。</p>
 <h3 id=划重点>划重点</h3>
 <p>这里就引出一个需要注意的地方：，<code>var a interface{}</code> 这个地方用<code>if a == nil</code>是可以判断的， 但是如果使用其他类型的<code>nil</code>指针赋给<code>interface</code>：</p>
@@ -511,7 +511,7 @@ July 23, 2020
 +<span class=o>========</span>+            <span class=p>|</span> <span class=nb>type</span>   <span class=p>|</span>
                       +<span class=o>========</span>+
                       <span class=p>|</span>   ...  <span class=p>|</span>
-</code></pre></div><p>所以这个时候把一个其他类型的<code>nil</code>指针赋值给<code>interface{}</code>的时候，<code>interface</code>并不是空，而是对<code>interface</code>进行了初始化，只不过<code>data</code>是<code>nil</code>而已。所有如果一个参数的返回值是<code>interface{}</code>或者其他有方法的<code>interface</code>，比如<code>error</code>等，所以一旦函数返回的是某种<code>interface</code>的时候，就需要注意，不要直接返回某种类型的空指针，需要转换成直接的<code>nil</code>进行赋值。如：</p>
+</code></pre></div><p>所以这个时候把一个其他类型的<code>nil</code>指针赋值给<code>interface{}</code>的时候，<code>interface</code>并不是空，而是对<code>interface</code>进行了初始化，只不过<code>data</code>是<code>nil</code>而已。所以如果函数返回的是<code>interface{}</code>或者其他有方法的<code>interface</code>（比如<code>error</code>），就需要注意：不要直接返回某个类型的空指针，而应该显式返回<code>nil</code>。如：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-Go data-lang=Go><span class=kd>func</span> <span class=nf>doSomething</span><span class=p>()</span> <span class=p>(</span><span class=kd>interface</span><span class=p>{})</span> <span class=p>{</span>
 	<span class=kd>var</span> <span class=nx>a</span> <span class=o>*</span><span class=nx>Binary</span> <span class=p>=</span> <span class=kc>nil</span>
 	<span class=c1>//do something

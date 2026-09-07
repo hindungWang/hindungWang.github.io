@@ -243,9 +243,9 @@ July 26, 2020
 <h2 id=前言>前言</h2>
 <p>这篇笔记主要记录一下学习Go见到的各种数据类型，从数据类型在内存的分布上看了解其中的原理，主要包括：</p>
 <ul>
-<li>基本类型（int, string, uint, int8, int16, byte, rune, unitptr, float32, float64, complex64, complex128, bool等）</li>
+<li>基本类型（int, string, uint, int8, int16, byte, rune, uintptr, float32, float64, complex64, complex128, bool等）</li>
 <li>数组和slice的内存模型（string是特殊的slice）</li>
-<li>指针的内存模型及unitptr与unsafe.Pointer、普通指针 *T的区别</li>
+<li>指针的内存模型及uintptr与unsafe.Pointer、普通指针 *T的区别</li>
 <li>map的内存模型</li>
 <li>struct的内存模型和字节对齐</li>
 <li>channel、goroutine的内存模型以后单独记录</li>
@@ -275,7 +275,7 @@ July 26, 2020
 <p>所以[4]int和[5]int表示两种完全不同的类型。</p>
 <h4 id=切片>切片</h4>
 <p>在之前的一些<a href=https://mangoqiqi.github.io/2018/09/09/golang/>golang基础</a>里已经有一些切片类型的简单使用方法了，这里就来探究一下切片的底层数据结构和实现。</p>
-<p>切片是对数组中一段数据的引用。在内存中它有三段数据组成：一个指向数据头的指针、切片的长度、切片的容量。长度是索引操作的上界，如：x[i] 。容量是切片操作的上界，如：x[i:j]。</p>
+<p>切片是对数组中一段数据的引用。在内存中它由三段数据组成：一个指向数据头的指针、切片的长度、切片的容量。长度是索引操作的上界，如：x[i] 。容量是切片操作的上界，如：x[i:j]。</p>
 <p>比如我通过s := make([]byte, 5)当容量参数被忽略时，它默认为指定的长度，创建的切片内存如下：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-text data-lang=text> s := make([]int, 5) 
 ┌───┬───┬───┬───┬───┐
@@ -315,7 +315,7 @@ s         │ 0 │ 0 │
 <span class=p>{</span><span class=mh>0xc042038448</span> <span class=mi>5</span> <span class=mi>5</span><span class=p>}</span>
 <span class=p>{</span><span class=mh>0xc04203844a</span> <span class=mi>2</span> <span class=mi>3</span><span class=p>}</span>
 </code></pre></div><p>0xc04203844a - 0xc042038448 = 2， 刚好是偏移了两个byte。</p>
-<p>从上面的内存模型来看，如果两个数组相互赋值，那么将会触发数组全量拷贝的动作，但是如果是传递切片，那么将只需要永远申请固定大小的切片对象就可以了，底层的数组通过引用传递。</p>
+<p>从上面的内存模型来看，如果两个数组相互赋值，那么将会触发数组全量拷贝的动作，但是如果是传递切片，那么只需要复制固定大小的切片头就可以了，底层的数组通过引用传递。</p>
 <h4 id=切片的内存增长>切片的内存增长</h4>
 <p>从内存模型来看，切片就是引用了一个固定的数组， 一个切片的容量受到起始索引和底层数组容量的限制。Go语言提供了内置的copy和append函数来增长切片的容量，那么调用这些函数以后切片的内存会发生什么变化呢？</p>
 <p>copy和append这两个是内置函数，是看不到go源码实现，可能使用C/C++/汇编实现的：</p>
@@ -493,7 +493,7 @@ cap函数的实现仅仅是调用b.cap这个成员</p>
 </code></pre></div><p>那么内存模型就是：</p>
 <p><img src=https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gadflnr12fj203t039dfl.jpg alt=1577590070(https://hindung.oss-cn-beijing.aliyuncs.com/img/9dc4c374gy1gadflnr12fj203t039dfl.jpg).jpg></p>
 <h3 id=struct的字节对齐>struct的字节对齐</h3>
-<p>在64位系统上面，Go语言的字节是8直接对齐，如果不足的，就补充padding。
+<p>在64位系统上面，Go语言的结构体默认按8字节对齐，如果不足的，就补充padding。
 这里有详细的描述：<a href=http://www.geeksforgeeks.org/structure-member-alignment-padding-and-data-packing/>http://www.geeksforgeeks.org/structure-member-alignment-padding-and-data-packing/</a></p>
 <p>下面有一个简单的例子：</p>
 <div class=highlight><pre tabindex=0 class=chroma><code class=language-Go data-lang=Go><span class=kd>type</span> <span class=nx>Example</span> <span class=kd>struct</span> <span class=p>{</span>
