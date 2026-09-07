@@ -318,3 +318,17 @@
   border-radius: 8px; background: #2f6f4f; color: #fff; font-size: 13px; text-decoration: none;
 }
 .gac-card-btn:hover { filter: brightness(1.1); }
+
+/* ---- 富内容块：海报（poster，SVG data URI） ---- */
+.gac-poster {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  border-radius: 12px;
+  border: 1px solid var(--gac-border);
+  margin: 4px auto;
+}
+
+/* ---- 海报按钮 & 内联海报 ---- */
+.gac-card-poster-btn { background: #2f6f4f; }
+.gac-poster { width: 100%; max-width: 420px; border-radius: 12px; display: block; margin: 4px auto; }

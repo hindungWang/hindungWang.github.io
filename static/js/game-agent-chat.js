@@ -302,8 +302,64 @@
     if (video) {
       h += '<a class="gac-card-btn" href="' + video + '" target="_blank" rel="noopener noreferrer">🎬 看预告 / 演示</a>';
     }
+    h += '<button type="button" class="gac-card-btn gac-card-poster-btn">🖼️ 生成海报</button>';
     h += "</div></div>";
     return h;
+  }
+
+  /* 客户端海报：由卡片数据本地拼 SVG（封面外链在 DOM 内可加载，无需服务端大 payload）。
+   * 所有值先转义，构造即安全。 */
+  function xmlEscape(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+  function buildPosterSvg(b) {
+    var cover = safeUrl(b.cover);
+    var name = xmlEscape(b.name || "");
+    var enName = b.en_name ? xmlEscape(String(b.en_name)) : "";
+    var price = b.price > 0 ? "¥" + b.price : "";
+    var origin = b.origin_price > 0 ? "¥" + b.origin_price : "";
+    var off = "";
+    if (b.origin_price > 0 && b.price > 0 && b.price < b.origin_price) {
+      off = "-" + Math.round((1 - b.price / b.origin_price) * 100) + "%";
+    }
+    var rating = b.rating ? "⭐ " + b.rating : "";
+    var platform = b.platform ? xmlEscape(String(b.platform)) : "";
+    var remaining = b.remaining ? xmlEscape(String(b.remaining)) : "";
+    var nameSize = Array.from(String(b.name || "")).length > 12 ? 40 : 52;
+    var chips = [rating, platform, remaining].filter(Boolean);
+    var chipSvg = "", cx = 360 - (chips.join("").length * 7) / 2;
+    for (var i = 0; i < chips.length; i++) {
+      var w = Array.from(chips[i]).length * 16 + 36;
+      chipSvg += '<rect x="' + cx + '" y="690" width="' + w + '" height="52" rx="26" fill="#2a313c"/>' +
+        '<text x="' + (cx + w / 2) + '" y="725" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="26" fill="#e8e8e8">' + xmlEscape(chips[i]) + "</text>";
+      cx += w + 12;
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960" class="gac-poster">' +
+      '<defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0" stop-color="#241111"/><stop offset="0.55" stop-color="#120707"/><stop offset="1" stop-color="#0a0303"/>' +
+      '</linearGradient></defs>' +
+      '<rect width="720" height="960" fill="url(#pg)"/>' +
+      (cover ? '<image x="0" y="0" width="720" height="340" preserveAspectRatio="xMidYMid slice" href="' + xmlEscape(cover) + '"/>' : "") +
+      (off ? '<g transform="translate(640 100) rotate(8)"><rect x="-72" y="-72" width="144" height="144" rx="24" fill="#e03333"/>' +
+        '<text x="0" y="-4" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="46" font-weight="900" fill="#fff">' + off + "</text>" +
+        '<text x="0" y="40" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="22" fill="#ffe9e9">限时特惠</text></g>' : "") +
+      '<text x="360" y="470" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="' + nameSize + '" font-weight="800" fill="#fff">' + name + "</text>" +
+      (enName ? '<text x="360" y="528" text-anchor="middle" font-family="Georgia, serif" font-size="24" letter-spacing="6" fill="#d4af37">' + enName + "</text>" : "") +
+      (origin ? '<text x="360" y="620" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="30" fill="#b5b5b5" text-decoration="line-through">' + origin + "</text>" : "") +
+      (price ? '<text x="360" y="700" text-anchor="middle" font-family="Arial Black, PingFang SC, sans-serif" font-size="96" font-weight="900" fill="#ffd23f">' + price + "</text>" : "") +
+      chipSvg +
+      '<line x1="140" y1="860" x2="580" y2="860" stroke="#3d2424" stroke-width="2"/>' +
+      '<text x="360" y="905" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="22" fill="#6d6d6d">由 Stray 查价生成 · 数据实时查询</text>' +
+      "</svg>";
+  }
+  function showPoster(block, cardEl) {
+    var old = cardEl.parentNode.querySelector(".gac-block-poster-inline");
+    if (old) old.remove();
+    var div = document.createElement("div");
+    div.className = "gac-block gac-block-poster-inline";
+    div.innerHTML = buildPosterSvg(block);
+    cardEl.parentNode.insertBefore(div, cardEl.nextSibling);
+    scrollToBottom();
   }
   function renderBlocks(blocks) {
     if (!Array.isArray(blocks) || blocks.length === 0) return;
@@ -314,6 +370,17 @@
       div.className = "gac-block gac-block-" + (b && b.type ? escapeHtml(String(b.type)) : "unknown");
       if (b && b.type === "game_card") {
         div.innerHTML = gameCardHtml(b);
+        var btn = div.querySelector(".gac-card-poster-btn");
+        if (btn) {
+          btn.addEventListener("click", function () { showPoster(b, div); });
+        }
+      } else if (b && b.type === "poster" && /^data:image\/svg\+xml;base64,/.test(String(b.src || ""))) {
+        var img = document.createElement("img");
+        img.className = "gac-poster";
+        img.src = String(b.src);
+        img.alt = "海报";
+        img.loading = "lazy";
+        div.appendChild(img);
       } else {
         div.textContent = JSON.stringify(b); // 未知块降级为文本
       }
