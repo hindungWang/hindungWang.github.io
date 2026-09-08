@@ -371,7 +371,7 @@
       f.addColorStop(0, "rgba(18,7,7,0)"); f.addColorStop(1, "rgba(18,7,7,1)");
       ctx.fillStyle = f; ctx.fillRect(0, 240, W, 120);
     }
-    // 平台价格数据：优先 prices 数组，best = 最大折扣（第一项）
+    // 平台价格：best = 最大折扣
     var plats = (Array.isArray(b.prices) && b.prices.length) ? b.prices : [];
     var best = plats.length ? plats[0] : null;
     var origin = best && best.origin_price ? best.origin_price : (b.origin_price || 0);
@@ -390,144 +390,140 @@
       ctx.restore();
       ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
     }
-    // 标题：字号自适应 + 居中 + 自动换行（最多 2 行，单行不超 600）
+    // 标题：自适应字号（≤2 行居中，不超 600）
     var name = String(b.name || "");
-    function fitTitleLines() {
+    function fitTitle() {
       for (var fs = 52; fs >= 28; fs -= 4) {
         ctx.font = "800 " + fs + "px 'PingFang SC',sans-serif";
         var ls = wrapText(ctx, name, 600);
-        var maxW = 0;
-        for (var li = 0; li < ls.length; li++) { var wl = ctx.measureText(ls[li]).width; if (wl > maxW) maxW = wl; }
-        if (ls.length <= 2 && maxW <= 600) return { size: fs, lines: ls };
+        var mx = 0;
+        for (var i = 0; i < ls.length; i++) mx = Math.max(mx, ctx.measureText(ls[i]).width);
+        if (ls.length <= 2 && mx <= 600) return { size: fs, lines: ls };
       }
       ctx.font = "800 28px 'PingFang SC',sans-serif";
       return { size: 28, lines: wrapText(ctx, name, 600).slice(0, 2) };
     }
-    var fit = fitTitleLines();
-    var ty = 448;
-    for (var ti = 0; ti < fit.lines.length; ti++) {
-      ctx.fillStyle = "#fff";
-      ctx.fillText(fit.lines[ti], 360, ty + ti * (fit.size + 8));
-    }
+    var fit = fitTitle();
+    var ty = 440;
+    for (var ti = 0; ti < fit.lines.length; ti++) { ctx.fillStyle = "#fff"; ctx.fillText(fit.lines[ti], 360, ty + ti * (fit.size + 8)); }
     var blockBottom = ty + (fit.lines.length - 1) * (fit.size + 8);
-    // 英文名
     if (b.en_name) {
       var enTxt = String(b.en_name);
       ctx.fillStyle = "#d4af37"; ctx.font = "22px Georgia";
-      if (ctx.measureText(enTxt).width > 560) {
-        // 过长则截断加省略
-        while (ctx.measureText(enTxt + "…").width > 560 && enTxt.length > 1) enTxt = enTxt.slice(0, -1);
-        enTxt += "…";
-      }
-      ctx.fillText(enTxt, 360, blockBottom + 34);
-      blockBottom += 38;
+      if (ctx.measureText(enTxt).width > 560) { while (ctx.measureText(enTxt + "…").width > 560 && enTxt.length > 1) enTxt = enTxt.slice(0, -1); enTxt += "…"; }
+      ctx.fillText(enTxt, 360, blockBottom + 32);
+      blockBottom += 36;
     }
-    // 主价格：原价（划线）→ 现价大字
-    var mainPriceY = Math.max(blockBottom + 42, 590);
+    // 主价格区
+    var mainPriceY = Math.max(blockBottom + 40, 588);
     if (origin > 0) {
       ctx.font = "28px 'PingFang SC',sans-serif"; ctx.fillStyle = "#b5b5b5";
       ctx.fillText("¥" + origin, 360, mainPriceY);
       var w0 = ctx.measureText("¥" + origin).width;
       ctx.strokeStyle = "#b5b5b5"; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(360 - w0 / 2, mainPriceY - 10); ctx.lineTo(360 + w0 / 2, mainPriceY - 10); ctx.stroke();
-      mainPriceY += 72;
+      mainPriceY += 70;
     }
     if (price > 0) {
       var pTxt = "¥" + price;
-      var pFont = pTxt.length > 7 ? 68 : 92;
-      ctx.font = "900 " + pFont + "px Arial,'PingFang SC',sans-serif"; ctx.fillStyle = "#ffd23f";
-      ctx.fillText(pTxt, 360, mainPriceY);
+      ctx.font = "900 " + (pTxt.length > 7 ? 68 : 92) + "px Arial,'PingFang SC',sans-serif";
+      ctx.fillStyle = "#ffd23f"; ctx.fillText(pTxt, 360, mainPriceY);
     }
-    // 顶部 chips：评分 + 剩余时间
+    // 顶部 chips（评分/剩余）
     var chips = [];
     if (b.rating) chips.push("⭐ " + b.rating);
     if (b.remaining) chips.push("⏳ " + b.remaining);
-    var chipY = mainPriceY + 46;
+    var chipY = mainPriceY + 42;
     if (chips.length) {
       ctx.font = "24px 'PingFang SC',sans-serif";
       var cws = [], ctw = 0;
       for (var ci = 0; ci < chips.length; ci++) { cws.push(ctx.measureText(chips[ci]).width + 30); ctw += cws[ci] + 10; }
       var cxx = 360 - (ctw - 10) / 2;
       for (var cj = 0; cj < chips.length; cj++) {
-        ctx.fillStyle = "#2a313c"; roundRectPath(ctx, cxx, chipY - 24, cws[cj], 42, 21); ctx.fill();
+        ctx.fillStyle = "#2a313c"; roundRectPath(ctx, cxx, chipY - 23, cws[cj], 40, 20); ctx.fill();
         ctx.fillStyle = "#e8e8e8"; ctx.fillText(chips[cj], cxx + cws[cj] / 2, chipY);
         cxx += cws[cj] + 10;
       }
     }
-    // 平台价格胶囊：流式换行、含折扣在胶囊内、字号自适应
-    var bandY = Math.max(mainPriceY + 88, chipY + 26);
+    // 平台价格：2 列网格面板（整齐不溢出）
+    var bandTop = Math.max(chipY + 34, mainPriceY + 74);
     if (plats.length) {
-      // 先组胶囊内容
-      var pills = [];
-      for (var pk = 0; pk < plats.length; pk++) {
-        var rr0 = plats[pk];
-        if (!rr0 || !rr0.name) continue;
-        pills.push({
-          name: String(rr0.name),
-          main: String(rr0.name) + " ¥" + (rr0.price || 0),
-          off: rr0.off_pct > 0 ? "-" + rr0.off_pct + "%" : "",
-          best: pk === 0,
-        });
+      var items = [];
+      for (var ik = 0; ik < plats.length; ik++) {
+        var it = plats[ik];
+        if (!it || !it.name) continue;
+        items.push({ name: String(it.name), originP: it.origin_price || 0, price: it.price || 0, offP: it.off_pct || 0, best: ik === 0 });
       }
-      function layoutPills(fontSize) {
-        ctx.font = fontSize + "px 'PingFang SC',sans-serif";
-        var pad = 22, gap = 12, maxLineW = 620;
-        var rows = [], row = [], rowW = 0;
-        for (var i2 = 0; i2 < pills.length; i2++) {
-          var p = pills[i2];
-          var wM = ctx.measureText(p.main).width;
-          var wO = p.off ? ctx.measureText(p.off).width + 10 : 0;
-          var wP = wM + wO + pad * 2;
-          if (wP > maxLineW) {
-            // 单胶囊过宽：整行降级字号（递归一次）
-            return null;
-          }
-          if (row.length && rowW + gap + wP > maxLineW) { rows.push(row); row = []; rowW = 0; }
-          row.push(p); rowW += (row.length > 1 ? gap : 0) + wP;
+      var maxShow = 8, shown = items.slice(0, maxShow);
+      var cols = 2, colGap = 40;
+      var panelW = 560, cellW = (panelW - colGap) / 2; // 260
+      var cellH = 40;
+      var rows = Math.ceil(shown.length / cols);
+      var panelH = rows * cellH;
+      var panelX = 360 - panelW / 2;
+      var panelY = bandTop;
+      // 面板底
+      ctx.fillStyle = "rgba(20,22,28,0.72)";
+      roundRectPath(ctx, panelX - 14, panelY - 12, panelW + 28, panelH + 24, 14); ctx.fill();
+      ctx.font = "22px 'PingFang SC',sans-serif";
+      for (var ri = 0; ri < shown.length; ri++) {
+        var itm = shown[ri];
+        var cx = panelX + (ri % cols) * (cellW + colGap) + cellW / 2;
+        var cy = panelY + Math.floor(ri / cols) * cellH + cellH / 2;
+        ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        // 平台名（最多约 7 字，超长省略）
+        var nameW = cellW * 0.42;
+        var nm = itm.name;
+        while (ctx.measureText(nm + "…").width > nameW && Array.from(nm).length > 1) nm = Array.from(nm).slice(0, -1).join("");
+        if (nm !== itm.name) nm += "…";
+        ctx.fillStyle = itm.best ? "#ffd23f" : "#e3e7ee";
+        ctx.font = "800 " + (itm.best ? 23 : 21) + "px 'PingFang SC',sans-serif";
+        ctx.fillText(nm, cx - cellW / 2 + 4, cy - (itm.best ? 0 : 0));
+        if (itm.best && itm.offP > 0) {
+          // 史低角标
+          ctx.fillStyle = "#e03333";
+          roundRectPath(ctx, cx - cellW / 2 + 4 + ctx.measureText(nm).width + 6, cy - 11, 40, 22, 6); ctx.fill();
+          ctx.fillStyle = "#fff"; ctx.font = "900 13px Arial";
+          ctx.fillText("史低", cx - cellW / 2 + 4 + ctx.measureText(nm).width + 26, cy);
         }
-        if (row.length) rows.push(row);
-        return rows;
+        ctx.font = "22px 'PingFang SC',sans-serif";
+        // 价格右对齐到 cell 右侧：off + now + old
+        var priceX = cx + cellW / 2 - 6;
+        var px = priceX;
+        if (itm.offP > 0) {
+          var offT = "-" + itm.offP + "%";
+          ctx.fillStyle = "#ff6b6b"; ctx.font = "800 17px Arial";
+          ctx.fillText(offT, px - ctx.measureText(offT).width, cy);
+          px -= ctx.measureText(offT).width + 8;
+        }
+        ctx.fillStyle = "#ffd23f"; ctx.font = "800 21px Arial,'PingFang SC',sans-serif";
+        var nowT = "¥" + itm.price;
+        ctx.fillText(nowT, px - ctx.measureText(nowT).width, cy);
+        px -= ctx.measureText(nowT).width + 10;
+        if (itm.originP > 0 && itm.originP > itm.price) {
+          ctx.font = "15px 'PingFang SC',sans-serif"; ctx.fillStyle = "#8a93a3";
+          var oldT = "¥" + itm.originP;
+          var ow = ctx.measureText(oldT).width;
+          ctx.fillText(oldT, px - ow, cy);
+          ctx.strokeStyle = "#8a93a3"; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(px - ow, cy - 6); ctx.lineTo(px, cy - 6); ctx.stroke();
+          px -= ow + 8;
+        }
       }
-      var rows = null, pillFont = 25;
-      for (pillFont = 25; pillFont >= 17 && !rows; pillFont -= 2) rows = layoutPills(pillFont);
-      if (!rows) { ctx.font = "17px 'PingFang SC',sans-serif"; rows = [[]]; }
-      rows = rows.slice(0, 3);
-      var rowH = 46, yyy = bandY;
-      var pad2 = 22, gap2 = 12;
-      for (var ri = 0; ri < rows.length; ri++) {
-        var ln = rows[ri], lineWTotal = 0;
-        for (var mi = 0; mi < ln.length; mi++) {
-          var wM = ctx.measureText(ln[mi].main).width;
-          var wO = ln[mi].off ? ctx.measureText(ln[mi].off).width + 10 : 0;
-          lineWTotal += (mi > 0 ? gap2 : 0) + wM + wO + pad2 * 2;
-        }
-        var x2 = 360 - lineWTotal / 2;
-        for (var mi2 = 0; mi2 < ln.length; mi2++) {
-          var pp = ln[mi2];
-          var wM2 = ctx.measureText(pp.main).width;
-          var wO2 = pp.off ? ctx.measureText(pp.off).width + 10 : 0;
-          var wP2 = wM2 + wO2 + pad2 * 2;
-          ctx.fillStyle = pp.best ? "rgba(255,210,63,0.13)" : "#262b35";
-          roundRectPath(ctx, x2, yyy, wP2, 38, 19); ctx.fill();
-          if (pp.best) { ctx.strokeStyle = "#ffd23f"; ctx.lineWidth = 1.5; roundRectPath(ctx, x2, yyy, wP2, 38, 19); ctx.stroke(); }
-          ctx.fillStyle = pp.best ? "#ffd23f" : "#e3e7ee";
-          ctx.fillText(pp.main, x2 + pad2, yyy + 25);
-          if (pp.off) {
-            ctx.fillStyle = "#ff6b6b";
-            ctx.fillText(pp.off, x2 + pad2 + wM2 + 10, yyy + 25);
-          }
-          x2 += wP2 + gap2;
-        }
-        yyy += rowH;
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      bandTop = panelY + panelH + 8;
+      if (items.length > maxShow) {
+        ctx.font = "18px 'PingFang SC',sans-serif"; ctx.fillStyle = "#7a828e";
+        ctx.fillText("…等 " + items.length + " 个平台在售", 360, bandTop + 14);
+        bandTop += 26;
       }
-      bandY = yyy + 6;
     }
     // footer
-    var fy = Math.max(bandY, 856);
+    var fy = Math.max(bandTop + 4, 848);
     ctx.strokeStyle = "#3d2424"; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(140, fy); ctx.lineTo(580, fy); ctx.stroke();
-    ctx.fillStyle = "#6d6d6d"; ctx.font = "22px 'PingFang SC',sans-serif";
-    ctx.fillText("由 Stray 查价生成 · 数据实时查询", 360, fy + 42);
+    ctx.fillStyle = "#6d6d6d"; ctx.font = "20px 'PingFang SC',sans-serif";
+    ctx.fillText("由 Stray 查价生成 · 数据实时查询", 360, fy + 34);
   }
   function openPoster(block) {
     loadImage(safeUrl(block.cover)).then(function (img) {
