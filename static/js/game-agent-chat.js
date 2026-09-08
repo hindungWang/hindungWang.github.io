@@ -478,11 +478,13 @@
         if (nm !== itm.name) nm += "…";
         ctx.fillStyle = itm.best ? "#ffd23f" : "#e3e7ee";
         ctx.font = "800 " + (itm.best ? 23 : 21) + "px 'PingFang SC',sans-serif";
-        ctx.fillText(nm, cx - cellW / 2 + 4, cy - (itm.best ? 0 : 0));
+        var nameLeft = cx - cellW / 2 + 4;
+        var nameWpx = ctx.measureText(nm).width; // 用名字当前字号量，避免切换字体后量错导致重叠
+        ctx.fillText(nm, nameLeft, cy);
         if (itm.best && itm.offP > 0) {
-          // 史低：红字无背景
+          // 史低：红字无背景，紧跟名字右侧
           ctx.fillStyle = "#ff5252"; ctx.font = "800 14px 'PingFang SC',sans-serif";
-          ctx.fillText("史低", cx - cellW / 2 + 4 + ctx.measureText(nm).width + 6, cy);
+          ctx.fillText("史低", nameLeft + nameWpx + 6, cy);
         }
         ctx.font = "22px 'PingFang SC',sans-serif";
         // 价格右对齐到 cell 右侧：now + old（不显示平台折扣百分比）
@@ -497,8 +499,8 @@
           var oldT = "¥" + itm.originP;
           var ow = ctx.measureText(oldT).width;
           ctx.fillText(oldT, px - ow, cy);
-          ctx.strokeStyle = "#8a93a3"; ctx.lineWidth = 1;
-          ctx.beginPath(); ctx.moveTo(px - ow, cy - 6); ctx.lineTo(px, cy - 6); ctx.stroke();
+          ctx.strokeStyle = "#8a93a3"; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(px - ow, cy + 1); ctx.lineTo(px, cy + 1); ctx.stroke();
           px -= ow + 8;
         }
       }
