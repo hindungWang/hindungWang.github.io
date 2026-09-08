@@ -378,17 +378,7 @@
     var price = best && best.price ? best.price : (b.price || 0);
     var off = "";
     if (origin > 0 && price > 0 && price < origin) off = "-" + Math.round((1 - price / origin) * 100) + "%";
-    // 折扣角标
-    if (off) {
-      ctx.save(); ctx.translate(642, 96); ctx.rotate(8 * Math.PI / 180);
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      var bg2 = ctx.createLinearGradient(0, -72, 0, 72);
-      bg2.addColorStop(0, "#ff5f3a"); bg2.addColorStop(1, "#d92626");
-      ctx.fillStyle = bg2; roundRectPath(ctx, -72, -72, 144, 144, 26); ctx.fill();
-      ctx.fillStyle = "#fff"; ctx.font = "900 52px Arial"; ctx.fillText(off, 0, 2);
-      ctx.restore();
-      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-    }
+
     // 标题：自适应字号（≤2 行居中，不超 600）
     var name = String(b.name || "");
     function fitTitle() {
@@ -423,10 +413,26 @@
       ctx.beginPath(); ctx.moveTo(360 - w0 / 2, mainPriceY - 10); ctx.lineTo(360 + w0 / 2, mainPriceY - 10); ctx.stroke();
       mainPriceY += 70;
     }
+    var pTxt = "";
     if (price > 0) {
-      var pTxt = "¥" + price;
-      ctx.font = "900 " + (pTxt.length > 7 ? 68 : 92) + "px Arial,'PingFang SC',sans-serif";
+      pTxt = "¥" + price;
+      var pFs = pTxt.length > 7 ? 66 : 92;
+      ctx.font = "900 " + pFs + "px Arial,'PingFang SC',sans-serif";
       ctx.fillStyle = "#ffd23f"; ctx.fillText(pTxt, 360, mainPriceY);
+      // -XX% 斜红框：紧贴价格右侧，垂直对齐价格字高中间
+      if (off) {
+        var priceW = ctx.measureText(pTxt).width;
+        ctx.save();
+        ctx.translate(360 + priceW / 2 + 18, mainPriceY - (pFs > 70 ? 34 : 26));
+        ctx.rotate(8 * Math.PI / 180);
+        ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        var bg2 = ctx.createLinearGradient(0, -30, 0, 30);
+        bg2.addColorStop(0, "#ff5f3a"); bg2.addColorStop(1, "#d92626");
+        ctx.fillStyle = bg2; roundRectPath(ctx, -38, -28, 76, 56, 12); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.font = "900 30px Arial"; ctx.fillText(off, 0, 2);
+        ctx.restore();
+        ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      }
     }
     // 顶部 chips：金色文本星号评分 + 淡蓝剩余时间
     var chips = [];
