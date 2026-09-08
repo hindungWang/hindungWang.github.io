@@ -360,7 +360,7 @@
     var W = 720, H = 960;
     canvas.width = W; canvas.height = H;
     var ctx = canvas.getContext("2d");
-    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
     // 背景
     var g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, "#241111"); g.addColorStop(0.55, "#120707"); g.addColorStop(1, "#0a0303");
@@ -371,10 +371,9 @@
       f.addColorStop(0, "rgba(18,7,7,0)"); f.addColorStop(1, "rgba(18,7,7,1)");
       ctx.fillStyle = f; ctx.fillRect(0, 240, W, 120);
     }
-    // 平台价格（优先 prices 数组，最大折扣=第一个）
-    var plats = Array.isArray(b.prices) && b.prices.length ? b.prices : [];
-    var best = null;
-    if (plats.length) best = plats[0];
+    // 平台价格数据：优先 prices 数组，best = 最大折扣（第一项）
+    var plats = (Array.isArray(b.prices) && b.prices.length) ? b.prices : [];
+    var best = plats.length ? plats[0] : null;
     var origin = best && best.origin_price ? best.origin_price : (b.origin_price || 0);
     var price = best && best.price ? best.price : (b.price || 0);
     var off = "";
@@ -382,107 +381,149 @@
     // 折扣角标
     if (off) {
       ctx.save(); ctx.translate(642, 96); ctx.rotate(8 * Math.PI / 180);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
       var bg2 = ctx.createLinearGradient(0, -72, 0, 72);
       bg2.addColorStop(0, "#ff5f3a"); bg2.addColorStop(1, "#d92626");
       ctx.fillStyle = bg2; roundRectPath(ctx, -72, -72, 144, 144, 26); ctx.fill();
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
       ctx.fillStyle = "#fff"; ctx.font = "900 46px Arial"; ctx.fillText(off, 0, -8);
       ctx.fillStyle = "#ffe9e9"; ctx.font = "22px 'PingFang SC',sans-serif"; ctx.fillText("限时特惠", 0, 38);
       ctx.restore();
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
     }
-    ctx.textBaseline = "alphabetic";
-    // 标题（可换行）
+    // 标题：字号自适应 + 居中 + 自动换行（最多 2 行，单行不超 600）
     var name = String(b.name || "");
-    var nameFont = Array.from(name).length > 12 ? 40 : 52;
-    ctx.font = "800 " + nameFont + "px 'PingFang SC',sans-serif";
-    var nameLines = wrapText(ctx, name, 640);
-    if (nameLines.length > 1 && nameFont === 52) { nameFont = 40; ctx.font = "800 40px 'PingFang SC',sans-serif"; nameLines = wrapText(ctx, name, 640); }
-    var ty = nameLines.length > 1 ? 430 : 462;
-    for (var i = 0; i < nameLines.length; i++) { ctx.fillStyle = "#fff"; ctx.fillText(nameLines[i], 360, ty + i * (nameFont + 8)); }
-    var blockBottom = ty + (nameLines.length - 1) * (nameFont + 8);
+    function fitTitleLines() {
+      for (var fs = 52; fs >= 28; fs -= 4) {
+        ctx.font = "800 " + fs + "px 'PingFang SC',sans-serif";
+        var ls = wrapText(ctx, name, 600);
+        var maxW = 0;
+        for (var li = 0; li < ls.length; li++) { var wl = ctx.measureText(ls[li]).width; if (wl > maxW) maxW = wl; }
+        if (ls.length <= 2 && maxW <= 600) return { size: fs, lines: ls };
+      }
+      ctx.font = "800 28px 'PingFang SC',sans-serif";
+      return { size: 28, lines: wrapText(ctx, name, 600).slice(0, 2) };
+    }
+    var fit = fitTitleLines();
+    var ty = 448;
+    for (var ti = 0; ti < fit.lines.length; ti++) {
+      ctx.fillStyle = "#fff";
+      ctx.fillText(fit.lines[ti], 360, ty + ti * (fit.size + 8));
+    }
+    var blockBottom = ty + (fit.lines.length - 1) * (fit.size + 8);
     // 英文名
-    if (b.en_name) { ctx.fillStyle = "#d4af37"; ctx.font = "22px Georgia"; ctx.fillText(String(b.en_name), 360, blockBottom + 36); blockBottom += 40; }
+    if (b.en_name) {
+      var enTxt = String(b.en_name);
+      ctx.fillStyle = "#d4af37"; ctx.font = "22px Georgia";
+      if (ctx.measureText(enTxt).width > 560) {
+        // 过长则截断加省略
+        while (ctx.measureText(enTxt + "…").width > 560 && enTxt.length > 1) enTxt = enTxt.slice(0, -1);
+        enTxt += "…";
+      }
+      ctx.fillText(enTxt, 360, blockBottom + 34);
+      blockBottom += 38;
+    }
     // 主价格：原价（划线）→ 现价大字
-    var mainPriceY = Math.max(blockBottom + 46, 585);
+    var mainPriceY = Math.max(blockBottom + 42, 590);
     if (origin > 0) {
-      ctx.font = "28px 'PingFang SC',sans-serif"; ctx.fillStyle = "#b5b5b5"; ctx.textAlign = "center";
+      ctx.font = "28px 'PingFang SC',sans-serif"; ctx.fillStyle = "#b5b5b5";
       ctx.fillText("¥" + origin, 360, mainPriceY);
       var w0 = ctx.measureText("¥" + origin).width;
       ctx.strokeStyle = "#b5b5b5"; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(360 - w0 / 2, mainPriceY - 10); ctx.lineTo(360 + w0 / 2, mainPriceY - 10); ctx.stroke();
-      mainPriceY += 74;
+      mainPriceY += 72;
     }
     if (price > 0) {
-      ctx.font = "900 92px Arial,'PingFang SC',sans-serif"; ctx.fillStyle = "#ffd23f"; ctx.textAlign = "center";
-      ctx.fillText("¥" + price, 360, mainPriceY);
+      var pTxt = "¥" + price;
+      var pFont = pTxt.length > 7 ? 68 : 92;
+      ctx.font = "900 " + pFont + "px Arial,'PingFang SC',sans-serif"; ctx.fillStyle = "#ffd23f";
+      ctx.fillText(pTxt, 360, mainPriceY);
     }
-    // 顶部 chips：评分 + 剩余时间（平台移到底部胶囊区）
+    // 顶部 chips：评分 + 剩余时间
     var chips = [];
     if (b.rating) chips.push("⭐ " + b.rating);
     if (b.remaining) chips.push("⏳ " + b.remaining);
-    var chipY = mainPriceY + 52;
+    var chipY = mainPriceY + 46;
     if (chips.length) {
       ctx.font = "24px 'PingFang SC',sans-serif";
-      var tw = 0, cws = [];
-      for (var ci = 0; ci < chips.length; ci++) { cws.push(Array.from(chips[ci]).length * 15 + 36); tw += cws[ci] + 10; }
-      var cxx = 360 - (tw - 10) / 2;
+      var cws = [], ctw = 0;
+      for (var ci = 0; ci < chips.length; ci++) { cws.push(ctx.measureText(chips[ci]).width + 30); ctw += cws[ci] + 10; }
+      var cxx = 360 - (ctw - 10) / 2;
       for (var cj = 0; cj < chips.length; cj++) {
-        ctx.fillStyle = "#2a313c"; roundRectPath(ctx, cxx, chipY - 24, cws[cj], 40, 20); ctx.fill();
-        ctx.fillStyle = "#e8e8e8"; ctx.textAlign = "center"; ctx.fillText(chips[cj], cxx + cws[cj] / 2, chipY);
+        ctx.fillStyle = "#2a313c"; roundRectPath(ctx, cxx, chipY - 24, cws[cj], 42, 21); ctx.fill();
+        ctx.fillStyle = "#e8e8e8"; ctx.fillText(chips[cj], cxx + cws[cj] / 2, chipY);
         cxx += cws[cj] + 10;
       }
     }
-    // 平台价格胶囊（流式换行，最大折扣金色高亮；非罗列）
-    var bandY = Math.max(mainPriceY + 92, chipY + 34);
+    // 平台价格胶囊：流式换行、含折扣在胶囊内、字号自适应
+    var bandY = Math.max(mainPriceY + 88, chipY + 26);
     if (plats.length) {
-      ctx.font = "25px 'PingFang SC',sans-serif";
-      var items = [];
-      for (var k = 0; k < plats.length; k++) {
-        var r = plats[k];
-        if (!r || !r.name) continue;
-        var txt = String(r.name) + " ¥" + (r.price || 0);
-        items.push({ name: String(r.name), txt: txt, off: r.off_pct || 0, best: k === 0 });
+      // 先组胶囊内容
+      var pills = [];
+      for (var pk = 0; pk < plats.length; pk++) {
+        var rr0 = plats[pk];
+        if (!rr0 || !rr0.name) continue;
+        pills.push({
+          name: String(rr0.name),
+          main: String(rr0.name) + " ¥" + (rr0.price || 0),
+          off: rr0.off_pct > 0 ? "-" + rr0.off_pct + "%" : "",
+          best: pk === 0,
+        });
       }
-      // 流式换行：每行 ≤ 620 宽，行高 52
-      var maxLineW = 620, pad = 26, gap = 14;
-      var lines = [], line = [], lineW = 0;
-      for (var li = 0; li < items.length; li++) {
-        var it = items[li];
-        var wIt = ctx.measureText(it.txt).width + pad * 2;
-        if (line.length && lineW + gap + wIt > maxLineW) { lines.push({ items: line, w: lineW }); line = []; lineW = 0; }
-        line.push(it); lineW += (line.length > 1 ? gap : 0) + wIt;
-      }
-      if (line.length) lines.push({ items: line, w: lineW });
-      // 最多 3 行，超出截断
-      var showLines = lines.slice(0, 3);
-      var rowH = 54, startY = bandY;
-      for (var ri = 0; ri < showLines.length; ri++) {
-        var ln = showLines[ri];
-        var x = 360 - ln.w / 2;
-        for (var ii = 0; ii < ln.items.length; ii++) {
-          var itm = ln.items[ii];
-          var wP = ctx.measureText(itm.txt).width + pad * 2;
-          ctx.fillStyle = itm.best ? "rgba(255,210,63,0.14)" : "#262b35";
-          roundRectPath(ctx, x, startY, wP, 44, 22); ctx.fill();
-          if (itm.best) { ctx.strokeStyle = "#ffd23f"; ctx.lineWidth = 2; roundRectPath(ctx, x, startY, wP, 44, 22); ctx.stroke(); }
-          ctx.fillStyle = itm.best ? "#ffd23f" : "#d7dbe2"; ctx.textAlign = "left";
-          ctx.fillText(itm.txt, x + pad, startY + 29);
-          if (itm.off > 0) {
-            var offTxt = "-" + itm.off + "%";
-            var wx = x + pad + ctx.measureText(itm.txt).width + 10;
-            ctx.fillStyle = "#ff6b6b"; ctx.font = "900 22px Arial";
-            ctx.fillText(offTxt, wx, startY + 28);
-            ctx.font = "25px 'PingFang SC',sans-serif";
+      function layoutPills(fontSize) {
+        ctx.font = fontSize + "px 'PingFang SC',sans-serif";
+        var pad = 22, gap = 12, maxLineW = 620;
+        var rows = [], row = [], rowW = 0;
+        for (var i2 = 0; i2 < pills.length; i2++) {
+          var p = pills[i2];
+          var wM = ctx.measureText(p.main).width;
+          var wO = p.off ? ctx.measureText(p.off).width + 10 : 0;
+          var wP = wM + wO + pad * 2;
+          if (wP > maxLineW) {
+            // 单胶囊过宽：整行降级字号（递归一次）
+            return null;
           }
-          x += wP + gap;
+          if (row.length && rowW + gap + wP > maxLineW) { rows.push(row); row = []; rowW = 0; }
+          row.push(p); rowW += (row.length > 1 ? gap : 0) + wP;
         }
-        startY += rowH;
+        if (row.length) rows.push(row);
+        return rows;
       }
-      bandY = startY;
+      var rows = null, pillFont = 25;
+      for (pillFont = 25; pillFont >= 17 && !rows; pillFont -= 2) rows = layoutPills(pillFont);
+      if (!rows) { ctx.font = "17px 'PingFang SC',sans-serif"; rows = [[]]; }
+      rows = rows.slice(0, 3);
+      var rowH = 46, yyy = bandY;
+      var pad2 = 22, gap2 = 12;
+      for (var ri = 0; ri < rows.length; ri++) {
+        var ln = rows[ri], lineWTotal = 0;
+        for (var mi = 0; mi < ln.length; mi++) {
+          var wM = ctx.measureText(ln[mi].main).width;
+          var wO = ln[mi].off ? ctx.measureText(ln[mi].off).width + 10 : 0;
+          lineWTotal += (mi > 0 ? gap2 : 0) + wM + wO + pad2 * 2;
+        }
+        var x2 = 360 - lineWTotal / 2;
+        for (var mi2 = 0; mi2 < ln.length; mi2++) {
+          var pp = ln[mi2];
+          var wM2 = ctx.measureText(pp.main).width;
+          var wO2 = pp.off ? ctx.measureText(pp.off).width + 10 : 0;
+          var wP2 = wM2 + wO2 + pad2 * 2;
+          ctx.fillStyle = pp.best ? "rgba(255,210,63,0.13)" : "#262b35";
+          roundRectPath(ctx, x2, yyy, wP2, 38, 19); ctx.fill();
+          if (pp.best) { ctx.strokeStyle = "#ffd23f"; ctx.lineWidth = 1.5; roundRectPath(ctx, x2, yyy, wP2, 38, 19); ctx.stroke(); }
+          ctx.fillStyle = pp.best ? "#ffd23f" : "#e3e7ee";
+          ctx.fillText(pp.main, x2 + pad2, yyy + 25);
+          if (pp.off) {
+            ctx.fillStyle = "#ff6b6b";
+            ctx.fillText(pp.off, x2 + pad2 + wM2 + 10, yyy + 25);
+          }
+          x2 += wP2 + gap2;
+        }
+        yyy += rowH;
+      }
+      bandY = yyy + 6;
     }
     // footer
-    ctx.textAlign = "center";
-    var fy = Math.max(bandY + 8, 872);
+    var fy = Math.max(bandY, 856);
     ctx.strokeStyle = "#3d2424"; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(140, fy); ctx.lineTo(580, fy); ctx.stroke();
     ctx.fillStyle = "#6d6d6d"; ctx.font = "22px 'PingFang SC',sans-serif";

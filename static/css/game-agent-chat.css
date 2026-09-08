@@ -485,3 +485,78 @@
   display: inline-block; margin-left: 6px; background: #e03333; color: #fff;
   font-size: 10px; padding: 0 6px; border-radius: 6px; vertical-align: 1px;
 }
+
+/* ================= 富块最终样式（统一覆盖，深色富卡风格） ================= */
+.gac-blocks { max-width: 88%; }
+.gac-block { margin: 4px 0 12px; }
+.gac-card {
+  border-radius: 14px; overflow: hidden;
+  background: #1d222b; border: 1px solid #2e3642;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  color: #e8ecf2;
+}
+.gac-card-cover { position: relative; }
+.gac-card-cover img { width: 100%; display: block; height: auto; max-height: 220px; object-fit: cover; }
+.gac-card-off {
+  position: absolute; right: 10px; top: 10px;
+  background: #e03333; color: #fff; font-weight: 800; font-size: 20px;
+  padding: 3px 10px; border-radius: 8px; transform: rotate(3deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+.gac-card-off-float {
+  display: inline-block; margin: 8px 0 0 8px; background: #e03333; color: #fff;
+  font-weight: 800; padding: 3px 10px; border-radius: 8px;
+}
+.gac-card-body { padding: 12px 14px 14px; }
+.gac-card-name { font-size: 17px; font-weight: 800; color: #fff; line-height: 1.35; }
+.gac-card-en { font-size: 11px; color: #8a93a3; letter-spacing: 1px; margin: 2px 0 8px; }
+.gac-card-prices { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; }
+.gac-card-now { color: #ffd23f; font-size: 26px; font-weight: 900; }
+.gac-card-old { color: #8a93a3; text-decoration: line-through; font-size: 14px; }
+.gac-card-chips { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; color: #b9c2cf; }
+.gac-card-chip { background: #2a313c; padding: 2px 9px; border-radius: 10px; }
+.gac-card-btn {
+  display: block; text-align: center; margin-top: 10px; padding: 8px;
+  border-radius: 8px; background: #2f6f4f; color: #fff; font-size: 13px; text-decoration: none;
+}
+.gac-card-btn:hover { filter: brightness(1.1); }
+.gac-card-poster-btn { background: #2f6f4f; }
+/* 平台价格明细：紧凑行，右对齐价格组 */
+.gac-card-plats { margin-top: 6px; border-top: 1px solid #2e3642; padding-top: 4px; }
+.gac-plat {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 2px 0; font-size: 12.5px; color: #cdd3dc;
+}
+.gac-plat-name { font-weight: 600; color: #e8ecf2; margin-right: auto; }
+.gac-plat-old { color: #8a93a3; text-decoration: line-through; font-size: 12px; }
+.gac-plat-now { font-weight: 800; color: #ffd23f; }
+.gac-plat-off { color: #ff6b6b; font-weight: 700; font-size: 12px; }
+.gac-plat-best { background: rgba(255, 210, 63, 0.1); border-radius: 6px; padding: 3px 6px; margin: 1px -6px; }
+.gac-plat-badge {
+  display: inline-block; margin-left: 6px; background: #e03333; color: #fff;
+  font-size: 10px; padding: 0 6px; border-radius: 6px; vertical-align: 1px;
+}
+/* 海报（内联 + 模态框） */
+.gac-poster-inline-wrap { margin: 6px 0 10px; }
+.gac-poster-inline { display: block; width: 100%; max-width: 320px; border-radius: 12px; margin: 0 auto; }
+.gac-poster-inline-actions { display: flex; justify-content: center; gap: 10px; margin-top: 8px; }
+.gac-poster-inline-actions button {
+  border: 1px solid #2e3642; background: transparent; color: #e8ecf2;
+  border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer;
+}
+.gac-poster-modal {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.gac-poster-box {
+  background: #17191d; border-radius: 16px; padding: 14px;
+  max-height: 94vh; overflow: auto; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+.gac-poster-canvas { display: block; width: 100%; max-width: 400px; height: auto; border-radius: 8px; }
+.gac-poster-actions { display: flex; gap: 10px; margin-top: 12px; }
+.gac-poster-act {
+  flex: 1; padding: 10px 0; border: none; border-radius: 9px;
+  background: #2f6f4f; color: #fff; font-size: 14px; cursor: pointer;
+}
+.gac-poster-close { background: #4a4f58; flex: 0 0 auto; padding: 10px 16px; }
