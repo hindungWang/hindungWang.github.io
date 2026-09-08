@@ -659,10 +659,16 @@
           statusEl.textContent = "· 在线";
           return;
         }
-        // 普通流程：回复逐字打出，完成后渲染富块（游戏卡片等）
-        typewriterAppend(res.reply, function () {
+        var hasCard = firstCard !== null;
+        // 默认：有游戏卡片时【卡片先出、文字后打】（卡片承载结构化信息，文字做补充）
+        if (hasCard) {
           renderBlocks(blocks);
-        });
+          setTimeout(function () { typewriterAppend(res.reply); }, 60);
+        } else {
+          typewriterAppend(res.reply, function () {
+            renderBlocks(blocks);
+          });
+        }
         statusEl.textContent = "· 在线";
       })
       .catch(function (err) {
