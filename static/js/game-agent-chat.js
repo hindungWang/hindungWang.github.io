@@ -461,9 +461,10 @@
       for (var cj = 0; cj < chips.length; cj++) {
         var chip = chips[cj];
         ctx.fillStyle = "#2a313c"; roundRectPath(ctx, cxx, chipY - 23, cws[cj], 40, 20); ctx.fill();
-        var iconCX = cxx + 16, iconCY = chipY;
-        if (chip.kind === "star") { ctx.fillStyle = "#ffd23f"; drawStar(iconCX, iconCY, 11); ctx.fill(); }
-        else { ctx.strokeStyle = "#b9c2cf"; ctx.lineWidth = 2; drawClock(iconCX, iconCY, 10); }
+        // 图标中心对齐文字视觉中线（文字为 alphabetic 基线，中线约在 chipY-7）
+        var iconCX = cxx + 16, iconCY = chipY - 7;
+        if (chip.kind === "star") { ctx.fillStyle = "#ffd23f"; drawStar(iconCX, iconCY, 10.5); ctx.fill(); }
+        else { ctx.strokeStyle = "#b9c2cf"; ctx.lineWidth = 2; drawClock(iconCX, iconCY, 9); }
         ctx.fillStyle = "#e8e8e8";
         ctx.fillText(chip.text, cxx + 30 + 8, chipY);
         cxx += cws[cj] + 10;
