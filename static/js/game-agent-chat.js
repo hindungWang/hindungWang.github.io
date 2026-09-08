@@ -420,6 +420,50 @@
     ctx.fillStyle = "#6d6d6d"; ctx.font = "22px 'PingFang SC',sans-serif";
     ctx.fillText("由 Stray 查价生成 · 数据实时查询", 360, 908);
   }
+  function downloadCanvas(canvas) {
+    canvas.toBlob(function (blob) {
+      if (!blob) { alert("生成图片失败"); return; }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "stray-poster-" + Date.now() + ".png";
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+    }, "image/png");
+  }
+  function copyCanvas(canvas) {
+    canvas.toBlob(function (blob) {
+      if (!blob) { alert("生成图片失败"); return; }
+      if (navigator.clipboard && window.ClipboardItem) {
+        navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
+          .then(function () { alert("已复制到剪贴板 ✅"); },
+                function () { alert("复制被拒绝，可用『下载 PNG』"); });
+      } else {
+        alert("当前浏览器不支持直接复制图片，请用『下载 PNG』");
+      }
+    }, "image/png");
+  }
+  /* 海报请求时：先内联渲染海报图，再发文字 */
+  function showInlinePoster(block, onDone) {
+    loadImage(safeUrl(block.cover)).then(function (img) {
+      var canvas = document.createElement("canvas");
+      drawPoster(canvas, block, img);
+      var wrap = document.createElement("div");
+      wrap.className = "gac-poster-inline-wrap";
+      wrap.innerHTML =
+        '<img class="gac-poster-inline" alt="海报">' +
+        '<div class="gac-poster-inline-actions">' +
+          '<button type="button" data-act="save">💾 下载 PNG</button>' +
+          '<button type="button" data-act="copy">📋 复制图片</button>' +
+        "</div>";
+      var pimg = wrap.querySelector("img");
+      pimg.src = canvas.toDataURL("image/png");
+      bodyEl.appendChild(wrap);
+      scrollToBottom();
+      wrap.querySelector('[data-act="save"]').addEventListener("click", function () { downloadCanvas(canvas); });
+      wrap.querySelector('[data-act="copy"]').addEventListener("click", function () { copyCanvas(canvas); });
+      if (onDone) setTimeout(onDone, 150);
+    });
+  }
   function openPoster(block) {
     loadImage(safeUrl(block.cover)).then(function (img) {
       var overlay = document.createElement("div");
@@ -439,26 +483,10 @@
       overlay.querySelector(".gac-poster-close").addEventListener("click", function () { overlay.remove(); });
       overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.remove(); });
       overlay.querySelector('[data-act="save"]').addEventListener("click", function () {
-        canvas.toBlob(function (blob) {
-          if (!blob) { alert("生成图片失败"); return; }
-          var a = document.createElement("a");
-          a.href = URL.createObjectURL(blob);
-          a.download = "stray-poster-" + Date.now() + ".png";
-          a.click();
-          setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
-        }, "image/png");
+        downloadCanvas(canvas);
       });
       overlay.querySelector('[data-act="copy"]').addEventListener("click", function () {
-        canvas.toBlob(function (blob) {
-          if (!blob) { alert("生成图片失败"); return; }
-          if (navigator.clipboard && window.ClipboardItem) {
-            navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
-              .then(function () { alert("已复制到剪贴板 ✅"); },
-                    function () { alert("复制被拒绝，可用『下载 PNG』"); });
-          } else {
-            alert("当前浏览器不支持直接复制图片，请用『下载 PNG』");
-          }
-        }, "image/png");
+        copyCanvas(canvas);
       });
     });
   }
@@ -618,9 +646,22 @@
     sendMessage(text)
       .then(function (res) {
         typing.remove();
-        // 回复逐字打出，完成后渲染富块（游戏卡片等）
+        var blocks = res.blocks || [];
+        var firstCard = null;
+        for (var bi = 0; bi < blocks.length; bi++) {
+          if (blocks[bi] && blocks[bi].type === "game_card") { firstCard = blocks[bi]; break; }
+        }
+        // 海报请求：先生成海报图，再打字发文字（卡片信息已含在海报里，不再重复出卡）
+        if (/海报|宣传图|poster/i.test(text) && firstCard) {
+          showInlinePoster(firstCard, function () {
+            typewriterAppend(res.reply);
+          });
+          statusEl.textContent = "· 在线";
+          return;
+        }
+        // 普通流程：回复逐字打出，完成后渲染富块（游戏卡片等）
         typewriterAppend(res.reply, function () {
-          renderBlocks(res.blocks || []);
+          renderBlocks(blocks);
         });
         statusEl.textContent = "· 在线";
       })

@@ -459,3 +459,13 @@
 }
 .gac-poster-act:hover { filter: brightness(1.1); }
 .gac-poster-close { background: #4a4f58; flex: 0 0 auto; padding: 10px 16px; }
+
+/* ---- 海报请求：内联海报（先图后文）---- */
+.gac-poster-inline-wrap { margin: 6px 0 10px; }
+.gac-poster-inline { display: block; width: 100%; max-width: 320px; border-radius: 12px; margin: 0 auto; }
+.gac-poster-inline-actions { display: flex; justify-content: center; gap: 10px; margin-top: 8px; }
+.gac-poster-inline-actions button {
+  border: 1px solid var(--gac-border); background: transparent; color: var(--gac-bubble-agent-text);
+  border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer;
+}
+.gac-poster-inline-actions button:hover { background: rgba(127, 127, 127, 0.15); }
