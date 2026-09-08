@@ -299,6 +299,24 @@
     if (b.platform) h += '<span class="gac-card-chip">' + escapeHtml(String(b.platform)) + "</span>";
     if (b.remaining) h += '<span class="gac-card-chip">⏳ ' + escapeHtml(String(b.remaining)) + "</span>";
     h += "</div>";
+    // 各平台价格明细：划线原价 + 现价 + 折扣%，最大折扣（第一行）高亮
+    var plats = Array.isArray(b.prices) ? b.prices : [];
+    if (plats.length > 0) {
+      h += '<div class="gac-card-plats">';
+      for (var pi = 0; pi < plats.length; pi++) {
+        var r = plats[pi];
+        if (!r || !r.name) continue;
+        var best = pi === 0 && r.off_pct > 0;
+        h += '<div class="gac-plat' + (best ? " gac-plat-best" : "") + '">' +
+          '<span class="gac-plat-name">' + escapeHtml(String(r.name)) +
+          (best ? '<span class="gac-plat-badge">最大折扣</span>' : "") + "</span>" +
+          (r.origin_price > 0 ? '<span class="gac-plat-old">¥' + escapeHtml(String(r.origin_price)) + "</span>" : "") +
+          '<span class="gac-plat-now">¥' + escapeHtml(String(r.price)) + "</span>" +
+          (r.off_pct > 0 ? '<span class="gac-plat-off">-' + escapeHtml(String(r.off_pct)) + "%</span>" : "") +
+          "</div>";
+      }
+      h += "</div>";
+    }
     if (video) {
       h += '<a class="gac-card-btn" href="' + video + '" target="_blank" rel="noopener noreferrer">🎬 看预告 / 演示</a>';
     }

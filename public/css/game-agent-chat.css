@@ -469,3 +469,19 @@
   border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer;
 }
 .gac-poster-inline-actions button:hover { background: rgba(127, 127, 127, 0.15); }
+
+/* ---- 卡片：平台价格明细 ---- */
+.gac-card-plats { margin-top: 8px; border-top: 1px solid var(--gac-border); padding-top: 6px; }
+.gac-plat {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 3px 0; font-size: 13px; color: var(--gac-bubble-agent-text);
+}
+.gac-plat-name { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gac-plat-old { color: #8a8f98; text-decoration: line-through; font-size: 12px; }
+.gac-plat-now { font-weight: 800; color: #ffd23f; }
+.gac-plat-off { color: #ff6b6b; font-weight: 700; font-size: 12px; }
+.gac-plat-best { background: rgba(255, 210, 63, 0.08); border-radius: 6px; padding: 4px 6px; margin: 0 -6px; }
+.gac-plat-badge {
+  display: inline-block; margin-left: 6px; background: #e03333; color: #fff;
+  font-size: 10px; padding: 0 6px; border-radius: 6px; vertical-align: 1px;
+}
