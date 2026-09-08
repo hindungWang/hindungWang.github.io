@@ -424,21 +424,46 @@
       pTxt = "¥" + price;
       var pFs = pTxt.length > 7 ? 66 : 92;
       ctx.font = "900 " + pFs + "px Arial,'PingFang SC',sans-serif";
-      ctx.fillStyle = "#ffd23f"; ctx.fillText(pTxt, 360, mainPriceY);
-      // -XX% 斜红框：紧贴价格右侧，垂直对齐价格字高中间
+      var priceW = ctx.measureText(pTxt).width;
+      // 组合水平居中：把价格字中心从 360 左移，使 [数字+tag] 整体对称于中轴
+      var gap = 32, tagBodyR = 58;               // tag 右缘
+      var cx = 360, hasTag = !!off;
+      if (hasTag) cx = 360 - (gap + tagBodyR) / 2; // 组合中心修正
+      // 先画红色价签(tag)，金色价格字后画叠加 —— 金色在红色之前
       if (off) {
-        var priceW = ctx.measureText(pTxt).width;
         ctx.save();
-        ctx.translate(360 + priceW / 2 + 18, mainPriceY - (pFs > 70 ? 34 : 26));
-        ctx.rotate(8 * Math.PI / 180);
+        ctx.translate(cx + priceW / 2 + gap, mainPriceY - (pFs > 70 ? 34 : 26));
+        ctx.rotate(18 * Math.PI / 180); // 左斜上：价签尖端朝左上方
         ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        var bg2 = ctx.createLinearGradient(0, -30, 0, 30);
-        bg2.addColorStop(0, "#ff5f3a"); bg2.addColorStop(1, "#d92626");
-        ctx.fillStyle = bg2; roundRectPath(ctx, -38, -28, 76, 56, 12); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.font = "900 30px Arial"; ctx.fillText(off, 0, 2);
+        // 价格标签：圆润尖端 + 大圆角主体 + 穿绳环 + 数字居中清晰
+        var TH = 80, TR = 18, yT = -TH / 2, yB = TH / 2;
+        var bodyL = -36, bodyR = 58, tipX = -72;
+        var bg2 = ctx.createLinearGradient(0, yT, 0, yB);
+        bg2.addColorStop(0, "#ff6b4a"); bg2.addColorStop(1, "#d92626");
+        ctx.fillStyle = bg2;
+        ctx.beginPath();
+        ctx.moveTo(bodyL, yT);
+        ctx.lineTo(bodyR - TR, yT);
+        ctx.arcTo(bodyR, yT, bodyR, yT + TR, TR);
+        ctx.lineTo(bodyR, yB - TR);
+        ctx.arcTo(bodyR, yB, bodyR - TR, yB, TR);
+        ctx.lineTo(bodyL, yB);
+        ctx.quadraticCurveTo(tipX, yB * 0.32, tipX + 4, 0); // 下腰快速收尖
+        ctx.quadraticCurveTo(tipX, yT * 0.32, bodyL, yT);   // 尖回上腰
+        ctx.closePath(); ctx.fill();
+        // 尖端高光（上边缘），柔和
+        ctx.strokeStyle = "rgba(255,255,255,0.22)"; ctx.lineWidth = 3; ctx.stroke();
+        // 穿绳环：细白环（不挖穿背景），位于尖端偏上
+        ctx.strokeStyle = "rgba(255,255,255,0.9)"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(-46, -6, 9, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = "#fff"; ctx.font = "900 32px Arial";
+        ctx.fillText(off, (bodyL + bodyR) / 2 + 10, 2);
         ctx.restore();
         ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
       }
+      // 金色价格字：后画，叠加在 tag 上（金色在红色之前）
+      ctx.fillStyle = "#ffd23f"; ctx.font = "900 " + pFs + "px Arial,'PingFang SC',sans-serif";
+      ctx.fillText(pTxt, cx, mainPriceY);
     }
     // 顶部 chips：金色文本星号评分 + 淡蓝剩余时间
     var chips = [];
