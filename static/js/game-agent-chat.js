@@ -428,19 +428,22 @@
       ctx.font = "900 " + (pTxt.length > 7 ? 68 : 92) + "px Arial,'PingFang SC',sans-serif";
       ctx.fillStyle = "#ffd23f"; ctx.fillText(pTxt, 360, mainPriceY);
     }
-    // 顶部 chips（纯文字标签，无图标依赖）
+    // 顶部 chips：金色文本星号评分 + 淡蓝剩余时间
     var chips = [];
-    if (b.rating) chips.push("评分 " + b.rating);
-    if (b.remaining) chips.push(String(b.remaining));
+    if (b.rating) chips.push({ text: "★ " + b.rating, color: "#ffd23f" });
+    if (b.remaining) chips.push({ text: String(b.remaining), color: "#a8c7e8" });
     var chipY = mainPriceY + 42;
     if (chips.length) {
-      ctx.font = "24px 'PingFang SC',sans-serif";
+      ctx.font = "800 24px 'PingFang SC',sans-serif";
       var cws = [], ctw = 0;
-      for (var ci = 0; ci < chips.length; ci++) { cws.push(ctx.measureText(chips[ci]).width + 34); ctw += cws[ci] + 10; }
+      for (var ci = 0; ci < chips.length; ci++) { cws.push(ctx.measureText(chips[ci].text).width + 36); ctw += cws[ci] + 10; }
       var cxx = 360 - (ctw - 10) / 2;
       for (var cj = 0; cj < chips.length; cj++) {
-        ctx.fillStyle = "#2a313c"; roundRectPath(ctx, cxx, chipY - 23, cws[cj], 40, 20); ctx.fill();
-        ctx.fillStyle = "#e8e8e8"; ctx.fillText(chips[cj], cxx + cws[cj] / 2, chipY);
+        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        roundRectPath(ctx, cxx, chipY - 24, cws[cj], 42, 21); ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 1;
+        roundRectPath(ctx, cxx, chipY - 24, cws[cj], 42, 21); ctx.stroke();
+        ctx.fillStyle = chips[cj].color; ctx.fillText(chips[cj].text, cxx + cws[cj] / 2, chipY);
         cxx += cws[cj] + 10;
       }
     }
