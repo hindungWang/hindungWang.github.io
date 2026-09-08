@@ -480,11 +480,9 @@
         ctx.font = "800 " + (itm.best ? 23 : 21) + "px 'PingFang SC',sans-serif";
         ctx.fillText(nm, cx - cellW / 2 + 4, cy - (itm.best ? 0 : 0));
         if (itm.best && itm.offP > 0) {
-          // 史低角标
-          ctx.fillStyle = "#e03333";
-          roundRectPath(ctx, cx - cellW / 2 + 4 + ctx.measureText(nm).width + 6, cy - 11, 40, 22, 6); ctx.fill();
-          ctx.fillStyle = "#fff"; ctx.font = "900 13px Arial";
-          ctx.fillText("史低", cx - cellW / 2 + 4 + ctx.measureText(nm).width + 26, cy);
+          // 史低：红字无背景
+          ctx.fillStyle = "#ff5252"; ctx.font = "800 14px 'PingFang SC',sans-serif";
+          ctx.fillText("史低", cx - cellW / 2 + 4 + ctx.measureText(nm).width + 6, cy);
         }
         ctx.font = "22px 'PingFang SC',sans-serif";
         // 价格右对齐到 cell 右侧：now + old（不显示平台折扣百分比）
