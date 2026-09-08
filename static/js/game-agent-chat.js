@@ -307,59 +307,160 @@
     return h;
   }
 
-  /* 客户端海报：由卡片数据本地拼 SVG（封面外链在 DOM 内可加载，无需服务端大 payload）。
-   * 所有值先转义，构造即安全。 */
-  function xmlEscape(s) {
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  /* ---------- 海报：canvas 渲染 + 模态框（下载 PNG / 复制图片） ---------- */
+  function loadImage(url) {
+    return new Promise(function (resolve) {
+      if (!url) { resolve(null); return; }
+      var img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = url;
+    });
   }
-  function buildPosterSvg(b) {
-    var cover = safeUrl(b.cover);
-    var name = xmlEscape(b.name || "");
-    var enName = b.en_name ? xmlEscape(String(b.en_name)) : "";
-    var price = b.price > 0 ? "¥" + b.price : "";
-    var origin = b.origin_price > 0 ? "¥" + b.origin_price : "";
+  function wrapText(ctx, text, maxW) {
+    var lines = [], cur = "";
+    for (var i = 0; i < Array.from(text).length; i++) {
+      var ch = Array.from(text)[i];
+      var t = cur + ch;
+      if (cur && ctx.measureText(t).width > maxW) { lines.push(cur); cur = ch; }
+      else cur = t;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function drawPoster(canvas, b, coverImg) {
+    var W = 720, H = 960;
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext("2d");
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#241111"); g.addColorStop(0.55, "#120707"); g.addColorStop(1, "#0a0303");
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    if (coverImg) {
+      ctx.drawImage(coverImg, 0, 0, W, 340);
+      var f = ctx.createLinearGradient(0, 240, 0, 360);
+      f.addColorStop(0, "rgba(18,7,7,0)"); f.addColorStop(1, "rgba(18,7,7,1)");
+      ctx.fillStyle = f; ctx.fillRect(0, 240, W, 120);
+    }
     var off = "";
     if (b.origin_price > 0 && b.price > 0 && b.price < b.origin_price) {
       off = "-" + Math.round((1 - b.price / b.origin_price) * 100) + "%";
     }
-    var rating = b.rating ? "⭐ " + b.rating : "";
-    var platform = b.platform ? xmlEscape(String(b.platform)) : "";
-    var remaining = b.remaining ? xmlEscape(String(b.remaining)) : "";
-    var nameSize = Array.from(String(b.name || "")).length > 12 ? 40 : 52;
-    var chips = [rating, platform, remaining].filter(Boolean);
-    var chipSvg = "", cx = 360 - (chips.join("").length * 7) / 2;
-    for (var i = 0; i < chips.length; i++) {
-      var w = Array.from(chips[i]).length * 16 + 36;
-      chipSvg += '<rect x="' + cx + '" y="690" width="' + w + '" height="52" rx="26" fill="#2a313c"/>' +
-        '<text x="' + (cx + w / 2) + '" y="725" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="26" fill="#e8e8e8">' + xmlEscape(chips[i]) + "</text>";
-      cx += w + 12;
+    if (off) {
+      ctx.save(); ctx.translate(642, 96); ctx.rotate(8 * Math.PI / 180);
+      var bg2 = ctx.createLinearGradient(0, -72, 0, 72);
+      bg2.addColorStop(0, "#ff5f3a"); bg2.addColorStop(1, "#d92626");
+      ctx.fillStyle = bg2; roundRectPath(ctx, -72, -72, 144, 144, 26); ctx.fill();
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillStyle = "#fff"; ctx.font = "900 46px Arial";
+      ctx.fillText(off, 0, -8);
+      ctx.fillStyle = "#ffe9e9"; ctx.font = "22px 'PingFang SC',sans-serif";
+      ctx.fillText("限时特惠", 0, 38);
+      ctx.restore();
     }
-    return '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="960" viewBox="0 0 720 960" class="gac-poster">' +
-      '<defs><linearGradient id="pg" x1="0" y1="0" x2="0" y2="1">' +
-      '<stop offset="0" stop-color="#241111"/><stop offset="0.55" stop-color="#120707"/><stop offset="1" stop-color="#0a0303"/>' +
-      '</linearGradient></defs>' +
-      '<rect width="720" height="960" fill="url(#pg)"/>' +
-      (cover ? '<image x="0" y="0" width="720" height="340" preserveAspectRatio="xMidYMid slice" href="' + xmlEscape(cover) + '"/>' : "") +
-      (off ? '<g transform="translate(640 100) rotate(8)"><rect x="-72" y="-72" width="144" height="144" rx="24" fill="#e03333"/>' +
-        '<text x="0" y="-4" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="46" font-weight="900" fill="#fff">' + off + "</text>" +
-        '<text x="0" y="40" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="22" fill="#ffe9e9">限时特惠</text></g>' : "") +
-      '<text x="360" y="470" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="' + nameSize + '" font-weight="800" fill="#fff">' + name + "</text>" +
-      (enName ? '<text x="360" y="528" text-anchor="middle" font-family="Georgia, serif" font-size="24" letter-spacing="6" fill="#d4af37">' + enName + "</text>" : "") +
-      (origin ? '<text x="360" y="620" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="30" fill="#b5b5b5" text-decoration="line-through">' + origin + "</text>" : "") +
-      (price ? '<text x="360" y="700" text-anchor="middle" font-family="Arial Black, PingFang SC, sans-serif" font-size="96" font-weight="900" fill="#ffd23f">' + price + "</text>" : "") +
-      chipSvg +
-      '<line x1="140" y1="860" x2="580" y2="860" stroke="#3d2424" stroke-width="2"/>' +
-      '<text x="360" y="905" text-anchor="middle" font-family="PingFang SC, sans-serif" font-size="22" fill="#6d6d6d">由 Stray 查价生成 · 数据实时查询</text>' +
-      "</svg>";
+    var name = String(b.name || "");
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    var nameFont = Array.from(name).length > 12 ? 40 : 52;
+    ctx.font = "800 " + nameFont + "px 'PingFang SC',sans-serif";
+    var nameLines = wrapText(ctx, name, 640);
+    if (nameLines.length > 1 && nameFont === 52) {
+      nameFont = 40; ctx.font = "800 40px 'PingFang SC',sans-serif";
+      nameLines = wrapText(ctx, name, 640);
+    }
+    var ny = nameLines.length > 1 ? 440 : 470;
+    for (var i = 0; i < nameLines.length; i++) {
+      ctx.fillStyle = "#fff";
+      ctx.fillText(nameLines[i], 360, ny + i * (nameFont + 8));
+    }
+    var textBottom = ny + (nameLines.length - 1) * (nameFont + 8);
+    if (b.en_name) {
+      ctx.fillStyle = "#d4af37"; ctx.font = "24px Georgia";
+      ctx.fillText(String(b.en_name), 360, Math.max(520, textBottom + 42));
+    }
+    var priceY = 700;
+    if (b.origin_price > 0) {
+      ctx.font = "30px 'PingFang SC',sans-serif"; ctx.fillStyle = "#b5b5b5";
+      var oy = 620; ctx.fillText("¥" + b.origin_price, 360, oy);
+      priceY = oy + 88;
+    }
+    if (b.price > 0) {
+      ctx.font = "900 92px Arial,'PingFang SC',sans-serif"; ctx.fillStyle = "#ffd23f";
+      ctx.fillText("¥" + b.price, 360, priceY);
+    }
+    var chips = [];
+    if (b.rating) chips.push("⭐ " + b.rating);
+    if (b.platform) chips.push(String(b.platform));
+    if (b.remaining) chips.push("⏳ " + b.remaining);
+    ctx.font = "26px 'PingFang SC',sans-serif";
+    var totalW = 0, widths = [];
+    for (var j = 0; j < chips.length; j++) {
+      widths.push(Array.from(chips[j]).length * 16 + 40);
+      totalW += widths[j] + 12;
+    }
+    var cx = 360 - (totalW - 12) / 2;
+    for (var k = 0; k < chips.length; k++) {
+      ctx.fillStyle = "#2a313c";
+      roundRectPath(ctx, cx, 780, widths[k], 52, 26); ctx.fill();
+      ctx.fillStyle = "#e8e8e8"; ctx.textAlign = "center";
+      ctx.fillText(chips[k], cx + widths[k] / 2, 812);
+      cx += widths[k] + 12;
+    }
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#3d2424"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(140, 868); ctx.lineTo(580, 868); ctx.stroke();
+    ctx.fillStyle = "#6d6d6d"; ctx.font = "22px 'PingFang SC',sans-serif";
+    ctx.fillText("由 Stray 查价生成 · 数据实时查询", 360, 908);
   }
-  function showPoster(block, cardEl) {
-    var old = cardEl.parentNode.querySelector(".gac-block-poster-inline");
-    if (old) old.remove();
-    var div = document.createElement("div");
-    div.className = "gac-block gac-block-poster-inline";
-    div.innerHTML = buildPosterSvg(block);
-    cardEl.parentNode.insertBefore(div, cardEl.nextSibling);
-    scrollToBottom();
+  function openPoster(block) {
+    loadImage(safeUrl(block.cover)).then(function (img) {
+      var overlay = document.createElement("div");
+      overlay.className = "gac-poster-modal";
+      overlay.innerHTML =
+        '<div class="gac-poster-box">' +
+          '<canvas class="gac-poster-canvas"></canvas>' +
+          '<div class="gac-poster-actions">' +
+            '<button type="button" class="gac-poster-act" data-act="save">💾 下载 PNG</button>' +
+            '<button type="button" class="gac-poster-act" data-act="copy">📋 复制图片</button>' +
+            '<button type="button" class="gac-poster-act gac-poster-close">✕ 关闭</button>' +
+          "</div>" +
+        "</div>";
+      document.body.appendChild(overlay);
+      var canvas = overlay.querySelector("canvas");
+      drawPoster(canvas, block, img);
+      overlay.querySelector(".gac-poster-close").addEventListener("click", function () { overlay.remove(); });
+      overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.remove(); });
+      overlay.querySelector('[data-act="save"]').addEventListener("click", function () {
+        canvas.toBlob(function (blob) {
+          if (!blob) { alert("生成图片失败"); return; }
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "stray-poster-" + Date.now() + ".png";
+          a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+        }, "image/png");
+      });
+      overlay.querySelector('[data-act="copy"]').addEventListener("click", function () {
+        canvas.toBlob(function (blob) {
+          if (!blob) { alert("生成图片失败"); return; }
+          if (navigator.clipboard && window.ClipboardItem) {
+            navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
+              .then(function () { alert("已复制到剪贴板 ✅"); },
+                    function () { alert("复制被拒绝，可用『下载 PNG』"); });
+          } else {
+            alert("当前浏览器不支持直接复制图片，请用『下载 PNG』");
+          }
+        }, "image/png");
+      });
+    });
   }
   function renderBlocks(blocks) {
     if (!Array.isArray(blocks) || blocks.length === 0) return;
@@ -372,7 +473,7 @@
         div.innerHTML = gameCardHtml(b);
         var btn = div.querySelector(".gac-card-poster-btn");
         if (btn) {
-          btn.addEventListener("click", function () { showPoster(b, div); });
+          btn.addEventListener("click", function () { openPoster(b); });
         }
       } else if (b && b.type === "poster" && /^data:image\/svg\+xml;base64,/.test(String(b.src || ""))) {
         var img = document.createElement("img");
