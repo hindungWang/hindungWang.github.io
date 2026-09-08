@@ -385,8 +385,7 @@
       var bg2 = ctx.createLinearGradient(0, -72, 0, 72);
       bg2.addColorStop(0, "#ff5f3a"); bg2.addColorStop(1, "#d92626");
       ctx.fillStyle = bg2; roundRectPath(ctx, -72, -72, 144, 144, 26); ctx.fill();
-      ctx.fillStyle = "#fff"; ctx.font = "900 46px Arial"; ctx.fillText(off, 0, -8);
-      ctx.fillStyle = "#ffe9e9"; ctx.font = "22px 'PingFang SC',sans-serif"; ctx.fillText("限时特惠", 0, 38);
+      ctx.fillStyle = "#fff"; ctx.font = "900 52px Arial"; ctx.fillText(off, 0, 2);
       ctx.restore();
       ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
     }
@@ -429,44 +428,19 @@
       ctx.font = "900 " + (pTxt.length > 7 ? 68 : 92) + "px Arial,'PingFang SC',sans-serif";
       ctx.fillStyle = "#ffd23f"; ctx.fillText(pTxt, 360, mainPriceY);
     }
-    // 顶部 chips（评分/剩余）——矢量图标，不依赖 emoji 字体
-    function drawStar(cx2, cy2, r) {
-      ctx.beginPath();
-      for (var si = 0; si < 10; si++) {
-        var rad = si % 2 === 0 ? r : r * 0.45;
-        var a = -Math.PI / 2 + (si * Math.PI) / 5;
-        var px2 = cx2 + Math.cos(a) * rad, py2 = cy2 + Math.sin(a) * rad;
-        if (si === 0) ctx.moveTo(px2, py2); else ctx.lineTo(px2, py2);
-      }
-      ctx.closePath();
-    }
-    function drawClock(cx2, cy2, r) {
-      ctx.beginPath(); ctx.arc(cx2, cy2, r, 0, Math.PI * 2); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(cx2, cy2); ctx.lineTo(cx2, cy2 - r * 0.55);
-      ctx.moveTo(cx2, cy2); ctx.lineTo(cx2 + r * 0.45, cy2 + r * 0.2);
-      ctx.stroke();
-    }
+    // 顶部 chips（纯文字标签，无图标依赖）
     var chips = [];
-    if (b.rating) chips.push({ kind: "star", text: String(b.rating) });
-    if (b.remaining) chips.push({ kind: "clock", text: String(b.remaining) });
+    if (b.rating) chips.push("评分 " + b.rating);
+    if (b.remaining) chips.push(String(b.remaining));
     var chipY = mainPriceY + 42;
     if (chips.length) {
       ctx.font = "24px 'PingFang SC',sans-serif";
-      var cws = [], ctw = 0, icW = 30;
-      for (var ci = 0; ci < chips.length; ci++) {
-        cws.push(ctx.measureText(chips[ci].text).width + 30 + (ci === 0 ? icW + 6 : icW + 6));
-        ctw += cws[ci] + 10;
-      }
+      var cws = [], ctw = 0;
+      for (var ci = 0; ci < chips.length; ci++) { cws.push(ctx.measureText(chips[ci]).width + 34); ctw += cws[ci] + 10; }
       var cxx = 360 - (ctw - 10) / 2;
       for (var cj = 0; cj < chips.length; cj++) {
-        var chip = chips[cj];
         ctx.fillStyle = "#2a313c"; roundRectPath(ctx, cxx, chipY - 23, cws[cj], 40, 20); ctx.fill();
-        // 图标中心对齐文字视觉中线（文字为 alphabetic 基线，中线约在 chipY-7）
-        var iconCX = cxx + 16, iconCY = chipY - 7;
-        if (chip.kind === "star") { ctx.fillStyle = "#ffd23f"; drawStar(iconCX, iconCY, 10.5); ctx.fill(); }
-        else { ctx.strokeStyle = "#b9c2cf"; ctx.lineWidth = 2; drawClock(iconCX, iconCY, 9); }
-        ctx.fillStyle = "#e8e8e8";
-        ctx.fillText(chip.text, cxx + 30 + 8, chipY);
+        ctx.fillStyle = "#e8e8e8"; ctx.fillText(chips[cj], cxx + cws[cj] / 2, chipY);
         cxx += cws[cj] + 10;
       }
     }
