@@ -487,15 +487,9 @@
           ctx.fillText("史低", cx - cellW / 2 + 4 + ctx.measureText(nm).width + 26, cy);
         }
         ctx.font = "22px 'PingFang SC',sans-serif";
-        // 价格右对齐到 cell 右侧：off + now + old
+        // 价格右对齐到 cell 右侧：now + old（不显示平台折扣百分比）
         var priceX = cx + cellW / 2 - 6;
         var px = priceX;
-        if (itm.offP > 0) {
-          var offT = "-" + itm.offP + "%";
-          ctx.fillStyle = "#ff6b6b"; ctx.font = "800 17px Arial";
-          ctx.fillText(offT, px - ctx.measureText(offT).width, cy);
-          px -= ctx.measureText(offT).width + 8;
-        }
         ctx.fillStyle = "#ffd23f"; ctx.font = "800 21px Arial,'PingFang SC',sans-serif";
         var nowT = "¥" + itm.price;
         ctx.fillText(nowT, px - ctx.measureText(nowT).width, cy);
