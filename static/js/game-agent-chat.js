@@ -271,6 +271,32 @@
   function safeUrl(u) {
     return /^https?:\/\//i.test(String(u || "")) ? String(u) : "";
   }
+  /* 从封面 URL 提取 Steam appid，生成备份图源列表（原图优先，失败依次试无 hash 的跨域名镜像）；
+     若后端给了显式 covers 数组，则优先使用它（仍带跨域降级 + 镜像兜底） */
+  function coverCandidates(url, extraCovers) {
+    var results = [];
+    function push(u) {
+      var s = safeUrl(u);
+      if (!s || results.indexOf(s) >= 0) return;
+      results.push(s);
+    }
+    // 显式 covers（后端）优先
+    if (Array.isArray(extraCovers)) {
+      for (var e = 0; e < extraCovers.length; e++) push(extraCovers[e]);
+    }
+    push(url); // 原图
+    var stripped = safeUrl(url).split("?")[0]; // 去掉 ?t= 时间戳
+    if (stripped && stripped !== url) push(stripped);
+    // 提取 appid：匹配 /apps/(\d+)/
+    var m = safeUrl(url).match(/\/apps\/(\d+)\//);
+    if (m) {
+      var id = m[1];
+      push("https://steamcdn-a.akamaihd.net/steam/apps/" + id + "/header.jpg");
+      push("https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/header.jpg");
+      push("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/" + id + "/header.jpg");
+    }
+    return results;
+  }
   function gameCardHtml(b) {
     var cover = safeUrl(b.cover);
     var video = safeUrl(b.video);
@@ -326,14 +352,34 @@
   }
 
   /* ---------- 海报：canvas 渲染 + 模态框（下载 PNG / 复制图片） ---------- */
-  function loadImage(url) {
+  function loadImage(url, extraCovers) {
     return new Promise(function (resolve) {
-      if (!url) { resolve(null); return; }
-      var img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = function () { resolve(img); };
-      img.onerror = function () { resolve(null); };
-      img.src = url;
+      var candidates = coverCandidates(url, extraCovers); // 原图 + 显式covers + 备用镜像
+      if (!candidates.length) { resolve(null); return; }
+      var idx = 0;
+      function next() {
+        if (idx >= candidates.length) { resolve(null); return; }
+        var u = candidates[idx++];
+        var triedPlain = false;
+        function tryLoad(useCors) {
+          var img = new Image();
+          if (useCors) img.crossOrigin = "anonymous";
+          img.__corsOk = useCors; // 标记是否走 CORS（决定 canvas 能否导出）
+          img.__src = u;          // 记录实际加载成功 URL（内联兜底显示）
+          var done = false;
+          var finish = function (ok) {
+            if (done) return; done = true;
+            if (ok) resolve(img);
+            else if (useCors && !triedPlain) { triedPlain = true; setTimeout(function () { tryLoad(false); }, 0); }
+            else next(); // 此候选失败，试下一个镜像
+          };
+          img.onload = function () { finish(true); };
+          img.onerror = function () { finish(false); };
+          img.src = u;
+        }
+        tryLoad(true);
+      }
+      next();
     });
   }
   function wrapText(ctx, text, maxW) {
@@ -675,7 +721,7 @@
   }
   /* 海报请求：先生成内联海报图，再发文字 */
   function showInlinePoster(block, onDone) {
-    loadImage(safeUrl(block.cover)).then(function (img) {
+    loadImage(safeUrl(block.cover), block.covers).then(function (img) {
       var canvas = document.createElement("canvas");
       try { drawPoster(canvas, block, img); } catch (e) { /* 保留空白画布，按钮仍可用 */ }
       var wrap = document.createElement("div");
@@ -687,7 +733,13 @@
           '<button type="button" data-act="copy">📋 复制图片</button>' +
         "</div>";
       var pimg = wrap.querySelector("img");
-      try { pimg.src = canvas.toDataURL("image/png"); } catch (e) { /* 忽略 */ }
+      var fallbackSrc = (img && img.__src) ? img.__src : safeUrl(block.cover);
+      // 画布被污染(封面走了非CORS降级)时 toDataURL 会抛错，改用实际加载成功的图 src 兜底显示
+      if (img && img.__corsOk === false) {
+        pimg.src = fallbackSrc;
+      } else {
+        try { pimg.src = canvas.toDataURL("image/png"); } catch (e) { pimg.src = fallbackSrc || ""; }
+      }
       bodyEl.appendChild(wrap);
       scrollToBottom();
       wrap.querySelector('[data-act="save"]').addEventListener("click", function () { downloadCanvas(canvas); });
@@ -696,7 +748,7 @@
     });
   }
   function openPoster(block) {
-    loadImage(safeUrl(block.cover)).then(function (img) {
+    loadImage(safeUrl(block.cover), block.covers).then(function (img) {
       var overlay = document.createElement("div");
       overlay.className = "gac-poster-modal";
       overlay.innerHTML =
