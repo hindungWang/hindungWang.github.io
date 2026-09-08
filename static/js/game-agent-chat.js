@@ -360,6 +360,8 @@
     var W = 720, H = 960;
     canvas.width = W; canvas.height = H;
     var ctx = canvas.getContext("2d");
+    ctx.textBaseline = "alphabetic";
+    // 背景
     var g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, "#241111"); g.addColorStop(0.55, "#120707"); g.addColorStop(1, "#0a0303");
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
@@ -369,118 +371,122 @@
       f.addColorStop(0, "rgba(18,7,7,0)"); f.addColorStop(1, "rgba(18,7,7,1)");
       ctx.fillStyle = f; ctx.fillRect(0, 240, W, 120);
     }
+    // 平台价格（优先 prices 数组，最大折扣=第一个）
+    var plats = Array.isArray(b.prices) && b.prices.length ? b.prices : [];
+    var best = null;
+    if (plats.length) best = plats[0];
+    var origin = best && best.origin_price ? best.origin_price : (b.origin_price || 0);
+    var price = best && best.price ? best.price : (b.price || 0);
     var off = "";
-    if (b.origin_price > 0 && b.price > 0 && b.price < b.origin_price) {
-      off = "-" + Math.round((1 - b.price / b.origin_price) * 100) + "%";
-    }
+    if (origin > 0 && price > 0 && price < origin) off = "-" + Math.round((1 - price / origin) * 100) + "%";
+    // 折扣角标
     if (off) {
       ctx.save(); ctx.translate(642, 96); ctx.rotate(8 * Math.PI / 180);
       var bg2 = ctx.createLinearGradient(0, -72, 0, 72);
       bg2.addColorStop(0, "#ff5f3a"); bg2.addColorStop(1, "#d92626");
       ctx.fillStyle = bg2; roundRectPath(ctx, -72, -72, 144, 144, 26); ctx.fill();
       ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillStyle = "#fff"; ctx.font = "900 46px Arial";
-      ctx.fillText(off, 0, -8);
-      ctx.fillStyle = "#ffe9e9"; ctx.font = "22px 'PingFang SC',sans-serif";
-      ctx.fillText("限时特惠", 0, 38);
+      ctx.fillStyle = "#fff"; ctx.font = "900 46px Arial"; ctx.fillText(off, 0, -8);
+      ctx.fillStyle = "#ffe9e9"; ctx.font = "22px 'PingFang SC',sans-serif"; ctx.fillText("限时特惠", 0, 38);
       ctx.restore();
     }
+    ctx.textBaseline = "alphabetic";
+    // 标题（可换行）
     var name = String(b.name || "");
-    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
     var nameFont = Array.from(name).length > 12 ? 40 : 52;
     ctx.font = "800 " + nameFont + "px 'PingFang SC',sans-serif";
     var nameLines = wrapText(ctx, name, 640);
-    if (nameLines.length > 1 && nameFont === 52) {
-      nameFont = 40; ctx.font = "800 40px 'PingFang SC',sans-serif";
-      nameLines = wrapText(ctx, name, 640);
+    if (nameLines.length > 1 && nameFont === 52) { nameFont = 40; ctx.font = "800 40px 'PingFang SC',sans-serif"; nameLines = wrapText(ctx, name, 640); }
+    var ty = nameLines.length > 1 ? 430 : 462;
+    for (var i = 0; i < nameLines.length; i++) { ctx.fillStyle = "#fff"; ctx.fillText(nameLines[i], 360, ty + i * (nameFont + 8)); }
+    var blockBottom = ty + (nameLines.length - 1) * (nameFont + 8);
+    // 英文名
+    if (b.en_name) { ctx.fillStyle = "#d4af37"; ctx.font = "22px Georgia"; ctx.fillText(String(b.en_name), 360, blockBottom + 36); blockBottom += 40; }
+    // 主价格：原价（划线）→ 现价大字
+    var mainPriceY = Math.max(blockBottom + 46, 585);
+    if (origin > 0) {
+      ctx.font = "28px 'PingFang SC',sans-serif"; ctx.fillStyle = "#b5b5b5"; ctx.textAlign = "center";
+      ctx.fillText("¥" + origin, 360, mainPriceY);
+      var w0 = ctx.measureText("¥" + origin).width;
+      ctx.strokeStyle = "#b5b5b5"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(360 - w0 / 2, mainPriceY - 10); ctx.lineTo(360 + w0 / 2, mainPriceY - 10); ctx.stroke();
+      mainPriceY += 74;
     }
-    var ny = nameLines.length > 1 ? 440 : 470;
-    for (var i = 0; i < nameLines.length; i++) {
-      ctx.fillStyle = "#fff";
-      ctx.fillText(nameLines[i], 360, ny + i * (nameFont + 8));
+    if (price > 0) {
+      ctx.font = "900 92px Arial,'PingFang SC',sans-serif"; ctx.fillStyle = "#ffd23f"; ctx.textAlign = "center";
+      ctx.fillText("¥" + price, 360, mainPriceY);
     }
-    var textBottom = ny + (nameLines.length - 1) * (nameFont + 8);
-    if (b.en_name) {
-      ctx.fillStyle = "#d4af37"; ctx.font = "24px Georgia";
-      ctx.fillText(String(b.en_name), 360, Math.max(520, textBottom + 42));
-    }
-    var priceY = 700;
-    if (b.origin_price > 0) {
-      ctx.font = "30px 'PingFang SC',sans-serif"; ctx.fillStyle = "#b5b5b5";
-      var oy = 620; ctx.fillText("¥" + b.origin_price, 360, oy);
-      priceY = oy + 88;
-    }
-    if (b.price > 0) {
-      ctx.font = "900 92px Arial,'PingFang SC',sans-serif"; ctx.fillStyle = "#ffd23f";
-      ctx.fillText("¥" + b.price, 360, priceY);
-    }
+    // 顶部 chips：评分 + 剩余时间（平台移到底部胶囊区）
     var chips = [];
     if (b.rating) chips.push("⭐ " + b.rating);
-    if (b.platform) chips.push(String(b.platform));
     if (b.remaining) chips.push("⏳ " + b.remaining);
-    ctx.font = "26px 'PingFang SC',sans-serif";
-    var totalW = 0, widths = [];
-    for (var j = 0; j < chips.length; j++) {
-      widths.push(Array.from(chips[j]).length * 16 + 40);
-      totalW += widths[j] + 12;
-    }
-    var cx = 360 - (totalW - 12) / 2;
-    for (var k = 0; k < chips.length; k++) {
-      ctx.fillStyle = "#2a313c";
-      roundRectPath(ctx, cx, 780, widths[k], 52, 26); ctx.fill();
-      ctx.fillStyle = "#e8e8e8"; ctx.textAlign = "center";
-      ctx.fillText(chips[k], cx + widths[k] / 2, 812);
-      cx += widths[k] + 12;
-    }
-    ctx.textAlign = "center";
-    ctx.strokeStyle = "#3d2424"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(140, 868); ctx.lineTo(580, 868); ctx.stroke();
-    ctx.fillStyle = "#6d6d6d"; ctx.font = "22px 'PingFang SC',sans-serif";
-    ctx.fillText("由 Stray 查价生成 · 数据实时查询", 360, 908);
-  }
-  function downloadCanvas(canvas) {
-    canvas.toBlob(function (blob) {
-      if (!blob) { alert("生成图片失败"); return; }
-      var a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = "stray-poster-" + Date.now() + ".png";
-      a.click();
-      setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
-    }, "image/png");
-  }
-  function copyCanvas(canvas) {
-    canvas.toBlob(function (blob) {
-      if (!blob) { alert("生成图片失败"); return; }
-      if (navigator.clipboard && window.ClipboardItem) {
-        navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
-          .then(function () { alert("已复制到剪贴板 ✅"); },
-                function () { alert("复制被拒绝，可用『下载 PNG』"); });
-      } else {
-        alert("当前浏览器不支持直接复制图片，请用『下载 PNG』");
+    var chipY = mainPriceY + 52;
+    if (chips.length) {
+      ctx.font = "24px 'PingFang SC',sans-serif";
+      var tw = 0, cws = [];
+      for (var ci = 0; ci < chips.length; ci++) { cws.push(Array.from(chips[ci]).length * 15 + 36); tw += cws[ci] + 10; }
+      var cxx = 360 - (tw - 10) / 2;
+      for (var cj = 0; cj < chips.length; cj++) {
+        ctx.fillStyle = "#2a313c"; roundRectPath(ctx, cxx, chipY - 24, cws[cj], 40, 20); ctx.fill();
+        ctx.fillStyle = "#e8e8e8"; ctx.textAlign = "center"; ctx.fillText(chips[cj], cxx + cws[cj] / 2, chipY);
+        cxx += cws[cj] + 10;
       }
-    }, "image/png");
-  }
-  /* 海报请求时：先内联渲染海报图，再发文字 */
-  function showInlinePoster(block, onDone) {
-    loadImage(safeUrl(block.cover)).then(function (img) {
-      var canvas = document.createElement("canvas");
-      drawPoster(canvas, block, img);
-      var wrap = document.createElement("div");
-      wrap.className = "gac-poster-inline-wrap";
-      wrap.innerHTML =
-        '<img class="gac-poster-inline" alt="海报">' +
-        '<div class="gac-poster-inline-actions">' +
-          '<button type="button" data-act="save">💾 下载 PNG</button>' +
-          '<button type="button" data-act="copy">📋 复制图片</button>' +
-        "</div>";
-      var pimg = wrap.querySelector("img");
-      pimg.src = canvas.toDataURL("image/png");
-      bodyEl.appendChild(wrap);
-      scrollToBottom();
-      wrap.querySelector('[data-act="save"]').addEventListener("click", function () { downloadCanvas(canvas); });
-      wrap.querySelector('[data-act="copy"]').addEventListener("click", function () { copyCanvas(canvas); });
-      if (onDone) setTimeout(onDone, 150);
-    });
+    }
+    // 平台价格胶囊（流式换行，最大折扣金色高亮；非罗列）
+    var bandY = Math.max(mainPriceY + 92, chipY + 34);
+    if (plats.length) {
+      ctx.font = "25px 'PingFang SC',sans-serif";
+      var items = [];
+      for (var k = 0; k < plats.length; k++) {
+        var r = plats[k];
+        if (!r || !r.name) continue;
+        var txt = String(r.name) + " ¥" + (r.price || 0);
+        items.push({ name: String(r.name), txt: txt, off: r.off_pct || 0, best: k === 0 });
+      }
+      // 流式换行：每行 ≤ 620 宽，行高 52
+      var maxLineW = 620, pad = 26, gap = 14;
+      var lines = [], line = [], lineW = 0;
+      for (var li = 0; li < items.length; li++) {
+        var it = items[li];
+        var wIt = ctx.measureText(it.txt).width + pad * 2;
+        if (line.length && lineW + gap + wIt > maxLineW) { lines.push({ items: line, w: lineW }); line = []; lineW = 0; }
+        line.push(it); lineW += (line.length > 1 ? gap : 0) + wIt;
+      }
+      if (line.length) lines.push({ items: line, w: lineW });
+      // 最多 3 行，超出截断
+      var showLines = lines.slice(0, 3);
+      var rowH = 54, startY = bandY;
+      for (var ri = 0; ri < showLines.length; ri++) {
+        var ln = showLines[ri];
+        var x = 360 - ln.w / 2;
+        for (var ii = 0; ii < ln.items.length; ii++) {
+          var itm = ln.items[ii];
+          var wP = ctx.measureText(itm.txt).width + pad * 2;
+          ctx.fillStyle = itm.best ? "rgba(255,210,63,0.14)" : "#262b35";
+          roundRectPath(ctx, x, startY, wP, 44, 22); ctx.fill();
+          if (itm.best) { ctx.strokeStyle = "#ffd23f"; ctx.lineWidth = 2; roundRectPath(ctx, x, startY, wP, 44, 22); ctx.stroke(); }
+          ctx.fillStyle = itm.best ? "#ffd23f" : "#d7dbe2"; ctx.textAlign = "left";
+          ctx.fillText(itm.txt, x + pad, startY + 29);
+          if (itm.off > 0) {
+            var offTxt = "-" + itm.off + "%";
+            var wx = x + pad + ctx.measureText(itm.txt).width + 10;
+            ctx.fillStyle = "#ff6b6b"; ctx.font = "900 22px Arial";
+            ctx.fillText(offTxt, wx, startY + 28);
+            ctx.font = "25px 'PingFang SC',sans-serif";
+          }
+          x += wP + gap;
+        }
+        startY += rowH;
+      }
+      bandY = startY;
+    }
+    // footer
+    ctx.textAlign = "center";
+    var fy = Math.max(bandY + 8, 872);
+    ctx.strokeStyle = "#3d2424"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(140, fy); ctx.lineTo(580, fy); ctx.stroke();
+    ctx.fillStyle = "#6d6d6d"; ctx.font = "22px 'PingFang SC',sans-serif";
+    ctx.fillText("由 Stray 查价生成 · 数据实时查询", 360, fy + 42);
   }
   function openPoster(block) {
     loadImage(safeUrl(block.cover)).then(function (img) {
