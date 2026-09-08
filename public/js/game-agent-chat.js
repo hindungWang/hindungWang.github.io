@@ -521,6 +521,76 @@
     ctx.fillStyle = "#6d6d6d"; ctx.font = "20px 'PingFang SC',sans-serif";
     ctx.fillText("由 Stray 查价生成 · 数据实时查询", 360, fy + 34);
   }
+  function toast(msg) {
+    var t = document.createElement("div");
+    t.className = "gac-toast";
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2000);
+  }
+  /* toBlob 兜底：偶发不回调（老 WebKit/被拒）时用 dataURL 转 Blob */
+  function canvasToBlob(canvas) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var finish = function (b) { if (!done) { done = true; resolve(b); } };
+      try { canvas.toBlob(finish, "image/png"); } catch (e) { finish(null); }
+      setTimeout(function () {
+        if (done) return;
+        done = true;
+        try {
+          var url = canvas.toDataURL("image/png");
+          fetch(url).then(function (r) { return r.blob(); }).then(resolve).catch(function () { resolve(null); });
+        } catch (e2) { resolve(null); }
+      }, 900);
+    });
+  }
+  function downloadCanvas(canvas) {
+    canvasToBlob(canvas).then(function (blob) {
+      if (!blob) { toast("生成图片失败，可对海报图片右键另存"); return; }
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "stray-poster-" + Date.now() + ".png";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+      toast("已开始下载海报 💾");
+    });
+  }
+  function copyCanvas(canvas) {
+    canvasToBlob(canvas).then(function (blob) {
+      if (!blob) { toast("生成图片失败"); return; }
+      if (navigator.clipboard && window.ClipboardItem) {
+        navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
+          .then(function () { toast("已复制到剪贴板 ✅"); },
+                function () { toast("复制被浏览器拒绝，请用『下载 PNG』"); });
+      } else {
+        toast("当前浏览器不支持复制图片，请用『下载 PNG』");
+      }
+    });
+  }
+  /* 海报请求：先生成内联海报图，再发文字 */
+  function showInlinePoster(block, onDone) {
+    loadImage(safeUrl(block.cover)).then(function (img) {
+      var canvas = document.createElement("canvas");
+      try { drawPoster(canvas, block, img); } catch (e) { /* 保留空白画布，按钮仍可用 */ }
+      var wrap = document.createElement("div");
+      wrap.className = "gac-poster-inline-wrap";
+      wrap.innerHTML =
+        '<img class="gac-poster-inline" alt="海报">' +
+        '<div class="gac-poster-inline-actions">' +
+          '<button type="button" data-act="save">💾 下载 PNG</button>' +
+          '<button type="button" data-act="copy">📋 复制图片</button>' +
+        "</div>";
+      var pimg = wrap.querySelector("img");
+      try { pimg.src = canvas.toDataURL("image/png"); } catch (e) { /* 忽略 */ }
+      bodyEl.appendChild(wrap);
+      scrollToBottom();
+      wrap.querySelector('[data-act="save"]').addEventListener("click", function () { downloadCanvas(canvas); });
+      wrap.querySelector('[data-act="copy"]').addEventListener("click", function () { copyCanvas(canvas); });
+      if (onDone) setTimeout(onDone, 150);
+    });
+  }
   function openPoster(block) {
     loadImage(safeUrl(block.cover)).then(function (img) {
       var overlay = document.createElement("div");
@@ -536,15 +606,12 @@
         "</div>";
       document.body.appendChild(overlay);
       var canvas = overlay.querySelector("canvas");
-      drawPoster(canvas, block, img);
+      // 先绑定事件（即使绘制失败按钮也可用），再绘制
       overlay.querySelector(".gac-poster-close").addEventListener("click", function () { overlay.remove(); });
       overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.remove(); });
-      overlay.querySelector('[data-act="save"]').addEventListener("click", function () {
-        downloadCanvas(canvas);
-      });
-      overlay.querySelector('[data-act="copy"]').addEventListener("click", function () {
-        copyCanvas(canvas);
-      });
+      overlay.querySelector('[data-act="save"]').addEventListener("click", function () { downloadCanvas(canvas); });
+      overlay.querySelector('[data-act="copy"]').addEventListener("click", function () { copyCanvas(canvas); });
+      try { drawPoster(canvas, block, img); } catch (e) { /* 保留空画布，操作仍可用 */ }
     });
   }
   function renderBlocks(blocks) {

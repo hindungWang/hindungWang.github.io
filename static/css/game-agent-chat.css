@@ -560,3 +560,12 @@
   background: #2f6f4f; color: #fff; font-size: 14px; cursor: pointer;
 }
 .gac-poster-close { background: #4a4f58; flex: 0 0 auto; padding: 10px 16px; }
+
+/* ---- toast 反馈 ---- */
+.gac-toast {
+  position: fixed; left: 50%; top: 18px; transform: translateX(-50%);
+  background: rgba(20, 22, 28, 0.92); color: #fff;
+  padding: 9px 18px; border-radius: 10px; font-size: 13px;
+  z-index: 10001; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
