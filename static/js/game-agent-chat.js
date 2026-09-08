@@ -306,7 +306,7 @@
     }
     var h = '<div class="gac-card">';
     if (cover) {
-      h += '<div class="gac-card-cover"><img src="' + cover + '" alt="' + escapeHtml(b.name || "") + '" loading="lazy">';
+      h += '<div class="gac-card-cover"><img src="' + cover + '" alt="' + escapeHtml(b.name || "") + '" loading="lazy" referrerpolicy="no-referrer">';
       if (offPct) h += '<div class="gac-card-off">' + offPct + "</div>";
       h += "</div>";
     } else if (offPct) {
@@ -364,6 +364,7 @@
         function tryLoad(useCors) {
           var img = new Image();
           if (useCors) img.crossOrigin = "anonymous";
+          img.referrerPolicy = "no-referrer"; // 绕过 erbingeditor 等 CDN 的 Referer 防盗链(403)
           img.__corsOk = useCors; // 标记是否走 CORS（决定 canvas 能否导出）
           img.__src = u;          // 记录实际加载成功 URL（内联兜底显示）
           var done = false;
@@ -727,7 +728,7 @@
       var wrap = document.createElement("div");
       wrap.className = "gac-poster-inline-wrap";
       wrap.innerHTML =
-        '<img class="gac-poster-inline" alt="海报">' +
+        '<img class="gac-poster-inline" alt="海报" referrerpolicy="no-referrer">' +
         '<div class="gac-poster-inline-actions">' +
           '<button type="button" data-act="save">💾 下载 PNG</button>' +
           '<button type="button" data-act="copy">📋 复制图片</button>' +
