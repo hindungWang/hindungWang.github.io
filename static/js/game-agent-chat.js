@@ -367,9 +367,14 @@
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     if (coverImg) {
       ctx.drawImage(coverImg, 0, 0, W, 340);
-      var f = ctx.createLinearGradient(0, 240, 0, 360);
-      f.addColorStop(0, "rgba(18,7,7,0)"); f.addColorStop(1, "rgba(18,7,7,1)");
-      ctx.fillStyle = f; ctx.fillRect(0, 240, W, 120);
+      // 图片底部 → 背景 渐进式融合：颜色随行贴近背景渐变，alpha 在图片下缘前已近不透明，无生硬分界
+      var f = ctx.createLinearGradient(0, 210, 0, 400);
+      f.addColorStop(0.00, "rgba(28,13,13,0)");
+      f.addColorStop(0.28, "rgba(26,12,12,0.30)");
+      f.addColorStop(0.62, "rgba(24,11,11,0.85)");
+      f.addColorStop(0.78, "rgba(23,10,10,0.97)");
+      f.addColorStop(1.00, "rgba(22,9,9,1)");
+      ctx.fillStyle = f; ctx.fillRect(0, 210, W, 190);
     }
     // 平台价格：best = 最大折扣
     var plats = (Array.isArray(b.prices) && b.prices.length) ? b.prices : [];
@@ -405,7 +410,8 @@
     }
     // 主价格区
     var mainPriceY = Math.max(blockBottom + 40, 588);
-    if (origin > 0) {
+    // 仅打折时展示划线原价；无折扣不划线也不重复显示价格
+    if (origin > 0 && off !== "") {
       ctx.font = "28px 'PingFang SC',sans-serif"; ctx.fillStyle = "#b5b5b5";
       ctx.fillText("¥" + origin, 360, mainPriceY);
       var w0 = ctx.measureText("¥" + origin).width;
