@@ -80,6 +80,13 @@
     return CONFIG.baseUrl.indexOf("your-gateway") === -1 &&
       CONFIG.token.indexOf("REPLACE") === -1;
   }
+  /* 大数字简写：62352 → 6.2万（海报/卡片显示用） */
+  function fmtCount(n) {
+    var v = Number(n) || 0;
+    if (v >= 100000000) return (v / 100000000).toFixed(1) + "亿";
+    if (v >= 10000) return (v / 10000).toFixed(1) + "万";
+    return String(v);
+  }
   /* 价格显示统一走这里：最多两位小数、去掉多余 0，
      避免后端浮点值被渲染成 ¥195.89999999999998 */
   function fmtPrice(v) {
@@ -365,9 +372,18 @@
     var chips = "";
     if (b.rating) chips += '<span class="gac-card-chip">⭐ ' + escapeHtml(String(b.rating)) + "</span>";
     if (b.platform) chips += '<span class="gac-card-chip">' + escapeHtml(String(b.platform)) + "</span>";
+    if (b.dlc_count > 0) chips += '<span class="gac-card-chip">DLC × ' + escapeHtml(String(b.dlc_count)) + "</span>";
+    if (b.good_rate) chips += '<span class="gac-card-chip">好评率 ' + escapeHtml(String(b.good_rate)) + "</span>";
     if (b.follow) chips += '<span class="gac-card-chip">👥 ' + escapeHtml(String(b.follow)) + "</span>";
     if (!cover && b.remaining) chips += '<span class="gac-card-chip">⏳ ' + escapeHtml(String(b.remaining)) + "</span>";
+    if (Array.isArray(b.awards) && b.awards.length) chips += '<span class="gac-card-chip gac-chip-award">🏆 ' + escapeHtml(String(b.awards[0])) + "</span>";
     if (chips) h += '<div class="gac-card-chips">' + chips + "</div>";
+    // 元信息行：开发商 · 发售日期 · 评价数（有才显示）
+    var metaBits = [];
+    if (b.developer) metaBits.push(String(b.developer));
+    if (b.release_date) metaBits.push(String(b.release_date));
+    if (b.comment_count > 0) metaBits.push(fmtCount(b.comment_count) + "评价");
+    if (metaBits.length) h += '<div class="gac-card-meta">' + escapeHtml(metaBits.join(" · ")) + "</div>";
     // 特性标签（中文/Steam Deck/家庭共享等）：最多 4 个，其余折叠为 +N
     if (Array.isArray(b.features) && b.features.length) {
       var fmax = Math.min(b.features.length, 4);
@@ -629,7 +645,7 @@
     }
     if (!(price > 0)) return y - top;
     var pTxt = "¥" + fmtPrice(price);
-    var pFs = pTxt.length > 7 ? 68 : 92;
+    var pFs = pTxt.length > 7 ? 66 : 86;
     ctx.font = "900 " + pFs + "px Arial,'PingFang SC',sans-serif";
     var pw = ctx.measureText(pTxt).width;
     var comboW = pw + (off ? 20 + POSTER_TAG_W : 0);
@@ -669,23 +685,153 @@
     }
     return 44;
   }
-  // -- 特性行（中文 · Steam Deck · 家庭共享 …）
-  function mFeatures(ctx, W, top, th, feats, align, dry) {
-    if (!feats || !feats.length) return 0;
-    var txt = feats.slice(0, 5).join(" · ");
+  // -- 胶囊信息条：把「特性 / 标签 / DLC / 获奖 / 好评率 / 平均时长 / 在线」收成一串小胶囊，
+  //    自动换行（最多 maxRows 行），放不下的收成「+N」
+  var PILL_H = 34, PILL_GAP = 8, PILL_PAD = 18;
+  var PILL_FONT = 19;
+  function mPills(ctx, W, top, th, items, align, dry, maxRows) {
+    var list = (items || []).filter(function (x) { return x && x.text; });
+    if (!list.length) return 0;
     var maxW = W - POSTER_MARGIN * 2;
-    ctx.font = "600 20px 'PingFang SC',sans-serif";
+    var rows = [], cur = [], curW = 0;
+    for (var i = 0; i < list.length; i++) {
+      ctx.font = "700 " + PILL_FONT + "px 'PingFang SC',sans-serif";
+      var w = ctx.measureText(list[i].text).width + PILL_PAD * 2;
+      if (cur.length && curW + PILL_GAP + w > maxW) { rows.push(cur); cur = []; curW = 0; }
+      cur.push({ text: list[i].text, kind: list[i].kind, w: w });
+      curW += (cur.length > 1 ? PILL_GAP : 0) + w;
+    }
+    if (cur.length) rows.push(cur);
+    var limit = maxRows || 2;
+    var hidden = 0;
+    if (rows.length > limit) {
+      for (var r = limit - 1; r < rows.length; r++) hidden += rows[r].length;
+      rows = rows.slice(0, limit);
+      rows[limit - 1] = rows[limit - 1].slice(0, Math.max(1, rows[limit - 1].length - 1));
+    }
+    if (hidden > 0) rows[rows.length - 1].push({ text: "+" + hidden, kind: "more", w: 0 });
+    if (!dry) {
+      ctx.textBaseline = "middle";
+      for (var ri = 0; ri < rows.length; ri++) {
+        var row = rows[ri], y = top + ri * (PILL_H + PILL_GAP);
+        var rowW = 0;
+        for (var k = 0; k < row.length; k++) {
+          if (row[k].w === 0) {
+            ctx.font = "700 " + PILL_FONT + "px 'PingFang SC',sans-serif";
+            row[k].w = ctx.measureText(row[k].text).width + PILL_PAD * 2;
+          }
+          rowW += (k > 0 ? PILL_GAP : 0) + row[k].w;
+        }
+        var x = align === "left" ? POSTER_MARGIN : (W - rowW) / 2;
+        for (var j = 0; j < row.length; j++) {
+          var it = row[j], style = PILL_STYLES[it.kind] || PILL_STYLES.tag;
+          ctx.fillStyle = style.bg(th);
+          roundRectPath(ctx, x, y, it.w, PILL_H, PILL_H / 2); ctx.fill();
+          if (style.border) { ctx.strokeStyle = style.border(th); ctx.lineWidth = 1.5; roundRectPath(ctx, x, y, it.w, PILL_H, PILL_H / 2); ctx.stroke(); }
+          ctx.fillStyle = style.fg(th);
+          ctx.font = "700 " + PILL_FONT + "px 'PingFang SC',sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(it.text, x + it.w / 2, y + PILL_H / 2 + 1);
+          x += it.w + PILL_GAP;
+        }
+      }
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    }
+    return rows.length * PILL_H + (rows.length - 1) * PILL_GAP;
+  }
+  // 胶囊配色：特性=绿、标签=中性、DLC=蓝、获奖=金、数据=灰
+  var PILL_STYLES = {
+    feat: {
+      bg: function () { return "rgba(80,200,140,0.14)"; },
+      border: function () { return "rgba(80,200,140,0.30)"; },
+      fg: function () { return "#8fd0a8"; }
+    },
+    tag: {
+      bg: function () { return "rgba(255,255,255,0.08)"; },
+      border: function () { return "rgba(255,255,255,0.16)"; },
+      fg: function (th) { return th.platName || "#e6eaf2"; }
+    },
+    dlc: {
+      bg: function () { return "rgba(110,170,255,0.14)"; },
+      border: function () { return "rgba(110,170,255,0.30)"; },
+      fg: function () { return "#9dc4ff"; }
+    },
+    award: {
+      bg: function (th) { return th.tagBot || "#d92626"; },
+      border: null,
+      fg: function () { return "#fff"; }
+    },
+    score: {
+      bg: function () { return "rgba(255,210,63,0.18)"; },
+      border: function () { return "rgba(255,210,63,0.42)"; },
+      fg: function (th) { return th.price || "#ffd23f"; }
+    },
+    stat: {
+      bg: function () { return "rgba(255,255,255,0.06)"; },
+      border: function () { return "rgba(255,255,255,0.12)"; },
+      fg: function (th) { return th.chipRemaining || "#a8c7e8"; }
+    },
+    lowest: {
+      bg: function () { return "rgba(255,210,63,0.16)"; },
+      border: function () { return "rgba(255,210,63,0.38)"; },
+      fg: function (th) { return th.price || "#ffd23f"; }
+    },
+    more: {
+      bg: function () { return "rgba(255,255,255,0.06)"; },
+      border: function () { return "rgba(255,255,255,0.12)"; },
+      fg: function (th) { return th.footer || "#8aa0b5"; }
+    }
+  };
+  // -- 元信息行：开发商 · 发售日期 · 评价数
+  function mMeta(ctx, W, top, th, parts, align, dry) {
+    var txt = (parts || []).filter(Boolean).join("  ·  ");
+    if (!txt) return 0;
+    var maxW = W - POSTER_MARGIN * 2;
+    ctx.font = "500 20px 'PingFang SC',sans-serif";
     if (ctx.measureText(txt).width > maxW) {
-      while (ctx.measureText(txt + "…").width > maxW && Array.from(txt).length > 1) txt = Array.from(txt).slice(0, -1).join("");
+      while (Array.from(txt).length > 1 && ctx.measureText(txt + "…").width > maxW) txt = Array.from(txt).slice(0, -1).join("");
       txt += "…";
     }
     if (!dry) {
       ctx.textAlign = align === "left" ? "left" : "center";
       ctx.textBaseline = "alphabetic";
-      ctx.fillStyle = th.chipRemaining || "#a8c7e8";
+      ctx.fillStyle = th.footer || "#8aa0b5";
       ctx.fillText(txt, align === "left" ? POSTER_MARGIN : W / 2, top + 20);
     }
     return 26;
+  }
+  // -- 多维评分小条（故事剧情/视觉画面/音乐音效/玩法机制/优化适配）
+  function mDims(ctx, W, top, th, dims, align, dry) {
+    var list = (dims || []).filter(function (d) { return d && d.name && d.score; });
+    if (!list.length) return 0;
+    var ROW = 36, COL_GAP = 40, LABEL_W = 104, SCORE_W = 42;
+    var totalW = Math.min(W - POSTER_MARGIN * 2, 640);
+    var colW = (totalW - COL_GAP) / 2;
+    var BAR_MAX = Math.max(60, colW - LABEL_W - SCORE_W - 8);
+    var x0 = align === "left" ? POSTER_MARGIN : (W - totalW) / 2;
+    if (!dry) {
+      ctx.textBaseline = "middle";
+      for (var i = 0; i < list.length; i++) {
+        var col = i % 2, row = Math.floor(i / 2);
+        var x = x0 + col * (colW + COL_GAP);
+        var y = top + row * ROW + ROW / 2;
+        ctx.textAlign = "left";
+        ctx.font = "600 19px 'PingFang SC',sans-serif";
+        ctx.fillStyle = th.platName || "#e6eaf2";
+        ctx.fillText(list[i].name, x, y);
+        var bw = Math.max(10, Math.min(1, parseFloat(list[i].score) / 10) * BAR_MAX);
+        ctx.fillStyle = "rgba(255,255,255,0.12)";
+        roundRectPath(ctx, x + LABEL_W, y - 6, BAR_MAX, 12, 6); ctx.fill();
+        ctx.fillStyle = th.price || "#ffd23f";
+        roundRectPath(ctx, x + LABEL_W, y - 6, bw, 12, 6); ctx.fill();
+        ctx.font = "700 18px Arial,sans-serif";
+        ctx.fillStyle = th.price || "#ffd23f";
+        ctx.textAlign = "left";
+        ctx.fillText(list[i].score, x + LABEL_W + BAR_MAX + 10, y + 1);
+      }
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    }
+    return Math.ceil(list.length / 2) * ROW;
   }
   // -- 史低行（历史最低价与日期；与面板里的“最低现价”是两个口径）
   function mLowest(ctx, W, top, th, price, date, align, dry) {
@@ -774,7 +920,7 @@
       items[i].best = !items[i].noPrice && priced > 1 && isFinite(minP) && items[i].price === minP;
     }
 
-    var ROW = 38, PADV = 16, PADH = 18, GAPX = 22;
+    var ROW = 32, PADV = 10, PADH = 18, GAPX = 22;
     var panelW = Math.min(W - POSTER_MARGIN * 2, 640);
     var panelX = (W - panelW) / 2;
     var maxRows = Math.max(1, Math.floor((maxBottom - top - PADV * 2) / ROW));
@@ -898,90 +1044,137 @@
     if (pref === "auto") return POSTER_FORMS[Math.random() < 0.5 ? 0 : 1];
     return POSTER_FORMS[1];
   }
+  /* 胶囊池：按重要性排序（获奖 → DLC → 数据 → 史低 → 特性 → 标签），供不同丰富度档位截取 */
+  function buildPills(D) {
+    var pills = [], seen = {};
+    function add(text, kind) {
+      var t = String(text == null ? "" : text).trim();
+      if (!t || seen[t]) return;
+      seen[t] = 1;
+      pills.push({ text: t, kind: kind });
+    }
+    if (D.rating) add("★ " + D.rating, "score");
+    // 获奖只放第一条：获奖名通常很长，多条会把 DLC/标签挤掉
+    if ((D.awards || []).length) add("🏆 " + D.awards[0], "award");
+    if (D.dlcCount > 0) add("DLC × " + D.dlcCount, "dlc");
+    if (D.goodRate) add("好评率 " + D.goodRate, "stat");
+    if (D.avgPlaytime) add("平均 " + D.avgPlaytime, "stat");
+    if (D.online) add("在线 " + D.online, "stat");
+    if (D.commentCount) add(fmtCount(D.commentCount) + "评价", "stat");
+    if (D.lowestPrice > 0) add("史低 ¥" + fmtPrice(D.lowestPrice) + (D.lowestDate ? " · " + D.lowestDate : ""), "lowest");
+    for (var f = 0; f < (D.features || []).length; f++) add(D.features[f], "feat");
+    for (var t2 = 0; t2 < (D.tags || []).length; t2++) add(D.tags[t2], "tag");
+    if (D.remaining && !D.coverImg) add("⏳ " + D.remaining, "stat"); // 无封面时剩余时间落在这里
+    return pills;
+  }
   /* 一个版式的绘制流程（align=center 居中版 / align=left 纯排版版）：
-     封面横幅 → 标题 → 卖点/英文名 → 价格主视觉 → chips → 特性/史低 →（底部锚定）平台面板 → 页脚 */
+     封面横幅 → 标题 → 英文名/卖点 → 价格主视觉 → chips → 胶囊信息条 → 多维评分 → 元信息
+     →（底部锚定）平台面板 → 页脚。
+     内容按"丰富度档位"自适应：从最丰富的一档开始量高，选第一个放得下的档位
+     （胶囊行数/维度条数/封面高度/是否显示英文名与元信息逐档收紧），
+     因此数据越多海报越丰富，实在放不下也不会溢出或压盖。 */
   function renderForm(ctx, D) {
     var W = D.w, th = D.th;
     var align = D.align === "left" ? "left" : "center";
     var typo = !!D.typo;
     var CW = W - POSTER_MARGIN * 2;
-    var bottomLimit = D.h - 76 - 20;                 // 页脚线之上留 20
-    var COVER_H = Math.round(D.h * 0.31);
-    if (D.coverImg) {
-      mCover(ctx, D.coverImg, 0, 0, W, COVER_H);
-      mCoverFade(ctx, W, th, COVER_H + 54, 118);
-    }
-    var startY = D.coverImg ? COVER_H - 8 : 96;
-    // 有封面时“剩余时间”压在封面上（省一行）；无封面时落到 chips 行
-    var coverBadge = (D.coverImg && D.remaining) ? "⏳ " + D.remaining : "";
-    var chipRemaining = D.coverImg ? "" : D.remaining;
-    if (typo) mTopBand(ctx, th, startY - 44);        // 顶部渐变色带，给纯排版版一个视觉锚点
+    var footerLine = D.h - 62;      // 页脚线：留出 14 单位给内容
+    var bottomLimit = footerLine - 20;
+    var hasCover = !!D.coverImg && !typo;
+    var coverBadge = (hasCover && D.remaining) ? "⏳ " + D.remaining : "";
+    var chipRemaining = hasCover ? "" : D.remaining;
 
     var plats = Array.isArray(D.plats) ? D.plats : [];
-    var cols = plats.length >= 5 ? 3 : 2;            // 平台多时走三列，一眼看全
+    var cols = plats.length >= 5 ? 3 : 2;   // 平台多时走三列，一眼看全
     var titleMax = typo ? 68 : 54;
-
-    // ---- 第一遍：只量不画 ----
-    var mods = [
-      { key: "title", gap: 0, h: mTitle(ctx, W, 0, th, D.name, align, CW, titleMax, true),
-        draw: function (t) { mTitle(ctx, W, t, th, D.name, align, CW, titleMax, false); } },
-      { key: "en", gap: 14, h: mEn(ctx, W, 0, th, D.en, align, CW, true),
-        draw: function (t) { mEn(ctx, W, t, th, D.en, align, CW, false); } },
-      { key: "hook", gap: 14, h: mHook(ctx, W, 0, th, D.hook, align, true),
-        draw: function (t) { mHook(ctx, W, t, th, D.hook, align, false); } },
-      { key: "price", gap: 24, h: mPrice(ctx, W, 0, th, D.origin, D.price, D.off, align, true),
-        draw: function (t) { mPrice(ctx, W, t, th, D.origin, D.price, D.off, align, false); } },
-      { key: "chips", gap: 22, h: mChips(ctx, W, 0, th, D.rating, chipRemaining, align, true),
-        draw: function (t) { mChips(ctx, W, t, th, D.rating, chipRemaining, align, false); } },
-      { key: "feats", gap: 16, h: mFeatures(ctx, W, 0, th, D.features, align, true),
-        draw: function (t) { mFeatures(ctx, W, t, th, D.features, align, false); } },
-      { key: "lowest", gap: 16, h: mLowest(ctx, W, 0, th, D.lowestPrice, D.lowestDate, align, true),
-        draw: function (t) { mLowest(ctx, W, t, th, D.lowestPrice, D.lowestDate, align, false); } }
-    ].filter(function (m) { return m.h > 0; });
-
     var needPanel = mPanel(ctx, W, 0, 1e4, th, plats, cols, true);
+    var pills = buildPills(D);
+    var dimsPool = Array.isArray(D.ratingDims) ? D.ratingDims : [];
+    var metaParts = [];
+    if (D.developer) metaParts.push(D.developer);
+    if (D.releaseDate) metaParts.push(D.releaseDate);
 
-    // ---- 降级：英文名 → 特性 → 史低 → 卖点（面板内部还会自己减条目/缩行）----
-    var dropped = {};
-    var dropOrder = ["en", "feats", "lowest", "hook"];
-    function contentBottom() {
-      var y = startY;
-      for (var i = 0; i < mods.length; i++) {
-        if (dropped[mods[i].key]) continue;
-        y += mods[i].gap + mods[i].h;
-      }
-      return y;
-    }
-    var cb = contentBottom();
-    var panelTop = Math.max(cb + 26, bottomLimit - needPanel);
-    for (var di = 0; di < dropOrder.length && panelTop + needPanel > bottomLimit; di++) {
-      dropped[dropOrder[di]] = true;
-      cb = contentBottom();
-      panelTop = Math.max(cb + 26, bottomLimit - needPanel);
+    // ---- 由档位生成模块清单（h 用 dry 量高） ----
+    function makeMods(plan) {
+      var mods = [];
+      mods.push({ key: "title", gap: 0,
+        h: mTitle(ctx, W, 0, th, D.name, align, CW, titleMax, true),
+        draw: function (t) { mTitle(ctx, W, t, th, D.name, align, CW, titleMax, false); } });
+      if (plan.showEn && D.en) mods.push({ key: "en", gap: 12,
+        h: mEn(ctx, W, 0, th, D.en, align, CW, true),
+        draw: function (t) { mEn(ctx, W, t, th, D.en, align, CW, false); } });
+      if (plan.showHook && D.hook) mods.push({ key: "hook", gap: 12,
+        h: mHook(ctx, W, 0, th, D.hook, align, true),
+        draw: function (t) { mHook(ctx, W, t, th, D.hook, align, false); } });
+      mods.push({ key: "price", gap: 18,
+        h: mPrice(ctx, W, 0, th, D.origin, D.price, D.off, align, true),
+        draw: function (t) { mPrice(ctx, W, t, th, D.origin, D.price, D.off, align, false); } });
+      var sub = pills.slice(0, plan.pillCount);
+      if (sub.length && plan.pillRows > 0) mods.push({ key: "pills", gap: plan.pillGap,
+        h: mPills(ctx, W, 0, th, sub, align, true, plan.pillRows),
+        draw: function (t) { mPills(ctx, W, t, th, sub, align, false, plan.pillRows); } });
+      if (plan.dims > 0 && dimsPool.length) mods.push({ key: "dims", gap: 14,
+        h: mDims(ctx, W, 0, th, dimsPool.slice(0, plan.dims), align, true),
+        draw: function (t) { mDims(ctx, W, t, th, dimsPool.slice(0, plan.dims), align, false); } });
+      if (plan.showMeta && metaParts.length) mods.push({ key: "meta", gap: 12,
+        h: mMeta(ctx, W, 0, th, metaParts, align, true),
+        draw: function (t) { mMeta(ctx, W, t, th, metaParts, align, false); } });
+      return mods.filter(function (m) { return m.h > 0; });
     }
 
-    // ---- 第二遍：绘制（富余留白匀给顶部与模块间距，避免下半部空一大块）----
-    var visible = mods.filter(function (m) { return !dropped[m.key]; });
-    var slack = Math.max(0, panelTop - 22 - cb);
-    var padTop = Math.round(Math.min(typo ? 34 : 56, slack * 0.38));
-    var extra = Math.max(0, Math.min(typo ? 34 : 26, Math.round((slack - padTop) / Math.max(1, visible.length))));
-    var y = startY + padTop;
+    // ---- 丰富度档位：从最丰富往下收紧，选第一个能放下的 ----
+    var plans = [
+      { pillCount: 18, pillRows: 4, dims: 5, coverScale: 0.22, showEn: true,  showHook: true,  showMeta: true,  pillGap: 14 },
+      { pillCount: 16, pillRows: 4, dims: 4, coverScale: 0.21, showEn: true,  showHook: true,  showMeta: false, pillGap: 14 },
+      { pillCount: 16, pillRows: 3, dims: 4, coverScale: 0.20, showEn: true,  showHook: true,  showMeta: false, pillGap: 12 },
+      { pillCount: 14, pillRows: 3, dims: 2, coverScale: 0.20, showEn: true,  showHook: true,  showMeta: false, pillGap: 12 },
+      { pillCount: 12, pillRows: 3, dims: 0, coverScale: 0.19, showEn: true,  showHook: true,  showMeta: false, pillGap: 12 },
+      { pillCount: 10, pillRows: 2, dims: 0, coverScale: 0.19, showEn: true,  showHook: true,  showMeta: false, pillGap: 12 },
+      { pillCount: 8,  pillRows: 2, dims: 0, coverScale: 0.18, showEn: false, showHook: false, showMeta: false, pillGap: 12 },
+      { pillCount: 6,  pillRows: 1, dims: 0, coverScale: 0.16, showEn: false, showHook: false, showMeta: false, pillGap: 12 }
+    ];
+    var chosen = plans[plans.length - 1], chosenMods = null, chosenPanelTop = 0, chosenCoverH = 0, chosenStartY = 0, chosenCb = 0;
+    for (var pi = 0; pi < plans.length; pi++) {
+      var plan = plans[pi];
+      var coverH = hasCover ? Math.round(D.h * plan.coverScale) : 0;
+      var startY = hasCover ? coverH - 8 : 96;
+      var mods = makeMods(plan);
+      var cb = startY;
+      for (var mi = 0; mi < mods.length; mi++) cb += mods[mi].gap + mods[mi].h;
+      var panelTop = Math.max(cb + 26, bottomLimit - needPanel);
+      chosen = plan; chosenMods = mods; chosenPanelTop = panelTop;
+      chosenCoverH = coverH; chosenStartY = startY; chosenCb = cb;
+      if (panelTop + needPanel <= bottomLimit) break;  // 这一档放得下
+    }
+
+    // ---- 绘制 ----
+    if (hasCover) {
+      mCover(ctx, D.coverImg, 0, 0, W, chosenCoverH);
+      mCoverFade(ctx, W, th, chosenCoverH + 54, 118);
+    }
+    if (typo) mTopBand(ctx, th, chosenStartY - 44);
+
+    var visible = chosenMods;
+    var slack = Math.max(0, chosenPanelTop - 22 - chosenCb);
+    var padTop = Math.round(Math.min(typo ? 34 : 52, slack * 0.38));
+    var extra = Math.max(0, Math.min(typo ? 34 : 24, Math.round((slack - padTop) / Math.max(1, visible.length))));
+    var y = chosenStartY + padTop;
     for (var vi = 0; vi < visible.length; vi++) {
       y += visible[vi].gap + (vi === 0 ? 0 : extra);
       visible[vi].draw(y);
       y += visible[vi].h;
     }
     if (plats.length) {
-      mPanel(ctx, W, panelTop, bottomLimit, th, plats, cols, false);
+      mPanel(ctx, W, chosenPanelTop, bottomLimit, th, plats, cols, false);
     } else {
       // 没有任何平台价（工具没取到数据）时给个交代，避免出一张只有标题的空海报
       ctx.font = "600 26px 'PingFang SC',sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
       ctx.fillStyle = th.footer;
-      ctx.fillText("暂无实时价格数据 · 稍后重试", W / 2, panelTop + 30);
+      ctx.fillText("暂无实时价格数据 · 稍后重试", W / 2, chosenPanelTop + 30);
     }
     if (coverBadge) mCoverBadge(ctx, th, coverBadge);
-    mFooter(ctx, W, D.h - 76, th);
+    mFooter(ctx, W, D.h - 62, th);
   }
   // -- 纯排版版顶部渐变色带
   function mTopBand(ctx, th, y) {
@@ -1098,6 +1291,16 @@
       w: W, h: H, th: th, align: fm.align, typo: !!fm.typo, form: fm.key,
       coverImg: fm.typo ? null : coverImg,   // 纯排版版式不画封面
       hook: b.hook ? String(b.hook) : "",
+      tags: Array.isArray(b.tags) ? b.tags : undefined,
+      awards: Array.isArray(b.awards) ? b.awards : undefined,
+      dlcCount: parseInt(b.dlc_count, 10) || 0,
+      releaseDate: b.release_date ? String(b.release_date) : "",
+      developer: b.developer ? String(b.developer) : "",
+      online: b.online ? String(b.online) : "",
+      goodRate: b.good_rate ? String(b.good_rate) : "",
+      commentCount: parseInt(b.comment_count, 10) || 0,
+      avgPlaytime: b.avg_playtime ? String(b.avg_playtime) : "",
+      ratingDims: Array.isArray(b.rating_dims) ? b.rating_dims : undefined,
       name: String(b.name || ""), en: b.en_name ? String(b.en_name) : "",
       rating: b.rating, remaining: b.remaining, plats: plats,
       features: Array.isArray(b.features) ? b.features : undefined,
