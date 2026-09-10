@@ -391,15 +391,25 @@
       }
     }
     if (plats.length > 0) {
-      var minP = Infinity;
+      var minP = Infinity, pricedCount = 0;
       for (var mi = 0; mi < plats.length; mi++) {
         var mp = parseFloat(plats[mi].price);
-        if (isFinite(mp) && mp > 0 && mp < minP) minP = mp;
+        if (isFinite(mp) && mp > 0) {
+          pricedCount++;
+          if (mp < minP) minP = mp;
+        }
       }
       h += '<div class="gac-card-plats">';
       for (var pi = 0; pi < plats.length; pi++) {
         var r = plats[pi];
-        var best = parseFloat(r.price) === minP && plats.length > 1;
+        var noPrice = r.no_price === true || !(parseFloat(r.price) > 0);
+        var best = !noPrice && pricedCount > 1 && parseFloat(r.price) === minP;
+        if (noPrice) {
+          h += '<div class="gac-plat gac-plat-none">' +
+            '<span class="gac-plat-name">' + escapeHtml(String(r.name)) + "</span>" +
+            '<span class="gac-plat-price"><span class="gac-plat-na">暂无价格</span></span></div>';
+          continue;
+        }
         var hasOff = r.off_pct > 0;
         var hasOld = r.origin_price > 0 && r.origin_price > r.price;
         h += '<div class="gac-plat' + (best ? " gac-plat-best" : "") + '">' +
@@ -751,12 +761,18 @@
     for (i = 0; i < plats.length; i++) {
       var it = plats[i];
       if (!it || !it.name) continue;
-      items.push({ name: String(it.name), originP: it.origin_price || 0, price: it.price || 0, offP: it.off_pct || 0 });
+      var noP = it.no_price === true || !(parseFloat(it.price) > 0);
+      items.push({ name: String(it.name), originP: it.origin_price || 0, price: it.price || 0, offP: it.off_pct || 0, noPrice: noP });
     }
     if (!items.length) return 0;
-    var minP = Infinity;
-    for (i = 0; i < items.length; i++) if (items[i].price > 0 && items[i].price < minP) minP = items[i].price;
-    for (i = 0; i < items.length; i++) items[i].best = items.length > 1 && isFinite(minP) && items[i].price === minP;
+    var minP = Infinity, priced = 0;
+    for (i = 0; i < items.length; i++) {
+      if (items[i].noPrice) continue;
+      if (items[i].price > 0) { priced++; if (items[i].price < minP) minP = items[i].price; }
+    }
+    for (i = 0; i < items.length; i++) {
+      items[i].best = !items[i].noPrice && priced > 1 && isFinite(minP) && items[i].price === minP;
+    }
 
     var ROW = 38, PADV = 16, PADH = 18, GAPX = 22;
     var panelW = Math.min(W - POSTER_MARGIN * 2, 640);
@@ -788,6 +804,17 @@
         var cxc = panelX + PADH + (si % cols) * (cellW + GAPX);
         var cyc = top + PADV + Math.floor(si / cols) * ROW + ROW / 2;
         var rightEdge = cxc + cellW;
+        if (s.noPrice) {
+          // 该平台小黑盒无报价：仍列出平台名，右侧标注"暂无"，让用户知道平台被查过
+          ctx.textAlign = "left"; ctx.textBaseline = "middle";
+          ctx.font = "800 22px 'PingFang SC',sans-serif";
+          ctx.fillStyle = th.platOld;
+          ctx.fillText(s.name, cxc, cyc);
+          ctx.textAlign = "right";
+          ctx.font = "600 18px 'PingFang SC',sans-serif";
+          ctx.fillText("暂无价格", rightEdge, cyc);
+          continue;
+        }
         var fit = platCellFit(ctx, s, cellW);
         var nowT = "¥" + fmtPrice(s.price);
         var offT = (fit.off && s.offP > 0) ? "-" + s.offP + "%" : "";

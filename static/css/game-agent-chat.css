@@ -372,6 +372,9 @@
 .gac-plat-now { font-weight: 800; color: #ffd23f; }
 .gac-plat-off { color: #ff6b6b; font-weight: 700; font-size: 10.5px; }
 .gac-plat-best { background: rgba(255, 210, 63, 0.1); }
+/* 该平台小黑盒无报价：平台名保留，价格位标注"暂无价格"（灰、不加粗） */
+.gac-plat-none .gac-plat-name { color: #8a93a3; font-weight: 500; }
+.gac-plat-na { color: #6f7784; font-size: 11px; }
 .gac-plat-badge {
   display: inline-block; margin-left: 4px; background: #e03333; color: #fff;
   font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 5px; vertical-align: 1px;
