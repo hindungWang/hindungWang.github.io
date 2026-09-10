@@ -25,7 +25,7 @@
     //   "poll" — 网关先返回 {id}，再用 GET {replyEndpoint}?id=<id> 轮询直到返回 {reply} 或超时
     replyMode: "poll",
     pollIntervalMs: 1500,
-    pollTimeoutMs: 60000,
+    pollTimeoutMs: 180000,  // 3 分钟：游戏查价含多次接口调用+限流退避，p99 实测可达 60s+
     // UI
     botName: "Game Agent",
     typingText: "Agent 正在思考…",
@@ -1338,7 +1338,8 @@
         lastErr = e;
       }
     }
-    if (lastErr) throw lastErr;
+    // 超时：不要只把最后一个瞬时错误（如代理 502）抛给用户，给出可理解的说明
+    if (lastErr) throw new Error("等待回复超时（" + lastErr.message + "），任务可能仍在处理，请稍后再试。");
     throw new Error("等待回复超时，请重试。");
   }
 
