@@ -439,6 +439,19 @@
       }
       h += "</div>";
     }
+    // 游戏截图集：缩略图横条（可横向滑动），点击看大图
+    var shots = Array.isArray(b.screenshots) ? b.screenshots.filter(function (x) { return x && safeUrl(x.thumb); }) : [];
+    if (shots.length) {
+      h += '<div class="gac-shots-head"><span>🖼 游戏截图 ' + shots.length + " 张</span>";
+      if (shots.length > 3) h += '<span class="gac-shots-more">点图看大图 ›</span>';
+      h += "</div>";
+      h += '<div class="gac-card-shots">';
+      for (var sh = 0; sh < shots.length; sh++) {
+        h += '<img class="gac-shot" src="' + safeUrl(shots[sh].thumb) + '" data-full="' + safeUrl(shots[sh].full || shots[sh].thumb) +
+          '" alt="' + escapeHtml((b.name || "游戏") + " 截图 " + (sh + 1)) + '" loading="lazy" referrerpolicy="no-referrer">';
+      }
+      h += "</div>";
+    }
     // 操作按钮：并排紧凑一行
     h += '<div class="gac-card-actions">';
     if (video) {
@@ -1256,6 +1269,59 @@
       try { drawPoster(canvas, block, usable, plan, 1); } catch (e) { /* 保留空画布，操作仍可用 */ }
     });
   }
+  /* ---------- 截图大图查看（灯箱：左右切换 / Esc 关闭 / 点背景关闭） ---------- */
+  function openShots(shots, startIndex) {
+    var idx = Math.max(0, Math.min(startIndex || 0, shots.length - 1));
+    var overlay = document.createElement("div");
+    overlay.className = "gac-media-modal";
+    overlay.innerHTML =
+      '<div class="gac-media-box">' +
+        '<img class="gac-media-img" alt="游戏截图" referrerpolicy="no-referrer">' +
+        '<div class="gac-media-bar">' +
+          '<button type="button" class="gac-media-act" data-act="prev">‹</button>' +
+          '<span class="gac-media-idx"></span>' +
+          '<button type="button" class="gac-media-act" data-act="next">›</button>' +
+          '<button type="button" class="gac-media-act gac-media-close">✕</button>' +
+        "</div>" +
+      "</div>";
+    var img = overlay.querySelector(".gac-media-img");
+    var label = overlay.querySelector(".gac-media-idx");
+    function show(i) {
+      idx = (i + shots.length) % shots.length;
+      img.src = shots[idx].full || shots[idx].thumb;
+      label.textContent = (idx + 1) + " / " + shots.length;
+    }
+    function close() {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey);
+    }
+    function onKey(e) {
+      if (e.key === "Escape") close();
+      else if (e.key === "ArrowLeft") show(idx - 1);
+      else if (e.key === "ArrowRight") show(idx + 1);
+    }
+    overlay.querySelector('[data-act="prev"]').addEventListener("click", function (e) { e.stopPropagation(); show(idx - 1); });
+    overlay.querySelector('[data-act="next"]').addEventListener("click", function (e) { e.stopPropagation(); show(idx + 1); });
+    overlay.querySelector(".gac-media-close").addEventListener("click", close);
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(overlay);
+    show(idx);
+  }
+  /* 卡片内截图条的事件绑定（点击开灯箱；加载失败的缩略图直接移除） */
+  function bindShots(scope, block) {
+    var shots = Array.isArray(block.screenshots) ? block.screenshots.filter(function (x) { return x && safeUrl(x.thumb); }) : [];
+    if (!shots.length) return;
+    var nodes = scope.querySelectorAll(".gac-shot");
+    for (var i = 0; i < nodes.length; i++) {
+      (function (node, i) {
+        node.addEventListener("error", function () { node.style.display = "none"; });
+        node.addEventListener("click", function () { openShots(shots, i); });
+      })(nodes[i], i);
+    }
+    scrollToBottom();
+  }
+
   function renderBlocks(blocks) {
     if (!Array.isArray(blocks) || blocks.length === 0) return;
     var wrap = document.createElement("div");
@@ -1269,6 +1335,7 @@
         if (btn) {
           btn.addEventListener("click", function () { openPoster(b); });
         }
+        bindShots(div, b);
       } else if (b && b.type === "poster" && /^data:image\/svg\+xml;base64,/.test(String(b.src || ""))) {
         var img = document.createElement("img");
         img.className = "gac-poster";

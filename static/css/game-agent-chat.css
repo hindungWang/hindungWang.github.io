@@ -387,6 +387,45 @@
   font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 5px; vertical-align: 1px;
 }
 
+/* 游戏截图集：标题行 + 可横向滑动的缩略图条 */
+.gac-shots-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 7px 0 4px; font-size: 11px; color: #8a93a3;
+}
+.gac-shots-more { color: #6f7784; }
+.gac-card-shots {
+  display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;
+  scroll-snap-type: x proximity; scrollbar-width: thin;
+}
+.gac-card-shots::-webkit-scrollbar { height: 4px; }
+.gac-card-shots::-webkit-scrollbar-thumb { background: #3a4351; border-radius: 2px; }
+.gac-shot {
+  flex: 0 0 calc((100% - 18px) / 4); aspect-ratio: 16 / 9; object-fit: cover;
+  border-radius: 8px; border: 1px solid #2e3642; background: #141922;
+  cursor: zoom-in; scroll-snap-align: start; transition: filter 0.15s, transform 0.1s;
+}
+.gac-shot:hover { filter: brightness(1.12); transform: translateY(-1px); }
+
+/* 截图大图查看（灯箱） */
+.gac-media-modal {
+  position: fixed; inset: 0; z-index: 9998;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.gac-media-box { display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 100%; }
+.gac-media-img {
+  max-width: min(92vw, 1100px); max-height: 78vh; border-radius: 10px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6); background: #141922;
+}
+.gac-media-bar { display: flex; align-items: center; gap: 10px; }
+.gac-media-act {
+  border: 1px solid #3a4351; background: rgba(29, 34, 43, 0.9); color: #e8ecf2;
+  border-radius: 9px; padding: 6px 14px; font-size: 14px; cursor: pointer; line-height: 1.2;
+}
+.gac-media-act:hover { background: rgba(58, 67, 81, 0.95); }
+.gac-media-idx { font-size: 12.5px; color: #b9c2cf; min-width: 56px; text-align: center; }
+.gac-media-close { margin-left: 6px; }
+
 /* 操作按钮：并排一行 */
 .gac-card-actions { display: flex; gap: 8px; margin-top: 8px; }
 .gac-card-btn {
