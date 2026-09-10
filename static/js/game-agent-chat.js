@@ -16,6 +16,10 @@
     //   请求头: Authorization: Bearer <token>
     //   响应体(同步模式): { "reply": "..." }  或 { "error": "..." }
     chatEndpoint: "/api/v1/game-agent/chat",
+    // 封面图代理（网关侧补 CORS 头；小黑盒图床不返回 CORS 头，直连会让海报 canvas 被污染、导不出 PNG）
+    imgEndpoint: "/api/v1/game-agent/img",
+    // 海报比例："4:5"（1080×1350，朋友圈/小红书更占屏，默认）| "3:4"（720×960）| "auto"（每次随机）
+    posterAspect: "4:5",
     // 回复模式：
     //   "sync" — 网关一次请求直接返回 {reply}（默认）
     //   "poll" — 网关先返回 {id}，再用 GET {replyEndpoint}?id=<id> 轮询直到返回 {reply} 或超时
@@ -280,12 +284,15 @@
   }
   /* 从封面 URL 提取 Steam appid，生成备份图源列表（原图优先，失败依次试无 hash 的跨域名镜像）；
      若后端给了显式 covers 数组，则优先使用它（仍带跨域降级 + 镜像兜底） */
+  /* 封面候选 → [{u, cors}] 计划列表。
+     顺序很重要：先"直连 + CORS"，再"代理 + CORS"，最后才退到"直连不带 CORS"——
+     因为不带 CORS 的图能把画面显示出来，却会污染 canvas 导致海报导不出 PNG。 */
   function coverCandidates(url, extraCovers) {
-    var results = [];
+    var direct = [];
     function push(u) {
       var s = safeUrl(u);
-      if (!s || results.indexOf(s) >= 0) return;
-      results.push(s);
+      if (!s || direct.indexOf(s) >= 0) return;
+      direct.push(s);
     }
     // 显式 covers（后端）优先
     if (Array.isArray(extraCovers)) {
@@ -302,7 +309,27 @@
       push("https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/header.jpg");
       push("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/" + id + "/header.jpg");
     }
-    return results;
+    var plan = [], seen = {};
+    function add(u, cors) {
+      var s = safeUrl(u);
+      if (!s || seen[s + "|" + cors]) return;
+      seen[s + "|" + cors] = 1;
+      plan.push({ u: s, cors: !!cors });
+    }
+    for (var i = 0; i < direct.length; i++) add(direct[i], true);
+    var proxyBase = imgProxyUrl();
+    if (proxyBase) {
+      for (var j = 0; j < direct.length; j++) add(proxyBase + encodeURIComponent(direct[j]), true);
+    }
+    for (var k = 0; k < direct.length; k++) add(direct[k], false);
+    return plan;
+  }
+  /* 网关图片代理地址（配置缺失或未配置网关时返回空串，海报自动降级为无封面版式） */
+  function imgProxyUrl() {
+    if (!isConfigFilled() || mockEnabled()) return "";
+    var base = CONFIG.baseUrl.replace(/\/+$/, "");
+    if (!/^https:\/\//.test(base)) return "";
+    return base + (CONFIG.imgEndpoint || "/api/v1/game-agent/img") + "?u=";
   }
   function gameCardHtml(b) {
     var cover = safeUrl(b.cover);
@@ -397,31 +424,21 @@
   /* ---------- 海报：canvas 渲染 + 模态框（下载 PNG / 复制图片） ---------- */
   function loadImage(url, extraCovers) {
     return new Promise(function (resolve) {
-      var candidates = coverCandidates(url, extraCovers); // 原图 + 显式covers + 备用镜像
-      if (!candidates.length) { resolve(null); return; }
+      var plan = coverCandidates(url, extraCovers); // [{u, cors}]：直连CORS → 代理CORS → 直连非CORS
+      if (!plan.length) { resolve(null); return; }
       var idx = 0;
       function next() {
-        if (idx >= candidates.length) { resolve(null); return; }
-        var u = candidates[idx++];
-        var triedPlain = false;
-        function tryLoad(useCors) {
-          var img = new Image();
-          if (useCors) img.crossOrigin = "anonymous";
-          img.referrerPolicy = "no-referrer"; // 绕过 erbingeditor 等 CDN 的 Referer 防盗链(403)
-          img.__corsOk = useCors; // 标记是否走 CORS（决定 canvas 能否导出）
-          img.__src = u;          // 记录实际加载成功 URL（内联兜底显示）
-          var done = false;
-          var finish = function (ok) {
-            if (done) return; done = true;
-            if (ok) resolve(img);
-            else if (useCors && !triedPlain) { triedPlain = true; setTimeout(function () { tryLoad(false); }, 0); }
-            else next(); // 此候选失败，试下一个镜像
-          };
-          img.onload = function () { finish(true); };
-          img.onerror = function () { finish(false); };
-          img.src = u;
-        }
-        tryLoad(true);
+        if (idx >= plan.length) { resolve(null); return; }
+        var cand = plan[idx++];
+        var img = new Image();
+        if (cand.cors) img.crossOrigin = "anonymous";
+        img.referrerPolicy = "no-referrer"; // 绕过 erbingeditor 等 CDN 的 Referer 防盗链(403)
+        img.__corsOk = false;               // 加载成功后按候选类型置位（决定 canvas 能否导出 PNG）
+        img.__src = cand.u;                 // 记录实际使用的 URL（兜底显示用）
+        var done = false;
+        img.onload = function () { if (done) return; done = true; img.__corsOk = !!cand.cors; resolve(img); };
+        img.onerror = function () { if (done) return; done = true; setTimeout(next, 0); };
+        img.src = cand.u;
       }
       next();
     });
@@ -483,11 +500,10 @@
    * v1 用硬编码 y 坐标摆模块，长标题/多平台时会互相压盖并把页脚顶出画布（已实测）。
    * v2 约定：每个模块收到自己的“顶部 y”，返回自己占用的“高度”；
    *   - 版式 F0 负责按游标顺排，并把富余空间匀给模块间距；
-   *   - 平台面板 / 页脚底部锚定，空间不足时按 英文名 → 特性 → 史低 → 面板条目 降级；
+   *   - 平台面板 / 页脚底部锚定，空间不足时按 英文名 → 特性 → 史低 → 卖点 → 面板条目 降级；
    * 因此任意数据量（超长标题 / 十几平台 / 无封面）都不会越界或压盖。
    */
   var POSTER_MARGIN = 48;
-  var POSTER_FOOTER_LINE = 884; // 页脚线（720x960 画布）
   var POSTER_TAG_W = 124;       // 价签包围盒宽度（tipX=-70 → bodyR=54）
 
   // -- 封面底部融合带
@@ -512,9 +528,10 @@
     ctx.textBaseline = "alphabetic";
   }
   // -- 标题：字号自适应 54→30，最多 2 行
-  function mTitle(ctx, W, top, th, name, align, maxW, dry) {
+  function mTitle(ctx, W, top, th, name, align, maxW, maxSize, dry) {
     if (!name) return 0;
-    var size = 54, ls = [];
+    var top0 = maxSize || 54;
+    var size = top0, ls = [];
     for (; size >= 30; size -= 3) {
       ctx.font = "800 " + size + "px 'PingFang SC',sans-serif";
       ls = wrapText(ctx, name, maxW);
@@ -658,15 +675,34 @@
     return 26;
   }
   // -- 史低行（历史最低价与日期；与面板里的“最低现价”是两个口径）
-  function mLowest(ctx, W, top, th, price, date, dry) {
+  function mLowest(ctx, W, top, th, price, date, align, dry) {
     if (!(price > 0)) return 0;
     if (!dry) {
       ctx.font = "800 22px 'PingFang SC',sans-serif";
-      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      ctx.textAlign = align === "left" ? "left" : "center"; ctx.textBaseline = "alphabetic";
       ctx.fillStyle = th.price;
-      ctx.fillText("史低 ¥" + fmtPrice(price) + (date ? "  ·  " + date : ""), W / 2, top + 22);
+      ctx.fillText("史低 ¥" + fmtPrice(price) + (date ? "  ·  " + date : ""),
+        align === "left" ? POSTER_MARGIN : W / 2, top + 22);
     }
     return 28;
+  }
+  // -- 卖点钩子（LLM 给的一句话，印在标题/价格之间当宣传语）
+  function mHook(ctx, W, top, th, hook, align, dry) {
+    if (!hook) return 0;
+    var txt = String(hook);
+    var maxW = W - POSTER_MARGIN * 2;
+    ctx.font = "800 28px 'PingFang SC',sans-serif";
+    if (ctx.measureText(txt).width > maxW) {
+      while (Array.from(txt).length > 1 && ctx.measureText(txt + "…").width > maxW) txt = Array.from(txt).slice(0, -1).join("");
+      txt += "…";
+    }
+    if (!dry) {
+      ctx.textAlign = align === "left" ? "left" : "center";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = th.tagTop || "#ff6b4a";
+      ctx.fillText(txt, align === "left" ? POSTER_MARGIN : W / 2, top + 27);
+    }
+    return 34;
   }
   // -- 价格组宽度（现价必显；折扣与原价二选一）
   function platGroupWidth(ctx, s, fs, withOff, withOld) {
@@ -804,8 +840,7 @@
     return panelH;
   }
   // -- 页脚（固定在画布底部，与面板互不干扰）
-  function mFooter(ctx, W, th) {
-    var line = POSTER_FOOTER_LINE;
+  function mFooter(ctx, W, line, th) {
     ctx.strokeStyle = th.footerLine; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(POSTER_MARGIN, line); ctx.lineTo(W - POSTER_MARGIN, line); ctx.stroke();
     var d = new Date();
@@ -816,86 +851,115 @@
     ctx.fillText("由 Stray 查价生成 · 数据实时查询 · " + ds, W / 2, line + 40);
   }
   // ===== 版式 pool =====
-  // F0 经典竖版 720x960：封面横幅 → 标题/英文名 → 价格主视觉 → chips → 特性/史低 →（底部锚定）平台面板 → 页脚
+  // 设计坐标系固定 720 宽：版式只声明输出尺寸(w×h)与设计高度 dh，绘制时整体缩放，模块尺寸无需改。
+  var POSTER_DESIGN_W = 720;
   var POSTER_FORMS = [
-    { w: 720, h: 960, render: function (ctx, D) {
-      var W = D.w, th = D.th;
-      var CW = W - POSTER_MARGIN * 2;
-      var COVER_H = 300;
-      if (D.coverImg) {
-        mCover(ctx, D.coverImg, 0, 0, W, COVER_H);
-        mCoverFade(ctx, W, th, COVER_H + 54, 118);
-      }
-      var startY = D.coverImg ? COVER_H - 8 : 96;
-      // 有封面时“剩余时间”压在封面上（省一行）；无封面时落到 chips 行
-      var coverBadge = (D.coverImg && D.remaining) ? "⏳ " + D.remaining : "";
-      var chipRemaining = D.coverImg ? "" : D.remaining;
-
-      var plats = Array.isArray(D.plats) ? D.plats : [];
-      var cols = plats.length >= 5 ? 3 : 2;   // 平台多时走三列，一眼看全
-
-      // ---- 第一遍：只量不画 ----
-      var mods = [
-        { key: "title", gap: 0, h: mTitle(ctx, W, 0, th, D.name, "center", CW, true),
-          draw: function (t) { mTitle(ctx, W, t, th, D.name, "center", CW, false); } },
-        { key: "en", gap: 14, h: mEn(ctx, W, 0, th, D.en, "center", CW, true),
-          draw: function (t) { mEn(ctx, W, t, th, D.en, "center", CW, false); } },
-        { key: "price", gap: 24, h: mPrice(ctx, W, 0, th, D.origin, D.price, D.off, "center", true),
-          draw: function (t) { mPrice(ctx, W, t, th, D.origin, D.price, D.off, "center", false); } },
-        { key: "chips", gap: 22, h: mChips(ctx, W, 0, th, D.rating, chipRemaining, "center", true),
-          draw: function (t) { mChips(ctx, W, t, th, D.rating, chipRemaining, "center", false); } },
-        { key: "feats", gap: 16, h: mFeatures(ctx, W, 0, th, D.features, "center", true),
-          draw: function (t) { mFeatures(ctx, W, t, th, D.features, "center", false); } },
-        { key: "lowest", gap: 16, h: mLowest(ctx, W, 0, th, D.lowestPrice, D.lowestDate, "center", true),
-          draw: function (t) { mLowest(ctx, W, t, th, D.lowestPrice, D.lowestDate, "center", false); } }
-      ].filter(function (m) { return m.h > 0; });
-
-      var needPanel = mPanel(ctx, W, 0, 1e4, th, plats, cols, true);
-      var bottomLimit = POSTER_FOOTER_LINE - 20;
-
-      // ---- 降级：英文名 → 特性 → 史低（面板内部还会自己减条目/缩行）----
-      var dropped = {};
-      var dropOrder = ["en", "feats", "lowest"];
-      function contentBottom() {
-        var y = startY;
-        for (var i = 0; i < mods.length; i++) {
-          if (dropped[mods[i].key]) continue;
-          y += mods[i].gap + mods[i].h;
-        }
-        return y;
-      }
-      var cb = contentBottom();
-      var panelTop = Math.max(cb + 26, bottomLimit - needPanel);
-      for (var di = 0; di < dropOrder.length && panelTop + needPanel > bottomLimit; di++) {
-        dropped[dropOrder[di]] = true;
-        cb = contentBottom();
-        panelTop = Math.max(cb + 26, bottomLimit - needPanel);
-      }
-
-      // ---- 第二遍：绘制（富余留白匀给顶部与模块间距，最多各 +18/+16px，避免下半部空一大块）----
-      var visible = mods.filter(function (m) { return !dropped[m.key]; });
-      var slack = Math.max(0, panelTop - 22 - cb);
-      var padTop = Math.round(Math.min(40, slack * 0.35));
-      var extra = Math.max(0, Math.min(18, Math.round((slack - padTop) / Math.max(1, visible.length))));
-      var y = startY + padTop;
-      for (var vi = 0; vi < visible.length; vi++) {
-        y += visible[vi].gap + (vi === 0 ? 0 : extra);
-        visible[vi].draw(y);
-        y += visible[vi].h;
-      }
-      if (plats.length) {
-        mPanel(ctx, W, panelTop, bottomLimit, th, plats, cols, false);
-      } else {
-        // 没有任何平台价（工具没取到数据）时给个交代，避免出一张只有标题的空海报
-        ctx.font = "600 26px 'PingFang SC',sans-serif";
-        ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-        ctx.fillStyle = th.footer;
-        ctx.fillText("暂无实时价格数据 · 稍后重试", W / 2, panelTop + 30);
-      }
-      if (coverBadge) mCoverBadge(ctx, th, coverBadge);
-      mFooter(ctx, W, th);
-    } }
+    // A 经典竖版 3:4（720×960）：封面主视觉 + 居中大字
+    { key: "A34", w: 720, h: 960, dh: 960, align: "center", typo: false },
+    // B 社交竖版 4:5（1080×1350）：朋友圈/小红书更占屏，构图同 A 按比例放大
+    { key: "B45", w: 1080, h: 1350, dh: 900, align: "center", typo: false },
+    // T 纯排版版 4:5（1080×1350）：不依赖封面图（无封面或封面跨域不可用时用），左对齐 + 顶部色带
+    { key: "T45", w: 1080, h: 1350, dh: 900, align: "left", typo: true }
   ];
+  function pickForm(coverImg) {
+    if (!coverImg) return POSTER_FORMS[2]; // 无封面 → 纯排版版
+    var pref = String(CONFIG.posterAspect || "4:5");
+    if (pref === "3:4") return POSTER_FORMS[0];
+    if (pref === "auto") return POSTER_FORMS[Math.random() < 0.5 ? 0 : 1];
+    return POSTER_FORMS[1];
+  }
+  /* 一个版式的绘制流程（align=center 居中版 / align=left 纯排版版）：
+     封面横幅 → 标题 → 卖点/英文名 → 价格主视觉 → chips → 特性/史低 →（底部锚定）平台面板 → 页脚 */
+  function renderForm(ctx, D) {
+    var W = D.w, th = D.th;
+    var align = D.align === "left" ? "left" : "center";
+    var typo = !!D.typo;
+    var CW = W - POSTER_MARGIN * 2;
+    var bottomLimit = D.h - 76 - 20;                 // 页脚线之上留 20
+    var COVER_H = Math.round(D.h * 0.31);
+    if (D.coverImg) {
+      mCover(ctx, D.coverImg, 0, 0, W, COVER_H);
+      mCoverFade(ctx, W, th, COVER_H + 54, 118);
+    }
+    var startY = D.coverImg ? COVER_H - 8 : 96;
+    // 有封面时“剩余时间”压在封面上（省一行）；无封面时落到 chips 行
+    var coverBadge = (D.coverImg && D.remaining) ? "⏳ " + D.remaining : "";
+    var chipRemaining = D.coverImg ? "" : D.remaining;
+    if (typo) mTopBand(ctx, th, startY - 44);        // 顶部渐变色带，给纯排版版一个视觉锚点
+
+    var plats = Array.isArray(D.plats) ? D.plats : [];
+    var cols = plats.length >= 5 ? 3 : 2;            // 平台多时走三列，一眼看全
+    var titleMax = typo ? 68 : 54;
+
+    // ---- 第一遍：只量不画 ----
+    var mods = [
+      { key: "title", gap: 0, h: mTitle(ctx, W, 0, th, D.name, align, CW, titleMax, true),
+        draw: function (t) { mTitle(ctx, W, t, th, D.name, align, CW, titleMax, false); } },
+      { key: "en", gap: 14, h: mEn(ctx, W, 0, th, D.en, align, CW, true),
+        draw: function (t) { mEn(ctx, W, t, th, D.en, align, CW, false); } },
+      { key: "hook", gap: 14, h: mHook(ctx, W, 0, th, D.hook, align, true),
+        draw: function (t) { mHook(ctx, W, t, th, D.hook, align, false); } },
+      { key: "price", gap: 24, h: mPrice(ctx, W, 0, th, D.origin, D.price, D.off, align, true),
+        draw: function (t) { mPrice(ctx, W, t, th, D.origin, D.price, D.off, align, false); } },
+      { key: "chips", gap: 22, h: mChips(ctx, W, 0, th, D.rating, chipRemaining, align, true),
+        draw: function (t) { mChips(ctx, W, t, th, D.rating, chipRemaining, align, false); } },
+      { key: "feats", gap: 16, h: mFeatures(ctx, W, 0, th, D.features, align, true),
+        draw: function (t) { mFeatures(ctx, W, t, th, D.features, align, false); } },
+      { key: "lowest", gap: 16, h: mLowest(ctx, W, 0, th, D.lowestPrice, D.lowestDate, align, true),
+        draw: function (t) { mLowest(ctx, W, t, th, D.lowestPrice, D.lowestDate, align, false); } }
+    ].filter(function (m) { return m.h > 0; });
+
+    var needPanel = mPanel(ctx, W, 0, 1e4, th, plats, cols, true);
+
+    // ---- 降级：英文名 → 特性 → 史低 → 卖点（面板内部还会自己减条目/缩行）----
+    var dropped = {};
+    var dropOrder = ["en", "feats", "lowest", "hook"];
+    function contentBottom() {
+      var y = startY;
+      for (var i = 0; i < mods.length; i++) {
+        if (dropped[mods[i].key]) continue;
+        y += mods[i].gap + mods[i].h;
+      }
+      return y;
+    }
+    var cb = contentBottom();
+    var panelTop = Math.max(cb + 26, bottomLimit - needPanel);
+    for (var di = 0; di < dropOrder.length && panelTop + needPanel > bottomLimit; di++) {
+      dropped[dropOrder[di]] = true;
+      cb = contentBottom();
+      panelTop = Math.max(cb + 26, bottomLimit - needPanel);
+    }
+
+    // ---- 第二遍：绘制（富余留白匀给顶部与模块间距，避免下半部空一大块）----
+    var visible = mods.filter(function (m) { return !dropped[m.key]; });
+    var slack = Math.max(0, panelTop - 22 - cb);
+    var padTop = Math.round(Math.min(typo ? 34 : 56, slack * 0.38));
+    var extra = Math.max(0, Math.min(typo ? 34 : 26, Math.round((slack - padTop) / Math.max(1, visible.length))));
+    var y = startY + padTop;
+    for (var vi = 0; vi < visible.length; vi++) {
+      y += visible[vi].gap + (vi === 0 ? 0 : extra);
+      visible[vi].draw(y);
+      y += visible[vi].h;
+    }
+    if (plats.length) {
+      mPanel(ctx, W, panelTop, bottomLimit, th, plats, cols, false);
+    } else {
+      // 没有任何平台价（工具没取到数据）时给个交代，避免出一张只有标题的空海报
+      ctx.font = "600 26px 'PingFang SC',sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = th.footer;
+      ctx.fillText("暂无实时价格数据 · 稍后重试", W / 2, panelTop + 30);
+    }
+    if (coverBadge) mCoverBadge(ctx, th, coverBadge);
+    mFooter(ctx, W, D.h - 76, th);
+  }
+  // -- 纯排版版顶部渐变色带
+  function mTopBand(ctx, th, y) {
+    var g = ctx.createLinearGradient(POSTER_MARGIN, 0, POSTER_MARGIN + 96, 0);
+    g.addColorStop(0, th.tagTop); g.addColorStop(1, th.tagBot);
+    ctx.fillStyle = g;
+    roundRectPath(ctx, POSTER_MARGIN, y, 96, 8, 4); ctx.fill();
+  }
   /* ---- 主题：优先从封面取主色调，取不到再回落到预设池 ---- */
   function hslToRgb(h, s, l) {
     h = ((h % 360) + 360) % 360;
@@ -972,16 +1036,22 @@
     if (t) return t;
     return POSTER_THEMES[(Math.random() * POSTER_THEMES.length) | 0];
   }
-  /* 渲染海报：theme 传同一个值可保证「预览 / 下载 / 复制」三处配色一致；
-     scale=2 用于导出 1440x1920 高清图（逻辑坐标不变，ctx 整体放大） */
-  function drawPoster(canvas, b, coverImg, theme, scale) {
-    var th = theme || pickTheme(coverImg);
-    var fm = POSTER_FORMS[0];
-    var W = fm.w, H = fm.h;
-    var s = scale > 1 ? scale : 1;
-    canvas.width = W * s; canvas.height = H * s;
+  /* 一次海报渲染的全部随机决策（主题 + 版式）打包成 plan，
+     预览/下载/复制复用同一个 plan，配色与版式不会跳变 */
+  function makePosterPlan(coverImg) {
+    return { theme: pickTheme(coverImg), form: pickForm(coverImg) };
+  }
+  /* 渲染海报：设计坐标恒为 720 宽，按版式尺寸整体缩放；scale=2 出高清图（逻辑坐标不变） */
+  function drawPoster(canvas, b, coverImg, plan, scale) {
+    var p = plan || {};
+    var fm = p.form || pickForm(coverImg);
+    var th = p.theme || pickTheme(coverImg);
+    var ratio = scale > 1 ? scale : 1;
+    var s = ratio * (fm.w / POSTER_DESIGN_W);
+    var W = POSTER_DESIGN_W, H = fm.dh;
+    canvas.width = fm.w * ratio; canvas.height = fm.h * ratio;
     var ctx = canvas.getContext("2d");
-    if (s !== 1) ctx.scale(s, s);
+    ctx.scale(s, s);                     // 之后所有绘制都用 720 宽的设计坐标
     ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
     var g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, th.bg[0]); g.addColorStop(0.55, th.bg[1]); g.addColorStop(1, th.bg[2]);
@@ -995,7 +1065,9 @@
       if (!best || cand.price < best.price) best = cand;
     }
     var D = {
-      w: W, h: H, th: th, coverImg: coverImg,
+      w: W, h: H, th: th, align: fm.align, typo: !!fm.typo, form: fm.key,
+      coverImg: fm.typo ? null : coverImg,   // 纯排版版式不画封面
+      hook: b.hook ? String(b.hook) : "",
       name: String(b.name || ""), en: b.en_name ? String(b.en_name) : "",
       rating: b.rating, remaining: b.remaining, plats: plats,
       features: Array.isArray(b.features) ? b.features : undefined,
@@ -1006,8 +1078,8 @@
     };
     D.off = "";
     if (D.origin > 0 && D.price > 0 && D.price < D.origin) D.off = "-" + Math.round((1 - D.price / D.origin) * 100) + "%";
-    fm.render(ctx, D);
-    return th;
+    renderForm(ctx, D);
+    return p;
   }
   function toast(msg) {
     var t = document.createElement("div");
@@ -1040,15 +1112,15 @@
   }
   /* 海报渲染：预览用 scale=1，导出用 scale=2（1440x1920 高清）；
      主题由 pickTheme 选一次后沿用，保证预览/下载/复制配色完全一致 */
-  function renderPoster(block, img, theme, scale) {
+  function renderPoster(block, img, plan, scale) {
     var canvas = document.createElement("canvas");
-    try { drawPoster(canvas, block, img, theme, scale || 1); } catch (e) { /* 保留空画布，按钮仍可用 */ }
+    try { drawPoster(canvas, block, img, plan, scale || 1); } catch (e) { /* 保留空画布，按钮仍可用 */ }
     return canvas;
   }
-  function exportCanvas(preview, block, img, theme) {
-    if (!block || !img) return preview;
+  function exportCanvas(preview, block, img, plan) {
+    if (!block) return preview;
     try {
-      var hi = renderPoster(block, img, theme, 2);
+      var hi = renderPoster(block, img, plan, 2);
       return hi.width > preview.width ? hi : preview;
     } catch (e) { return preview; }
   }
@@ -1080,9 +1152,9 @@
   /* 海报请求：先生成内联海报图，再发文字 */
   function showInlinePoster(block, onDone) {
     loadImage(safeUrl(block.cover), block.covers).then(function (img) {
-      var usable = posterImageFor(img);           // 不可导出时置 null → 走无封面版式
-      var theme = pickTheme(usable);
-      var canvas = renderPoster(block, usable, theme, 1);
+      var usable = posterImageFor(img);           // 不可导出时置 null → 走无封面纯排版版式
+      var plan = makePosterPlan(usable);
+      var canvas = renderPoster(block, usable, plan, 1);
       var wrap = document.createElement("div");
       wrap.className = "gac-poster-inline-wrap";
       wrap.innerHTML =
@@ -1097,10 +1169,10 @@
       bodyEl.appendChild(wrap);
       scrollToBottom();
       wrap.querySelector('[data-act="save"]').addEventListener("click", function () {
-        downloadCanvas(exportCanvas(canvas, block, usable, theme));
+        downloadCanvas(exportCanvas(canvas, block, usable, plan));
       });
       wrap.querySelector('[data-act="copy"]').addEventListener("click", function () {
-        copyCanvas(exportCanvas(canvas, block, usable, theme));
+        copyCanvas(exportCanvas(canvas, block, usable, plan));
       });
       if (onDone) setTimeout(onDone, 150);
     });
@@ -1108,7 +1180,7 @@
   function openPoster(block) {
     loadImage(safeUrl(block.cover), block.covers).then(function (img) {
       var usable = posterImageFor(img);
-      var theme = pickTheme(usable);
+      var plan = makePosterPlan(usable);
       var overlay = document.createElement("div");
       overlay.className = "gac-poster-modal";
       overlay.innerHTML =
@@ -1126,12 +1198,12 @@
       overlay.querySelector(".gac-poster-close").addEventListener("click", function () { overlay.remove(); });
       overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.remove(); });
       overlay.querySelector('[data-act="save"]').addEventListener("click", function () {
-        downloadCanvas(exportCanvas(canvas, block, usable, theme));
+        downloadCanvas(exportCanvas(canvas, block, usable, plan));
       });
       overlay.querySelector('[data-act="copy"]').addEventListener("click", function () {
-        copyCanvas(exportCanvas(canvas, block, usable, theme));
+        copyCanvas(exportCanvas(canvas, block, usable, plan));
       });
-      try { drawPoster(canvas, block, usable, theme, 1); } catch (e) { /* 保留空画布，操作仍可用 */ }
+      try { drawPoster(canvas, block, usable, plan, 1); } catch (e) { /* 保留空画布，操作仍可用 */ }
     });
   }
   function renderBlocks(blocks) {
