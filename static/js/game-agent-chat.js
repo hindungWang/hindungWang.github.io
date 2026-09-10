@@ -896,7 +896,7 @@
     var M = CP.MARGIN, panelX = M, panelW = W - M * 2;
     var PADX = 22, PADT = 16, PADB = 18;
     var innerW = panelW - PADX * 2;
-    var footerLine = D.h - 58;
+    var footerLine = D.h - 48;
     var coverH = D.coverImg ? Math.round(panelW * 0.295) : 0;
     var offTxt = D.off || "";
     var coverBadge = D.coverImg ? D.remaining : "";
@@ -951,12 +951,22 @@
       if (total <= botLimit - topLimit) break;
     }
 
+    // ---- 富余空间分配：① 封面横幅吃掉一部分（最多长到面板宽的 0.42，内容少时当主视觉）
+    //      ② 剩下的上下平分，让整块（钩子 + 面板）在页脚之上居中，底部不留大片空白 ----
+    var hookBlock = (chosen.showHook && hookH) ? hookH + 22 : 0;
+    var baseTotal = hookBlock + coverH + bodyH;
+    var slack = Math.max(0, (botLimit - topLimit) - baseTotal);
+    var maxCover = D.coverImg ? Math.round(panelW * 0.52) : 0;
+    var coverGrow = D.coverImg ? Math.max(0, Math.min(maxCover - coverH, Math.round(slack * 0.55))) : 0;
+    coverH += coverGrow;
+    // 内容偏少时，卡片上下内边距也撑开一点（内部留白比底部空一大块好看）
+    var airy = (slack - coverGrow) > 60 ? 8 : 0;
+    bodyH += airy * 2;
+    var rest = Math.max(0, slack - coverGrow - airy * 2);
+    var padTop = Math.round(rest * 0.5);
+
     // ---- 绘制 ----
     var panelH = coverH + bodyH;
-    var totalH = (chosen.showHook && hookH ? hookH + 22 : 0) + panelH;
-    var slack = Math.max(0, (botLimit - topLimit) - totalH);
-    var padTop = Math.round(Math.min(48, slack * 0.45));
-    var gapExtra = Math.round(Math.min(36, slack - padTop));
     var y = topLimit + padTop;
 
     if (chosen.showHook && D.hook) {
@@ -964,12 +974,12 @@
       ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
       ctx.fillStyle = CP.PRICE;
       ctx.fillText(D.hook, W / 2, y + CP_F.hook * 0.92);
-      y += hookH + 22 + gapExtra;
+      y += hookBlock;
     }
     // 面板
     cpPanel(ctx, panelX, y, panelW, panelH);
     if (D.coverImg) cpCover(ctx, D.coverImg, panelX, y, panelW, coverH, offTxt, coverBadge);
-    var cy = y + coverH + PADT + 2;
+    var cy = y + coverH + PADT + 2 + airy;
     cy += cpHead(ctx, panelX + PADX, cy, innerW, th, D, false) + 14;
     if (chips.length) {
       cy += cpPills(ctx, panelX + PADX, cy, innerW, chips, chipStyle, chosen.chipRows, false, "left") + 12;
