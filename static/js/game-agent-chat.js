@@ -930,31 +930,31 @@
       return y + PADB - 2;
     }
 
-    var hookH = D.hook ? CP_F.hook * 1.4 : 0;
+    // 钩子（LLM 卖点）不再画在海报上方：整块直接由卡片面板构成，面板在页脚之上居中。
+    // 数据仍随 block 下发（D.hook 保留），需要时可在卡片标题下方补一行。
     var topLimit = M;
     var botLimit = footerLine - 22;
     var plans = [
-      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: true,  showHook: true,  platRows: 8 },
-      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, showHook: true,  platRows: 8 },
-      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, showHook: true,  platRows: 6 },
-      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: false, showDims: false, showHook: true,  platRows: 5 },
-      { chipRows: 2, featRows: 1, showLowest: true,  showMeta: false, showDims: false, showHook: true,  platRows: 4 },
-      { chipRows: 1, featRows: 1, showLowest: false, showMeta: false, showDims: false, showHook: true,  platRows: 4 },
-      { chipRows: 1, featRows: 0, showLowest: false, showMeta: false, showDims: false, showHook: false, platRows: 3 }
+      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: true,  platRows: 8 },
+      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, platRows: 8 },
+      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, platRows: 6 },
+      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: false, showDims: false, platRows: 5 },
+      { chipRows: 2, featRows: 1, showLowest: true,  showMeta: false, showDims: false, platRows: 4 },
+      { chipRows: 1, featRows: 1, showLowest: false, showMeta: false, showDims: false, platRows: 4 },
+      { chipRows: 1, featRows: 0, showLowest: false, showMeta: false, showDims: false, platRows: 3 }
     ];
     var chosen = plans[plans.length - 1], bodyH = 0;
     for (var pi = 0; pi < plans.length; pi++) {
       var p = plans[pi];
       bodyH = bodyHeight(p);
-      var total = (p.showHook && hookH ? hookH + 22 : 0) + coverH + bodyH;
+      var total = coverH + bodyH;
       chosen = p;
       if (total <= botLimit - topLimit) break;
     }
 
     // ---- 富余空间分配：① 封面横幅吃掉一部分（最多长到面板宽的 0.42，内容少时当主视觉）
     //      ② 剩下的上下平分，让整块（钩子 + 面板）在页脚之上居中，底部不留大片空白 ----
-    var hookBlock = (chosen.showHook && hookH) ? hookH + 22 : 0;
-    var baseTotal = hookBlock + coverH + bodyH;
+    var baseTotal = coverH + bodyH;
     var slack = Math.max(0, (botLimit - topLimit) - baseTotal);
     var maxCover = D.coverImg ? Math.round(panelW * 0.52) : 0;
     var coverGrow = D.coverImg ? Math.max(0, Math.min(maxCover - coverH, Math.round(slack * 0.55))) : 0;
@@ -969,13 +969,6 @@
     var panelH = coverH + bodyH;
     var y = topLimit + padTop;
 
-    if (chosen.showHook && D.hook) {
-      ctx.font = "800 " + CP_F.hook + "px 'PingFang SC',sans-serif";
-      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-      ctx.fillStyle = CP.PRICE;
-      ctx.fillText(D.hook, W / 2, y + CP_F.hook * 0.92);
-      y += hookBlock;
-    }
     // 面板
     cpPanel(ctx, panelX, y, panelW, panelH);
     if (D.coverImg) cpCover(ctx, D.coverImg, panelX, y, panelW, coverH, offTxt, coverBadge);
