@@ -287,7 +287,7 @@
   /* 封面候选 → [{u, cors}] 计划列表。
      顺序很重要：先"直连 + CORS"，再"代理 + CORS"，最后才退到"直连不带 CORS"——
      因为不带 CORS 的图能把画面显示出来，却会污染 canvas 导致海报导不出 PNG。 */
-  function coverCandidates(url, extraCovers) {
+  function coverCandidates(url, extraCovers, inlineData) {
     var direct = [];
     function push(u) {
       var s = safeUrl(u);
@@ -310,12 +310,14 @@
       push("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/" + id + "/header.jpg");
     }
     var plan = [], seen = {};
-    function add(u, cors) {
-      var s = safeUrl(u);
+    function add(u, cors, clean) {
+      var s = clean ? String(u || "") : safeUrl(u);
       if (!s || seen[s + "|" + cors]) return;
       seen[s + "|" + cors] = 1;
-      plan.push({ u: s, cors: !!cors });
+      plan.push({ u: s, cors: !!cors, clean: clean === undefined ? !!cors : !!clean });
     }
+    // 网关内联的封面（data URL）：同源内容，既不依赖 CDN 的 CORS 头，也不会污染画布
+    if (typeof inlineData === "string" && /^data:image\//.test(inlineData)) add(inlineData, false, true);
     for (var i = 0; i < direct.length; i++) add(direct[i], true);
     var proxyBase = imgProxyUrl();
     if (proxyBase) {
@@ -422,9 +424,10 @@
   }
 
   /* ---------- 海报：canvas 渲染 + 模态框（下载 PNG / 复制图片） ---------- */
-  function loadImage(url, extraCovers) {
+  function loadImage(url, extraCovers, inlineData) {
     return new Promise(function (resolve) {
-      var plan = coverCandidates(url, extraCovers); // [{u, cors}]：直连CORS → 代理CORS → 直连非CORS
+      // [{u, cors, clean}]：内联data → 直连CORS → 代理CORS → 直连非CORS
+      var plan = coverCandidates(url, extraCovers, inlineData);
       if (!plan.length) { resolve(null); return; }
       var idx = 0;
       function next() {
@@ -436,7 +439,7 @@
         img.__corsOk = false;               // 加载成功后按候选类型置位（决定 canvas 能否导出 PNG）
         img.__src = cand.u;                 // 记录实际使用的 URL（兜底显示用）
         var done = false;
-        img.onload = function () { if (done) return; done = true; img.__corsOk = !!cand.cors; resolve(img); };
+        img.onload = function () { if (done) return; done = true; img.__corsOk = !!cand.clean; resolve(img); };
         img.onerror = function () { if (done) return; done = true; setTimeout(next, 0); };
         img.src = cand.u;
       }
@@ -1151,7 +1154,7 @@
   }
   /* 海报请求：先生成内联海报图，再发文字 */
   function showInlinePoster(block, onDone) {
-    loadImage(safeUrl(block.cover), block.covers).then(function (img) {
+    loadImage(safeUrl(block.cover), block.covers, block.cover_data).then(function (img) {
       var usable = posterImageFor(img);           // 不可导出时置 null → 走无封面纯排版版式
       var plan = makePosterPlan(usable);
       var canvas = renderPoster(block, usable, plan, 1);
@@ -1178,7 +1181,7 @@
     });
   }
   function openPoster(block) {
-    loadImage(safeUrl(block.cover), block.covers).then(function (img) {
+    loadImage(safeUrl(block.cover), block.covers, block.cover_data).then(function (img) {
       var usable = posterImageFor(img);
       var plan = makePosterPlan(usable);
       var overlay = document.createElement("div");
