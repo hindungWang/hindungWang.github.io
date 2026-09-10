@@ -569,3 +569,12 @@
   z-index: 10001; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
   pointer-events: none;
 }
+
+/* ===== 卡片增强：特性标签 / 史低 / 关注 ===== */
+.gac-card-feats{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.gac-feat{font-size:12px;line-height:1;padding:4px 8px;border-radius:6px;
+  color:#8fd0a8;background:rgba(80,200,140,.12);border:1px solid rgba(80,200,140,.22);white-space:nowrap}
+.gac-card-lowest{display:flex;align-items:center;gap:6px;margin:6px 0 2px;font-size:13px;
+  color:#ffd23f;font-weight:700}
+.gac-card-lowest .gac-lowest-date{color:#9aa3b2;font-weight:400;font-size:12px}
+.gac-card-chip{white-space:nowrap}

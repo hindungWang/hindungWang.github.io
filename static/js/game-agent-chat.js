@@ -323,19 +323,38 @@
     h += '<div class="gac-card-chips">';
     if (b.rating) h += '<span class="gac-card-chip">⭐ ' + escapeHtml(String(b.rating)) + "</span>";
     if (b.platform) h += '<span class="gac-card-chip">' + escapeHtml(String(b.platform)) + "</span>";
+    if (b.follow) h += '<span class="gac-card-chip">👥 ' + escapeHtml(String(b.follow)) + "</span>";
     if (b.remaining) h += '<span class="gac-card-chip">⏳ ' + escapeHtml(String(b.remaining)) + "</span>";
     h += "</div>";
-    // 各平台价格明细：划线原价 + 现价 + 折扣%，最大折扣（第一行）高亮
+    // 特性标签（中文/Steam Deck/家庭共享等）
+    if (Array.isArray(b.features) && b.features.length) {
+      h += '<div class="gac-card-feats">';
+      for (var fi = 0; fi < b.features.length; fi++) {
+        h += '<span class="gac-feat">' + escapeHtml(String(b.features[fi])) + "</span>";
+      }
+      h += "</div>";
+    }
+    // 史低提示
+    if (b.lowest_price > 0) {
+      h += '<div class="gac-card-lowest">史低 ¥' + escapeHtml(String(b.lowest_price)) +
+        (b.lowest_date ? ' <span class="gac-lowest-date">· ' + escapeHtml(String(b.lowest_date)) + "</span>" : "") + "</div>";
+    }
+    // 各平台价格明细：全平台列出，最低价平台高亮
     var plats = Array.isArray(b.prices) ? b.prices : [];
     if (plats.length > 0) {
+      var minP = Infinity;
+      for (var mi = 0; mi < plats.length; mi++) {
+        var mp = parseFloat(plats[mi] && plats[mi].price);
+        if (isFinite(mp) && mp > 0 && mp < minP) minP = mp;
+      }
       h += '<div class="gac-card-plats">';
       for (var pi = 0; pi < plats.length; pi++) {
         var r = plats[pi];
         if (!r || !r.name) continue;
-        var best = pi === 0 && r.off_pct > 0;
+        var best = parseFloat(r.price) === minP && plats.length > 1;
         h += '<div class="gac-plat' + (best ? " gac-plat-best" : "") + '">' +
           '<span class="gac-plat-name">' + escapeHtml(String(r.name)) +
-          (best ? '<span class="gac-plat-badge">最大折扣</span>' : "") + "</span>" +
+          (best ? '<span class="gac-plat-badge">最低价</span>' : "") + "</span>" +
           (r.origin_price > 0 ? '<span class="gac-plat-old">¥' + escapeHtml(String(r.origin_price)) + "</span>" : "") +
           '<span class="gac-plat-now">¥' + escapeHtml(String(r.price)) + "</span>" +
           (r.off_pct > 0 ? '<span class="gac-plat-off">-' + escapeHtml(String(r.off_pct)) + "%</span>" : "") +
@@ -615,6 +634,33 @@
     ctx.textAlign = isLeft ? "left" : "center"; ctx.textBaseline = "alphabetic";
     return topY - 12 + panelH + 24 + 8;
   }
+  // -- 特性标签行（如 "中文 · Steam Deck · 家庭共享"），返回底部y
+  function mFeatures(ctx, x, y, th, feats, align) {
+    if (!feats || !feats.length) return y;
+    ctx.textAlign = align === "left" ? "left" : "center";
+    ctx.textBaseline = "alphabetic";
+    var txt = feats.slice(0, 5).join(" · ");
+    var fs = 20;
+    ctx.font = "600 " + fs + "px 'PingFang SC',sans-serif";
+    if (ctx.measureText(txt).width > 560) {
+      while (ctx.measureText(txt + "…").width > 560 && txt.length > 1) txt = txt.slice(0, -1);
+      txt += "…";
+    }
+    ctx.fillStyle = th.chipRemaining || "#a8c7e8";
+    ctx.fillText(txt, align === "left" ? x : x, y);
+    return y + 26;
+  }
+  // -- 史低行（"史低 ¥178.8 · 2023-12-22"），返回底部y
+  function mLowest(ctx, x, y, th, price, date, align) {
+    if (!(price > 0)) return y;
+    ctx.textAlign = align === "left" ? "left" : "center";
+    ctx.textBaseline = "alphabetic";
+    var t = "史低 ¥" + price + (date ? "  ·  " + date : "");
+    ctx.font = "800 22px 'PingFang SC',sans-serif";
+    ctx.fillStyle = th.price || "#ffd23f";
+    ctx.fillText(t, x, y);
+    return y + 28;
+  }
   // -- footer
   function mFooter(ctx, x, topY, th, align) {
     var fy = Math.max(topY, 0);
@@ -638,7 +684,9 @@
       var py = Math.max(bot + 46, 556);
       py = mPrice(ctx, 360, py, th, D.origin, D.price, D.off, "center", "tagRight");
       var cy = mChips(ctx, 360, py + 60, th, D.rating, D.remaining, "center");
-      var bandTop = Math.max(cy + 42, py + 88);
+      var fy = mFeatures(ctx, 360, cy + 36, th, D.features, "center");
+      var ly = mLowest(ctx, 360, fy + 30, th, D.lowestPrice, D.lowestDate, "center");
+      var bandTop = Math.max(ly + 26, py + 88);
       var end = mPanel(ctx, 360, bandTop, 560, th, D.plats, 2);
       mFooter(ctx, 360, Math.max(end + 14, 862), th, "center");
     } }
@@ -665,6 +713,9 @@
       w: W, h: H, th: th, coverImg: coverImg,
       name: String(b.name || ""), en: b.en_name ? String(b.en_name) : "",
       rating: b.rating, remaining: b.remaining, plats: plats,
+      features: Array.isArray(b.features) ? b.features : undefined,
+      lowestPrice: b.lowest_price > 0 ? b.lowest_price : undefined,
+      lowestDate: b.lowest_date ? String(b.lowest_date) : "",
       origin: best && best.origin_price ? best.origin_price : (b.origin_price || 0),
       price: best && best.price ? best.price : (b.price || 0)
     };
