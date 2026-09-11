@@ -447,16 +447,20 @@
       }
       h += "</div>";
     }
-    // 游戏截图集：缩略图横条（可横向滑动），点击看大图
+    // 游戏截图集：一排三张（不横向滑动，避免出现丑滚动条），多余的用「+N」角标进灯箱看
     var shots = Array.isArray(b.screenshots) ? b.screenshots.filter(function (x) { return x && safeUrl(x.thumb); }) : [];
     if (shots.length) {
+      var cardShow = Math.min(shots.length, 3);
       h += '<div class="gac-shots-head"><span>🖼 游戏截图 ' + shots.length + " 张</span>";
-      if (shots.length > 3) h += '<span class="gac-shots-more">点图看大图 ›</span>';
-      h += "</div>";
+      h += '<span class="gac-shots-more">' + (shots.length > cardShow ? "点图看全部 ›" : "点图看大图 ›") + "</span></div>";
       h += '<div class="gac-card-shots">';
-      for (var sh = 0; sh < shots.length; sh++) {
-        h += '<img class="gac-shot" src="' + safeUrl(shots[sh].thumb) + '" data-full="' + safeUrl(shots[sh].full || shots[sh].thumb) +
-          '" alt="' + escapeHtml((b.name || "游戏") + " 截图 " + (sh + 1)) + '" loading="lazy" referrerpolicy="no-referrer">';
+      for (var sh = 0; sh < cardShow; sh++) {
+        var rest = shots.length - cardShow;
+        h += '<div class="gac-shot-cell">' +
+          '<img class="gac-shot" src="' + safeUrl(shots[sh].thumb) + '" data-full="' + safeUrl(shots[sh].full || shots[sh].thumb) +
+          '" alt="' + escapeHtml((b.name || "游戏") + " 截图 " + (sh + 1)) + '" loading="lazy" referrerpolicy="no-referrer">' +
+          (sh === cardShow - 1 && rest > 0 ? '<span class="gac-shot-more">+' + rest + "</span>" : "") +
+          "</div>";
       }
       h += "</div>";
     }
@@ -553,22 +557,39 @@
     h += '<div class="gac-media-head">' +
       '<span class="gac-media-title">' + name + " · 画面</span>" +
       '<span class="gac-media-meta">' + meta.join("　") + "</span></div>";
-    for (var i = 0; i < videos.length; i++) {
-      var src = safeUrl(videos[i].url);
-      var poster = safeUrl(videos[i].poster);
-      h += '<div class="gac-video" data-src="' + src + '" data-poster="' + poster + '">';
-      if (poster) {
-        h += '<img class="gac-video-poster" src="' + poster + '" alt="' + name + ' 预告片封面" loading="lazy" referrerpolicy="no-referrer">';
+    if (videos.length) {
+      // 只放一个主播放器（多个 16:9 大块叠在一起会把聊天窗撑成很长的滚动条），
+      // 其余预告片用胶囊按钮切换播放源
+      var tabs = [];
+      for (var i = 0; i < videos.length; i++) {
+        tabs.push({ src: safeUrl(videos[i].url), poster: safeUrl(videos[i].poster) });
       }
-      h += '<button type="button" class="gac-video-btn">▶ 播放预告片' +
-        (videos.length > 1 ? " " + (i + 1) : "") + "</button></div>";
+      h += '<div class="gac-video" data-src="' + tabs[0].src + '" data-poster="' + tabs[0].poster + '" data-tabs=\'' +
+        escapeHtml(JSON.stringify(tabs)) + "'>";
+      if (tabs[0].poster) {
+        h += '<img class="gac-video-poster" src="' + tabs[0].poster + '" alt="' + name + ' 预告片封面" loading="lazy" referrerpolicy="no-referrer">';
+      }
+      h += '<button type="button" class="gac-video-btn">▶ 播放预告片' + (videos.length > 1 ? " 1" : "") + "</button></div>";
+      if (videos.length > 1) {
+        h += '<div class="gac-video-tabs">';
+        for (var t = 0; t < videos.length; t++) {
+          h += '<button type="button" class="gac-video-tab' + (t === 0 ? " active" : "") + '" data-i="' + t + '">预告片 ' + (t + 1) + "</button>";
+        }
+        h += "</div>";
+      }
     }
     if (images.length) {
+      // 最多 6 张（两排），其余用「+N」角标进灯箱看，保证媒体块不会长到需要滚很久
+      var show = Math.min(images.length, 6);
       h += '<div class="gac-media-grid">';
-      for (var j = 0; j < images.length; j++) {
-        h += '<img class="gac-shot" src="' + safeUrl(images[j].thumb) + '"' +
+      for (var j = 0; j < show; j++) {
+        var left = images.length - show;
+        h += '<div class="gac-shot-cell">' +
+          '<img class="gac-shot" src="' + safeUrl(images[j].thumb) + '"' +
           ' data-full="' + safeUrl(images[j].full || images[j].thumb) + '"' +
-          ' alt="' + name + " 截图 " + (j + 1) + '" loading="lazy" referrerpolicy="no-referrer">';
+          ' alt="' + name + " 截图 " + (j + 1) + '" loading="lazy" referrerpolicy="no-referrer">' +
+          (j === show - 1 && left > 0 ? '<span class="gac-shot-more">+' + left + "</span>" : "") +
+          "</div>";
       }
       h += "</div>";
     }
@@ -588,13 +609,39 @@
     var vids = scope.querySelectorAll(".gac-video");
     for (var k = 0; k < vids.length; k++) {
       (function (node) {
-        var src = node.getAttribute("data-src");
-        var poster = node.getAttribute("data-poster");
         var btn = node.querySelector(".gac-video-btn");
         var posterImg = node.querySelector(".gac-video-poster");
-        function go() { mountVideo(node, src, poster); }
+        var tabs = [];
+        try { tabs = JSON.parse(node.getAttribute("data-tabs") || "[]"); } catch (e) { tabs = []; }
+        if (!tabs.length) tabs = [{ src: node.getAttribute("data-src"), poster: node.getAttribute("data-poster") }];
+        var cur = 0;
+        function go() {
+          var t = tabs[cur] || {};
+          mountVideo(node, t.src || node.getAttribute("data-src"), t.poster || node.getAttribute("data-poster"));
+        }
         if (btn) btn.addEventListener("click", go);
         if (posterImg) posterImg.addEventListener("click", go);
+        // 胶囊切换：换播放源；若已在播放则直接换台
+        var tabBtns = scope.querySelectorAll(".gac-video-tab");
+        for (var q = 0; q < tabBtns.length; q++) {
+          (function (tb) {
+            tb.addEventListener("click", function () {
+              cur = parseInt(tb.getAttribute("data-i"), 10) || 0;
+              for (var w = 0; w < tabBtns.length; w++) tabBtns[w].classList.toggle("active", w === cur);
+              var t = tabs[cur] || {};
+              var v = node.querySelector("video");
+              if (v) {
+                mountVideo(node, t.src, t.poster);
+              } else {
+                node.setAttribute("data-src", t.src || "");
+                node.setAttribute("data-poster", t.poster || "");
+                var pi = node.querySelector(".gac-video-poster");
+                if (pi && t.poster) pi.src = t.poster;
+                if (btn) btn.textContent = "▶ 播放预告片 " + (cur + 1);
+              }
+            });
+          })(tabBtns[q]);
+        }
       })(vids[k]);
     }
     scrollToBottom();
