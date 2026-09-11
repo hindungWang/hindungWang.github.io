@@ -130,8 +130,15 @@
   function inlineMd(raw) {
     var t = escapeHtml(raw);
     t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
-    // 图片 ![alt](url) 必须在链接之前处理（只允许 http/https，防注入）
-    t = t.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">');
+    // 图片 / 视频 ![alt](url) 必须在链接之前处理（只允许 http/https，防注入）
+    t = t.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, function (_m, alt, url) {
+      if (isVideoSrc(url)) {
+        // 视频：先给一个播放按钮，点了再创建播放器（避免一上来就加载视频）
+        return '<span class="gac-md-video" data-src="' + url + '">' +
+          '<button type="button" class="gac-md-video-btn">▶ ' + (alt || "播放视频") + "</button></span>";
+      }
+      return '<img class="gac-md-img" src="' + url + '" alt="' + alt + '" loading="lazy" referrerpolicy="no-referrer">';
+    });
     t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
     t = t.replace(/~~([^~]+)~~/g, "<del>$1</del>");
     t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
@@ -234,6 +241,7 @@
     if (role === "agent") {
       div.className += " md";
       div.innerHTML = renderMarkdown(text); // agent 回复渲染 Markdown（标准解析）
+      bindMdMedia(div); // 回复里的图片可点开大图、视频可内联播放
     } else {
       div.textContent = text; // 用户消息保持纯文本
     }
@@ -460,6 +468,158 @@
     h += '<button type="button" class="gac-card-btn gac-card-poster-btn">🖼️ 生成海报</button>';
     h += "</div></div></div>";
     return h;
+  }
+
+  /* ---------- 图片 / 预告片：媒体块 + 内联播放器 ----------
+   * 数据全部来自 game.media（小黑盒详情），前端只负责渲染：
+   *   - 截图：3 列网格，点击开灯箱（复用 openShots，左右切换 / Esc 关闭）
+   *   - 预告片：封面图 + 播放按钮，点击才创建 <video>；m3u8 在 Safari 原生播，
+   *     Chrome 等懒加载 hls.js（CDN 挂了就降级成"新窗口播放"链接，不影响其它内容）
+   */
+  var hlsLoading = null;
+  function isVideoSrc(u) { return /\.(m3u8|mp4|webm|mov)([?#]|$)/i.test(String(u || "")); }
+
+  function loadHlsJs() {
+    if (window.Hls) return Promise.resolve(window.Hls);
+    if (hlsLoading) return hlsLoading;
+    hlsLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js";
+      s.async = true;
+      s.onload = function () { window.Hls ? resolve(window.Hls) : reject(new Error("Hls 未定义")); };
+      s.onerror = function () { hlsLoading = null; reject(new Error("hls.js 加载失败")); };
+      document.head.appendChild(s);
+    });
+    return hlsLoading;
+  }
+
+  /** 在容器里挂一个 <video> 播放器（m3u8 走 hls.js，mp4 直接播） */
+  function mountVideo(box, src, poster) {
+    if (!box || !safeUrl(src)) return;
+    var v = document.createElement("video");
+    v.className = "gac-video-el";
+    v.controls = true;
+    v.autoplay = true;
+    v.preload = "metadata";
+    v.setAttribute("playsinline", "");
+    v.setAttribute("referrerpolicy", "no-referrer");
+    if (safeUrl(poster)) v.poster = safeUrl(poster);
+    function useDirect() {
+      v.src = src;
+      var p = v.play();
+      if (p && p.catch) p.catch(function () {});
+    }
+    function fallbackLink(msg) {
+      box.innerHTML = "";
+      var a = document.createElement("a");
+      a.className = "gac-video-fallback";
+      a.href = src;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "▶ " + (msg || "在新窗口播放预告片");
+      box.appendChild(a);
+    }
+    // 先把播放器放上去（有封面图，点击后立即有反馈）
+    box.innerHTML = "";
+    box.appendChild(v);
+    if (!/\.m3u8([?#]|$)/i.test(src) || v.canPlayType("application/vnd.apple.mpegurl")) {
+      useDirect();
+      return;
+    }
+    loadHlsJs().then(function (Hls) {
+      if (!Hls || !Hls.isSupported()) { useDirect(); return; }
+      var h = new Hls({ maxBufferLength: 20 });
+      h.on(Hls.Events.MANIFEST_PARSED, function () {
+        var p = v.play();
+        if (p && p.catch) p.catch(function () {});
+      });
+      h.on(Hls.Events.ERROR, function (_e, data) {
+        if (data && data.fatal) fallbackLink("在新窗口播放预告片");
+      });
+      h.loadSource(src);
+      h.attachMedia(v);
+    }).catch(function () { fallbackLink("在新窗口播放预告片"); });
+  }
+
+  function mediaBlockHtml(b) {
+    var name = escapeHtml(String((b && b.name) || "游戏"));
+    var images = (b && Array.isArray(b.images) ? b.images : []).filter(function (x) { return x && safeUrl(x.thumb); });
+    var videos = (b && Array.isArray(b.videos) ? b.videos : []).filter(function (x) { return x && safeUrl(x.url); });
+    if (!images.length && !videos.length) return "";
+    var h = '<div class="gac-media">';
+    var meta = [];
+    if (videos.length) meta.push("🎬 " + videos.length + " 个预告片");
+    if (images.length) meta.push("🖼 " + images.length + " 张截图");
+    h += '<div class="gac-media-head">' +
+      '<span class="gac-media-title">' + name + " · 画面</span>" +
+      '<span class="gac-media-meta">' + meta.join("　") + "</span></div>";
+    for (var i = 0; i < videos.length; i++) {
+      var src = safeUrl(videos[i].url);
+      var poster = safeUrl(videos[i].poster);
+      h += '<div class="gac-video" data-src="' + src + '" data-poster="' + poster + '">';
+      if (poster) {
+        h += '<img class="gac-video-poster" src="' + poster + '" alt="' + name + ' 预告片封面" loading="lazy" referrerpolicy="no-referrer">';
+      }
+      h += '<button type="button" class="gac-video-btn">▶ 播放预告片' +
+        (videos.length > 1 ? " " + (i + 1) : "") + "</button></div>";
+    }
+    if (images.length) {
+      h += '<div class="gac-media-grid">';
+      for (var j = 0; j < images.length; j++) {
+        h += '<img class="gac-shot" src="' + safeUrl(images[j].thumb) + '"' +
+          ' data-full="' + safeUrl(images[j].full || images[j].thumb) + '"' +
+          ' alt="' + name + " 截图 " + (j + 1) + '" loading="lazy" referrerpolicy="no-referrer">';
+      }
+      h += "</div>";
+    }
+    return h + "</div>";
+  }
+
+  /** 媒体块交互：截图开灯箱、封面点击播放 */
+  function bindMedia(scope, b) {
+    var images = (b && Array.isArray(b.images) ? b.images : []).filter(function (x) { return x && safeUrl(x.thumb); });
+    var nodes = scope.querySelectorAll(".gac-shot");
+    for (var i = 0; i < nodes.length; i++) {
+      (function (node, i) {
+        node.addEventListener("error", function () { node.style.display = "none"; });
+        node.addEventListener("click", function () { if (images.length) openShots(images, i); });
+      })(nodes[i], i);
+    }
+    var vids = scope.querySelectorAll(".gac-video");
+    for (var k = 0; k < vids.length; k++) {
+      (function (node) {
+        var src = node.getAttribute("data-src");
+        var poster = node.getAttribute("data-poster");
+        var btn = node.querySelector(".gac-video-btn");
+        var posterImg = node.querySelector(".gac-video-poster");
+        function go() { mountVideo(node, src, poster); }
+        if (btn) btn.addEventListener("click", go);
+        if (posterImg) posterImg.addEventListener("click", go);
+      })(vids[k]);
+    }
+    scrollToBottom();
+  }
+
+  /** 回复正文里的 markdown 图片 / 视频（服务端已做 URL 白名单与清洗） */
+  function bindMdMedia(scope) {
+    var imgs = scope.querySelectorAll(".gac-md-img");
+    if (imgs.length) {
+      var list = [];
+      for (var i = 0; i < imgs.length; i++) list.push({ thumb: imgs[i].src, full: imgs[i].src });
+      for (var j = 0; j < imgs.length; j++) {
+        (function (node, idx) {
+          node.addEventListener("error", function () { node.style.display = "none"; });
+          node.addEventListener("click", function () { openShots(list, idx); });
+        })(imgs[j], j);
+      }
+    }
+    var mvs = scope.querySelectorAll(".gac-md-video");
+    for (var k = 0; k < mvs.length; k++) {
+      (function (node) {
+        var btn = node.querySelector(".gac-md-video-btn");
+        if (btn) btn.addEventListener("click", function () { mountVideo(node, node.getAttribute("data-src"), ""); });
+      })(mvs[k]);
+    }
   }
 
   /* ---------- 海报：canvas 渲染 + 模态框（下载 PNG / 复制图片） ---------- */
@@ -1329,7 +1489,10 @@
     blocks.forEach(function (b) {
       var div = document.createElement("div");
       div.className = "gac-block gac-block-" + (b && b.type ? escapeHtml(String(b.type)) : "unknown");
-      if (b && b.type === "game_card") {
+      if (b && b.type === "game_media") {
+        div.innerHTML = mediaBlockHtml(b);
+        bindMedia(div, b);
+      } else if (b && b.type === "game_card") {
         div.innerHTML = gameCardHtml(b);
         var btn = div.querySelector(".gac-card-poster-btn");
         if (btn) {

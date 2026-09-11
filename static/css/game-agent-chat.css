@@ -483,3 +483,108 @@
   .gac-card-cover img { height: 104px; }
   .gac-poster-inline { max-width: 100%; }
 }
+
+/* ==================== 游戏图片 / 预告片（game_media 块 + 回复内联媒体） ====================
+ * 设计语言与卡片一致：圆角 10px、深色底 #141922、1px 边框 #2e3642、hover 轻微提亮。
+ */
+.gac-media {
+  border: 1px solid #2e3642;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1b2129 0%, #171c23 100%);
+  overflow: hidden;
+  margin: 2px 0 12px;
+}
+
+.gac-media-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #262d37;
+}
+.gac-media-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8edf4;
+  letter-spacing: 0.2px;
+}
+.gac-media-meta { font-size: 11px; color: #8a93a3; white-space: nowrap; }
+
+/* ---- 预告片：封面 + 播放按钮；点击后就地变成播放器 ---- */
+.gac-video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #10151b;
+  overflow: hidden;
+}
+.gac-video-poster {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  cursor: pointer; opacity: 0.82; transition: opacity 0.15s, transform 0.2s;
+}
+.gac-video-poster:hover { opacity: 0.95; transform: scale(1.015); }
+.gac-video-btn {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  border: 0; cursor: pointer;
+  padding: 10px 18px; border-radius: 999px;
+  background: rgba(224, 51, 51, 0.94);
+  color: #fff; font-size: 13px; font-weight: 700;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  transition: transform 0.12s, background 0.15s;
+}
+.gac-video-btn:hover { transform: translate(-50%, -50%) scale(1.04); background: #e03333; }
+.gac-video-el {
+  width: 100%; height: 100%; display: block; background: #000;
+  aspect-ratio: 16 / 9;
+}
+.gac-video-fallback {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  color: #ffd9d9; font-size: 13px; text-decoration: none;
+  background: #10151b;
+}
+.gac-video-fallback:hover { color: #fff; }
+
+/* ---- 截图画廊：3 列网格，圆角，点击开灯箱 ---- */
+.gac-media-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+}
+.gac-media-grid .gac-shot {
+  flex: none;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  border: 1px solid #232a33;
+}
+
+/* ---- 回复正文里的 markdown 图片 / 视频 ---- */
+.gac-msg.md .gac-md-img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #2e3642;
+  background: #141922;
+  margin: 8px 0;
+  cursor: zoom-in;
+  transition: filter 0.15s;
+}
+.gac-msg.md .gac-md-img:hover { filter: brightness(1.08); }
+.gac-md-video { display: block; margin: 8px 0; }
+.gac-md-video-btn {
+  border: 1px solid #2e3642; background: #1b2129; color: #e8edf4;
+  padding: 10px 16px; border-radius: 10px; cursor: pointer;
+  font-size: 13px; font-weight: 600;
+}
+.gac-md-video-btn:hover { background: #232b35; }
+.gac-md-video .gac-video-el { border-radius: 10px; }
+
+/* ---- 移动端 ---- */
+@media (max-width: 560px) {
+  .gac-media-grid { grid-template-columns: repeat(2, 1fr); }
+  .gac-msg.md .gac-md-img { max-height: 240px; }
+}
