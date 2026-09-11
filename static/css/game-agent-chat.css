@@ -600,3 +600,36 @@
   .gac-card-shots { grid-template-columns: repeat(3, 1fr); }
   .gac-msg.md .gac-md-img { max-height: 240px; }
 }
+
+/* ==================== 分段回复：文字 / 卡片 / 图片块 在同一个回复框里依次出现 ====================
+ * 后端按模型给的 [[card:游戏名]] 标记切好顺序，前端逐个打字 / 淡入，观感上是一条完整回复。
+ */
+.gac-reply {
+  max-width: 100%;              /* 卡片比气泡宽：整条回复占满，卡片本身仍有自己的宽度上限 */
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 段落文字：气泡内不再各自成块，段间距交给 gap */
+.gac-reply .gac-part-text { white-space: pre-wrap; }
+.gac-reply .gac-part-text:empty { display: none; }
+
+/* 富块在回复框内：去掉整批渲染时的外边距，只留少量上下间距 */
+.gac-reply .gac-block {
+  margin: 10px 0 2px;
+  align-self: flex-start;
+  max-width: 100%;
+}
+.gac-reply .gac-block:last-child { margin-bottom: 2px; }
+
+/* 入场：淡入 + 轻微上移（比整块闪现更像"动态展现"） */
+.gac-part-in { animation: gac-part-in 0.34s cubic-bezier(0.22, 0.9, 0.3, 1) both; }
+@keyframes gac-part-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 回复里最后一段文字后没有卡片时，别留多余的塌陷 */
+.gac-reply .gac-part-text:last-child { margin-bottom: 2px; }

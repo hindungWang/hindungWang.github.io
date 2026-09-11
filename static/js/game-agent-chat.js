@@ -1589,37 +1589,87 @@
     scrollToBottom();
   }
 
+  /* 单个富块 → DOM 节点（分段渲染与整批渲染共用同一套逻辑） */
+  function blockNode(b, withEnter) {
+    var div = document.createElement("div");
+    div.className = "gac-block gac-block-" + (b && b.type ? escapeHtml(String(b.type)) : "unknown") +
+      (withEnter ? " gac-part-in" : "");
+    if (b && b.type === "game_media") {
+      div.innerHTML = mediaBlockHtml(b);
+      bindMedia(div, b);
+    } else if (b && b.type === "game_card") {
+      div.innerHTML = gameCardHtml(b);
+      var btn = div.querySelector(".gac-card-poster-btn");
+      if (btn) {
+        btn.addEventListener("click", function () { openPoster(b); });
+      }
+      bindShots(div, b);
+    } else if (b && b.type === "poster" && /^data:image\/svg\+xml;base64,/.test(String(b.src || ""))) {
+      var img = document.createElement("img");
+      img.className = "gac-poster";
+      img.src = String(b.src);
+      img.alt = "海报";
+      img.loading = "lazy";
+      div.appendChild(img);
+    } else {
+      div.textContent = JSON.stringify(b); // 未知块降级为文本
+    }
+    return div;
+  }
+
   function renderBlocks(blocks) {
     if (!Array.isArray(blocks) || blocks.length === 0) return;
     var wrap = document.createElement("div");
     wrap.className = "gac-blocks";
-    blocks.forEach(function (b) {
-      var div = document.createElement("div");
-      div.className = "gac-block gac-block-" + (b && b.type ? escapeHtml(String(b.type)) : "unknown");
-      if (b && b.type === "game_media") {
-        div.innerHTML = mediaBlockHtml(b);
-        bindMedia(div, b);
-      } else if (b && b.type === "game_card") {
-        div.innerHTML = gameCardHtml(b);
-        var btn = div.querySelector(".gac-card-poster-btn");
-        if (btn) {
-          btn.addEventListener("click", function () { openPoster(b); });
-        }
-        bindShots(div, b);
-      } else if (b && b.type === "poster" && /^data:image\/svg\+xml;base64,/.test(String(b.src || ""))) {
-        var img = document.createElement("img");
-        img.className = "gac-poster";
-        img.src = String(b.src);
-        img.alt = "海报";
-        img.loading = "lazy";
-        div.appendChild(img);
-      } else {
-        div.textContent = JSON.stringify(b); // 未知块降级为文本
-      }
-      wrap.appendChild(div);
-    });
+    blocks.forEach(function (b) { wrap.appendChild(blockNode(b, false)); });
     bodyEl.appendChild(wrap);
     scrollToBottom();
+  }
+
+  /* ---------- 分段渲染：同一个回复框里 文字打字 → 卡片/图片块淡入 → 继续打字 ----------
+   * parts 由后端按模型给的 [[card:游戏名]] / [[media:游戏名]] 标记切好顺序：
+   *   [{type:"text",md:"先说结论"},{type:"game_card",...},{type:"text",md:"补充说明"}]
+   */
+  function typewriterInto(host, text, onDone) {
+    var div = document.createElement("div");
+    div.className = "gac-part-text";
+    host.appendChild(div);
+    var chars = Array.from(String(text || ""));
+    if (!chars.length) { if (onDone) onDone(); return; }
+    var totalMs = Math.max(220, Math.min(1500, chars.length * 12)); // 分段更短，节奏更利落
+    var step = Math.max(1, Math.ceil(chars.length / (totalMs / 16)));
+    var i = 0;
+    var timer = setInterval(function () {
+      i = Math.min(chars.length, i + step);
+      div.innerHTML = renderMarkdown(chars.slice(0, i).join(""));
+      scrollToBottom();
+      if (i >= chars.length) {
+        clearInterval(timer);
+        if (onDone) onDone();
+      }
+    }, 16);
+  }
+
+  function renderParts(parts, onDone) {
+    if (!Array.isArray(parts) || !parts.length) { if (onDone) onDone(); return null; }
+    var host = document.createElement("div");
+    host.className = "gac-msg agent gac-reply";
+    bodyEl.appendChild(host);
+    scrollToBottom();
+    var i = 0;
+    function step() {
+      if (i >= parts.length) { if (onDone) onDone(); return; }
+      var part = parts[i++];
+      if (part && part.type === "text") {
+        typewriterInto(host, part.md, function () { setTimeout(step, 110); });
+      } else {
+        host.appendChild(blockNode(part, true)); // 淡入 + 轻微上移
+        scrollToBottom();
+        setTimeout(step, 320); // 让卡片的入场动画走完再继续写字
+      }
+    }
+    step();
+    return host;
   }
 
   /* ---------- 网络层 ---------- */
@@ -1665,8 +1715,8 @@
     if (CONFIG.replyMode === "poll") {
       return await pollReply(data.id);
     }
-    if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [] };
-    if (data.reply) return { reply: JSON.stringify(data.reply), blocks: [] };
+    if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [], parts: data.parts };
+    if (data.reply) return { reply: JSON.stringify(data.reply), blocks: [], parts: data.parts };
     if (data.error) throw new Error(data.error);
     return { reply: JSON.stringify(data), blocks: [] };
   }
@@ -1687,8 +1737,8 @@
         });
         if (!resp.ok) { lastErr = new Error("HTTP " + resp.status); continue; }
         var data = await resp.json().catch(function () { return {}; });
-        if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [] };
-        if (data.status === "done" && data.result) return { reply: data.result, blocks: [] };
+        if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [], parts: data.parts };
+        if (data.status === "done" && data.result) return { reply: data.result, blocks: [], parts: data.parts };
         lastErr = null; // 一次成功的轮询清除之前的瞬时错误
       } catch (e) {
         // 瞬时网络/CORS 抖动（如网关边缘偶发错误页）：继续轮询，不中断整个对话
@@ -1763,8 +1813,20 @@
           statusEl.textContent = "· 在线";
           return;
         }
+        // 后端给了分段且含富块（卡片/图片块）→ 在同一个回复框里依次 打字 → 淡入 → 续写。
+        // 纯文字回复仍走下面原来的窄气泡，保持既有观感（Hug 内容而不是整宽）。
+        var partsArr = Array.isArray(res.parts) ? res.parts : [];
+        var hasRichPart = false;
+        for (var pi = 0; pi < partsArr.length; pi++) {
+          if (partsArr[pi] && partsArr[pi].type !== "text") { hasRichPart = true; break; }
+        }
+        if (hasRichPart) {
+          renderParts(partsArr);
+          statusEl.textContent = "· 在线";
+          return;
+        }
         var hasCard = firstCard !== null;
-        // 默认：有游戏卡片时【卡片先出、文字后打】（卡片承载结构化信息，文字做补充）
+        // 兼容旧网关：有游戏卡片时【卡片先出、文字后打】（卡片承载结构化信息，文字做补充）
         if (hasCard) {
           renderBlocks(blocks);
           setTimeout(function () { typewriterAppend(res.reply); }, 60);
