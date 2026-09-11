@@ -1108,6 +1108,33 @@
     return Math.ceil(list.length / 2) * ROW;
   }
 
+  /* 一排截图（借鉴卡片：等宽 16:9、圆角、cover 裁剪）。
+     返回占用高度；传入 dry=true 时只量高度不画。 */
+  function cpShotRow(ctx, x, y, w, imgs, count, dry) {
+    var list = (imgs || []).filter(function (i) { return i && i.width; });
+    if (!list.length || count <= 0) return 0;
+    var cols = Math.max(1, Math.min(count, list.length));
+    var gap = 8, cw = (w - gap * (cols - 1)) / cols, ch = cw * 9 / 16, r = 9;
+    if (dry) return Math.ceil(ch) + 6;
+    for (var i = 0; i < cols; i++) {
+      var ix = x + i * (cw + gap);
+      var im = list[i];
+      // object-fit: cover —— 按目标比例从原图中心裁一块
+      var target = cw / ch, sr = im.width / im.height;
+      var sx = 0, sy = 0, sw = im.width, sh = im.height;
+      if (sr > target) { sw = sh * target; sx = (im.width - sw) / 2; }
+      else { sh = sw / target; sy = (im.height - sh) / 2; }
+      ctx.save();
+      roundRectPath(ctx, ix, y + 6, cw, ch, r);
+      ctx.clip();
+      try { ctx.drawImage(im, sx, sy, sw, sh, ix, y + 6, cw, ch); } catch (e) { /* 单张失败不影响其它 */ }
+      ctx.restore();
+      ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 1;
+      roundRectPath(ctx, ix + 0.5, y + 6.5, cw - 1, ch - 1, r); ctx.stroke();
+    }
+    return Math.ceil(ch) + 6;
+  }
+
   /* ---------- 卡片版式海报 ---------- */
   function renderCardPoster(ctx, D) {
     var W = POSTER_DESIGN_W, th = D.th;
@@ -1121,6 +1148,7 @@
 
     var chips = buildChips(D);
     var feats = buildFeats(D);
+    var shots = Array.isArray(D.shots) ? D.shots : [];
     var dims = Array.isArray(D.ratingDims) ? D.ratingDims : [];
     var lowestTxt = D.lowestPrice > 0
       ? "史低 ¥" + fmtPrice(D.lowestPrice) + (D.lowestDate ? "  ·  " + D.lowestDate : "") : "";
@@ -1144,7 +1172,11 @@
       var ph = cpPlats(ctx, 0, 0, innerW, D, true, plan.platRows);
       y += ph + (ph ? 14 : 0);
       if (plan.showDims && dims.length) y += cpDims(ctx, 0, 0, innerW, dims, true) + 12;
-      if (plan.showMeta && metaTxt) y += 24;
+      // 与绘制路径保持一致：cpLine 的高度 = 字号 × 1.35，后面还跟 10px 间距（截图排在其下）
+      if (plan.showMeta && metaTxt) y += Math.round(CP_F.meta * 1.35) + 10;
+      // 截图一排（借鉴卡片：放在最底部）
+      var sh2 = cpShotRow(ctx, 0, 0, innerW, shots, plan.shotCount || 0, true);
+      if (sh2) y += sh2 + 8;
       return y + PADB - 2;
     }
 
@@ -1152,14 +1184,18 @@
     // 数据仍随 block 下发（D.hook 保留），需要时可在卡片标题下方补一行。
     var topLimit = M;
     var botLimit = footerLine - 22;
+    // shotCount：一排截图的张数（借用卡片观感）；内容多时逐级让位——先砍元信息/评分维度，
+    // 再砍截图张数（3→2→1），最后才整排不画
     var plans = [
-      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: true,  platRows: 8 },
-      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, platRows: 8 },
-      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, platRows: 6 },
-      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: false, showDims: false, platRows: 5 },
-      { chipRows: 2, featRows: 1, showLowest: true,  showMeta: false, showDims: false, platRows: 4 },
-      { chipRows: 1, featRows: 1, showLowest: false, showMeta: false, showDims: false, platRows: 4 },
-      { chipRows: 1, featRows: 0, showLowest: false, showMeta: false, showDims: false, platRows: 3 }
+      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: true,  platRows: 8, shotCount: 3 },
+      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, platRows: 8, shotCount: 3 },
+      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, platRows: 6, shotCount: 3 },
+      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: false, showDims: false, platRows: 5, shotCount: 3 },
+      { chipRows: 2, featRows: 1, showLowest: true,  showMeta: false, showDims: false, platRows: 4, shotCount: 2 },
+      { chipRows: 2, featRows: 1, showLowest: true,  showMeta: false, showDims: false, platRows: 4, shotCount: 1 },
+      { chipRows: 1, featRows: 1, showLowest: true,  showMeta: false, showDims: false, platRows: 3, shotCount: 1 },
+      { chipRows: 1, featRows: 1, showLowest: false, showMeta: false, showDims: false, platRows: 3, shotCount: 0 },
+      { chipRows: 1, featRows: 0, showLowest: false, showMeta: false, showDims: false, platRows: 3, shotCount: 0 }
     ];
     var chosen = plans[plans.length - 1], bodyH = 0;
     for (var pi = 0; pi < plans.length; pi++) {
@@ -1205,7 +1241,11 @@
     cy += ph + (ph ? 14 : 0);
     if (chosen.showDims && dims.length) cy += cpDims(ctx, panelX + PADX, cy, innerW, dims, false) + 12;
     if (chosen.showMeta && metaTxt) {
-      cpLine(ctx, panelX + PADX, cy, innerW, metaTxt, CP_F.meta, 500, CP.META, false, "left");
+      cy += cpLine(ctx, panelX + PADX, cy, innerW, metaTxt, CP_F.meta, 500, CP.META, false, "left") + 10;
+    }
+    // 截图一排（借用卡片观感：等宽三张、圆角）
+    if (shots.length && chosen.shotCount > 0) {
+      cy += cpShotRow(ctx, panelX + PADX, cy, innerW, shots, chosen.shotCount, false) + 6;
     }
     // 页脚
     ctx.strokeStyle = "rgba(255,255,255,0.14)"; ctx.lineWidth = 1.5;
@@ -1339,6 +1379,7 @@
       name: String(b.name || ""), en: b.en_name ? String(b.en_name) : "",
       rating: b.rating, remaining: b.remaining, plats: plats,
       features: Array.isArray(b.features) ? b.features : undefined,
+      shots: (p.shots || []).filter(function (x) { return x && x.width; }),
       lowestPrice: b.lowest_price > 0 ? b.lowest_price : undefined,
       lowestDate: b.lowest_date ? String(b.lowest_date) : "",
       origin: best && best.origin_price ? best.origin_price : (b.origin_price || 0),
@@ -1445,10 +1486,31 @@
       if (onDone) setTimeout(onDone, 150);
     });
   }
+  /* 海报用截图：最多 3 张（借鉴卡片的一排三张），只要 CORS 安全的图
+     —— 小黑盒图床不发 CORS 头，直连会把画布污染导致导不出 PNG，所以必须过网关代理；
+     拿不到就少画这一排，绝不让整张海报导出失败。 */
+  function loadPosterShots(block, max) {
+    var shots = (block && Array.isArray(block.screenshots) ? block.screenshots : [])
+      .filter(function (x) { return x && safeUrl(x.thumb); })
+      .slice(0, max || 3);
+    if (!shots.length) return Promise.resolve([]);
+    return Promise.all(shots.map(function (sh) {
+      return loadImage(safeUrl(sh.thumb), null, undefined).then(function (img) {
+        return img && img.__corsOk !== false ? img : null;
+      }).catch(function () { return null; });
+    })).then(function (imgs) {
+      return imgs.filter(Boolean);
+    });
+  }
+
   function openPoster(block) {
-    loadImage(safeUrl(block.cover), block.covers, block.cover_data).then(function (img) {
+    var coverP = loadImage(safeUrl(block.cover), block.covers, block.cover_data);
+    var shotsP = loadPosterShots(block, 3);
+    Promise.all([coverP, shotsP]).then(function (rs) {
+      var img = rs[0];
       var usable = posterImageFor(img);
       var plan = makePosterPlan(usable);
+      plan.shots = rs[1] || [];   // 随 plan 走，导出高清图时复用（不重新下载）
       var overlay = document.createElement("div");
       overlay.className = "gac-poster-modal";
       overlay.innerHTML =
