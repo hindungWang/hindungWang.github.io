@@ -397,13 +397,18 @@
 .gac-shots-more { color: #6f7784; }
 .gac-card-shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .gac-media-grid .gac-shot-cell { min-width: 0; }
-.gac-shot-cell { position: relative; min-width: 0; }
+.gac-shot-cell { position: relative; min-width: 0; display: block; }
 .gac-shot {
+  box-sizing: border-box;    /* 关键：width:100% 要含 1px 边框，否则图片比格子宽 2px、角标对不上 */
+}
   width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;
   border-radius: 8px; border: 1px solid #2e3642; background: #141922;
   cursor: zoom-in; transition: filter 0.15s, transform 0.1s;
 }
 .gac-shot:hover { filter: brightness(1.12); transform: translateY(-1px); }
+/* 画廊缩略图必须抵消 .gac-msg img 的通用 margin（否则格子比图高 12px、下面留空缝） */
+.gac-msg .gac-card-shots .gac-shot,
+.gac-msg .gac-media-grid .gac-shot { margin: 0; }
 /* 「+N」角标：还有更多截图，点进灯箱看 */
 .gac-shot-more {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
@@ -605,8 +610,9 @@
  * 后端按模型给的 [[card:游戏名]] 标记切好顺序，前端逐个打字 / 淡入，观感上是一条完整回复。
  */
 .gac-reply {
-  max-width: 100%;              /* 卡片比气泡宽：整条回复占满，卡片本身仍有自己的宽度上限 */
+  max-width: 100%;              /* 卡片比气泡宽：整条回复占满 */
   width: 100%;
+  box-sizing: border-box;       /* 关键：content-box 下 100% 不含 14px 内边距，会让整框比聊天区宽 28px */
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -621,7 +627,9 @@
   margin: 10px 0 2px;
   align-self: flex-start;
   max-width: 100%;
+  width: 100%;              /* 卡片铺满回复框：402px 的窄卡在 714px 框里两侧发空显得"小" */
 }
+.gac-reply .gac-card { max-width: 100%; }
 .gac-reply .gac-block:last-child { margin-bottom: 2px; }
 
 /* 入场：淡入 + 轻微上移（比整块闪现更像"动态展现"） */
