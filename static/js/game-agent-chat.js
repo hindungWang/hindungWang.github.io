@@ -350,7 +350,6 @@
   }
   function gameCardHtml(b) {
     var cover = safeUrl(b.cover);
-    var video = safeUrl(b.video);
     var offPct = "";
     if (b.origin_price > 0 && b.price > 0 && b.price < b.origin_price) {
       offPct = "-" + Math.round((1 - b.price / b.origin_price) * 100) + "%";
@@ -462,11 +461,8 @@
       }
       h += "</div>";
     }
-    // 操作按钮：并排紧凑一行
+    // 操作按钮：只留生成海报（预告片已由图集块内联播放，这里不再放外链按钮）
     h += '<div class="gac-card-actions">';
-    if (video) {
-      h += '<a class="gac-card-btn" href="' + video + '" target="_blank" rel="noopener noreferrer">🎬 预告</a>';
-    }
     h += '<button type="button" class="gac-card-btn gac-card-poster-btn">🖼️ 生成海报</button>';
     h += "</div></div></div>";
     return h;
