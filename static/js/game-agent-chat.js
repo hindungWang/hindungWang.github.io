@@ -392,14 +392,12 @@
     if (b.release_date) metaBits.push(String(b.release_date));
     if (b.comment_count > 0) metaBits.push(fmtCount(b.comment_count) + "评价");
     if (metaBits.length) h += '<div class="gac-card-meta">' + escapeHtml(metaBits.join(" · ")) + "</div>";
-    // 特性标签（中文/Steam Deck/家庭共享等）：最多 4 个，其余折叠为 +N
+    // 特性标签（中文/Steam Deck/家庭共享等）：全部展示，不折叠（用户要求）
     if (Array.isArray(b.features) && b.features.length) {
-      var fmax = Math.min(b.features.length, 4);
       h += '<div class="gac-card-feats">';
-      for (var fi = 0; fi < fmax; fi++) {
+      for (var fi = 0; fi < b.features.length; fi++) {
         h += '<span class="gac-feat">' + escapeHtml(String(b.features[fi])) + "</span>";
       }
-      if (b.features.length > fmax) h += '<span class="gac-feat gac-feat-more">+' + (b.features.length - fmax) + "</span>";
       h += "</div>";
     }
     // 史低提示
