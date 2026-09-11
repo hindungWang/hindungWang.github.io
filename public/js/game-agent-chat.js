@@ -201,7 +201,7 @@
       inputEl.disabled = true;
       return;
     }
-    appendMsg("agent", "你好，我是 " + CONFIG.botName + "。把指令发给我，我来执行或回答。" + (mockEnabled() ? "（演示模式）" : ""));
+    appendMsg("agent", "你好，今天想玩什么游戏？" + (mockEnabled() ? "（演示模式）" : ""));
     setHint("请求带访问 token，网关侧有限流；对话可能需要几秒，请耐心等待。");
   }
 
