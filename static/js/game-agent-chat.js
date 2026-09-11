@@ -294,6 +294,11 @@
   }
 
   /* ---------- 富内容块（blocks）渲染 ---------- */
+  /* 折扣截止文案：平台行很窄，把"剩余"去掉只留"13天/12小时" */
+  function shortDeadline(t) {
+    return String(t || "").replace(/^剩余\s*/, "").trim();
+  }
+
   function safeUrl(u) {
     return /^https?:\/\//i.test(String(u || "")) ? String(u) : "";
   }
@@ -359,7 +364,6 @@
     if (cover) {
       h += '<div class="gac-card-cover"><img src="' + cover + '" alt="' + escapeHtml(b.name || "") + '" loading="lazy" referrerpolicy="no-referrer">';
       if (offPct) h += '<div class="gac-card-off">' + offPct + "</div>";
-      if (b.remaining) h += '<div class="gac-card-left">⏳ ' + escapeHtml(String(b.remaining)) + "</div>";
       h += "</div>";
     }
     h += '<div class="gac-card-body">';
@@ -372,6 +376,8 @@
       h += '<div class="gac-card-prices">';
       if (b.origin_price > 0) h += '<span class="gac-card-old">¥' + escapeHtml(fmtPrice(b.origin_price)) + "</span>";
       h += '<span class="gac-card-now">¥' + escapeHtml(fmtPrice(b.price)) + "</span>";
+      // 折扣截止放在价格正下方（小黑盒只在打折时给这个字段）
+      if (b.remaining) h += '<span class="gac-card-deadline">⏳ ' + escapeHtml(shortDeadline(b.remaining)) + "</span>";
       h += "</div>";
     }
     h += "</div>";
@@ -382,7 +388,6 @@
     if (b.dlc_count > 0) chips += '<span class="gac-card-chip">DLC × ' + escapeHtml(String(b.dlc_count)) + "</span>";
     if (b.good_rate) chips += '<span class="gac-card-chip">好评率 ' + escapeHtml(String(b.good_rate)) + "</span>";
     if (b.follow) chips += '<span class="gac-card-chip">👥 ' + escapeHtml(String(b.follow)) + "</span>";
-    if (!cover && b.remaining) chips += '<span class="gac-card-chip">⏳ ' + escapeHtml(String(b.remaining)) + "</span>";
     if (Array.isArray(b.awards) && b.awards.length) chips += '<span class="gac-card-chip gac-chip-award">🏆 ' + escapeHtml(String(b.awards[0])) + "</span>";
     if (chips) h += '<div class="gac-card-chips">' + chips + "</div>";
     // 元信息行：开发商 · 发售日期 · 评价数（有才显示）
@@ -440,6 +445,7 @@
           (hasOld && !hasOff ? '<span class="gac-plat-old">¥' + escapeHtml(fmtPrice(r.origin_price)) + "</span>" : "") +
           '<span class="gac-plat-now">¥' + escapeHtml(fmtPrice(r.price)) + "</span>" +
           (hasOff ? '<span class="gac-plat-off">-' + escapeHtml(String(r.off_pct)) + "%</span>" : "") +
+          (r.remaining ? '<span class="gac-plat-dead">⏳' + escapeHtml(shortDeadline(r.remaining)) + "</span>" : "") +
           "</span></div>";
       }
       h += "</div>";

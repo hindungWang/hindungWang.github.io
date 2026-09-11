@@ -641,3 +641,19 @@
 
 /* 回复里最后一段文字后没有卡片时，别留多余的塌陷 */
 .gac-reply .gac-part-text:last-child { margin-bottom: 2px; }
+
+/* ---- 折扣截止（放在价格旁边；小黑盒只在打折时返回该字段） ---- */
+.gac-card-deadline {
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #ffb454;
+  white-space: nowrap;
+}
+.gac-plat-dead {
+  margin-left: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #ffb454;
+  white-space: nowrap;
+}
