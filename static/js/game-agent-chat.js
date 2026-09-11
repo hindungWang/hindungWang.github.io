@@ -226,7 +226,7 @@
       inputEl.disabled = true;
       return;
     }
-    appendMsg("agent", "你好，我是 " + CONFIG.botName + "。把指令发给我，我来执行或回答。" + (mockEnabled() ? "（演示模式）" : ""));
+    appendMsg("agent", "你好，今天想玩什么游戏？" + (mockEnabled() ? "（演示模式）" : ""));
     setHint("请求带访问 token，网关侧有限流；对话可能需要几秒，请耐心等待。");
   }
 
@@ -1456,9 +1456,9 @@
   }
   /* 海报请求：先生成内联海报图，再发文字 */
   function showInlinePoster(block, onDone) {
-    loadImage(safeUrl(block.cover), block.covers, block.cover_data).then(function (img) {
-      var usable = posterImageFor(img);           // 不可导出时置 null → 走无封面纯排版版式
-      var plan = makePosterPlan(usable);
+    preparePoster(block).then(function (pre) {
+      var usable = pre.img;                       // 不可导出时置 null → 走无封面纯排版版式
+      var plan = pre.plan;                        // plan.shots 已带截图（与弹窗海报一致）
       var canvas = renderPoster(block, usable, plan, 1);
       var wrap = document.createElement("div");
       wrap.className = "gac-poster-inline-wrap";
@@ -1470,7 +1470,7 @@
         "</div>" +
         (usable ? "" : '<div class="gac-poster-note">封面图源不支持跨域，已生成纯排版版海报（可正常下载）</div>');
       var pimg = wrap.querySelector("img");
-      try { pimg.src = canvas.toDataURL("image/png"); } catch (e) { pimg.src = (img && img.__src) ? img.__src : safeUrl(block.cover) || ""; }
+      try { pimg.src = canvas.toDataURL("image/png"); } catch (e) { pimg.src = safeUrl(block.cover) || ""; }
       bodyEl.appendChild(wrap);
       scrollToBottom();
       wrap.querySelector('[data-act="save"]').addEventListener("click", function () {
@@ -1499,14 +1499,23 @@
     });
   }
 
-  function openPoster(block) {
-    var coverP = loadImage(safeUrl(block.cover), block.covers, block.cover_data);
-    var shotsP = loadPosterShots(block, 3);
-    Promise.all([coverP, shotsP]).then(function (rs) {
-      var img = rs[0];
-      var usable = posterImageFor(img);
+  /* 海报素材准备：封面 + 最多 3 张截图（弹窗海报与内联海报共用，两条路必须一致） */
+  function preparePoster(block) {
+    return Promise.all([
+      loadImage(safeUrl(block.cover), block.covers, block.cover_data),
+      loadPosterShots(block, 3),
+    ]).then(function (rs) {
+      var usable = posterImageFor(rs[0]);
       var plan = makePosterPlan(usable);
       plan.shots = rs[1] || [];   // 随 plan 走，导出高清图时复用（不重新下载）
+      return { img: usable, plan: plan };
+    });
+  }
+
+  function openPoster(block) {
+    preparePoster(block).then(function (pre) {
+      var usable = pre.img;
+      var plan = pre.plan;
       var overlay = document.createElement("div");
       overlay.className = "gac-poster-modal";
       overlay.innerHTML =
