@@ -439,7 +439,8 @@
 /* 操作按钮：并排一行 */
 .gac-card-actions { display: flex; gap: 8px; margin-top: 8px; }
 .gac-card-btn {
-  flex: 1; display: block; text-align: center; padding: 6px 8px;
+  /* 不要 flex:1：只剩一个按钮时会拉成整行通栏（原来"预告"+"生成海报"两个按钮时才是等分） */
+  flex: 0 0 auto; display: block; text-align: center; padding: 6px 14px;
   border-radius: 7px; background: #232a34; border: 1px solid #333c49;
   color: #dfe5ee; font-size: 12px; line-height: 1.4; text-decoration: none;
   cursor: pointer; font-family: inherit;

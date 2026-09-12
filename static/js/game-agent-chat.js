@@ -945,7 +945,8 @@
       var noP = it.no_price === true || !(parseFloat(it.price) > 0);
       items.push({
         name: String(it.name), price: parseFloat(it.price) || 0,
-        originP: parseFloat(it.origin_price) || 0, offP: parseFloat(it.off_pct) || 0, noPrice: noP
+        originP: parseFloat(it.origin_price) || 0, offP: parseFloat(it.off_pct) || 0, noPrice: noP,
+        remaining: String(it.remaining || "").trim(),  // 该平台折扣截止（各平台可能不同）
       });
     }
     if (!items.length) return 0;
@@ -996,8 +997,13 @@
         var badgeT = s.best ? "最低" : "";
         var badgeW = 0;
         if (badgeT) { ctx.font = "700 " + CP_F.badge + "px 'PingFang SC',sans-serif"; badgeW = ctx.measureText(badgeT).width + 12; }
-        var nameMax = cellW - nowW - offW - badgeW - 16;
-        if (nameMax < 40 && badgeW) { badgeW = 0; nameMax = cellW - nowW - offW - 16; }
+        // 逐平台折扣截止（最右，小字）；宽度不够时先让"最低"角标让位，再弃掉截止，绝不让行内溢出
+        var dlT = (!s.noPrice && s.remaining) ? "⏳" + shortDeadline(s.remaining) : "";
+        var dlW = 0;
+        if (dlT) { ctx.font = "700 " + CP_F.badge + "px 'PingFang SC',sans-serif"; dlW = ctx.measureText(dlT).width + 10; }
+        var nameMax = cellW - nowW - offW - badgeW - dlW - 16;
+        if (nameMax < 40 && badgeW) { badgeW = 0; nameMax = cellW - nowW - offW - dlW - 16; }
+        if (nameMax < 40 && dlW) { dlW = 0; dlT = ""; nameMax = cellW - nowW - offW - 16; }
         ctx.textAlign = "left";
         ctx.font = "600 " + CP_F.plat + "px 'PingFang SC',sans-serif";
         var nm = s.name;
@@ -1014,7 +1020,7 @@
           ctx.fillText(badgeT, cx + nmW + 8 + badgeW / 2, cy + 1);
         }
         ctx.textAlign = "right";
-        var rx = cx + cellW;
+        var rx = cx + cellW - dlW;   // 给最右的截止让位
         ctx.font = "800 " + CP_F.plat + "px Arial,'PingFang SC',sans-serif";
         ctx.fillStyle = s.noPrice ? CP.META : CP.PRICE;
         ctx.fillText(nowT, rx, cy);
@@ -1022,6 +1028,12 @@
           ctx.font = "700 " + CP_F.badge + "px Arial,sans-serif";
           ctx.fillStyle = CP.OFF;
           ctx.fillText(offT, rx - nowW - 8, cy);
+        }
+        if (dlT) {
+          ctx.font = "700 " + CP_F.badge + "px 'PingFang SC',sans-serif";
+          ctx.fillStyle = CP.OFF;
+          ctx.textAlign = "right";
+          ctx.fillText(dlT, cx + cellW, cy);
         }
       }
       ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
