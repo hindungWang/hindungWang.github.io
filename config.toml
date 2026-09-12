@@ -62,7 +62,7 @@ title = "Hindung's Blog"
     weight = 3
 
   [[menu.main]]
-    name = "Game Agent"
+    name = "Stray"
     pre = "<span data-feather='gamepad'></span>"
     url = "/game-agent/"
     weight = 4

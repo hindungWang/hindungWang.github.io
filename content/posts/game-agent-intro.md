@@ -1,8 +1,8 @@
 ---
-title: 'Game Agent: Stray 是什么'
+title: 'Stray 是什么'
 date: 2026-01-20
 type: post
-description: 微信游戏助手 Bot Stray 的能力盘点：工具链、主动功能、长期记忆、Slash 命令兜底
+description: 游戏助手 Stray 的能力盘点：工具链、主动功能、长期记忆、Slash 命令兜底
 ---
 
 > 在线试玩在 **[这里](/game-agent/)**（整页对话界面）。

@@ -1,4 +1,4 @@
-/* Game Agent 聊天窗 —— 纯前端组件
+/* Stray 聊天窗 —— 纯前端组件
  * 直接在静态页面上渲染一个可对话的窗口，后端由你的消息网关提供 REST 接口。
  */
 (function () {
@@ -27,9 +27,9 @@
     pollIntervalMs: 1500,
     pollTimeoutMs: 180000,  // 3 分钟：游戏查价含多次接口调用+限流退避，p99 实测可达 60s+
     // UI
-    botName: "Game Agent",
-    typingText: "Agent 正在思考…",
-    placeholder: "输入指令，开始和 Agent 对话…",
+    botName: "Stray",
+    typingText: "Stray 正在思考…",
+    placeholder: "输入指令，开始和 Stray 对话…",
     maxMessageChars: 2000,
     // 演示模式：true 时强制走本地模拟回复（不改配置也能预览效果）
     mock: false,
@@ -194,7 +194,7 @@
   function render() {
     el.innerHTML =
       '<div class="gac-header">' +
-        '<div class="gac-avatar">GA</div>' +
+        '<div class="gac-avatar">' + esc(String(CONFIG.botName || "S").trim().charAt(0).toUpperCase()) + '</div>' +
         '<div><div class="gac-name">' + esc(CONFIG.botName) + '</div>' +
         '<div class="gac-status" id="gac-status">· 在线</div></div>' +
       '</div>' +
@@ -1797,7 +1797,7 @@
     if (/推荐|好玩|适合/.test(t)) {
       return "🎮 给你推荐这几款：\n· 双人成行（双人合作天花板）\n· 艾尔登法环（魂系开放世界）\n· 黑神话：悟空（国产动作大作）\n\n（演示内容）";
     }
-    return "收到：「" + text + "」。\n（演示模式）真实网关尚未接入，接好后这里会返回 Game Agent 的实际回复。可以试试问我：红色沙漠现在多少钱 / 黑神话 二郎神怎么打。";
+    return "收到：「" + text + "」。\n（演示模式）真实网关尚未接入，接好后这里会返回 Stray 的实际回复。可以试试问我：红色沙漠现在多少钱 / 黑神话 二郎神怎么打。";
   }
 
   /* ---------- 交互 ---------- */
