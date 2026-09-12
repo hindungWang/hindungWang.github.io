@@ -1,92 +1,149 @@
-/* 首页 Game Agent 演示卡 —— 自动播放脚本化对话，点击跳转体验页 */
+/* 首页 Game Agent 演示卡 —— 自动播放脚本化对话（结论 → 迷你卡片），点击进入体验页。
+   数据取自真实接口返回（双人成行 / 艾尔登法环），不联网、不依赖后端。 */
 (function () {
   "use strict";
 
   var el = document.getElementById("game-agent-teaser");
   if (!el) return;
-
   var TARGET = "/game-agent/";
 
+  var CARDS = {
+    itt: {
+      name: "双人成行", en: "It Takes Two",
+      price: 59.4, origin: 198,
+      chips: ["⭐ 9.8", "好评率 95%", "平均 20.6h", "🏆 TGA 2021 年度最佳游戏"],
+      plats: [
+        { name: "EPIC", price: 59.4, off: 70, best: true },
+        { name: "STEAM", price: 198 },
+        { name: "PS4", price: 272.83 }
+      ],
+      lowest: "史低 ¥39.6 · 2024-12-12"
+    },
+    er: {
+      name: "艾尔登法环", en: "ELDEN RING",
+      price: 152.08, origin: 298,
+      chips: ["⭐ 9.6", "DLC × 6", "好评率 93%", "中文"],
+      plats: [
+        { name: "XBOX", price: 152.08, best: true },
+        { name: "STEAM", price: 298 },
+        { name: "PS4", price: 409.93 }
+      ],
+      lowest: "史低 ¥178.8 · 2023-12-22"
+    }
+  };
+
+  /* 脚本：q=用户提问，say=agent 结论，card=要展示的卡片（真实数据） */
   var SCRIPT = [
-    { role: "user", text: "红色沙漠现在多少钱" },
-    { role: "agent", text: "🎮 红色沙漠 价格信息\n\n💰 当前各平台售价：\n🔸 Steam：¥268\n🔸 Epic：¥268\n🔸 XSX|S：¥331.7\n🔸 PS5：¥492.3\n\n📊 游戏信息：\n⭐ 玩家评分：6.09（161条评论）\n🎯 媒体评分：二柄/Steam 7.9 | IGN 6 | GameSpot 7 | IGN日本 8\n\n⚠️ 目前没有折扣，都是原价\n\n📌 说实话评分有点低，口碑比较两极分化。如果你喜欢开放世界动作游戏，可以等等看后续更新和打折，或者先看看评测视频再决定要不要入手！" },
-    { role: "user", text: "黑神话 二郎神怎么打" },
-    { role: "agent", text: "二郎神杨戬是黑神话悟空的隐藏BOSS，难度不低，给你整理一份打法攻略👇\n\n📌 前置条件（解锁杨戬）\n▪️ 解锁四张隐藏地图：旧观音禅院、斯哈里国、紫云山、碧水洞\n▪️ 分别击败金池长老、蝜蝂、晦月魔君、避水金睛兽\n▪️ 在瓜田与翠笠武师对战并获胜\n▪️ 全部完成后回浮屠塔触发小弥勒剧情，即可解锁杨戬\n\n⚔️ 战斗阶段解析\n\n🔸 第一阶段（破盾+输出）\n▪️ 杨戬投技前摇明显，翻滚或格挡躲避\n▪️ 冲刺枪攻击：先拉开距离再翻滚，同时注意闪避他召唤的哮天犬扑击\n▪️ 杨戬释放定身术时，立刻用点满天赋的棍花全力输出，能打掉约70%护盾\n▪️ 剩余护盾用蓄力重击破除\n▪️ 芭蕉扇加速贴近 → 两套轻棍连击 → 蓄力重棍，第一阶段基本就能过\n\n🔸 第二阶段\n▪️ 杨戬攻击频率和范围增大，注意保持距离观察出招\n▪️ 用芭蕉扇龙卷风推着杨戬后退，配合搅棍打法连续打硬直\n▪️ 墙角压制效果极佳，戳棍搅阵流可以让杨戬起不来\n\n🔸 第三阶段\n▪️ 杨戬会开大招，伤害极高，务必留好闪避体力\n▪️ 可以召唤猴子猴孙分散火力（正义群殴流）\n▪️ 抓住硬直窗口集中爆发输出\n\n🎯 推荐流派\n\n🔹 芭蕉扇+重棍流（新手推荐）\n芭蕉扇加速贴脸 → 轻棍连击 → 蓄力重棍，循环往复\n\n🔹 戳棍搅阵流\n破盾后用戳棍搅阵压制，把杨戬堵墙角效果拉满\n\n🔹 禁字法无伤流\n高手向，纯靠闪避和普攻无伤通关\n\n📌 打完杨戬之后\n▪️ 触发CG动画，进入四天王战斗（相对简单）\n▪️ 之后推进主线击败大圣残躯\n▪️ 解锁隐藏结局“杨戬无金箍形态”\n▪️ 奖励包括石猿变身和杨戬武器，非常值得挑战💪\n\n核心思路就是破盾优先，芭蕉扇是神器，多用翻滚躲投技，别贪刀就行🎮" },
+    { q: "双人成行现在多少钱", say: "全平台最低 **¥59.4**（Epic 打 7 折），Steam 还是原价 ¥198。", card: "itt" },
+    { q: "艾尔登法环呢", say: "最低 **¥152.08** 在 Xbox；Steam ¥298、PS4 ¥409.93 都没折。", card: "er" }
   ];
 
   var body = el.querySelector("#gact-body");
-  var typingMs = 380;      // 打字指示停留
-  var typeCharMs = 6;     // 逐字显示间隔
-  var holdEndMs = 2600;    // 播完停留
+  var TYPE_MS = 14, HOLD_MS = 3200, FADE_MS = 420;
 
   function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
-  function clear() { body.innerHTML = ""; }
-
-  function addNode(className) {
+  function elMsg(role) {
     var d = document.createElement("div");
-    d.className = "gact-msg " + className;
+    d.className = "gact-msg " + role;
     body.appendChild(d);
+    scrollTeaser();
     return d;
   }
 
-  async function typeInto(node, text, ms) {
-    var step = ms == null ? typeCharMs : ms;
-    for (var i = 0; i < text.length; i++) {
-      node.textContent = text.slice(0, i + 1);
+  function scrollTeaser() {
+    /* 演示卡自身不滚动（固定高度），内容多了只显示最新的 */
+    var max = 3;   // 同时只留 3 条：提问 → 结论 → 卡片（循环时旧的自动滚出）
+    while (body.children.length > max) body.removeChild(body.firstChild);
+  }
+
+  async function typeInto(node, text, per) {
+    var html = String(text).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+    /* 逐字：按纯文本走，插入 <b> 时整段替换，避免拆坏标签 */
+    var plain = String(text).replace(/\*\*/g, "");
+    var step = per || TYPE_MS;
+    var caret = document.createElement("span");
+    caret.className = "gact-caret";
+    node.appendChild(caret);
+    for (var i = 1; i <= plain.length; i++) {
+      var shown = plain.slice(0, i);
+      /* 用纯文本逐字，结束后再套加粗（视觉上够用且稳定） */
+      node.textContent = shown;
+      node.appendChild(caret);
       await sleep(step);
     }
+    node.innerHTML = html;
+  }
+
+  function cardNode(c) {
+    var d = document.createElement("div");
+    d.className = "gact-card";
+    var off = c.origin > c.price ? "-" + Math.round((1 - c.price / c.origin) * 100) + "%" : "";
+    var h = '<div class="gact-card-head">' +
+      '<div class="gact-card-titles"><div class="gact-card-name">' + c.name + '</div>' +
+      '<div class="gact-card-en">' + c.en + '</div></div>' +
+      '<div class="gact-card-price"><span class="gact-card-old">¥' + c.origin + '</span>' +
+      '<span class="gact-card-now">¥' + c.price + '</span></div></div>';
+    h += '<div class="gact-card-chips">';
+    for (var i = 0; i < c.chips.length; i++) {
+      var cls = c.chips[i].indexOf("🏆") === 0 ? "gact-chip gact-chip-award" : "gact-chip";
+      h += '<span class="' + cls + '">' + c.chips[i] + '</span>';
+    }
+    if (off) h += '<span class="gact-chip gact-chip-off">' + off + '</span>';
+    h += "</div>";
+    h += '<div class="gact-card-plats">';
+    for (var j = 0; j < c.plats.length; j++) {
+      var p = c.plats[j];
+      h += '<div class="gact-plat' + (p.best ? " best" : "") + '">' +
+        '<span class="gact-plat-name">' + p.name + '</span>' +
+        (p.off ? '<span class="gact-plat-off">-' + p.off + '%</span>' : "") +
+        '<span class="gact-plat-now">¥' + p.price + '</span>' +
+        (p.best ? '<span class="gact-plat-best">最低</span>' : "") +
+        "</div>";
+    }
+    h += "</div>";
+    h += '<div class="gact-card-lowest">' + c.lowest + "</div>";
+    d.innerHTML = h;
+    return d;
   }
 
   async function playTurn(item) {
-    var node = addNode(item.role);
-    // 用户消息也用打字机逐字呈现，节奏稍快
-    var delay = item.role === "user" ? typeCharMs * 1.5 : 0;
-    if (item.role === "user") {
-      await typeInto(node, item.text, delay);
-      await sleep(280);
-      return;
+    var u = elMsg("user");
+    await typeInto(u, item.q, 22);
+    await sleep(260);
+    var a = elMsg("agent");
+    await sleep(300);
+    await typeInto(a, item.say);
+    if (item.card) {
+      var c = cardNode(CARDS[item.card]);
+      c.style.opacity = "0";
+      body.appendChild(c);
+      scrollTeaser();
+      await sleep(60);
+      c.style.transition = "opacity .35s ease, transform .35s ease";
+      c.style.transform = "translateY(6px)";
+      c.style.opacity = "1";
+      c.style.transform = "none";
     }
-    await sleep(typingMs);
-    await typeInto(node, item.text);
   }
 
   async function play() {
-    clear();
-    await sleep(400);
-    for (var i = 0; i < SCRIPT.length; i++) {
-      await playTurn(SCRIPT[i]);
-    }
-    await sleep(holdEndMs);
-    // 淡出后重新播放（无限循环）
-    body.style.opacity = "0";
-    body.style.transition = "opacity 0.4s";
+    body.innerHTML = "";
     await sleep(420);
+    for (var i = 0; i < SCRIPT.length; i++) await playTurn(SCRIPT[i]);
+    await sleep(HOLD_MS);
+    body.style.transition = "opacity " + FADE_MS + "ms";
+    body.style.opacity = "0";
+    await sleep(FADE_MS + 40);
     body.style.opacity = "";
-    clear();
+    body.style.transition = "";
     play();
   }
 
-  // 点击 / 回车 → 跳转体验页
   el.addEventListener("click", function () { location.href = TARGET; });
   el.addEventListener("keydown", function (e) {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); location.href = TARGET; }
   });
-
-  // 跟随主题深色模式
-  (function watchTheme() {
-    var themeLink = document.getElementById("dark-theme");
-    function apply() {
-      var dark = themeLink
-        ? themeLink.disabled !== true
-        : !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      el.classList.toggle("gact-dark", dark);
-    }
-    apply();
-    if (themeLink) {
-      new MutationObserver(apply).observe(themeLink, { attributes: true, attributeFilter: ["disabled"] });
-    }
-  })();
 
   play();
 })();
