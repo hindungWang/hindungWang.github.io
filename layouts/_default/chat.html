@@ -1,0 +1,30 @@
+{{- /* 整页对话布局：/game-agent/ 专用 —— 只渲染对话组件，不带博客头/尾/侧栏 */ -}}
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>{{ .Title }}</title>
+  {{ with .Description }}<meta name="description" content="{{ . }}">{{ end }}
+  <link rel="stylesheet" href="{{ "/css/game-agent-page.css" | relURL }}">
+  {{/* 不引主题 head（整页独立，组件 CSS 由 shortcode 自带） */}}
+</head>
+<body class="gac-page">
+  <main id="content">{{ .Content }}</main>
+  <script>
+    /* 底部那行细字：把组件默认提示换成一句更安静的说明 */
+    (function () {
+      function fix() {
+        var h = document.getElementById('gac-hint');
+        if (!h) return false;
+        h.textContent = 'STRAY · 实时数据接口已连接';
+        return true;
+      }
+      if (!fix()) {
+        document.addEventListener('DOMContentLoaded', fix);
+        setTimeout(fix, 400);
+      }
+    })();
+  </script>
+</body>
+</html>
