@@ -7,7 +7,11 @@
   <title>{{ .Title }}</title>
   {{ with .Description }}<meta name="description" content="{{ . }}">{{ end }}
   <link rel="stylesheet" href="{{ "/css/game-agent-page.css" | relURL }}">
-  {{/* 不引主题 head（整页独立，组件 CSS 由 shortcode 自带） */}}
+  {{/* 移动端浏览器 UI 配色跟随整页深色 */}}
+  <meta name="theme-color" content="#04060a">
+  {{/* 站点自定义 head（favicon / apple-touch-icon 等）—— 与其它页面保持同一套，
+       整页布局不引主题 head，所以这里显式注入，避免标签页图标丢失 */}}
+  {{ with .Site.Params.CustomHeadHTML }}{{ . | safeHTML }}{{ end }}
 </head>
 <body class="gac-page">
   <main id="content">{{ .Content }}</main>
