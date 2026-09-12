@@ -776,7 +776,7 @@
     META: "#7f8794"
   };
   var CP_F = {
-    name: 24, en: 16, price: 34, priceOld: 17,
+    name: 24, en: 16, price: 34, priceOld: 17, deadline: 16,
     chip: 18, chipH: 32, chipPad: 12,
     feat: 17, featH: 30, featPad: 10,
     plat: 18, platRow: 34, badge: 14,
@@ -848,7 +848,10 @@
       if (en !== D.en) en += "…";
       enH = CP_F.en * 1.35;
     }
-    var h = Math.max(nameH + enH, CP_F.price + (D.origin > 0 ? CP_F.priceOld + 4 : 0));
+    // 折扣截止（小黑盒只在打折时给）：画在现价正下方，和卡片保持同一位置关系
+    var dl = String(D.remaining || "");
+    var dlH = dl ? Math.round(CP_F.deadline * 1.4) : 0;
+    var h = Math.max(nameH + enH, CP_F.price + (D.origin > 0 ? CP_F.priceOld + 4 : 0)) + dlH;
     if (!dry) {
       ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
       ctx.fillStyle = CP.NAME;
@@ -873,7 +876,12 @@
         ctx.textAlign = "right";
         ctx.font = "900 " + CP_F.price + "px Arial,'PingFang SC',sans-serif";
         ctx.fillStyle = CP.PRICE;
-        ctx.fillText("¥" + fmtPrice(D.price), px, y + h - 2);
+        ctx.fillText("¥" + fmtPrice(D.price), px, y + h - 2 - dlH);
+        if (dl) {
+          ctx.font = "700 " + CP_F.deadline + "px 'PingFang SC',sans-serif";
+          ctx.fillStyle = CP.PRICE;
+          ctx.fillText("⏳ " + dl, px, y + h - 3);
+        }
       }
     }
     return h;
@@ -1064,7 +1072,6 @@
     if (D.goodRate) add("好评率 " + D.goodRate, "");
     if (D.avgPlaytime) add("平均 " + D.avgPlaytime, "");
     if (D.follow) add("👥 " + D.follow, "");
-    if (D.remaining && !D.coverImg) add("⏳ " + D.remaining, "");
     if ((D.awards || []).length) add("🏆 " + D.awards[0], "award");
     return chips;
   }
@@ -1146,7 +1153,7 @@
     var footerLine = D.h - 48;
     var coverH = D.coverImg ? Math.round(panelW * 0.295) : 0;
     var offTxt = D.off || "";
-    var coverBadge = D.coverImg ? D.remaining : "";
+    var coverBadge = ""; // 折扣截止已改到价格旁边（cpHead），封面不再重复画
 
     var chips = buildChips(D);
     var feats = buildFeats(D);
