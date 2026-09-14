@@ -374,7 +374,9 @@
     h += "</div>";
     if (b.price > 0) {
       h += '<div class="gac-card-prices">';
-      if (b.origin_price > 0) h += '<span class="gac-card-old">¥' + escapeHtml(fmtPrice(b.origin_price)) + "</span>";
+      // 只有真打折才画删除线：origin 必须大于现价（与下方平台行的 hasOld 口径一致），
+      // 否则原价=现价时会画出"¥0.95 <s>¥0.95</s>"这种没意义的划线
+      if (b.origin_price > b.price) h += '<span class="gac-card-old">¥' + escapeHtml(fmtPrice(b.origin_price)) + "</span>";
       h += '<span class="gac-card-now">¥' + escapeHtml(fmtPrice(b.price)) + "</span>";
       // 折扣截止放在价格正下方（小黑盒只在打折时给这个字段）
       if (b.remaining) h += '<span class="gac-card-deadline">⏳ ' + escapeHtml(shortDeadline(b.remaining)) + "</span>";
