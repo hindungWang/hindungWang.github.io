@@ -24,7 +24,13 @@
     //   "sync" — 网关一次请求直接返回 {reply}（默认）
     //   "poll" — 网关先返回 {id}，再用 GET {replyEndpoint}?id=<id> 轮询直到返回 {reply} 或超时
     replyMode: "poll",
-    pollIntervalMs: 1500,
+    pollIntervalMs: 2500,
+    // 长轮询：轮询请求带上 wait，网关会把这条请求挂住直到有结果（最多 10s，挂太久中间代理可能直接 502）。
+    // 起因：原来每 1.5s 打一次，65 秒就是 39 个请求 —— 中间隧道代理有每分钟请求数上限，
+    // 实测直接被限流（27 次 429 rate limited + 3 次 502 bad response from agent）。
+    pollWaitMs: 10000,
+    // 撞上限流/502 时按倍数退避，别继续用原节奏撞（会一直卡在限流上）
+    pollBackoffMaxMs: 15000,
     pollTimeoutMs: 240000,  // 4 分钟兜底：查价含多次接口调用与限流退避，实测 p99 约 40s，偶发极端情况要留余量
     // UI
     botName: "Stray",
@@ -1775,27 +1781,44 @@
     var url = CONFIG.baseUrl.replace(/\/+$/, "") + (CONFIG.replyEndpoint || CONFIG.chatEndpoint);
     var deadline = Date.now() + CONFIG.pollTimeoutMs;
     var lastErr = null;
+    var interval = CONFIG.pollIntervalMs;
+    var backedOff = false;
     while (Date.now() < deadline) {
-      await sleep(CONFIG.pollIntervalMs);
+      await sleep(interval);
       try {
-        // 轮询用 POST 携带 id：ngrok 对浏览器 GET 会弹访问警告页（无 CORS 头），POST 不受影响
+        // 轮询用 POST 携带 id：ngrok 对浏览器 GET 会弹访问警告页（无 CORS 头），POST 不受影响。
+        // wait = 长轮询，网关会挂住这条请求直到有结果或到点。
         var resp = await fetch(url, {
           method: "POST",
           headers: headers(),
-          body: JSON.stringify({ id: id })
+          body: JSON.stringify({ id: id, wait: CONFIG.pollWaitMs })
         });
+        if (resp.status === 429 || resp.status === 502 || resp.status === 503 || resp.status === 504) {
+          // 限流/上游抖动：退避重试（间隔翻倍、上限 pollBackoffMaxMs），
+          // 原来的"失败也按 2.5s 继续打"会让限流一直续着
+          lastErr = new Error("HTTP " + resp.status);
+          interval = Math.min(interval * 2, CONFIG.pollBackoffMaxMs);
+          backedOff = true;
+          continue;
+        }
         if (!resp.ok) { lastErr = new Error("HTTP " + resp.status); continue; }
         var data = await resp.json().catch(function () { return {}; });
         if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [], parts: data.parts };
         if (data.status === "done" && data.result) return { reply: data.result, blocks: [], parts: data.parts };
-        lastErr = null; // 一次成功的轮询清除之前的瞬时错误
+        lastErr = null;  // 一次成功的轮询清除之前的瞬时错误
+        interval = CONFIG.pollIntervalMs;  // 恢复正常节奏
       } catch (e) {
         // 瞬时网络/CORS 抖动（如网关边缘偶发错误页）：继续轮询，不中断整个对话
         lastErr = e;
       }
     }
     // 超时：不要只把最后一个瞬时错误（如代理 502）抛给用户，给出可理解的说明
-    if (lastErr) throw new Error("等待回复超时（" + lastErr.message + "），任务可能仍在处理，请稍后再试。");
+    if (lastErr) {
+      var hint = /HTTP (429|502|503|504)/.test(lastErr.message)
+        ? "网关繁忙（" + lastErr.message + "），已自动重试多次仍被限流"
+        : lastErr.message;
+      throw new Error("等待回复超时（" + hint + "），任务可能仍在处理，请稍后再试。");
+    }
     throw new Error("等待回复超时，请重试。");
   }
 
@@ -1851,6 +1874,12 @@
       .then(function (res) {
         typing.remove();
         var blocks = res.blocks || [];
+        var partsArr = Array.isArray(res.parts) ? res.parts : [];
+        // 新网关在给了 parts 之后不再重复下发 blocks（同一批对象发两份让响应大一倍，
+        // 而中间隧道代理读不完大响应就会 502）—— 这里把富块从 parts 里取回来
+        if (!blocks.length && partsArr.length) {
+          blocks = partsArr.filter(function (p) { return p && p.type !== "text"; });
+        }
         var firstCard = null;
         for (var bi = 0; bi < blocks.length; bi++) {
           if (blocks[bi] && blocks[bi].type === "game_card") { firstCard = blocks[bi]; break; }
@@ -1865,7 +1894,6 @@
         }
         // 后端给了分段且含富块（卡片/图片块）→ 在同一个回复框里依次 打字 → 淡入 → 续写。
         // 纯文字回复仍走下面原来的窄气泡，保持既有观感（Hug 内容而不是整宽）。
-        var partsArr = Array.isArray(res.parts) ? res.parts : [];
         var hasRichPart = false;
         for (var pi = 0; pi < partsArr.length; pi++) {
           if (partsArr[pi] && partsArr[pi].type !== "text") { hasRichPart = true; break; }
