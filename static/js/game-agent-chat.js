@@ -25,7 +25,7 @@
     //   "poll" — 网关先返回 {id}，再用 GET {replyEndpoint}?id=<id> 轮询直到返回 {reply} 或超时
     replyMode: "poll",
     pollIntervalMs: 1500,
-    pollTimeoutMs: 180000,  // 3 分钟：游戏查价含多次接口调用+限流退避，p99 实测可达 60s+
+    pollTimeoutMs: 240000,  // 4 分钟兜底：查价含多次接口调用与限流退避，实测 p99 约 40s，偶发极端情况要留余量
     // UI
     botName: "Stray",
     typingText: "Stray 正在思考…",
@@ -291,6 +291,23 @@
 
   function scrollToBottom() {
     bodyEl.scrollTop = bodyEl.scrollHeight;
+  }
+
+  /* 慢查询的等待提示：网关要补全卡片详情（十几秒），只转三个点会让人以为卡死。
+     定时器自己检查元素是否还在文档里，回复到达（typing.remove）后不会再写。 */
+  function attachWaitHint(typing) {
+    var el = document.createElement("div");
+    el.className = "gac-typing-hint";
+    typing.appendChild(el);
+    function later(ms, text) {
+      setTimeout(function () {
+        if (!typing.isConnected) return;
+        el.textContent = text;
+        scrollToBottom();
+      }, ms);
+    }
+    later(8000, "正在查实时价格…");
+    later(25000, "卡片详情补全中，再等一下…");
   }
 
   /* ---------- 富内容块（blocks）渲染 ---------- */
@@ -1829,6 +1846,7 @@
     statusEl.textContent = "· 思考中";
 
     var typing = showTyping();
+    attachWaitHint(typing);
     sendMessage(text)
       .then(function (res) {
         typing.remove();
