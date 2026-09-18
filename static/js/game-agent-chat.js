@@ -710,8 +710,25 @@
         img.__corsOk = false;               // 加载成功后按候选类型置位（决定 canvas 能否导出 PNG）
         img.__src = cand.u;                 // 记录实际使用的 URL（兜底显示用）
         var done = false;
-        img.onload = function () { if (done) return; done = true; img.__corsOk = !!cand.clean; resolve(img); };
-        img.onerror = function () { if (done) return; done = true; setTimeout(next, 0); };
+        // 8s 无响应就换下一个候选：原来没有超时，一张图卡住会让整个海报（Promise.all）永远不返回
+        var timer = setTimeout(function () {
+          if (done) return;
+          done = true;
+          setTimeout(next, 0);
+        }, 8000);
+        img.onload = function () {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          img.__corsOk = !!cand.clean;
+          resolve(img);
+        };
+        img.onerror = function () {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          setTimeout(next, 0);
+        };
         img.src = cand.u;
       }
       next();
@@ -1540,12 +1557,22 @@
       .filter(function (x) { return x && safeUrl(x.thumb); })
       .slice(0, max || 3);
     if (!shots.length) return Promise.resolve([]);
-    return Promise.all(shots.map(function (sh) {
-      return loadImage(safeUrl(sh.thumb), null, undefined).then(function (img) {
-        return img && img.__corsOk !== false ? img : null;
+    var inline = (block && Array.isArray(block.shots_data)) ? block.shots_data : [];
+    return Promise.all(shots.map(function (sh, i) {
+      // 后端内联的 data URL 优先：同源内容，既不依赖图床 CORS 也不会污染画布
+      return loadImage(safeUrl(sh.thumb), null, inline[i]).then(function (img) {
+        if (img && img.__corsOk !== false) return img;
+        return null;
       }).catch(function () { return null; });
     })).then(function (imgs) {
-      return imgs.filter(Boolean);
+      var kept = imgs.filter(Boolean);
+      if (kept.length < shots.length) {
+        // 丢掉的原因只有一个：候选全部不是 CORS 干净的（画进去海报就导不出 PNG）
+        if (window.console && console.warn) {
+          console.warn("[gac] 海报截图丢弃 " + (shots.length - kept.length) + "/" + shots.length + " 张（无 CORS 干净来源）");
+        }
+      }
+      return kept;
     });
   }
 
