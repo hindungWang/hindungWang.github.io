@@ -1445,8 +1445,12 @@
       shots: (p.shots || []).filter(function (x) { return x && x.width; }),
       lowestPrice: b.lowest_price > 0 ? b.lowest_price : undefined,
       lowestDate: b.lowest_date ? String(b.lowest_date) : "",
-      origin: best && best.origin_price ? best.origin_price : (b.origin_price || 0),
-      price: best && best.price ? best.price : (b.price || 0)
+      // 海报主价必须与卡面同源（口径价 = Steam 国区 / PS 港区 / 其余国区里最低）：
+      // 以前取"全平台最低行"，会把外区价（Switch 巴西 ¥32.36）当成海报大字号领价 ——
+      // 用户买不到，等于骗人（CLAUDE.md 的口径铁律）。只有口径内全无报价时，
+      // 才退回"有价的最低行"，且那一行在rows里自带区名标注。
+      origin: b.origin_price > 0 ? b.origin_price : (best && best.origin_price ? best.origin_price : 0),
+      price: b.price > 0 ? b.price : (best && best.price ? best.price : 0)
     };
     D.off = "";
     if (D.origin > 0 && D.price > 0 && D.price < D.origin) D.off = "-" + Math.round((1 - D.price / D.origin) * 100) + "%";
