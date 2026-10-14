@@ -4,7 +4,11 @@
   {{ with .Site.Params.gameAgent.replyMode }}data-reply-mode="{{ . }}"{{ end }}
   {{ with .Site.Params.gameAgent.mock }}data-mock="{{ . }}"{{ end }}
 ></div>
-<link rel="stylesheet" href="{{ "/css/game-agent-chat.css" | relURL }}">
+{{- /* 资源指纹：改了 widget 却吃到旧缓存时，症状是"新块渲染不出来（页面直接显示 {\"type\":...}）」。
+       加 ?v=<内容 md5 前 8 位> 让每次改动都换 URL，省掉"清缓存再试一次"的排查成本。 */ -}}
+{{- $cssV := substr (md5 (readFile "static/css/game-agent-chat.css")) 0 8 -}}
+{{- $jsV := substr (md5 (readFile "static/js/game-agent-chat.js")) 0 8 -}}
+<link rel="stylesheet" href="{{ "/css/game-agent-chat.css" | relURL }}?v={{ $cssV }}">
 <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
-<script src="{{ "/js/game-agent-chat.js" | relURL }}"></script>
+<script src="{{ "/js/game-agent-chat.js" | relURL }}?v={{ $jsV }}"></script>

@@ -666,3 +666,121 @@
   color: #ffb454;
   white-space: nowrap;
 }
+
+/* ---- 折扣截止的紧迫度档位（tone 由后端 deadline.ts 判定，前端只上色） ----
+ * 起因：以前「剩余 15 小时」和「还剩 20 天」长得一模一样，每天都是同一种"限时"语气。
+ * hot=今天/3天内（要催）、warn=限时（可以想两天）、mute=长期促销/不确定（别催）。
+ */
+.gac-dead-hot  { color: #ff6b6b; }
+.gac-dead-warn { color: #ffb454; }
+.gac-dead-mute { color: #8a93a3; font-weight: 600; }
+
+/* 没在打折时：史低旁边补"还差多少" */
+.gac-lowest-gap { color: #9aa3b2; font-weight: 400; }
+
+/* ==================== 会话组合块：走势 / 变化 / 玩家原声 / 对比 ====================
+ * 视觉语言与 .gac-card 对齐：同色板、同圆角、同阴影、同字号档位；
+ * 宽度铺满回复框（与卡片一致），但体量刻意比卡片小，形成"大卡 ↔ 小条"的节奏。
+ */
+.gac-trend, .gac-delta, .gac-quotes, .gac-cmp {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 12px;
+  background: #1d222b;
+  border: 1px solid #2e3642;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
+  color: #e8ecf2;
+  padding: 9px 11px 10px;
+}
+
+/* ---------- 价格走势（事件化时间轴） ---------- */
+.gac-trend-head { display: flex; align-items: center; gap: 8px; }
+.gac-trend-title { font-size: 12px; font-weight: 700; color: #cdd3dc; flex: 1; }
+.gac-trend-verdict {
+  font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 8px; white-space: nowrap;
+}
+.gac-v-low    { background: rgba(94, 194, 122, 0.16); color: #7ddb9b; border: 1px solid rgba(94, 194, 122, 0.35); }
+.gac-v-near   { background: rgba(255, 210, 63, 0.14); color: #ffd23f; border: 1px solid rgba(255, 210, 63, 0.32); }
+.gac-v-normal { background: #2a313c; color: #9aa3b2; border: 1px solid #363f4c; }
+.gac-v-back   { background: rgba(224, 51, 51, 0.14); color: #ff8a8a; border: 1px solid rgba(224, 51, 51, 0.32); }
+
+.gac-trend-chart { display: block; width: 100%; height: 62px; margin: 8px 0 2px; overflow: visible; }
+.gac-trend-line { fill: none; stroke: #ffd23f; stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.gac-trend-area { fill: url(#gacTrendFill); opacity: 0.35; }
+.gac-trend-dot  { fill: #1d222b; stroke: #ffd23f; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.gac-trend-dot-low { fill: #ffd23f; stroke: #1d222b; }
+.gac-trend-lbl { font-size: 9px; fill: #8a93a3; }
+.gac-trend-lbl-hot { font-size: 9.5px; font-weight: 700; fill: #ffd23f; }
+
+.gac-trend-axis { display: flex; justify-content: space-between; font-size: 10px; color: #6f7784; margin-top: -2px; }
+.gac-trend-foot {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 7px; padding-top: 7px;
+  border-top: 1px solid #2e3642; font-size: 11.5px; color: #9aa3b2;
+}
+.gac-trend-foot b { color: #e8ecf2; font-weight: 800; }
+.gac-trend-foot span { color: #5d6672; }
+.gac-trend-note { margin-top: 6px; font-size: 11.5px; line-height: 1.5; color: #b9c2cf; }
+
+/* ---------- 会话变化条（上次问过 → 现在） ---------- */
+.gac-delta { display: flex; align-items: center; gap: 9px; padding: 8px 11px; }
+.gac-delta-icon { font-size: 15px; line-height: 1; }
+.gac-delta-main { flex: 1; min-width: 0; }
+.gac-delta-line { font-size: 12.5px; color: #e8ecf2; }
+.gac-delta-line b { color: #ffd23f; font-size: 15px; font-weight: 900; }
+.gac-delta-sub { font-size: 10.5px; color: #8a93a3; margin-top: 1px; }
+.gac-delta-badge { font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 8px; white-space: nowrap; }
+.gac-delta-up   { background: rgba(224, 51, 51, 0.16); color: #ff8a8a; }
+.gac-delta-down { background: rgba(94, 194, 122, 0.16); color: #7ddb9b; }
+.gac-delta-flat { background: #2a313c; color: #9aa3b2; }
+
+/* ---------- 玩家原声 ---------- */
+.gac-quotes-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 12px; font-weight: 700; color: #cdd3dc; margin-bottom: 6px;
+}
+.gac-quotes-num { font-size: 10.5px; font-weight: 400; color: #8a93a3; }
+.gac-quote {
+  border-left: 2px solid #39424f;
+  padding: 1px 0 1px 9px;
+  margin-bottom: 7px;
+}
+.gac-quote:last-child { margin-bottom: 0; }
+.gac-quote.pos { border-left-color: #3f7a55; }
+.gac-quote.neg { border-left-color: #8a4340; }
+.gac-quote-text { font-size: 12.5px; line-height: 1.55; color: #dbe1e9; }
+.gac-quote-meta { font-size: 10.5px; color: #7f8794; margin-top: 2px; }
+.gac-quote-meta .gac-quote-up { color: #ffd23f; }
+
+/* ---------- 对比 / 三选一 ---------- */
+.gac-cmp-head { font-size: 12px; font-weight: 700; color: #cdd3dc; margin-bottom: 6px; }
+.gac-cmp-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px;
+  padding: 6px 7px; border-radius: 8px;
+}
+.gac-cmp-row + .gac-cmp-row { margin-top: 3px; }
+.gac-cmp-row.gac-cmp-best { background: rgba(255, 210, 63, 0.09); border: 1px solid rgba(255, 210, 63, 0.22); }
+.gac-cmp-row.gac-cmp-wait .gac-cmp-price { color: #8a93a3; }
+.gac-cmp-row.gac-cmp-wait .gac-cmp-name { color: #b9c2cf; }
+.gac-cmp-name { font-size: 12.5px; font-weight: 700; color: #fff; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gac-cmp-name .gac-cmp-badge {
+  font-size: 9px; font-weight: 800; color: #1d222b; background: #ffd23f;
+  padding: 0 5px; border-radius: 5px; margin-left: 5px; vertical-align: 1px;
+}
+.gac-cmp-price { font-size: 14px; font-weight: 900; color: #ffd23f; white-space: nowrap; }
+.gac-cmp-price .gac-cmp-off { font-size: 10.5px; color: #ff6b6b; font-weight: 700; margin-left: 4px; }
+.gac-cmp-meta { grid-column: 1 / -1; font-size: 10.5px; color: #8a93a3; }
+.gac-cmp-meta em { color: #ffb454; font-style: normal; font-weight: 700; }
+.gac-cmp-foot {
+  margin-top: 7px; padding-top: 7px; border-top: 1px solid #2e3642;
+  font-size: 11.5px; color: #b9c2cf; line-height: 1.5;
+}
+
+/* 移动端：走势图与对比表在窄屏下不挤 */
+@media (max-width: 560px) {
+  .gac-trend-chart { height: 56px; }
+  .gac-cmp-row { padding: 6px 5px; }
+  .gac-quote-text { font-size: 12px; }
+}
+
+/* 未知内容块：安静跳过（不把 JSON 打到对话里），只在布局上不占位 */
+.gac-block-skip { display: none; }

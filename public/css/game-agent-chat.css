@@ -1,4 +1,4 @@
-/* Game Agent 聊天窗样式 —— 贴合 gokarna 主题设计系统
+/* Stray 聊天窗样式 —— 贴合 gokarna 主题设计系统
  * 沿用主题变量：--accent-color / primary / secondary / tertiary
  * 深色模式：监听主题的 #dark-theme <link>，给容器加 .gac-dark 由本文件覆写
  */
@@ -62,8 +62,6 @@
   flex-shrink: 0;
 }
 
-.gac-meta { min-width: 0; }
-
 .gac-name { font-weight: 700; font-size: 15px; }
 
 .gac-status {
@@ -85,14 +83,20 @@
 /* ---- 消息区 ---- */
 .gac-body {
   min-height: 320px;
-  max-height: 440px;
+  /* 320/440 的窗口里放图片视频太挤，消息区和媒体块都只能靠滚动看；放宽到 520 */
+  max-height: 520px;
   overflow-y: auto;
   padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+/* 滚动条一律隐藏：滚动能力保留（滚轮 / 触控板 / 触摸都能滑），只是不显示那根条 */
+#game-agent-chat *::-webkit-scrollbar { width: 0; height: 0; display: none; }
+#game-agent-chat { scrollbar-width: none; }
+#game-agent-chat * { scrollbar-width: none; }
 
 .gac-msg {
   max-width: 80%;
@@ -153,6 +157,14 @@
   background: var(--gac-muted);
   animation: gac-blink 1.2s infinite both;
 }
+/* 等待提示：跟在三个点后面的小字（只在 8s/25s 后才出现） */
+.gac-typing-hint {
+  align-self: center;
+  margin-left: 4px;
+  font-size: 12px;
+  color: var(--gac-muted);
+  white-space: nowrap;
+}
 .gac-typing span:nth-child(2) { animation-delay: 0.2s; }
 .gac-typing span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes gac-blink {
@@ -211,13 +223,7 @@
   border-top: 1px solid var(--gac-border);
 }
 
-/* ---- 窄屏 ---- */
-@media (max-width: 480px) {
-  #game-agent-chat { margin: 18px auto; border-radius: 12px; }
-  .gac-msg { max-width: 88%; }
-  .gac-send { padding: 10px 14px; }
-}
-/* ---- Markdown 元素 ---- */
+/* ================= Markdown 渲染 ================= */
 .gac-msg strong { color: inherit; font-weight: 700; }
 .gac-msg em { font-style: italic; }
 .gac-msg code {
@@ -250,8 +256,6 @@
   color: var(--gac-muted);
 }
 .gac-msg a { color: #2f81f7; text-decoration: underline; }
-
-/* ---- Markdown 图片 ---- */
 .gac-msg img {
   display: block;
   max-width: 100%;
@@ -259,8 +263,6 @@
   border-radius: 8px;
   margin: 6px 0;
 }
-
-/* ---- Markdown 表格 ---- */
 .gac-msg table {
   border-collapse: collapse;
   margin: 6px 0;
@@ -274,269 +276,187 @@
 }
 .gac-msg th { background: rgba(127, 127, 127, 0.12); }
 .gac-msg table code { font-size: 12px; }
-
-/* ---- Markdown 分割线 ---- */
 .gac-msg hr {
   border: none;
   border-top: 1px solid var(--gac-border);
   margin: 10px 0;
 }
-
-/* ---- 标准 Markdown（marked 渲染）---- */
 .gac-msg.md { white-space: normal; } /* 标准解析后由块级元素排版，避免 pre-wrap 造成多余空格 */
 .gac-msg.md p { margin: 4px 0; }
 .gac-msg.md > *:first-child { margin-top: 0; }
 .gac-msg.md > *:last-child { margin-bottom: 0; }
 
-/* ---- 富内容块：游戏卡片（game_card） ---- */
-.gac-block { margin: 4px 0 12px; }
+/* ================= 富内容块：游戏卡片（game_card · 紧凑版） =================
+ * 目标：小一号的卡片 —— 宽度封顶 400px、封面压到 118px 横幅、
+ * 标题与价格同行、平台价两列网格、按钮并排；
+ * 同样的信息量，高度约为旧版的一半。
+ */
+.gac-blocks { max-width: 100%; }
+.gac-block { margin: 2px 0 10px; }
+
 .gac-card {
-  border-radius: 14px;
-  overflow: hidden;
-  background: var(--gac-bg);
-  border: 1px solid var(--gac-border);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-}
-.gac-card-cover { position: relative; }
-.gac-card-cover img { width: 100%; display: block; height: auto; max-height: 260px; object-fit: cover; }
-.gac-card-off {
-  position: absolute; right: 10px; top: 10px;
-  background: #e03333; color: #fff; font-weight: 800; font-size: 20px;
-  padding: 3px 10px; border-radius: 8px; transform: rotate(3deg);
-}
-.gac-card-off-float { margin: 8px 0 0 8px; display: inline-block; background: #e03333; color:#fff; font-weight:800; padding: 3px 10px; border-radius: 8px; }
-.gac-card-body { padding: 12px 14px 14px; }
-.gac-card-name { font-size: 17px; font-weight: 800; color: var(--gac-bubble-agent-text); }
-.gac-card-en { font-size: 11px; opacity: 0.55; letter-spacing: 1px; margin: 2px 0 8px; }
-.gac-card-prices { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
-.gac-card-now { color: #ffd23f; font-size: 22px; font-weight: 900; }
-.gac-card-old { color: #8a8f98; text-decoration: line-through; font-size: 13px; }
-.gac-card-chips { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
-.gac-card-chip { background: rgba(127, 127, 127, 0.16); padding: 2px 9px; border-radius: 10px; }
-.gac-card-btn {
-  display: block; text-align: center; margin-top: 10px; padding: 8px;
-  border-radius: 8px; background: #2f6f4f; color: #fff; font-size: 13px; text-decoration: none;
-}
-.gac-card-btn:hover { filter: brightness(1.1); }
-
-/* ---- 底部提示 ---- */
-.gac-hint {
-  padding: 9px 16px;
-  font-size: 12px;
-  color: var(--gac-muted);
-  background: var(--gac-bg);
-  border-top: 1px solid var(--gac-border);
-}
-
-/* ---- 窄屏 ---- */
-@media (max-width: 480px) {
-  #game-agent-chat { margin: 18px auto; border-radius: 12px; }
-  .gac-msg { max-width: 88%; }
-  .gac-send { padding: 10px 14px; }
-}
-/* ---- Markdown 元素 ---- */
-.gac-msg strong { color: inherit; font-weight: 700; }
-.gac-msg em { font-style: italic; }
-.gac-msg code {
-  background: rgba(127, 127, 127, 0.15);
-  border-radius: 4px;
-  padding: 1px 5px;
-  font-size: 12.5px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-.gac-msg pre {
-  background: rgba(127, 127, 127, 0.12);
-  border-radius: 8px;
-  padding: 9px 11px;
-  margin: 6px 0;
-  overflow-x: auto;
-}
-.gac-msg pre code { background: none; padding: 0; font-size: 12.5px; white-space: pre; }
-.gac-msg h1, .gac-msg h2, .gac-msg h3, .gac-msg h4 {
-  margin: 8px 0 4px;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.4;
-}
-.gac-msg ul { margin: 4px 0; padding-left: 18px; }
-.gac-msg li { margin: 2px 0; }
-.gac-msg blockquote {
-  margin: 5px 0;
-  padding: 4px 10px;
-  border-left: 3px solid var(--gac-border);
-  color: var(--gac-muted);
-}
-.gac-msg a { color: #2f81f7; text-decoration: underline; }
-
-/* ---- Markdown 图片 ---- */
-.gac-msg img {
-  display: block;
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin: 6px 0;
-}
-
-/* ---- Markdown 表格 ---- */
-.gac-msg table {
-  border-collapse: collapse;
-  margin: 6px 0;
   width: 100%;
-  font-size: 13px;
-}
-.gac-msg th, .gac-msg td {
-  border: 1px solid var(--gac-border);
-  padding: 5px 8px;
-  text-align: left;
-}
-.gac-msg th { background: rgba(127, 127, 127, 0.12); }
-.gac-msg table code { font-size: 12px; }
-
-/* ---- Markdown 分割线 ---- */
-.gac-msg hr {
-  border: none;
-  border-top: 1px solid var(--gac-border);
-  margin: 10px 0;
-}
-
-/* ---- 标准 Markdown（marked 渲染）---- */
-.gac-msg.md { white-space: normal; } /* 标准解析后由块级元素排版，避免 pre-wrap 造成多余空格 */
-.gac-msg.md p { margin: 4px 0; }
-.gac-msg.md > *:first-child { margin-top: 0; }
-.gac-msg.md > *:last-child { margin-bottom: 0; }
-
-/* ---- 富内容块：游戏卡片（game_card） ---- */
-.gac-block { margin: 4px 0 12px; }
-.gac-card {
-  border-radius: 14px;
+  max-width: 400px;
+  border-radius: 12px;
   overflow: hidden;
-  background: var(--gac-bg);
-  border: 1px solid var(--gac-border);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
-}
-.gac-card-cover { position: relative; }
-.gac-card-cover img { width: 100%; display: block; height: auto; max-height: 260px; object-fit: cover; }
-.gac-card-off {
-  position: absolute; right: 10px; top: 10px;
-  background: #e03333; color: #fff; font-weight: 800; font-size: 20px;
-  padding: 3px 10px; border-radius: 8px; transform: rotate(3deg);
-}
-.gac-card-off-float { margin: 8px 0 0 8px; display: inline-block; background: #e03333; color:#fff; font-weight:800; padding: 3px 10px; border-radius: 8px; }
-.gac-card-body { padding: 12px 14px 14px; }
-.gac-card-name { font-size: 17px; font-weight: 800; color: var(--gac-bubble-agent-text); }
-.gac-card-en { font-size: 11px; opacity: 0.55; letter-spacing: 1px; margin: 2px 0 8px; }
-.gac-card-prices { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; }
-.gac-card-now { color: #ffd23f; font-size: 22px; font-weight: 900; }
-.gac-card-old { color: #8a8f98; text-decoration: line-through; font-size: 13px; }
-.gac-card-chips { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; }
-.gac-card-chip { background: rgba(127, 127, 127, 0.16); padding: 2px 9px; border-radius: 10px; }
-.gac-card-btn {
-  display: block; text-align: center; margin-top: 10px; padding: 8px;
-  border-radius: 8px; background: #2f6f4f; color: #fff; font-size: 13px; text-decoration: none;
-}
-.gac-card-btn:hover { filter: brightness(1.1); }
-
-/* ---- 海报按钮（卡片上）---- */
-.gac-card-poster-btn { background: #2f6f4f; }
-
-/* ---- 海报：canvas 模态框 ---- */
-.gac-poster-modal {
-  position: fixed; inset: 0; z-index: 9999;
-  background: rgba(0, 0, 0, 0.72);
-  display: flex; align-items: center; justify-content: center;
-  padding: 20px;
-}
-.gac-poster-box {
-  background: #17191d; border-radius: 16px; padding: 14px;
-  max-height: 94vh; overflow: auto;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-}
-.gac-poster-canvas { display: block; width: 100%; max-width: 400px; height: auto; border-radius: 8px; }
-.gac-poster-actions { display: flex; gap: 10px; margin-top: 12px; }
-.gac-poster-act {
-  flex: 1; padding: 10px 0; border: none; border-radius: 9px;
-  background: #2f6f4f; color: #fff; font-size: 14px; cursor: pointer;
-}
-.gac-poster-act:hover { filter: brightness(1.1); }
-.gac-poster-close { background: #4a4f58; flex: 0 0 auto; padding: 10px 16px; }
-
-/* ---- 海报请求：内联海报（先图后文）---- */
-.gac-poster-inline-wrap { margin: 6px 0 10px; }
-.gac-poster-inline { display: block; width: 100%; max-width: 320px; border-radius: 12px; margin: 0 auto; }
-.gac-poster-inline-actions { display: flex; justify-content: center; gap: 10px; margin-top: 8px; }
-.gac-poster-inline-actions button {
-  border: 1px solid var(--gac-border); background: transparent; color: var(--gac-bubble-agent-text);
-  border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer;
-}
-.gac-poster-inline-actions button:hover { background: rgba(127, 127, 127, 0.15); }
-
-/* ---- 卡片：平台价格明细 ---- */
-.gac-card-plats { margin-top: 8px; border-top: 1px solid var(--gac-border); padding-top: 6px; }
-.gac-plat {
-  display: flex; align-items: baseline; gap: 8px;
-  padding: 3px 0; font-size: 13px; color: var(--gac-bubble-agent-text);
-}
-.gac-plat-name { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.gac-plat-old { color: #8a8f98; text-decoration: line-through; font-size: 12px; }
-.gac-plat-now { font-weight: 800; color: #ffd23f; }
-.gac-plat-off { color: #ff6b6b; font-weight: 700; font-size: 12px; }
-.gac-plat-best { background: rgba(255, 210, 63, 0.08); border-radius: 6px; padding: 4px 6px; margin: 0 -6px; }
-.gac-plat-badge {
-  display: inline-block; margin-left: 6px; background: #e03333; color: #fff;
-  font-size: 10px; padding: 0 6px; border-radius: 6px; vertical-align: 1px;
-}
-
-/* ================= 富块最终样式（统一覆盖，深色富卡风格） ================= */
-.gac-blocks { max-width: 88%; }
-.gac-block { margin: 4px 0 12px; }
-.gac-card {
-  border-radius: 14px; overflow: hidden;
-  background: #1d222b; border: 1px solid #2e3642;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  background: #1d222b;
+  border: 1px solid #2e3642;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
   color: #e8ecf2;
 }
-.gac-card-cover { position: relative; }
-.gac-card-cover img { width: 100%; display: block; height: auto; max-height: 220px; object-fit: cover; }
+
+/* 封面：窄横幅 + 底部渐隐，角标压在图上 */
+.gac-card-cover { position: relative; background: #141922; }
+.gac-card-cover img { width: 100%; display: block; height: 118px; object-fit: cover; }
+.gac-card-cover::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 40px;
+  background: linear-gradient(to top, rgba(29, 34, 43, 0.92), rgba(29, 34, 43, 0));
+  pointer-events: none;
+}
 .gac-card-off {
-  position: absolute; right: 10px; top: 10px;
-  background: #e03333; color: #fff; font-weight: 800; font-size: 20px;
-  padding: 3px 10px; border-radius: 8px; transform: rotate(3deg);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  position: absolute; right: 8px; top: 8px; z-index: 2;
+  background: #e03333; color: #fff; font-weight: 800; font-size: 14px;
+  padding: 2px 8px; border-radius: 7px; transform: rotate(3deg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
-.gac-card-off-float {
-  display: inline-block; margin: 8px 0 0 8px; background: #e03333; color: #fff;
-  font-weight: 800; padding: 3px 10px; border-radius: 8px;
+.gac-card-left {
+  position: absolute; left: 10px; bottom: 6px; z-index: 2;
+  font-size: 11px; font-weight: 700; color: #ffd6a0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.65);
 }
-.gac-card-body { padding: 12px 14px 14px; }
-.gac-card-name { font-size: 17px; font-weight: 800; color: #fff; line-height: 1.35; }
-.gac-card-en { font-size: 11px; color: #8a93a3; letter-spacing: 1px; margin: 2px 0 8px; }
-.gac-card-prices { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; }
-.gac-card-now { color: #ffd23f; font-size: 26px; font-weight: 900; }
-.gac-card-old { color: #8a93a3; text-decoration: line-through; font-size: 14px; }
-.gac-card-chips { display: flex; gap: 6px; flex-wrap: wrap; font-size: 12px; color: #b9c2cf; }
-.gac-card-chip { background: #2a313c; padding: 2px 9px; border-radius: 10px; }
-.gac-card-btn {
-  display: block; text-align: center; margin-top: 10px; padding: 8px;
-  border-radius: 8px; background: #2f6f4f; color: #fff; font-size: 13px; text-decoration: none;
+
+.gac-card-body { padding: 9px 11px 10px; }
+
+/* 标题 + 价格同行 */
+.gac-card-head { display: flex; align-items: flex-start; gap: 10px; }
+.gac-card-titles { flex: 1; min-width: 0; }
+.gac-card-name {
+  font-size: 14.5px; font-weight: 800; line-height: 1.3; color: #fff;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.gac-card-btn:hover { filter: brightness(1.1); }
-.gac-card-poster-btn { background: #2f6f4f; }
-/* 平台价格明细：紧凑行，右对齐价格组 */
-.gac-card-plats { margin-top: 6px; border-top: 1px solid #2e3642; padding-top: 4px; }
+.gac-card-en {
+  font-size: 10px; color: #8a93a3; letter-spacing: 0.6px; margin-top: 1px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gac-card-prices { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; }
+.gac-card-now { color: #ffd23f; font-size: 20px; font-weight: 900; line-height: 1.1; white-space: nowrap; }
+.gac-card-old { color: #8a93a3; text-decoration: line-through; font-size: 11px; line-height: 1.2; }
+
+/* 元信息 chips */
+.gac-card-chips { display: flex; gap: 5px; flex-wrap: wrap; font-size: 11px; color: #b9c2cf; margin-top: 6px; }
+.gac-card-chip {
+  background: #2a313c; padding: 1px 7px; border-radius: 9px;
+  white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* 特性标签 */
+.gac-card-feats { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.gac-feat {
+  font-size: 10.5px; line-height: 1; padding: 3px 6px; border-radius: 5px;
+  color: #8fd0a8; background: rgba(80, 200, 140, 0.12);
+  border: 1px solid rgba(80, 200, 140, 0.22); white-space: nowrap;
+}
+/* 获奖胶囊：金色描边，和绿色特性标签区分开 */
+.gac-chip-award {
+  color: #ffd23f !important; background: rgba(255, 210, 63, 0.14) !important;
+  border: 1px solid rgba(255, 210, 63, 0.35);
+}
+/* 卡片元信息行：开发商 · 发售 · 评价数 */
+.gac-card-meta { margin-top: 5px; font-size: 10.5px; color: #7f8794; }
+
+/* 史低 */
+.gac-card-lowest { margin-top: 6px; font-size: 11.5px; color: #ffd23f; font-weight: 700; }
+.gac-card-lowest .gac-lowest-date { color: #9aa3b2; font-weight: 400; font-size: 11px; }
+
+/* 全平台价格：两列网格（行高约为旧版的 1/2） */
+.gac-card-plats {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px 10px; margin-top: 7px; padding-top: 6px; border-top: 1px solid #2e3642;
+}
 .gac-plat {
-  display: flex; align-items: baseline; gap: 8px;
-  padding: 2px 0; font-size: 12.5px; color: #cdd3dc;
+  display: flex; align-items: baseline; gap: 6px; min-width: 0;
+  font-size: 11.5px; color: #cdd3dc; padding: 1px 4px; border-radius: 5px;
 }
-.gac-plat-name { font-weight: 600; color: #e8ecf2; margin-right: auto; }
-.gac-plat-old { color: #8a93a3; text-decoration: line-through; font-size: 12px; }
+.gac-plat-name {
+  font-weight: 600; color: #e8ecf2; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.gac-plat-price {
+  margin-left: auto; display: flex; align-items: baseline; gap: 5px;
+  flex-shrink: 0; white-space: nowrap;
+}
+.gac-plat-old { color: #8a93a3; text-decoration: line-through; font-size: 10.5px; }
 .gac-plat-now { font-weight: 800; color: #ffd23f; }
-.gac-plat-off { color: #ff6b6b; font-weight: 700; font-size: 12px; }
-.gac-plat-best { background: rgba(255, 210, 63, 0.1); border-radius: 6px; padding: 3px 6px; margin: 1px -6px; }
+.gac-plat-off { color: #ff6b6b; font-weight: 700; font-size: 10.5px; }
+.gac-plat-best { background: rgba(255, 210, 63, 0.1); }
+/* 该平台小黑盒无报价：平台名保留，价格位标注"暂无价格"（灰、不加粗） */
+.gac-plat-none .gac-plat-name { color: #8a93a3; font-weight: 500; }
+.gac-plat-na { color: #6f7784; font-size: 11px; }
 .gac-plat-badge {
-  display: inline-block; margin-left: 6px; background: #e03333; color: #fff;
-  font-size: 10px; padding: 0 6px; border-radius: 6px; vertical-align: 1px;
+  display: inline-block; margin-left: 4px; background: #e03333; color: #fff;
+  font-size: 9px; font-weight: 700; padding: 0 4px; border-radius: 5px; vertical-align: 1px;
 }
-/* 海报（内联 + 模态框） */
+
+/* 游戏截图集：标题行 + 可横向滑动的缩略图条 */
+.gac-shots-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin: 7px 0 4px; font-size: 11px; color: #8a93a3;
+}
+.gac-shots-more { color: #6f7784; }
+.gac-card-shots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.gac-media-grid .gac-shot-cell { min-width: 0; }
+.gac-shot-cell { position: relative; min-width: 0; display: block; }
+.gac-shot {
+  box-sizing: border-box;    /* 关键：width:100% 要含 1px 边框，否则图片比格子宽 2px、角标对不上 */
+}
+  width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block;
+  border-radius: 8px; border: 1px solid #2e3642; background: #141922;
+  cursor: zoom-in; transition: filter 0.15s, transform 0.1s;
+}
+.gac-shot:hover { filter: brightness(1.12); transform: translateY(-1px); }
+/* 画廊缩略图必须抵消 .gac-msg img 的通用 margin（否则格子比图高 12px、下面留空缝） */
+.gac-msg .gac-card-shots .gac-shot,
+.gac-msg .gac-media-grid .gac-shot { margin: 0; }
+/* 「+N」角标：还有更多截图，点进灯箱看 */
+.gac-shot-more {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; background: rgba(12, 16, 21, 0.62); color: #fff;
+  font-size: 15px; font-weight: 700; letter-spacing: 0.5px; pointer-events: none;
+}
+
+/* 截图大图查看（灯箱） */
+.gac-media-modal {
+  position: fixed; inset: 0; z-index: 9998;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.gac-media-box { display: flex; flex-direction: column; align-items: center; gap: 12px; max-width: 100%; }
+.gac-media-img {
+  max-width: min(92vw, 1100px); max-height: 78vh; border-radius: 10px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6); background: #141922;
+}
+.gac-media-bar { display: flex; align-items: center; gap: 10px; }
+.gac-media-act {
+  border: 1px solid #3a4351; background: rgba(29, 34, 43, 0.9); color: #e8ecf2;
+  border-radius: 9px; padding: 6px 14px; font-size: 14px; cursor: pointer; line-height: 1.2;
+}
+.gac-media-act:hover { background: rgba(58, 67, 81, 0.95); }
+.gac-media-idx { font-size: 12.5px; color: #b9c2cf; min-width: 56px; text-align: center; }
+.gac-media-close { margin-left: 6px; }
+
+/* 操作按钮：并排一行 */
+.gac-card-actions { display: flex; gap: 8px; margin-top: 8px; }
+.gac-card-btn {
+  /* 不要 flex:1：只剩一个按钮时会拉成整行通栏（原来"预告"+"生成海报"两个按钮时才是等分） */
+  flex: 0 0 auto; display: block; text-align: center; padding: 6px 14px;
+  border-radius: 7px; background: #232a34; border: 1px solid #333c49;
+  color: #dfe5ee; font-size: 12px; line-height: 1.4; text-decoration: none;
+  cursor: pointer; font-family: inherit;
+}
+.gac-card-btn:hover { filter: brightness(1.15); }
+.gac-card-poster-btn { background: #2f6f4f; border-color: #3a855f; color: #fff; }
+
+/* ================= 海报（内联 + 模态框） ================= */
 .gac-poster-inline-wrap { margin: 6px 0 10px; }
 .gac-poster-inline { display: block; width: 100%; max-width: 320px; border-radius: 12px; margin: 0 auto; }
 .gac-poster-inline-actions { display: flex; justify-content: center; gap: 10px; margin-top: 8px; }
@@ -544,6 +464,8 @@
   border: 1px solid #2e3642; background: transparent; color: #e8ecf2;
   border-radius: 8px; padding: 5px 12px; font-size: 12px; cursor: pointer;
 }
+.gac-poster-inline-actions button:hover { background: rgba(127, 127, 127, 0.15); }
+.gac-poster-note { margin-top: 6px; text-align: center; font-size: 11.5px; color: #8a93a3; }
 .gac-poster-modal {
   position: fixed; inset: 0; z-index: 9999;
   background: rgba(0, 0, 0, 0.72);
@@ -559,6 +481,7 @@
   flex: 1; padding: 10px 0; border: none; border-radius: 9px;
   background: #2f6f4f; color: #fff; font-size: 14px; cursor: pointer;
 }
+.gac-poster-act:hover { filter: brightness(1.1); }
 .gac-poster-close { background: #4a4f58; flex: 0 0 auto; padding: 10px 16px; }
 
 /* ---- toast 反馈 ---- */
@@ -569,3 +492,295 @@
   z-index: 10001; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
   pointer-events: none;
 }
+
+/* ---- 窄屏 ---- */
+@media (max-width: 480px) {
+  #game-agent-chat { margin: 18px auto; border-radius: 12px; }
+  .gac-msg { max-width: 88%; }
+  .gac-send { padding: 10px 14px; }
+  .gac-card { max-width: 100%; }
+  .gac-card-cover img { height: 104px; }
+  .gac-poster-inline { max-width: 100%; }
+}
+
+/* ==================== 游戏图片 / 预告片（game_media 块 + 回复内联媒体） ====================
+ * 设计语言与卡片一致：圆角 10px、深色底 #141922、1px 边框 #2e3642、hover 轻微提亮。
+ */
+.gac-media {
+  border: 1px solid #2e3642;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #1b2129 0%, #171c23 100%);
+  overflow: hidden;
+  margin: 2px 0 12px;
+}
+
+.gac-media-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #262d37;
+}
+.gac-media-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e8edf4;
+  letter-spacing: 0.2px;
+}
+.gac-media-meta { font-size: 11px; color: #8a93a3; white-space: nowrap; }
+
+/* ---- 预告片：封面 + 播放按钮；点击后就地变成播放器 ---- */
+.gac-video {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #10151b;
+  overflow: hidden;
+}
+.gac-video-poster {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  cursor: pointer; opacity: 0.82; transition: opacity 0.15s, transform 0.2s;
+}
+.gac-video-poster:hover { opacity: 0.95; transform: scale(1.015); }
+.gac-video-btn {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  border: 0; cursor: pointer;
+  padding: 10px 18px; border-radius: 999px;
+  background: rgba(224, 51, 51, 0.94);
+  color: #fff; font-size: 13px; font-weight: 700;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  transition: transform 0.12s, background 0.15s;
+}
+.gac-video-btn:hover { transform: translate(-50%, -50%) scale(1.04); background: #e03333; }
+.gac-video-el {
+  width: 100%; height: 100%; display: block; background: #000;
+  aspect-ratio: 16 / 9;
+}
+.gac-video-fallback {
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  color: #ffd9d9; font-size: 13px; text-decoration: none;
+  background: #10151b;
+}
+.gac-video-fallback:hover { color: #fff; }
+
+/* ---- 截图画廊：3 列网格，圆角，点击开灯箱 ---- */
+.gac-media-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+}
+.gac-media-grid .gac-shot { border-radius: 8px; border-color: #232a33; }
+
+/* 预告片切换：胶囊一行，只有多个预告片时才出现 */
+.gac-video-tabs {
+  display: flex; gap: 6px; padding: 8px 10px 2px; flex-wrap: wrap;
+}
+.gac-video-tab {
+  border: 1px solid #2e3642; background: #1b2129; color: #aab3c0;
+  padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  font-size: 11.5px; font-weight: 600; transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.gac-video-tab:hover { background: #232b35; color: #e8edf4; }
+.gac-video-tab.active { background: #e03333; border-color: #e03333; color: #fff; }
+
+/* ---- 回复正文里的 markdown 图片 / 视频 ---- */
+.gac-msg.md .gac-md-img {
+  display: block;
+  max-width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #2e3642;
+  background: #141922;
+  margin: 8px 0;
+  cursor: zoom-in;
+  transition: filter 0.15s;
+}
+.gac-msg.md .gac-md-img:hover { filter: brightness(1.08); }
+.gac-md-video { display: block; margin: 8px 0; }
+.gac-md-video-btn {
+  border: 1px solid #2e3642; background: #1b2129; color: #e8edf4;
+  padding: 10px 16px; border-radius: 10px; cursor: pointer;
+  font-size: 13px; font-weight: 600;
+}
+.gac-md-video-btn:hover { background: #232b35; }
+.gac-md-video .gac-video-el { border-radius: 10px; }
+
+/* ---- 移动端 ---- */
+@media (max-width: 560px) {
+  .gac-media-grid { grid-template-columns: repeat(3, 1fr); }
+  .gac-card-shots { grid-template-columns: repeat(3, 1fr); }
+  .gac-msg.md .gac-md-img { max-height: 240px; }
+}
+
+/* ==================== 分段回复：文字 / 卡片 / 图片块 在同一个回复框里依次出现 ====================
+ * 后端按模型给的 [[card:游戏名]] 标记切好顺序，前端逐个打字 / 淡入，观感上是一条完整回复。
+ */
+.gac-reply {
+  max-width: 100%;              /* 卡片比气泡宽：整条回复占满 */
+  width: 100%;
+  box-sizing: border-box;       /* 关键：content-box 下 100% 不含 14px 内边距，会让整框比聊天区宽 28px */
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* 段落文字：气泡内不再各自成块，段间距交给 gap */
+.gac-reply .gac-part-text { white-space: pre-wrap; }
+.gac-reply .gac-part-text:empty { display: none; }
+
+/* 富块在回复框内：去掉整批渲染时的外边距，只留少量上下间距 */
+.gac-reply .gac-block {
+  margin: 10px 0 2px;
+  align-self: flex-start;
+  max-width: 100%;
+  width: 100%;              /* 卡片铺满回复框：402px 的窄卡在 714px 框里两侧发空显得"小" */
+}
+.gac-reply .gac-card { max-width: 100%; }
+.gac-reply .gac-block:last-child { margin-bottom: 2px; }
+
+/* 入场：淡入 + 轻微上移（比整块闪现更像"动态展现"） */
+.gac-part-in { animation: gac-part-in 0.34s cubic-bezier(0.22, 0.9, 0.3, 1) both; }
+@keyframes gac-part-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 回复里最后一段文字后没有卡片时，别留多余的塌陷 */
+.gac-reply .gac-part-text:last-child { margin-bottom: 2px; }
+
+/* ---- 折扣截止（放在价格旁边；小黑盒只在打折时返回该字段） ---- */
+.gac-card-deadline {
+  margin-top: 2px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #ffb454;
+  white-space: nowrap;
+}
+.gac-plat-dead {
+  margin-left: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #ffb454;
+  white-space: nowrap;
+}
+
+/* ---- 折扣截止的紧迫度档位（tone 由后端 deadline.ts 判定，前端只上色） ----
+ * 起因：以前「剩余 15 小时」和「还剩 20 天」长得一模一样，每天都是同一种"限时"语气。
+ * hot=今天/3天内（要催）、warn=限时（可以想两天）、mute=长期促销/不确定（别催）。
+ */
+.gac-dead-hot  { color: #ff6b6b; }
+.gac-dead-warn { color: #ffb454; }
+.gac-dead-mute { color: #8a93a3; font-weight: 600; }
+
+/* 没在打折时：史低旁边补"还差多少" */
+.gac-lowest-gap { color: #9aa3b2; font-weight: 400; }
+
+/* ==================== 会话组合块：走势 / 变化 / 玩家原声 / 对比 ====================
+ * 视觉语言与 .gac-card 对齐：同色板、同圆角、同阴影、同字号档位；
+ * 宽度铺满回复框（与卡片一致），但体量刻意比卡片小，形成"大卡 ↔ 小条"的节奏。
+ */
+.gac-trend, .gac-delta, .gac-quotes, .gac-cmp {
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 12px;
+  background: #1d222b;
+  border: 1px solid #2e3642;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
+  color: #e8ecf2;
+  padding: 9px 11px 10px;
+}
+
+/* ---------- 价格走势（事件化时间轴） ---------- */
+.gac-trend-head { display: flex; align-items: center; gap: 8px; }
+.gac-trend-title { font-size: 12px; font-weight: 700; color: #cdd3dc; flex: 1; }
+.gac-trend-verdict {
+  font-size: 10.5px; font-weight: 800; padding: 2px 7px; border-radius: 8px; white-space: nowrap;
+}
+.gac-v-low    { background: rgba(94, 194, 122, 0.16); color: #7ddb9b; border: 1px solid rgba(94, 194, 122, 0.35); }
+.gac-v-near   { background: rgba(255, 210, 63, 0.14); color: #ffd23f; border: 1px solid rgba(255, 210, 63, 0.32); }
+.gac-v-normal { background: #2a313c; color: #9aa3b2; border: 1px solid #363f4c; }
+.gac-v-back   { background: rgba(224, 51, 51, 0.14); color: #ff8a8a; border: 1px solid rgba(224, 51, 51, 0.32); }
+
+.gac-trend-chart { display: block; width: 100%; height: 62px; margin: 8px 0 2px; overflow: visible; }
+.gac-trend-line { fill: none; stroke: #ffd23f; stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.gac-trend-area { fill: url(#gacTrendFill); opacity: 0.35; }
+.gac-trend-dot  { fill: #1d222b; stroke: #ffd23f; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.gac-trend-dot-low { fill: #ffd23f; stroke: #1d222b; }
+.gac-trend-lbl { font-size: 9px; fill: #8a93a3; }
+.gac-trend-lbl-hot { font-size: 9.5px; font-weight: 700; fill: #ffd23f; }
+
+.gac-trend-axis { display: flex; justify-content: space-between; font-size: 10px; color: #6f7784; margin-top: -2px; }
+.gac-trend-foot {
+  display: flex; gap: 8px; flex-wrap: wrap; margin-top: 7px; padding-top: 7px;
+  border-top: 1px solid #2e3642; font-size: 11.5px; color: #9aa3b2;
+}
+.gac-trend-foot b { color: #e8ecf2; font-weight: 800; }
+.gac-trend-foot span { color: #5d6672; }
+.gac-trend-note { margin-top: 6px; font-size: 11.5px; line-height: 1.5; color: #b9c2cf; }
+
+/* ---------- 会话变化条（上次问过 → 现在） ---------- */
+.gac-delta { display: flex; align-items: center; gap: 9px; padding: 8px 11px; }
+.gac-delta-icon { font-size: 15px; line-height: 1; }
+.gac-delta-main { flex: 1; min-width: 0; }
+.gac-delta-line { font-size: 12.5px; color: #e8ecf2; }
+.gac-delta-line b { color: #ffd23f; font-size: 15px; font-weight: 900; }
+.gac-delta-sub { font-size: 10.5px; color: #8a93a3; margin-top: 1px; }
+.gac-delta-badge { font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 8px; white-space: nowrap; }
+.gac-delta-up   { background: rgba(224, 51, 51, 0.16); color: #ff8a8a; }
+.gac-delta-down { background: rgba(94, 194, 122, 0.16); color: #7ddb9b; }
+.gac-delta-flat { background: #2a313c; color: #9aa3b2; }
+
+/* ---------- 玩家原声 ---------- */
+.gac-quotes-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 12px; font-weight: 700; color: #cdd3dc; margin-bottom: 6px;
+}
+.gac-quotes-num { font-size: 10.5px; font-weight: 400; color: #8a93a3; }
+.gac-quote {
+  border-left: 2px solid #39424f;
+  padding: 1px 0 1px 9px;
+  margin-bottom: 7px;
+}
+.gac-quote:last-child { margin-bottom: 0; }
+.gac-quote.pos { border-left-color: #3f7a55; }
+.gac-quote.neg { border-left-color: #8a4340; }
+.gac-quote-text { font-size: 12.5px; line-height: 1.55; color: #dbe1e9; }
+.gac-quote-meta { font-size: 10.5px; color: #7f8794; margin-top: 2px; }
+.gac-quote-meta .gac-quote-up { color: #ffd23f; }
+
+/* ---------- 对比 / 三选一 ---------- */
+.gac-cmp-head { font-size: 12px; font-weight: 700; color: #cdd3dc; margin-bottom: 6px; }
+.gac-cmp-row {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px;
+  padding: 6px 7px; border-radius: 8px;
+}
+.gac-cmp-row + .gac-cmp-row { margin-top: 3px; }
+.gac-cmp-row.gac-cmp-best { background: rgba(255, 210, 63, 0.09); border: 1px solid rgba(255, 210, 63, 0.22); }
+.gac-cmp-row.gac-cmp-wait .gac-cmp-price { color: #8a93a3; }
+.gac-cmp-row.gac-cmp-wait .gac-cmp-name { color: #b9c2cf; }
+.gac-cmp-name { font-size: 12.5px; font-weight: 700; color: #fff; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gac-cmp-name .gac-cmp-badge {
+  font-size: 9px; font-weight: 800; color: #1d222b; background: #ffd23f;
+  padding: 0 5px; border-radius: 5px; margin-left: 5px; vertical-align: 1px;
+}
+.gac-cmp-price { font-size: 14px; font-weight: 900; color: #ffd23f; white-space: nowrap; }
+.gac-cmp-price .gac-cmp-off { font-size: 10.5px; color: #ff6b6b; font-weight: 700; margin-left: 4px; }
+.gac-cmp-meta { grid-column: 1 / -1; font-size: 10.5px; color: #8a93a3; }
+.gac-cmp-meta em { color: #ffb454; font-style: normal; font-weight: 700; }
+.gac-cmp-foot {
+  margin-top: 7px; padding-top: 7px; border-top: 1px solid #2e3642;
+  font-size: 11.5px; color: #b9c2cf; line-height: 1.5;
+}
+
+/* 移动端：走势图与对比表在窄屏下不挤 */
+@media (max-width: 560px) {
+  .gac-trend-chart { height: 56px; }
+  .gac-cmp-row { padding: 6px 5px; }
+  .gac-quote-text { font-size: 12px; }
+}
+
+/* 未知内容块：安静跳过（不把 JSON 打到对话里），只在布局上不占位 */
+.gac-block-skip { display: none; }

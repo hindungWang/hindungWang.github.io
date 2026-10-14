@@ -1,6 +1,12 @@
 /* Stray 聊天窗 —— 纯前端组件
  * 直接在静态页面上渲染一个可对话的窗口，后端由你的消息网关提供 REST 接口。
+ *
+ * 构建标识：在控制台输入 window.__GAC_BUILD__ 就能知道页面加载的是哪一版 widget。
+ * 起因：后端先上了新块类型、页面还挂着旧 JS 时，症状是"新块渲染不出来"——
+ * 旧版还会把未知块 JSON.stringify() 打到对话里，排查时很容易误判成"后端没产出这个块"。
  */
+window.__GAC_BUILD__ = "2026-10-13.blocks-v1";
+try { console.info("[game-agent-chat] build " + window.__GAC_BUILD__); } catch (e) { /* 忽略 */ }
 (function () {
   "use strict";
 
@@ -401,8 +407,17 @@
       // 否则原价=现价时会画出"¥0.95 <s>¥0.95</s>"这种没意义的划线
       if (b.origin_price > b.price) h += '<span class="gac-card-old">¥' + escapeHtml(fmtPrice(b.origin_price)) + "</span>";
       h += '<span class="gac-card-now">¥' + escapeHtml(fmtPrice(b.price)) + "</span>";
-      // 折扣截止放在价格正下方（小黑盒只在打折时给这个字段）
-      if (b.remaining) h += '<span class="gac-card-deadline">⏳ ' + escapeHtml(shortDeadline(b.remaining)) + "</span>";
+      // 折扣截止放在价格正下方。语气按后端分好的档位走（hot=今天/3天内、warn=限时、mute=长期促销/不确定）——
+      // 「剩余 15 小时」和「还剩 20 天」以前长得一模一样，每天都看到同一种"限时"语气，久了就腻。
+      // tone 与 label 都由后端 deadline.ts 判定，前端不再自己写一份阈值。
+      if (b.deadline_label) {
+        var dtone = String(b.deadline_tone || "mute");
+        var dicon = dtone === "hot" ? "🔥" : dtone === "warn" ? "⏳" : "🕒";
+        h += '<span class="gac-card-deadline gac-dead-' + escapeHtml(dtone) + '">' + dicon + " " +
+          escapeHtml(String(b.deadline_label)) + "</span>";
+      } else if (b.remaining) {
+        h += '<span class="gac-card-deadline">⏳ ' + escapeHtml(shortDeadline(b.remaining)) + "</span>";
+      }
       h += "</div>";
     }
     h += "</div>";
@@ -429,10 +444,11 @@
       }
       h += "</div>";
     }
-    // 史低提示
+    // 史低提示：没在打折时补一句"还要等多少"——比把价格区留白有用（lowest_gap 由后端算，前端不判阈值）
     if (b.lowest_price > 0) {
       h += '<div class="gac-card-lowest">史低 ¥' + escapeHtml(fmtPrice(b.lowest_price)) +
-        (b.lowest_date ? ' <span class="gac-lowest-date">· ' + escapeHtml(String(b.lowest_date)) + "</span>" : "") + "</div>";
+        (b.lowest_date ? ' <span class="gac-lowest-date">· ' + escapeHtml(String(b.lowest_date)) + "</span>" : "") +
+        (b.lowest_gap > 0 ? ' <span class="gac-lowest-gap">还差 ¥' + escapeHtml(fmtPrice(b.lowest_gap)) + "</span>" : "") + "</div>";
     }
     // 各平台价格：全平台两列紧凑网格，最低价平台高亮（网格省掉一半高度）
     var plats = [];
@@ -1675,6 +1691,147 @@
     scrollToBottom();
   }
 
+  /* ==================== 会话组合块：走势 / 变化 / 玩家原声 / 对比 ====================
+   * 数据全部由后端从**本地价格库与本轮工具结果**里确定性组装（零幻觉）：
+   *   · price_trend   近 60 天的降价/回价事件轴（已降噪，不是连续曲线）
+   *   · price_delta   「你上次问到现在变了没有」
+   *   · review_quotes 本轮 game.comments 的真实玩家评论（截断后上屏）
+   *   · compare_table 2~4 款的决策表（"最值得"由后端判定，前端只渲染）
+   * 前端只负责画，不含任何阈值判断（阈值在后端 deadline.ts / compare.ts，改口径只改一处）。
+   */
+
+  /** 走势图：阶梯线（价格是跳变的）+ 首末与史低三个标注 */
+  function trendSvg(series, fallbackMax) {
+    var list = (series || []).filter(function (s) { return s && isFinite(Number(s.p)); });
+    if (list.length < 2) return "";
+    var W = 320, H = 62, PADX = 8, PADY = 16;
+    var prices = list.map(function (s) { return Number(s.p); });
+    var max = Math.max.apply(null, prices.concat(fallbackMax > 0 ? [fallbackMax] : []));
+    var min = Math.min.apply(null, prices);
+    var span = Math.max(1, max - min);
+    function X(i) { return PADX + (W - 2 * PADX) * (i / (list.length - 1)); }
+    function Y(p) { return PADY + (H - 2 * PADY) * (1 - (p - min) / span); }
+    var d = "M" + X(0).toFixed(1) + " " + Y(prices[0]).toFixed(1);
+    for (var i = 1; i < list.length; i++) {
+      d += "L" + X(i).toFixed(1) + " " + Y(prices[i - 1]).toFixed(1);
+      d += "L" + X(i).toFixed(1) + " " + Y(prices[i]).toFixed(1);
+    }
+    var area = d + "L" + X(list.length - 1).toFixed(1) + " " + H + "L" + X(0).toFixed(1) + " " + H + "Z";
+    var lowIdx = prices.indexOf(min);
+    var out = '<svg class="gac-trend-chart" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="价格走势">';
+    out += '<defs><linearGradient id="gacTrendFill" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#ffd23f" stop-opacity="0.32"/>' +
+      '<stop offset="100%" stop-color="#ffd23f" stop-opacity="0"/></linearGradient></defs>';
+    out += '<path class="gac-trend-area" d="' + area + '"/>';
+    out += '<path class="gac-trend-line" d="' + d + '"/>';
+    for (var k = 0; k < list.length; k++) {
+      var isLow = k === lowIdx;
+      out += '<circle class="gac-trend-dot' + (isLow ? " gac-trend-dot-low" : "") + '" cx="' + X(k).toFixed(1) +
+        '" cy="' + Y(prices[k]).toFixed(1) + '" r="' + (isLow ? 4 : 3) + '"/>';
+    }
+    // 只在首/末/史低三点打标签；史低那个标注放谷点**左侧**（下方会被"史低→回价"的底部横线穿过）。
+    // 史低正好落在末点时不另打标签 —— 否则会和右侧的现价标签并排重复一次。
+    out += '<text class="gac-trend-lbl" x="' + X(0).toFixed(1) + '" y="' + (Y(prices[0]) - 7).toFixed(1) +
+      '" text-anchor="start">¥' + escapeHtml(fmtPrice(prices[0])) + "</text>";
+    if (lowIdx > 0 && lowIdx < list.length - 1) {
+      out += '<text class="gac-trend-lbl-hot" x="' + (X(lowIdx) - 7).toFixed(1) + '" y="' + (Y(prices[lowIdx]) + 3.5).toFixed(1) +
+        '" text-anchor="end">史低 ¥' + escapeHtml(fmtPrice(prices[lowIdx])) + "</text>";
+    }
+    var last = list.length - 1;
+    out += '<text class="gac-trend-lbl" x="' + X(last).toFixed(1) + '" y="' + (Y(prices[last]) - 7).toFixed(1) +
+      '" text-anchor="end">¥' + escapeHtml(fmtPrice(prices[last])) + "</text>";
+    return out + "</svg>";
+  }
+
+  function trendBlockHtml(b) {
+    var series = Array.isArray(b.series) ? b.series : [];
+    var h = '<div class="gac-trend">';
+    h += '<div class="gac-trend-head"><span class="gac-trend-title">' + escapeHtml(b.title || "价格走势") + "</span>";
+    if (b.verdict) {
+      h += '<span class="gac-trend-verdict gac-v-' + escapeHtml(String(b.verdict_kind || "normal")) + '">' +
+        escapeHtml(String(b.verdict)) + "</span>";
+    }
+    h += "</div>";
+    h += trendSvg(series, b.origin_price);
+    if (series.length) {
+      h += '<div class="gac-trend-axis">';
+      h += "<span>" + escapeHtml(String(series[0].t || "")) + "</span>";
+      if (series.length > 2) h += "<span>" + escapeHtml(String(series[1].t || "")) + "</span>";
+      h += "<span>" + escapeHtml(String(series[series.length - 1].t || "")) + "</span></div>";
+    }
+    var foot = [];
+    if (b.lowest > 0) foot.push("史低 <b>¥" + escapeHtml(fmtPrice(b.lowest)) + "</b> <span>" + escapeHtml(String(b.lowest_date || "")) + "</span>");
+    if (b.current > 0) foot.push("现在 <b>¥" + escapeHtml(fmtPrice(b.current)) + "</b>");
+    if (b.lowest > 0 && b.current > 0 && b.current - b.lowest > 1) {
+      foot.push("距史低 <b>¥" + escapeHtml(fmtPrice(b.current - b.lowest)) + "</b>");
+    }
+    if (foot.length) h += '<div class="gac-trend-foot">' + foot.join("<span>·</span>") + "</div>";
+    if (b.promo_days > 0) {
+      h += '<div class="gac-trend-note">这波折扣已经持续 ' + escapeHtml(String(Math.round(b.promo_days))) + " 天。</div>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  function deltaBlockHtml(b) {
+    var kind = String(b.delta_kind || "flat");
+    var h = '<div class="gac-delta">';
+    h += '<span class="gac-delta-icon">' + escapeHtml(String(b.icon || "🔁")) + "</span>";
+    h += '<div class="gac-delta-main">';
+    h += '<div class="gac-delta-line">' + escapeHtml(String(b.text || "")) + "</div>";
+    if (b.sub) h += '<div class="gac-delta-sub">' + escapeHtml(String(b.sub)) + "</div>";
+    h += "</div>";
+    if (b.badge) h += '<span class="gac-delta-badge gac-delta-' + escapeHtml(kind) + '">' + escapeHtml(String(b.badge)) + "</span>";
+    h += "</div>";
+    return h;
+  }
+
+  function quotesBlockHtml(b) {
+    var list = (Array.isArray(b.quotes) ? b.quotes : []).filter(function (q) { return q && q.text; });
+    var h = '<div class="gac-quotes">';
+    h += '<div class="gac-quotes-head"><span>' + escapeHtml(b.title || "玩家怎么说") + "</span>";
+    if (b.summary) h += '<span class="gac-quotes-num">' + escapeHtml(String(b.summary)) + "</span>";
+    h += "</div>";
+    for (var i = 0; i < list.length; i++) {
+      var q = list[i];
+      var tone = q.score > 0 ? (q.score >= 4 ? "pos" : q.score <= 3 ? "neg" : "") : "";
+      h += '<div class="gac-quote ' + tone + '">';
+      h += '<div class="gac-quote-text">“' + escapeHtml(String(q.text)) + '”</div>';
+      h += '<div class="gac-quote-meta">' + escapeHtml(String(q.by || "玩家"));
+      if (q.up) h += ' · <span class="gac-quote-up">' + escapeHtml(String(q.up)) + " 赞</span>";
+      if (q.score) h += " · 评分 " + escapeHtml(String(q.score));
+      h += "</div></div>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  function compareBlockHtml(b) {
+    var rows = Array.isArray(b.rows) ? b.rows : [];
+    var h = '<div class="gac-cmp">';
+    if (b.title) h += '<div class="gac-cmp-head">' + escapeHtml(String(b.title)) + "</div>";
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i] || {};
+      h += '<div class="gac-cmp-row' + (r.best ? " gac-cmp-best" : "") + (r.tone === "wait" ? " gac-cmp-wait" : "") + '">';
+      h += '<div class="gac-cmp-name">' + escapeHtml(String(r.name || ""));
+      if (r.best && r.badge) h += '<span class="gac-cmp-badge">' + escapeHtml(String(r.badge)) + "</span>";
+      h += "</div>";
+      h += '<div class="gac-cmp-price">¥' + escapeHtml(fmtPrice(r.price));
+      if (r.off_pct > 0) h += '<span class="gac-cmp-off">-' + escapeHtml(String(r.off_pct)) + "%</span>";
+      h += "</div>";
+      var bits = [];
+      if (r.lowest > 0) bits.push("史低 ¥" + escapeHtml(fmtPrice(r.lowest)));
+      if (r.rating) bits.push("⭐" + escapeHtml(String(r.rating)));
+      if (r.remaining) bits.push("<em>⏳" + escapeHtml(shortDeadline(String(r.remaining))) + "</em>");
+      if (r.why) bits.push(escapeHtml(String(r.why)));
+      if (bits.length) h += '<div class="gac-cmp-meta">' + bits.join(" · ") + "</div>";
+      h += "</div>";
+    }
+    if (b.note) h += '<div class="gac-cmp-foot">' + escapeHtml(String(b.note)) + "</div>";
+    h += "</div>";
+    return h;
+  }
+
   /* 单个富块 → DOM 节点（分段渲染与整批渲染共用同一套逻辑） */
   function blockNode(b, withEnter) {
     var div = document.createElement("div");
@@ -1697,8 +1854,21 @@
       img.alt = "海报";
       img.loading = "lazy";
       div.appendChild(img);
+    } else if (b && b.type === "price_trend") {
+      div.innerHTML = trendBlockHtml(b);
+    } else if (b && b.type === "price_delta") {
+      div.innerHTML = deltaBlockHtml(b);
+    } else if (b && b.type === "review_quotes") {
+      div.innerHTML = quotesBlockHtml(b);
+    } else if (b && b.type === "compare_table") {
+      div.innerHTML = compareBlockHtml(b);
     } else {
-      div.textContent = JSON.stringify(b); // 未知块降级为文本
+      // 未知块**绝不**把 JSON 丢进对话：那会让用户看到一堆 {"type":...}，比"少一块"糟糕得多。
+      // 后端可能比页面新（先上了新块类型），这时正确行为是安静跳过 + 留一条控制台线索。
+      div.className += " gac-block-skip";
+      console.warn("[game-agent-chat] 未知内容块被跳过 type=" + (b && b.type) +
+        "；若这是刚上线的新块，多半是页面还在用旧 JS（对比 window.__GAC_BUILD__ 与后端版本）", b);
+      return div;
     }
     return div;
   }

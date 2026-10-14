@@ -1,6 +1,12 @@
-/* Game Agent 聊天窗 —— 纯前端组件
+/* Stray 聊天窗 —— 纯前端组件
  * 直接在静态页面上渲染一个可对话的窗口，后端由你的消息网关提供 REST 接口。
+ *
+ * 构建标识：在控制台输入 window.__GAC_BUILD__ 就能知道页面加载的是哪一版 widget。
+ * 起因：后端先上了新块类型、页面还挂着旧 JS 时，症状是"新块渲染不出来"——
+ * 旧版还会把未知块 JSON.stringify() 打到对话里，排查时很容易误判成"后端没产出这个块"。
  */
+window.__GAC_BUILD__ = "2026-10-13.blocks-v1";
+try { console.info("[game-agent-chat] build " + window.__GAC_BUILD__); } catch (e) { /* 忽略 */ }
 (function () {
   "use strict";
 
@@ -16,16 +22,26 @@
     //   请求头: Authorization: Bearer <token>
     //   响应体(同步模式): { "reply": "..." }  或 { "error": "..." }
     chatEndpoint: "/api/v1/game-agent/chat",
+    // 封面图代理（网关侧补 CORS 头；小黑盒图床不返回 CORS 头，直连会让海报 canvas 被污染、导不出 PNG）
+    imgEndpoint: "/api/v1/game-agent/img",
+    // 海报比例："4:5"（1080×1350，朋友圈/小红书更占屏，默认）| "3:4"（720×960）| "auto"（每次随机）
+    posterAspect: "4:5",
     // 回复模式：
     //   "sync" — 网关一次请求直接返回 {reply}（默认）
     //   "poll" — 网关先返回 {id}，再用 GET {replyEndpoint}?id=<id> 轮询直到返回 {reply} 或超时
     replyMode: "poll",
-    pollIntervalMs: 1500,
-    pollTimeoutMs: 60000,
+    pollIntervalMs: 2500,
+    // 长轮询：轮询请求带上 wait，网关会把这条请求挂住直到有结果（最多 10s，挂太久中间代理可能直接 502）。
+    // 起因：原来每 1.5s 打一次，65 秒就是 39 个请求 —— 中间隧道代理有每分钟请求数上限，
+    // 实测直接被限流（27 次 429 rate limited + 3 次 502 bad response from agent）。
+    pollWaitMs: 10000,
+    // 撞上限流/502 时按倍数退避，别继续用原节奏撞（会一直卡在限流上）
+    pollBackoffMaxMs: 15000,
+    pollTimeoutMs: 240000,  // 4 分钟兜底：查价含多次接口调用与限流退避，实测 p99 约 40s，偶发极端情况要留余量
     // UI
-    botName: "Game Agent",
-    typingText: "Agent 正在思考…",
-    placeholder: "输入指令，开始和 Agent 对话…",
+    botName: "Stray",
+    typingText: "Stray 正在思考…",
+    placeholder: "输入指令，开始和 Stray 对话…",
     maxMessageChars: 2000,
     // 演示模式：true 时强制走本地模拟回复（不改配置也能预览效果）
     mock: false,
@@ -76,6 +92,20 @@
     return CONFIG.baseUrl.indexOf("your-gateway") === -1 &&
       CONFIG.token.indexOf("REPLACE") === -1;
   }
+  /* 大数字简写：62352 → 6.2万（海报/卡片显示用） */
+  function fmtCount(n) {
+    var v = Number(n) || 0;
+    if (v >= 100000000) return (v / 100000000).toFixed(1) + "亿";
+    if (v >= 10000) return (v / 10000).toFixed(1) + "万";
+    return String(v);
+  }
+  /* 价格显示统一走这里：最多两位小数、去掉多余 0，
+     避免后端浮点值被渲染成 ¥195.89999999999998 */
+  function fmtPrice(v) {
+    var n = typeof v === "number" ? v : parseFloat(v);
+    if (!isFinite(n)) return String(v == null ? "" : v);
+    return String(Math.round(n * 100) / 100);
+  }
   function mockEnabled() {
     return CONFIG.mock || (CONFIG.mockWhenUnconfigured && !isConfigFilled());
   }
@@ -112,8 +142,15 @@
   function inlineMd(raw) {
     var t = escapeHtml(raw);
     t = t.replace(/`([^`\n]+)`/g, "<code>$1</code>");
-    // 图片 ![alt](url) 必须在链接之前处理（只允许 http/https，防注入）
-    t = t.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">');
+    // 图片 / 视频 ![alt](url) 必须在链接之前处理（只允许 http/https，防注入）
+    t = t.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, function (_m, alt, url) {
+      if (isVideoSrc(url)) {
+        // 视频：先给一个播放按钮，点了再创建播放器（避免一上来就加载视频）
+        return '<span class="gac-md-video" data-src="' + url + '">' +
+          '<button type="button" class="gac-md-video-btn">▶ ' + (alt || "播放视频") + "</button></span>";
+      }
+      return '<img class="gac-md-img" src="' + url + '" alt="' + alt + '" loading="lazy" referrerpolicy="no-referrer">';
+    });
     t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
     t = t.replace(/~~([^~]+)~~/g, "<del>$1</del>");
     t = t.replace(/\*([^*]+)\*/g, "<em>$1</em>");
@@ -169,7 +206,7 @@
   function render() {
     el.innerHTML =
       '<div class="gac-header">' +
-        '<div class="gac-avatar">GA</div>' +
+        '<div class="gac-avatar">' + esc(String(CONFIG.botName || "S").trim().charAt(0).toUpperCase()) + '</div>' +
         '<div><div class="gac-name">' + esc(CONFIG.botName) + '</div>' +
         '<div class="gac-status" id="gac-status">· 在线</div></div>' +
       '</div>' +
@@ -216,6 +253,7 @@
     if (role === "agent") {
       div.className += " md";
       div.innerHTML = renderMarkdown(text); // agent 回复渲染 Markdown（标准解析）
+      bindMdMedia(div); // 回复里的图片可点开大图、视频可内联播放
     } else {
       div.textContent = text; // 用户消息保持纯文本
     }
@@ -267,73 +305,449 @@
     bodyEl.scrollTop = bodyEl.scrollHeight;
   }
 
+  /* 慢查询的等待提示：网关要补全卡片详情（十几秒），只转三个点会让人以为卡死。
+     定时器自己检查元素是否还在文档里，回复到达（typing.remove）后不会再写。 */
+  function attachWaitHint(typing) {
+    var el = document.createElement("div");
+    el.className = "gac-typing-hint";
+    typing.appendChild(el);
+    function later(ms, text) {
+      setTimeout(function () {
+        if (!typing.isConnected) return;
+        el.textContent = text;
+        scrollToBottom();
+      }, ms);
+    }
+    later(8000, "正在查实时价格…");
+    later(25000, "卡片详情补全中，再等一下…");
+  }
+
   /* ---------- 富内容块（blocks）渲染 ---------- */
+  /* 折扣截止文案：平台行很窄，把"剩余"去掉只留"13天/12小时" */
+  function shortDeadline(t) {
+    return String(t || "").replace(/^剩余\s*/, "").trim();
+  }
+
   function safeUrl(u) {
     return /^https?:\/\//i.test(String(u || "")) ? String(u) : "";
   }
+  /* 从封面 URL 提取 Steam appid，生成备份图源列表（原图优先，失败依次试无 hash 的跨域名镜像）；
+     若后端给了显式 covers 数组，则优先使用它（仍带跨域降级 + 镜像兜底） */
+  /* 封面候选 → [{u, cors}] 计划列表。
+     顺序很重要：先"直连 + CORS"，再"代理 + CORS"，最后才退到"直连不带 CORS"——
+     因为不带 CORS 的图能把画面显示出来，却会污染 canvas 导致海报导不出 PNG。 */
+  function coverCandidates(url, extraCovers, inlineData) {
+    var direct = [];
+    function push(u) {
+      var s = safeUrl(u);
+      if (!s || direct.indexOf(s) >= 0) return;
+      direct.push(s);
+    }
+    // 显式 covers（后端）优先
+    if (Array.isArray(extraCovers)) {
+      for (var e = 0; e < extraCovers.length; e++) push(extraCovers[e]);
+    }
+    push(url); // 原图
+    var stripped = safeUrl(url).split("?")[0]; // 去掉 ?t= 时间戳
+    if (stripped && stripped !== url) push(stripped);
+    // 提取 appid：匹配 /apps/(\d+)/
+    var m = safeUrl(url).match(/\/apps\/(\d+)\//);
+    if (m) {
+      var id = m[1];
+      push("https://steamcdn-a.akamaihd.net/steam/apps/" + id + "/header.jpg");
+      push("https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/header.jpg");
+      push("https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/" + id + "/header.jpg");
+    }
+    var plan = [], seen = {};
+    function add(u, cors, clean) {
+      var s = clean ? String(u || "") : safeUrl(u);
+      if (!s || seen[s + "|" + cors]) return;
+      seen[s + "|" + cors] = 1;
+      plan.push({ u: s, cors: !!cors, clean: clean === undefined ? !!cors : !!clean });
+    }
+    // 网关内联的封面（data URL）：同源内容，既不依赖 CDN 的 CORS 头，也不会污染画布
+    if (typeof inlineData === "string" && /^data:image\//.test(inlineData)) add(inlineData, false, true);
+    for (var i = 0; i < direct.length; i++) add(direct[i], true);
+    var proxyBase = imgProxyUrl();
+    if (proxyBase) {
+      for (var j = 0; j < direct.length; j++) add(proxyBase + encodeURIComponent(direct[j]), true);
+    }
+    for (var k = 0; k < direct.length; k++) add(direct[k], false);
+    return plan;
+  }
+  /* 网关图片代理地址（配置缺失或未配置网关时返回空串，海报自动降级为无封面版式） */
+  function imgProxyUrl() {
+    if (!isConfigFilled() || mockEnabled()) return "";
+    var base = CONFIG.baseUrl.replace(/\/+$/, "");
+    if (!/^https:\/\//.test(base)) return "";
+    return base + (CONFIG.imgEndpoint || "/api/v1/game-agent/img") + "?u=";
+  }
   function gameCardHtml(b) {
     var cover = safeUrl(b.cover);
-    var video = safeUrl(b.video);
     var offPct = "";
     if (b.origin_price > 0 && b.price > 0 && b.price < b.origin_price) {
       offPct = "-" + Math.round((1 - b.price / b.origin_price) * 100) + "%";
     }
     var h = '<div class="gac-card">';
+    // 封面：窄横幅 + 折扣角标 + 剩余时间角标（都压在图上，不占正文高度）
     if (cover) {
-      h += '<div class="gac-card-cover"><img src="' + cover + '" alt="' + escapeHtml(b.name || "") + '" loading="lazy">';
+      h += '<div class="gac-card-cover"><img src="' + cover + '" alt="' + escapeHtml(b.name || "") + '" loading="lazy" referrerpolicy="no-referrer">';
       if (offPct) h += '<div class="gac-card-off">' + offPct + "</div>";
       h += "</div>";
-    } else if (offPct) {
-      h += '<div class="gac-card-off-float">' + offPct + "</div>";
     }
     h += '<div class="gac-card-body">';
+    // 标题行：左标题、右价格（价格是视觉主角）
+    h += '<div class="gac-card-head"><div class="gac-card-titles">';
     h += '<div class="gac-card-name">' + escapeHtml(b.name || "") + "</div>";
     if (b.en_name) h += '<div class="gac-card-en">' + escapeHtml(b.en_name) + "</div>";
+    h += "</div>";
     if (b.price > 0) {
-      h += '<div class="gac-card-prices"><span class="gac-card-now">¥' + escapeHtml(String(b.price)) + "</span>";
-      if (b.origin_price > 0) h += '<span class="gac-card-old">¥' + escapeHtml(String(b.origin_price)) + "</span>";
+      h += '<div class="gac-card-prices">';
+      // 只有真打折才画删除线：origin 必须大于现价（与下方平台行的 hasOld 口径一致），
+      // 否则原价=现价时会画出"¥0.95 <s>¥0.95</s>"这种没意义的划线
+      if (b.origin_price > b.price) h += '<span class="gac-card-old">¥' + escapeHtml(fmtPrice(b.origin_price)) + "</span>";
+      h += '<span class="gac-card-now">¥' + escapeHtml(fmtPrice(b.price)) + "</span>";
+      // 折扣截止放在价格正下方。语气按后端分好的档位走（hot=今天/3天内、warn=限时、mute=长期促销/不确定）——
+      // 「剩余 15 小时」和「还剩 20 天」以前长得一模一样，每天都看到同一种"限时"语气，久了就腻。
+      // tone 与 label 都由后端 deadline.ts 判定，前端不再自己写一份阈值。
+      if (b.deadline_label) {
+        var dtone = String(b.deadline_tone || "mute");
+        var dicon = dtone === "hot" ? "🔥" : dtone === "warn" ? "⏳" : "🕒";
+        h += '<span class="gac-card-deadline gac-dead-' + escapeHtml(dtone) + '">' + dicon + " " +
+          escapeHtml(String(b.deadline_label)) + "</span>";
+      } else if (b.remaining) {
+        h += '<span class="gac-card-deadline">⏳ ' + escapeHtml(shortDeadline(b.remaining)) + "</span>";
+      }
       h += "</div>";
     }
-    h += '<div class="gac-card-chips">';
-    if (b.rating) h += '<span class="gac-card-chip">⭐ ' + escapeHtml(String(b.rating)) + "</span>";
-    if (b.platform) h += '<span class="gac-card-chip">' + escapeHtml(String(b.platform)) + "</span>";
-    if (b.remaining) h += '<span class="gac-card-chip">⏳ ' + escapeHtml(String(b.remaining)) + "</span>";
     h += "</div>";
-    // 各平台价格明细：划线原价 + 现价 + 折扣%，最大折扣（第一行）高亮
-    var plats = Array.isArray(b.prices) ? b.prices : [];
+    // 元信息 chips（无封面时剩余时间落在这里）
+    var chips = "";
+    if (b.rating) chips += '<span class="gac-card-chip">⭐ ' + escapeHtml(String(b.rating)) + "</span>";
+    if (b.platform) chips += '<span class="gac-card-chip">' + escapeHtml(String(b.platform)) + "</span>";
+    if (b.dlc_count > 0) chips += '<span class="gac-card-chip">DLC × ' + escapeHtml(String(b.dlc_count)) + "</span>";
+    if (b.good_rate) chips += '<span class="gac-card-chip">好评率 ' + escapeHtml(String(b.good_rate)) + "</span>";
+    if (b.follow) chips += '<span class="gac-card-chip">👥 ' + escapeHtml(String(b.follow)) + "</span>";
+    if (Array.isArray(b.awards) && b.awards.length) chips += '<span class="gac-card-chip gac-chip-award">🏆 ' + escapeHtml(String(b.awards[0])) + "</span>";
+    if (chips) h += '<div class="gac-card-chips">' + chips + "</div>";
+    // 元信息行：开发商 · 发售日期 · 评价数（有才显示）
+    var metaBits = [];
+    if (b.developer) metaBits.push(String(b.developer));
+    if (b.release_date) metaBits.push(String(b.release_date));
+    if (b.comment_count > 0) metaBits.push(fmtCount(b.comment_count) + "评价");
+    if (metaBits.length) h += '<div class="gac-card-meta">' + escapeHtml(metaBits.join(" · ")) + "</div>";
+    // 特性标签（中文/Steam Deck/家庭共享等）：全部展示，不折叠（用户要求）
+    if (Array.isArray(b.features) && b.features.length) {
+      h += '<div class="gac-card-feats">';
+      for (var fi = 0; fi < b.features.length; fi++) {
+        h += '<span class="gac-feat">' + escapeHtml(String(b.features[fi])) + "</span>";
+      }
+      h += "</div>";
+    }
+    // 史低提示：没在打折时补一句"还要等多少"——比把价格区留白有用（lowest_gap 由后端算，前端不判阈值）
+    if (b.lowest_price > 0) {
+      h += '<div class="gac-card-lowest">史低 ¥' + escapeHtml(fmtPrice(b.lowest_price)) +
+        (b.lowest_date ? ' <span class="gac-lowest-date">· ' + escapeHtml(String(b.lowest_date)) + "</span>" : "") +
+        (b.lowest_gap > 0 ? ' <span class="gac-lowest-gap">还差 ¥' + escapeHtml(fmtPrice(b.lowest_gap)) + "</span>" : "") + "</div>";
+    }
+    // 各平台价格：全平台两列紧凑网格，最低价平台高亮（网格省掉一半高度）
+    var plats = [];
+    if (Array.isArray(b.prices)) {
+      for (var pk = 0; pk < b.prices.length; pk++) {
+        if (b.prices[pk] && b.prices[pk].name) plats.push(b.prices[pk]);
+      }
+    }
     if (plats.length > 0) {
+      var minP = Infinity, pricedCount = 0;
+      for (var mi = 0; mi < plats.length; mi++) {
+        var mp = parseFloat(plats[mi].price);
+        if (isFinite(mp) && mp > 0) {
+          pricedCount++;
+          if (mp < minP) minP = mp;
+        }
+      }
       h += '<div class="gac-card-plats">';
       for (var pi = 0; pi < plats.length; pi++) {
         var r = plats[pi];
-        if (!r || !r.name) continue;
-        var best = pi === 0 && r.off_pct > 0;
+        var noPrice = r.no_price === true || !(parseFloat(r.price) > 0);
+        var best = !noPrice && pricedCount > 1 && parseFloat(r.price) === minP;
+        if (noPrice) {
+          h += '<div class="gac-plat gac-plat-none">' +
+            '<span class="gac-plat-name">' + escapeHtml(String(r.name)) + "</span>" +
+            '<span class="gac-plat-price"><span class="gac-plat-na">暂无价格</span></span></div>';
+          continue;
+        }
+        var hasOff = r.off_pct > 0;
+        var hasOld = r.origin_price > 0 && r.origin_price > r.price;
         h += '<div class="gac-plat' + (best ? " gac-plat-best" : "") + '">' +
           '<span class="gac-plat-name">' + escapeHtml(String(r.name)) +
-          (best ? '<span class="gac-plat-badge">最大折扣</span>' : "") + "</span>" +
-          (r.origin_price > 0 ? '<span class="gac-plat-old">¥' + escapeHtml(String(r.origin_price)) + "</span>" : "") +
-          '<span class="gac-plat-now">¥' + escapeHtml(String(r.price)) + "</span>" +
-          (r.off_pct > 0 ? '<span class="gac-plat-off">-' + escapeHtml(String(r.off_pct)) + "%</span>" : "") +
+          (best ? '<span class="gac-plat-badge">最低</span>' : "") + "</span>" +
+          '<span class="gac-plat-price">' +
+          (hasOld && !hasOff ? '<span class="gac-plat-old">¥' + escapeHtml(fmtPrice(r.origin_price)) + "</span>" : "") +
+          '<span class="gac-plat-now">¥' + escapeHtml(fmtPrice(r.price)) + "</span>" +
+          (hasOff ? '<span class="gac-plat-off">-' + escapeHtml(String(r.off_pct)) + "%</span>" : "") +
+          (r.remaining ? '<span class="gac-plat-dead">⏳' + escapeHtml(shortDeadline(r.remaining)) + "</span>" : "") +
+          "</span></div>";
+      }
+      h += "</div>";
+    }
+    // 游戏截图集：一排三张（不横向滑动，避免出现丑滚动条），多余的用「+N」角标进灯箱看
+    var shots = Array.isArray(b.screenshots) ? b.screenshots.filter(function (x) { return x && safeUrl(x.thumb); }) : [];
+    if (shots.length) {
+      var cardShow = Math.min(shots.length, 3);
+      h += '<div class="gac-shots-head"><span>🖼 游戏截图 ' + shots.length + " 张</span>";
+      h += '<span class="gac-shots-more">' + (shots.length > cardShow ? "点图看全部 ›" : "点图看大图 ›") + "</span></div>";
+      h += '<div class="gac-card-shots">';
+      for (var sh = 0; sh < cardShow; sh++) {
+        var rest = shots.length - cardShow;
+        h += '<div class="gac-shot-cell">' +
+          '<img class="gac-shot" src="' + safeUrl(shots[sh].thumb) + '" data-full="' + safeUrl(shots[sh].full || shots[sh].thumb) +
+          '" alt="' + escapeHtml((b.name || "游戏") + " 截图 " + (sh + 1)) + '" loading="lazy" referrerpolicy="no-referrer">' +
+          (sh === cardShow - 1 && rest > 0 ? '<span class="gac-shot-more">+' + rest + "</span>" : "") +
           "</div>";
       }
       h += "</div>";
     }
-    if (video) {
-      h += '<a class="gac-card-btn" href="' + video + '" target="_blank" rel="noopener noreferrer">🎬 看预告 / 演示</a>';
-    }
+    // 操作按钮：只留生成海报（预告片已由图集块内联播放，这里不再放外链按钮）
+    h += '<div class="gac-card-actions">';
     h += '<button type="button" class="gac-card-btn gac-card-poster-btn">🖼️ 生成海报</button>';
-    h += "</div></div>";
+    h += "</div></div></div>";
     return h;
   }
 
+  /* ---------- 图片 / 预告片：媒体块 + 内联播放器 ----------
+   * 数据全部来自 game.media（小黑盒详情），前端只负责渲染：
+   *   - 截图：3 列网格，点击开灯箱（复用 openShots，左右切换 / Esc 关闭）
+   *   - 预告片：封面图 + 播放按钮，点击才创建 <video>；m3u8 在 Safari 原生播，
+   *     Chrome 等懒加载 hls.js（CDN 挂了就降级成"新窗口播放"链接，不影响其它内容）
+   */
+  var hlsLoading = null;
+  function isVideoSrc(u) { return /\.(m3u8|mp4|webm|mov)([?#]|$)/i.test(String(u || "")); }
+
+  function loadHlsJs() {
+    if (window.Hls) return Promise.resolve(window.Hls);
+    if (hlsLoading) return hlsLoading;
+    hlsLoading = new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/hls.js@1/dist/hls.min.js";
+      s.async = true;
+      s.onload = function () { window.Hls ? resolve(window.Hls) : reject(new Error("Hls 未定义")); };
+      s.onerror = function () { hlsLoading = null; reject(new Error("hls.js 加载失败")); };
+      document.head.appendChild(s);
+    });
+    return hlsLoading;
+  }
+
+  /** 在容器里挂一个 <video> 播放器（m3u8 走 hls.js，mp4 直接播） */
+  function mountVideo(box, src, poster) {
+    if (!box || !safeUrl(src)) return;
+    var v = document.createElement("video");
+    v.className = "gac-video-el";
+    v.controls = true;
+    v.autoplay = true;
+    v.preload = "metadata";
+    v.setAttribute("playsinline", "");
+    v.setAttribute("referrerpolicy", "no-referrer");
+    if (safeUrl(poster)) v.poster = safeUrl(poster);
+    function useDirect() {
+      v.src = src;
+      var p = v.play();
+      if (p && p.catch) p.catch(function () {});
+    }
+    function fallbackLink(msg) {
+      box.innerHTML = "";
+      var a = document.createElement("a");
+      a.className = "gac-video-fallback";
+      a.href = src;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.textContent = "▶ " + (msg || "在新窗口播放预告片");
+      box.appendChild(a);
+    }
+    // 先把播放器放上去（有封面图，点击后立即有反馈）
+    box.innerHTML = "";
+    box.appendChild(v);
+    if (!/\.m3u8([?#]|$)/i.test(src) || v.canPlayType("application/vnd.apple.mpegurl")) {
+      useDirect();
+      return;
+    }
+    loadHlsJs().then(function (Hls) {
+      if (!Hls || !Hls.isSupported()) { useDirect(); return; }
+      var h = new Hls({ maxBufferLength: 20 });
+      h.on(Hls.Events.MANIFEST_PARSED, function () {
+        var p = v.play();
+        if (p && p.catch) p.catch(function () {});
+      });
+      h.on(Hls.Events.ERROR, function (_e, data) {
+        if (data && data.fatal) fallbackLink("在新窗口播放预告片");
+      });
+      h.loadSource(src);
+      h.attachMedia(v);
+    }).catch(function () { fallbackLink("在新窗口播放预告片"); });
+  }
+
+  function mediaBlockHtml(b) {
+    var name = escapeHtml(String((b && b.name) || "游戏"));
+    var images = (b && Array.isArray(b.images) ? b.images : []).filter(function (x) { return x && safeUrl(x.thumb); });
+    var videos = (b && Array.isArray(b.videos) ? b.videos : []).filter(function (x) { return x && safeUrl(x.url); });
+    if (!images.length && !videos.length) return "";
+    var h = '<div class="gac-media">';
+    var meta = [];
+    if (videos.length) meta.push("🎬 " + videos.length + " 个预告片");
+    if (images.length) meta.push("🖼 " + images.length + " 张截图");
+    h += '<div class="gac-media-head">' +
+      '<span class="gac-media-title">' + name + " · 画面</span>" +
+      '<span class="gac-media-meta">' + meta.join("　") + "</span></div>";
+    if (videos.length) {
+      // 只放一个主播放器（多个 16:9 大块叠在一起会把聊天窗撑成很长的滚动条），
+      // 其余预告片用胶囊按钮切换播放源
+      var tabs = [];
+      for (var i = 0; i < videos.length; i++) {
+        tabs.push({ src: safeUrl(videos[i].url), poster: safeUrl(videos[i].poster) });
+      }
+      h += '<div class="gac-video" data-src="' + tabs[0].src + '" data-poster="' + tabs[0].poster + '" data-tabs=\'' +
+        escapeHtml(JSON.stringify(tabs)) + "'>";
+      if (tabs[0].poster) {
+        h += '<img class="gac-video-poster" src="' + tabs[0].poster + '" alt="' + name + ' 预告片封面" loading="lazy" referrerpolicy="no-referrer">';
+      }
+      h += '<button type="button" class="gac-video-btn">▶ 播放预告片' + (videos.length > 1 ? " 1" : "") + "</button></div>";
+      if (videos.length > 1) {
+        h += '<div class="gac-video-tabs">';
+        for (var t = 0; t < videos.length; t++) {
+          h += '<button type="button" class="gac-video-tab' + (t === 0 ? " active" : "") + '" data-i="' + t + '">预告片 ' + (t + 1) + "</button>";
+        }
+        h += "</div>";
+      }
+    }
+    if (images.length) {
+      // 最多 6 张（两排），其余用「+N」角标进灯箱看，保证媒体块不会长到需要滚很久
+      var show = Math.min(images.length, 6);
+      h += '<div class="gac-media-grid">';
+      for (var j = 0; j < show; j++) {
+        var left = images.length - show;
+        h += '<div class="gac-shot-cell">' +
+          '<img class="gac-shot" src="' + safeUrl(images[j].thumb) + '"' +
+          ' data-full="' + safeUrl(images[j].full || images[j].thumb) + '"' +
+          ' alt="' + name + " 截图 " + (j + 1) + '" loading="lazy" referrerpolicy="no-referrer">' +
+          (j === show - 1 && left > 0 ? '<span class="gac-shot-more">+' + left + "</span>" : "") +
+          "</div>";
+      }
+      h += "</div>";
+    }
+    return h + "</div>";
+  }
+
+  /** 媒体块交互：截图开灯箱、封面点击播放 */
+  function bindMedia(scope, b) {
+    var images = (b && Array.isArray(b.images) ? b.images : []).filter(function (x) { return x && safeUrl(x.thumb); });
+    var nodes = scope.querySelectorAll(".gac-shot");
+    for (var i = 0; i < nodes.length; i++) {
+      (function (node, i) {
+        node.addEventListener("error", function () { node.style.display = "none"; });
+        node.addEventListener("click", function () { if (images.length) openShots(images, i); });
+      })(nodes[i], i);
+    }
+    var vids = scope.querySelectorAll(".gac-video");
+    for (var k = 0; k < vids.length; k++) {
+      (function (node) {
+        var btn = node.querySelector(".gac-video-btn");
+        var posterImg = node.querySelector(".gac-video-poster");
+        var tabs = [];
+        try { tabs = JSON.parse(node.getAttribute("data-tabs") || "[]"); } catch (e) { tabs = []; }
+        if (!tabs.length) tabs = [{ src: node.getAttribute("data-src"), poster: node.getAttribute("data-poster") }];
+        var cur = 0;
+        function go() {
+          var t = tabs[cur] || {};
+          mountVideo(node, t.src || node.getAttribute("data-src"), t.poster || node.getAttribute("data-poster"));
+        }
+        if (btn) btn.addEventListener("click", go);
+        if (posterImg) posterImg.addEventListener("click", go);
+        // 胶囊切换：换播放源；若已在播放则直接换台
+        var tabBtns = scope.querySelectorAll(".gac-video-tab");
+        for (var q = 0; q < tabBtns.length; q++) {
+          (function (tb) {
+            tb.addEventListener("click", function () {
+              cur = parseInt(tb.getAttribute("data-i"), 10) || 0;
+              for (var w = 0; w < tabBtns.length; w++) tabBtns[w].classList.toggle("active", w === cur);
+              var t = tabs[cur] || {};
+              var v = node.querySelector("video");
+              if (v) {
+                mountVideo(node, t.src, t.poster);
+              } else {
+                node.setAttribute("data-src", t.src || "");
+                node.setAttribute("data-poster", t.poster || "");
+                var pi = node.querySelector(".gac-video-poster");
+                if (pi && t.poster) pi.src = t.poster;
+                if (btn) btn.textContent = "▶ 播放预告片 " + (cur + 1);
+              }
+            });
+          })(tabBtns[q]);
+        }
+      })(vids[k]);
+    }
+    scrollToBottom();
+  }
+
+  /** 回复正文里的 markdown 图片 / 视频（服务端已做 URL 白名单与清洗） */
+  function bindMdMedia(scope) {
+    var imgs = scope.querySelectorAll(".gac-md-img");
+    if (imgs.length) {
+      var list = [];
+      for (var i = 0; i < imgs.length; i++) list.push({ thumb: imgs[i].src, full: imgs[i].src });
+      for (var j = 0; j < imgs.length; j++) {
+        (function (node, idx) {
+          node.addEventListener("error", function () { node.style.display = "none"; });
+          node.addEventListener("click", function () { openShots(list, idx); });
+        })(imgs[j], j);
+      }
+    }
+    var mvs = scope.querySelectorAll(".gac-md-video");
+    for (var k = 0; k < mvs.length; k++) {
+      (function (node) {
+        var btn = node.querySelector(".gac-md-video-btn");
+        if (btn) btn.addEventListener("click", function () { mountVideo(node, node.getAttribute("data-src"), ""); });
+      })(mvs[k]);
+    }
+  }
+
   /* ---------- 海报：canvas 渲染 + 模态框（下载 PNG / 复制图片） ---------- */
-  function loadImage(url) {
+  function loadImage(url, extraCovers, inlineData) {
     return new Promise(function (resolve) {
-      if (!url) { resolve(null); return; }
-      var img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = function () { resolve(img); };
-      img.onerror = function () { resolve(null); };
-      img.src = url;
+      // [{u, cors, clean}]：内联data → 直连CORS → 代理CORS → 直连非CORS
+      var plan = coverCandidates(url, extraCovers, inlineData);
+      if (!plan.length) { resolve(null); return; }
+      var idx = 0;
+      function next() {
+        if (idx >= plan.length) { resolve(null); return; }
+        var cand = plan[idx++];
+        var img = new Image();
+        if (cand.cors) img.crossOrigin = "anonymous";
+        img.referrerPolicy = "no-referrer"; // 绕过 erbingeditor 等 CDN 的 Referer 防盗链(403)
+        img.__corsOk = false;               // 加载成功后按候选类型置位（决定 canvas 能否导出 PNG）
+        img.__src = cand.u;                 // 记录实际使用的 URL（兜底显示用）
+        var done = false;
+        // 8s 无响应就换下一个候选：原来没有超时，一张图卡住会让整个海报（Promise.all）永远不返回
+        var timer = setTimeout(function () {
+          if (done) return;
+          done = true;
+          setTimeout(next, 0);
+        }, 8000);
+        img.onload = function () {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          img.__corsOk = !!cand.clean;
+          resolve(img);
+        };
+        img.onerror = function () {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          setTimeout(next, 0);
+        };
+        img.src = cand.u;
+      }
+      next();
     });
   }
   function wrapText(ctx, text, maxW) {
@@ -356,176 +770,708 @@
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
   }
-  function drawPoster(canvas, b, coverImg) {
-    var W = 720, H = 960;
-    canvas.width = W; canvas.height = H;
-    var ctx = canvas.getContext("2d");
-    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-    // 背景
-    var g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, "#241111"); g.addColorStop(0.55, "#120707"); g.addColorStop(1, "#0a0303");
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    if (coverImg) {
-      ctx.drawImage(coverImg, 0, 0, W, 340);
-      var f = ctx.createLinearGradient(0, 240, 0, 360);
-      f.addColorStop(0, "rgba(18,7,7,0)"); f.addColorStop(1, "rgba(18,7,7,1)");
-      ctx.fillStyle = f; ctx.fillRect(0, 240, W, 120);
-    }
-    // 平台价格：best = 最大折扣
-    var plats = (Array.isArray(b.prices) && b.prices.length) ? b.prices : [];
-    var best = plats.length ? plats[0] : null;
-    var origin = best && best.origin_price ? best.origin_price : (b.origin_price || 0);
-    var price = best && best.price ? best.price : (b.price || 0);
-    var off = "";
-    if (origin > 0 && price > 0 && price < origin) off = "-" + Math.round((1 - price / origin) * 100) + "%";
+  // 海报主题池：随机搭配一套，保证每套配色协调
+  var POSTER_THEMES = [
+    { bg: ["#241111", "#120707", "#0a0303"], fade: "22,9,9",
+      title: "#ffffff", en: "#d4af37", origin: "#b5b5b5", price: "#ffd23f",
+      tagTop: "#ff6b4a", tagBot: "#d92626", chipRemaining: "#a8c7e8",
+      chipBg: "rgba(255,255,255,0.06)", chipBorder: "rgba(255,255,255,0.12)",
+      panelBg: "rgba(20,22,28,0.72)", platName: "#e3e7ee", platOld: "#8a93a3",
+      platMore: "#7a828e", platSd: "#ff5252", footer: "#6d6d6d", footerLine: "#3d2424" },
+    { bg: ["#0b1a2b", "#071120", "#03090f"], fade: "8,16,28",
+      title: "#eaf2ff", en: "#7fb3e0", origin: "#93a5b8", price: "#ffd23f",
+      tagTop: "#3d9bff", tagBot: "#1556b0", chipRemaining: "#6fc3ff",
+      chipBg: "rgba(255,255,255,0.07)", chipBorder: "rgba(120,180,255,0.15)",
+      panelBg: "rgba(15,26,40,0.80)", platName: "#dbe6f2", platOld: "#7e93a8",
+      platMore: "#6f8599", platSd: "#ff6b6b", footer: "#8aa0b5", footerLine: "#26435f" },
+    { bg: ["#221031", "#150823", "#08030f"], fade: "16,9,26",
+      title: "#f5ecff", en: "#c9a5f0", origin: "#a78fbb", price: "#ffd23f",
+      tagTop: "#b06bff", tagBot: "#6a24c9", chipRemaining: "#c9a5f0",
+      chipBg: "rgba(255,255,255,0.07)", chipBorder: "rgba(190,150,255,0.15)",
+      panelBg: "rgba(30,18,45,0.80)", platName: "#ece0f7", platOld: "#937aa8",
+      platMore: "#7e6b90", platSd: "#ff6bd6", footer: "#a892bf", footerLine: "#4a2a6b" }
+  ];
+  // ===== 模块化海报引擎：主题(配色) × 版式(Form: 尺寸+模块摆位) 双随机 =====
+  // 模块 helper 均从 DATA 取内容，从 th 取色；
+  // -- 封面等比裁剪(crop)：等比放大填满区域、居中裁掉超出的部分，绝不拉伸变形
+  function mCover(ctx, img, x, y, w, h) {
+    if (!img) return;
+    var iw = img.width, ih = img.height;
+    if (!iw || !ih) { ctx.drawImage(img, x, y, w, h); return; }
+    var scale = Math.max(w / iw, h / ih);
+    var sw = w / scale, sh = h / scale;          // 源里取的样子
+    var sx = (iw - sw) / 2, sy = (ih - sh) / 2;  // 居中
+    ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+  }
+  /* ===================== 海报引擎 v3：卡片版式 =====================
+   * 用户反馈：卡片的排版最好看 → 海报直接沿用卡片的版式与配色：
+   *   封面横幅（折扣角标 + 剩余时间）→ 标题行（左标题 / 右价格）→ 胶囊 chip 行 →
+   *   特性标签行 → 史低行 → 平台价格两列网格（最低价高亮）→ 元信息行
+   * 外层保留海报感：主题底色 + 卖点钩子 + 页脚；整块"卡片面板"浮在底色上。
+   * 设计坐标恒 720 宽；所有尺寸＝卡片 CSS 尺寸 ×1.58（卡片宽 400 → 面板 632）。
+   */
+  var CP = {
+    W: 720,                 // 设计宽
+    MARGIN: 44,
+    RADIUS: 22,
+    PANEL_BG: "#1d222b",
+    PANEL_BORDER: "#2e3642",
+    NAME: "#ffffff",
+    EN: "#8a93a3",
+    TEXT: "#e8ecf2",
+    MUTED: "#b9c2cf",
+    PRICE: "#ffd23f",
+    OFF: "#ff6b6b",
+    CHIP_BG: "#2a313c",
+    FEAT_FG: "#8fd0a8",
+    FEAT_BG: "rgba(80,200,140,0.12)",
+    FEAT_BORDER: "rgba(80,200,140,0.22)",
+    BADGE_BG: "#e03333",
+    AWARD_FG: "#ffd23f",
+    AWARD_BG: "rgba(255,210,63,0.14)",
+    AWARD_BORDER: "rgba(255,210,63,0.35)",
+    BEST_BG: "rgba(255,210,63,0.10)",
+    META: "#7f8794"
+  };
+  var CP_F = {
+    name: 24, en: 16, price: 34, priceOld: 17, deadline: 16,
+    chip: 18, chipH: 32, chipPad: 12,
+    feat: 17, featH: 30, featPad: 10,
+    plat: 18, platRow: 34, badge: 14,
+    lowest: 19, meta: 16, hook: 30
+  };
 
-    // 标题：自适应字号（≤2 行居中，不超 600）
-    var name = String(b.name || "");
-    function fitTitle() {
-      for (var fs = 52; fs >= 28; fs -= 4) {
-        ctx.font = "800 " + fs + "px 'PingFang SC',sans-serif";
-        var ls = wrapText(ctx, name, 600);
-        var mx = 0;
-        for (var i = 0; i < ls.length; i++) mx = Math.max(mx, ctx.measureText(ls[i]).width);
-        if (ls.length <= 2 && mx <= 600) return { size: fs, lines: ls };
-      }
-      ctx.font = "800 28px 'PingFang SC',sans-serif";
-      return { size: 28, lines: wrapText(ctx, name, 600).slice(0, 2) };
+  /* ---------- 卡片内的基础绘图 ---------- */
+  function cpPanel(ctx, x, y, w, h) {
+    ctx.fillStyle = CP.PANEL_BG;
+    roundRectPath(ctx, x, y, w, h, CP.RADIUS); ctx.fill();
+    ctx.strokeStyle = CP.PANEL_BORDER; ctx.lineWidth = 2;
+    roundRectPath(ctx, x, y, w, h, CP.RADIUS); ctx.stroke();
+  }
+  // 封面：等比裁剪 + 折扣角标（右上）+ 剩余时间角标（左下）
+  function cpCover(ctx, img, x, y, w, h, off, remaining) {
+    ctx.save();
+    roundRectPath(ctx, x, y, w, h, CP.RADIUS);
+    ctx.clip();
+    mCover(ctx, img, x, y, w, h);
+    // 底部渐隐，和卡片封面一致
+    var f = ctx.createLinearGradient(0, y + h - 46, 0, y + h);
+    f.addColorStop(0, "rgba(29,34,43,0)");
+    f.addColorStop(1, "rgba(29,34,43,0.92)");
+    ctx.fillStyle = f; ctx.fillRect(x, y + h - 46, w, 46);
+    ctx.restore();
+    if (off) {
+      ctx.font = "800 22px 'PingFang SC',sans-serif";
+      var bw = ctx.measureText(off).width + 26;
+      ctx.save();
+      ctx.translate(x + w - bw - 16, y + 16);
+      ctx.rotate(3 * Math.PI / 180);
+      ctx.fillStyle = CP.BADGE_BG;
+      roundRectPath(ctx, 0, 0, bw, 40, 12); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(off, bw / 2, 21);
+      ctx.restore();
     }
-    var fit = fitTitle();
-    var ty = 440;
-    for (var ti = 0; ti < fit.lines.length; ti++) { ctx.fillStyle = "#fff"; ctx.fillText(fit.lines[ti], 360, ty + ti * (fit.size + 8)); }
-    var blockBottom = ty + (fit.lines.length - 1) * (fit.size + 8);
-    if (b.en_name) {
-      var enTxt = String(b.en_name);
-      ctx.fillStyle = "#d4af37"; ctx.font = "22px Georgia";
-      if (ctx.measureText(enTxt).width > 560) { while (ctx.measureText(enTxt + "…").width > 560 && enTxt.length > 1) enTxt = enTxt.slice(0, -1); enTxt += "…"; }
-      ctx.fillText(enTxt, 360, blockBottom + 32);
-      blockBottom += 36;
+    if (remaining) {
+      ctx.font = "700 18px 'PingFang SC',sans-serif";
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = "rgba(255,214,160,0.95)";
+      ctx.fillText("⏳ " + remaining, x + 18, y + h - 14);
     }
-    // 主价格区
-    var mainPriceY = Math.max(blockBottom + 40, 588);
-    if (origin > 0) {
-      ctx.font = "28px 'PingFang SC',sans-serif"; ctx.fillStyle = "#b5b5b5";
-      ctx.fillText("¥" + origin, 360, mainPriceY);
-      var w0 = ctx.measureText("¥" + origin).width;
-      ctx.strokeStyle = "#b5b5b5"; ctx.lineWidth = 2;
-      ctx.beginPath(); ctx.moveTo(360 - w0 / 2, mainPriceY - 10); ctx.lineTo(360 + w0 / 2, mainPriceY - 10); ctx.stroke();
-      mainPriceY += 70;
-    }
-    var pTxt = "";
-    if (price > 0) {
-      pTxt = "¥" + price;
-      var pFs = pTxt.length > 7 ? 66 : 92;
-      ctx.font = "900 " + pFs + "px Arial,'PingFang SC',sans-serif";
-      ctx.fillStyle = "#ffd23f"; ctx.fillText(pTxt, 360, mainPriceY);
-      // -XX% 斜红框：紧贴价格右侧，垂直对齐价格字高中间
-      if (off) {
-        var priceW = ctx.measureText(pTxt).width;
-        ctx.save();
-        ctx.translate(360 + priceW / 2 + 18, mainPriceY - (pFs > 70 ? 34 : 26));
-        ctx.rotate(8 * Math.PI / 180);
-        ctx.textAlign = "center"; ctx.textBaseline = "middle";
-        var bg2 = ctx.createLinearGradient(0, -30, 0, 30);
-        bg2.addColorStop(0, "#ff5f3a"); bg2.addColorStop(1, "#d92626");
-        ctx.fillStyle = bg2; roundRectPath(ctx, -38, -28, 76, 56, 12); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.font = "900 30px Arial"; ctx.fillText(off, 0, 2);
-        ctx.restore();
-        ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  }
+  // 标题行：左标题（名称+英文名）/ 右价格（划线原价 + 大字现价）
+  function cpHead(ctx, x, y, w, th, D, dry) {
+    var gap = 18;
+    var priceW = 0;
+    if (D.price > 0) {
+      ctx.font = "900 " + CP_F.price + "px Arial,'PingFang SC',sans-serif";
+      priceW = ctx.measureText("¥" + fmtPrice(D.price)).width;
+      if (D.origin > 0) {
+        ctx.font = "400 " + CP_F.priceOld + "px 'PingFang SC',sans-serif";
+        priceW = Math.max(priceW, ctx.measureText("¥" + fmtPrice(D.origin)).width);
       }
     }
-    // 顶部 chips：金色文本星号评分 + 淡蓝剩余时间
-    var chips = [];
-    if (b.rating) chips.push({ text: "★ " + b.rating, color: "#ffd23f" });
-    if (b.remaining) chips.push({ text: String(b.remaining), color: "#a8c7e8" });
-    var chipY = mainPriceY + 42;
+    var titleMax = w - priceW - (priceW ? gap : 0);
+    ctx.font = "800 " + CP_F.name + "px 'PingFang SC',sans-serif";
+    var name = String(D.name || "");
+    while (ctx.measureText(name + "…").width > titleMax && Array.from(name).length > 2) name = Array.from(name).slice(0, -1).join("");
+    if (name !== D.name) name += "…";
+    var nameH = CP_F.name * 1.3;
+    var enH = 0;
+    var en = String(D.en || "");
+    if (en) {
+      ctx.font = "400 " + CP_F.en + "px Georgia,serif";
+      while (ctx.measureText(en + "…").width > titleMax && Array.from(en).length > 2) en = Array.from(en).slice(0, -1).join("");
+      if (en !== D.en) en += "…";
+      enH = CP_F.en * 1.35;
+    }
+    // 折扣截止（小黑盒只在打折时给）：画在现价正下方，和卡片保持同一位置关系
+    var dl = String(D.remaining || "");
+    var dlH = dl ? Math.round(CP_F.deadline * 1.4) : 0;
+    var h = Math.max(nameH + enH, CP_F.price + (D.origin > 0 ? CP_F.priceOld + 4 : 0)) + dlH;
+    if (!dry) {
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = CP.NAME;
+      ctx.font = "800 " + CP_F.name + "px 'PingFang SC',sans-serif";
+      ctx.fillText(name, x, y + CP_F.name * 0.92);
+      if (D.en) {
+        ctx.fillStyle = CP.EN;
+        ctx.font = "400 " + CP_F.en + "px Georgia,serif";
+        ctx.fillText(en, x, y + nameH + CP_F.en * 0.86);
+      }
+      if (D.price > 0) {
+        var px = x + w;
+        if (D.origin > 0) {
+          ctx.textAlign = "right";
+          ctx.font = "400 " + CP_F.priceOld + "px 'PingFang SC',sans-serif";
+          ctx.fillStyle = CP.EN;
+          ctx.fillText("¥" + fmtPrice(D.origin), px, y + CP_F.priceOld * 0.95);
+          var ow = ctx.measureText("¥" + fmtPrice(D.origin)).width;
+          ctx.strokeStyle = CP.EN; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(px - ow, y + CP_F.priceOld * 0.6); ctx.lineTo(px, y + CP_F.priceOld * 0.6); ctx.stroke();
+        }
+        ctx.textAlign = "right";
+        ctx.font = "900 " + CP_F.price + "px Arial,'PingFang SC',sans-serif";
+        ctx.fillStyle = CP.PRICE;
+        ctx.fillText("¥" + fmtPrice(D.price), px, y + h - 2 - dlH);
+        if (dl) {
+          ctx.font = "700 " + CP_F.deadline + "px 'PingFang SC',sans-serif";
+          ctx.fillStyle = CP.PRICE;
+          ctx.fillText("⏳ " + dl, px, y + h - 3);
+        }
+      }
+    }
+    return h;
+  }
+  /* 胶囊行（chip / 特性标签 / 获奖）：通用换行绘制
+   *   style: { bg, fg, border, h, font, pad }
+   *   返回占用高度；超出行数上限时，末尾补一个「+N」 */
+  function cpPills(ctx, x, y, w, items, style, maxRows, dry, align) {
+    var list = (items || []).filter(function (it) { return it && it.text; });
+    if (!list.length) return 0;
+    ctx.font = style.font;
+    var rows = [], cur = [], curW = 0;
+    for (var i = 0; i < list.length; i++) {
+      var pw = ctx.measureText(list[i].text).width + style.pad * 2;
+      if (cur.length && curW + 8 + pw > w) { rows.push({ items: cur, w: curW }); cur = []; curW = 0; }
+      cur.push({ text: list[i].text, kind: list[i].kind, w: pw });
+      curW += (cur.length > 1 ? 8 : 0) + pw;
+    }
+    if (cur.length) rows.push({ items: cur, w: curW });
+    var hidden = 0;
+    if (rows.length > maxRows) {
+      for (var r = maxRows; r < rows.length; r++) hidden += rows[r].items.length;
+      rows = rows.slice(0, maxRows);
+      var last = rows[maxRows - 1];
+      last.items = last.items.slice(0, Math.max(1, last.items.length - 1));
+      var moreItem = { text: "+" + hidden, kind: "more", w: 0 };
+      last.items.push(moreItem);
+    }
+    if (!dry) {
+      ctx.textBaseline = "middle";
+      for (var ri = 0; ri < rows.length; ri++) {
+        var row = rows[ri], ry = y + ri * (style.h + 8);
+        var rx = align === "left" ? x : x + Math.max(0, (w - row.w) / 2);
+        for (var j = 0; j < row.items.length; j++) {
+          var it = row.items[j];
+          if (!it.w) { ctx.font = style.font; it.w = ctx.measureText(it.text).width + style.pad * 2; }
+          var st = (it.kind === "award") ? { bg: CP.AWARD_BG, fg: CP.AWARD_FG, border: CP.AWARD_BORDER } : style;
+          ctx.fillStyle = st.bg;
+          roundRectPath(ctx, rx, ry, it.w, style.h, style.h / 2); ctx.fill();
+          if (st.border) {
+            ctx.strokeStyle = st.border; ctx.lineWidth = 1.5;
+            roundRectPath(ctx, rx, ry, it.w, style.h, style.h / 2); ctx.stroke();
+          }
+          ctx.fillStyle = st.fg;
+          ctx.font = style.font;
+          ctx.textAlign = "center";
+          ctx.fillText(it.text, rx + it.w / 2, ry + style.h / 2 + 1);
+          rx += it.w + 8;
+        }
+      }
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    }
+    return rows.length * style.h + Math.max(0, rows.length - 1) * 8;
+  }
+  /* 平台价格：两列网格（与卡片一致），最低价行高亮 + 「最低」角标 */
+  function cpPlats(ctx, x, y, w, D, dry, maxRows) {
+    var items = [];
+    for (var i = 0; i < (D.plats || []).length; i++) {
+      var it = D.plats[i];
+      if (!it || !it.name) continue;
+      var noP = it.no_price === true || !(parseFloat(it.price) > 0);
+      items.push({
+        name: String(it.name), price: parseFloat(it.price) || 0,
+        originP: parseFloat(it.origin_price) || 0, offP: parseFloat(it.off_pct) || 0, noPrice: noP,
+        remaining: String(it.remaining || "").trim(),  // 该平台折扣截止（各平台可能不同）
+      });
+    }
+    if (!items.length) return 0;
+    var minP = Infinity, priced = 0;
+    for (i = 0; i < items.length; i++) {
+      if (items[i].noPrice) continue;
+      priced++;
+      if (items[i].price < minP) minP = items[i].price;
+    }
+    for (i = 0; i < items.length; i++) {
+      items[i].best = !items[i].noPrice && priced > 1 && items[i].price === minP;
+    }
+    var shown = items;
+    var rest = 0;
+    if (maxRows && items.length > maxRows * 2) {
+      shown = items.slice(0, maxRows * 2 - 1);
+      rest = items.length - shown.length;
+    }
+    var rows = Math.ceil((shown.length + (rest ? 1 : 0)) / 2);
+    var rowH = CP_F.platRow;
+    var gapX = 26;
+    var cellW = (w - gapX) / 2;
+    if (!dry) {
+      ctx.textBaseline = "middle";
+      for (var si = 0; si < shown.length + (rest ? 1 : 0); si++) {
+        var col = si % 2, row = Math.floor(si / 2);
+        var cx = x + col * (cellW + gapX);
+        var cy = y + row * rowH + rowH / 2;
+        if (rest && si === shown.length) {  // 末尾"还有 N 个平台"
+          ctx.textAlign = "left";
+          ctx.font = "600 " + CP_F.meta + "px 'PingFang SC',sans-serif";
+          ctx.fillStyle = CP.META;
+          ctx.fillText("还有 " + rest + " 个平台…", cx, cy);
+          continue;
+        }
+        var s = shown[si];
+        if (s.best) {
+          ctx.fillStyle = CP.BEST_BG;
+          roundRectPath(ctx, cx - 8, cy - rowH / 2 + 3, cellW + 16, rowH - 6, 8); ctx.fill();
+        }
+        // 价格组（右对齐）宽度先量
+        ctx.font = "800 " + CP_F.plat + "px Arial,'PingFang SC',sans-serif";
+        var nowT = s.noPrice ? "暂无价格" : "¥" + fmtPrice(s.price);
+        var nowW = ctx.measureText(nowT).width;
+        var offT = (!s.noPrice && s.offP > 0) ? "-" + s.offP + "%" : "";
+        var offW = 0;
+        if (offT) { ctx.font = "700 " + CP_F.badge + "px Arial,sans-serif"; offW = ctx.measureText(offT).width + 8; }
+        var badgeT = s.best ? "最低" : "";
+        var badgeW = 0;
+        if (badgeT) { ctx.font = "700 " + CP_F.badge + "px 'PingFang SC',sans-serif"; badgeW = ctx.measureText(badgeT).width + 12; }
+        // 逐平台折扣截止（最右，小字）；宽度不够时先让"最低"角标让位，再弃掉截止，绝不让行内溢出
+        var dlT = (!s.noPrice && s.remaining) ? "⏳" + shortDeadline(s.remaining) : "";
+        var dlW = 0;
+        if (dlT) { ctx.font = "700 " + CP_F.badge + "px 'PingFang SC',sans-serif"; dlW = ctx.measureText(dlT).width + 10; }
+        var nameMax = cellW - nowW - offW - badgeW - dlW - 16;
+        if (nameMax < 40 && badgeW) { badgeW = 0; nameMax = cellW - nowW - offW - dlW - 16; }
+        if (nameMax < 40 && dlW) { dlW = 0; dlT = ""; nameMax = cellW - nowW - offW - 16; }
+        ctx.textAlign = "left";
+        ctx.font = "600 " + CP_F.plat + "px 'PingFang SC',sans-serif";
+        var nm = s.name;
+        while (Array.from(nm).length > 1 && ctx.measureText(nm + "…").width > Math.max(30, nameMax)) nm = Array.from(nm).slice(0, -1).join("");
+        if (nm !== s.name) nm += "…";
+        ctx.fillStyle = s.noPrice ? CP.EN : (s.best ? CP.PRICE : CP.TEXT);
+        ctx.fillText(nm, cx, cy);
+        var nmW = ctx.measureText(nm).width;
+        if (badgeW) {
+          ctx.fillStyle = CP.BADGE_BG;
+          roundRectPath(ctx, cx + nmW + 8, cy - CP_F.badge / 2 - 3, badgeW, CP_F.badge + 6, 5); ctx.fill();
+          ctx.fillStyle = "#fff"; ctx.font = "700 " + CP_F.badge + "px 'PingFang SC',sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(badgeT, cx + nmW + 8 + badgeW / 2, cy + 1);
+        }
+        ctx.textAlign = "right";
+        var rx = cx + cellW - dlW;   // 给最右的截止让位
+        ctx.font = "800 " + CP_F.plat + "px Arial,'PingFang SC',sans-serif";
+        ctx.fillStyle = s.noPrice ? CP.META : CP.PRICE;
+        ctx.fillText(nowT, rx, cy);
+        if (offT) {
+          ctx.font = "700 " + CP_F.badge + "px Arial,sans-serif";
+          ctx.fillStyle = CP.OFF;
+          ctx.fillText(offT, rx - nowW - 8, cy);
+        }
+        if (dlT) {
+          ctx.font = "700 " + CP_F.badge + "px 'PingFang SC',sans-serif";
+          ctx.fillStyle = CP.OFF;
+          ctx.textAlign = "right";
+          ctx.fillText(dlT, cx + cellW, cy);
+        }
+      }
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    }
+    return rows * rowH;
+  }
+  // 史低行 / 元信息行
+  function cpLine(ctx, x, y, w, text, size, weight, color, dry, align) {
+    if (!text) return 0;
+    ctx.font = weight + " " + size + "px 'PingFang SC',sans-serif";
+    var t = String(text);
+    while (Array.from(t).length > 1 && ctx.measureText(t + "…").width > w) t = Array.from(t).slice(0, -1).join("");
+    if (t !== text) t += "…";
+    if (!dry) {
+      ctx.textAlign = align === "center" ? "center" : "left";
+      ctx.textBaseline = "alphabetic";
+      ctx.fillStyle = color;
+      ctx.fillText(t, align === "center" ? x + w / 2 : x, y + size * 1.05);
+    }
+    return Math.round(size * 1.35);
+  }
+
+  // ===== 版式：设计坐标恒 720 宽，按输出尺寸整体缩放 =====
+  var POSTER_DESIGN_W = 720;
+  var POSTER_FORMS = [
+    { key: "A34", w: 1080, h: 1440, dh: 960 },   // 3:4
+    { key: "B45", w: 1080, h: 1350, dh: 900 }    // 4:5（默认）
+  ];
+  function pickForm() {
+    var pref = String(CONFIG.posterAspect || "4:5");
+    if (pref === "3:4") return POSTER_FORMS[0];
+    if (pref === "auto") return POSTER_FORMS[Math.random() < 0.5 ? 0 : 1];
+    return POSTER_FORMS[1];
+  }
+
+  /* ---------- 卡片内容装配（与卡片 DOM 一致的顺序与取舍） ---------- */
+  function buildChips(D) {
+    var chips = [], seen = {};
+    function add(text, kind) {
+      var t = String(text == null ? "" : text).trim();
+      if (!t || seen[t]) return;
+      seen[t] = 1;
+      chips.push({ text: t, kind: kind });
+    }
+    if (D.rating) add("⭐ " + D.rating, "");
+    if (D.platform) add(D.platform, "");
+    if (D.dlcCount > 0) add("DLC × " + D.dlcCount, "");
+    if (D.goodRate) add("好评率 " + D.goodRate, "");
+    if (D.avgPlaytime) add("平均 " + D.avgPlaytime, "");
+    if (D.follow) add("👥 " + D.follow, "");
+    if ((D.awards || []).length) add("🏆 " + D.awards[0], "award");
+    return chips;
+  }
+  function buildFeats(D) {
+    var feats = [], seen = {};
+    function add(t) {
+      var v = String(t == null ? "" : t).trim();
+      if (!v || seen[v]) return;
+      seen[v] = 1;
+      feats.push({ text: v });
+    }
+    for (var i = 0; i < (D.features || []).length; i++) add(D.features[i]);
+    for (var j = 0; j < (D.tags || []).length; j++) add(D.tags[j]);
+    return feats;
+  }
+  // 多维评分（卡片没有，但海报有空间时作为附加信息）
+  function cpDims(ctx, x, y, w, dims, dry) {
+    var list = (dims || []).filter(function (d) { return d && d.name && d.score; });
+    if (!list.length) return 0;
+    var ROW = 32, LABEL_W = 104, SCORE_W = 42, COL_GAP = 34;
+    var colW = (w - COL_GAP) / 2;
+    var BAR_MAX = Math.max(50, colW - LABEL_W - SCORE_W - 6);
+    if (!dry) {
+      ctx.textBaseline = "middle";
+      for (var i = 0; i < list.length; i++) {
+        var col = i % 2, row = Math.floor(i / 2);
+        var cx = x + col * (colW + COL_GAP);
+        var cy = y + row * ROW + ROW / 2;
+        ctx.textAlign = "left";
+        ctx.font = "600 17px 'PingFang SC',sans-serif";
+        ctx.fillStyle = CP.MUTED;
+        ctx.fillText(list[i].name, cx, cy);
+        var bw = Math.max(8, Math.min(1, parseFloat(list[i].score) / 10) * BAR_MAX);
+        ctx.fillStyle = "rgba(255,255,255,0.12)";
+        roundRectPath(ctx, cx + LABEL_W, cy - 5, BAR_MAX, 10, 5); ctx.fill();
+        ctx.fillStyle = CP.PRICE;
+        roundRectPath(ctx, cx + LABEL_W, cy - 5, bw, 10, 5); ctx.fill();
+        ctx.font = "700 16px Arial,sans-serif";
+        ctx.fillText(list[i].score, cx + LABEL_W + BAR_MAX + 8, cy + 1);
+      }
+      ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    }
+    return Math.ceil(list.length / 2) * ROW;
+  }
+
+  /* 一排截图（借鉴卡片：等宽 16:9、圆角、cover 裁剪）。
+     返回占用高度；传入 dry=true 时只量高度不画。 */
+  function cpShotRow(ctx, x, y, w, imgs, count, dry) {
+    var list = (imgs || []).filter(function (i) { return i && i.width; });
+    if (!list.length || count <= 0) return 0;
+    var cols = Math.max(1, Math.min(count, list.length));
+    var gap = 8, cw = (w - gap * (cols - 1)) / cols, ch = cw * 9 / 16, r = 9;
+    if (dry) return Math.ceil(ch) + 6;
+    for (var i = 0; i < cols; i++) {
+      var ix = x + i * (cw + gap);
+      var im = list[i];
+      // object-fit: cover —— 按目标比例从原图中心裁一块
+      var target = cw / ch, sr = im.width / im.height;
+      var sx = 0, sy = 0, sw = im.width, sh = im.height;
+      if (sr > target) { sw = sh * target; sx = (im.width - sw) / 2; }
+      else { sh = sw / target; sy = (im.height - sh) / 2; }
+      ctx.save();
+      roundRectPath(ctx, ix, y + 6, cw, ch, r);
+      ctx.clip();
+      try { ctx.drawImage(im, sx, sy, sw, sh, ix, y + 6, cw, ch); } catch (e) { /* 单张失败不影响其它 */ }
+      ctx.restore();
+      ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 1;
+      roundRectPath(ctx, ix + 0.5, y + 6.5, cw - 1, ch - 1, r); ctx.stroke();
+    }
+    return Math.ceil(ch) + 6;
+  }
+
+  /* ---------- 卡片版式海报 ---------- */
+  function renderCardPoster(ctx, D) {
+    var W = POSTER_DESIGN_W, th = D.th;
+    var M = CP.MARGIN, panelX = M, panelW = W - M * 2;
+    var PADX = 22, PADT = 16, PADB = 18;
+    var innerW = panelW - PADX * 2;
+    var footerLine = D.h - 48;
+    var coverH = D.coverImg ? Math.round(panelW * 0.295) : 0;
+    var offTxt = D.off || "";
+    var coverBadge = ""; // 折扣截止已改到价格旁边（cpHead），封面不再重复画
+
+    var chips = buildChips(D);
+    var feats = buildFeats(D);
+    var shots = Array.isArray(D.shots) ? D.shots : [];
+    var dims = Array.isArray(D.ratingDims) ? D.ratingDims : [];
+    var lowestTxt = D.lowestPrice > 0
+      ? "史低 ¥" + fmtPrice(D.lowestPrice) + (D.lowestDate ? "  ·  " + D.lowestDate : "") : "";
+    var metaTxt = [D.developer, D.releaseDate, D.commentCount ? fmtCount(D.commentCount) + "评价" : ""]
+      .filter(Boolean).join("  ·  ");
+
+    var chipStyle = { bg: CP.CHIP_BG, fg: CP.MUTED, border: null, h: CP_F.chipH,
+      font: "700 " + CP_F.chip + "px 'PingFang SC',sans-serif", pad: CP_F.chipPad };
+    var featStyle = { bg: CP.FEAT_BG, fg: CP.FEAT_FG, border: CP.FEAT_BORDER, h: CP_F.featH,
+      font: "700 " + CP_F.feat + "px 'PingFang SC',sans-serif", pad: CP_F.featPad };
+
+    // 量出某档位的面板正文高度
+    function bodyHeight(plan) {
+      var y = PADT + 2;
+      y += cpHead(ctx, 0, 0, innerW, th, D, true) + 14;
+      var ch = chips.length ? cpPills(ctx, 0, 0, innerW, chips, chipStyle, plan.chipRows, true, "left") : 0;
+      y += ch + (ch ? 12 : 0);
+      var fh = (feats.length && plan.featRows > 0) ? cpPills(ctx, 0, 0, innerW, feats, featStyle, plan.featRows, true, "left") : 0;
+      y += fh + (fh ? 12 : 0);
+      if (plan.showLowest && lowestTxt) y += 28 + 10;
+      var ph = cpPlats(ctx, 0, 0, innerW, D, true, plan.platRows);
+      y += ph + (ph ? 14 : 0);
+      if (plan.showDims && dims.length) y += cpDims(ctx, 0, 0, innerW, dims, true) + 12;
+      // 与绘制路径保持一致：cpLine 的高度 = 字号 × 1.35，后面还跟 10px 间距（截图排在其下）
+      if (plan.showMeta && metaTxt) y += Math.round(CP_F.meta * 1.35) + 10;
+      // 截图一排（借鉴卡片：放在最底部）
+      var sh2 = cpShotRow(ctx, 0, 0, innerW, shots, plan.shotCount || 0, true);
+      if (sh2) y += sh2 + 8;
+      return y + PADB - 2;
+    }
+
+    // 钩子（LLM 卖点）不再画在海报上方：整块直接由卡片面板构成，面板在页脚之上居中。
+    // 数据仍随 block 下发（D.hook 保留），需要时可在卡片标题下方补一行。
+    var topLimit = M;
+    var botLimit = footerLine - 22;
+    // shotCount：一排截图的张数（借用卡片观感）；内容多时逐级让位——先砍元信息/评分维度，
+    // 再砍截图张数（3→2→1），最后才整排不画
+    var plans = [
+      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: true,  platRows: 8, shotCount: 3 },
+      { chipRows: 3, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, platRows: 8, shotCount: 3 },
+      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: true,  showDims: false, platRows: 6, shotCount: 3 },
+      { chipRows: 2, featRows: 2, showLowest: true,  showMeta: false, showDims: false, platRows: 5, shotCount: 3 },
+      { chipRows: 2, featRows: 1, showLowest: true,  showMeta: false, showDims: false, platRows: 4, shotCount: 2 },
+      { chipRows: 2, featRows: 1, showLowest: true,  showMeta: false, showDims: false, platRows: 4, shotCount: 1 },
+      { chipRows: 1, featRows: 1, showLowest: true,  showMeta: false, showDims: false, platRows: 3, shotCount: 1 },
+      { chipRows: 1, featRows: 1, showLowest: false, showMeta: false, showDims: false, platRows: 3, shotCount: 0 },
+      { chipRows: 1, featRows: 0, showLowest: false, showMeta: false, showDims: false, platRows: 3, shotCount: 0 }
+    ];
+    var chosen = plans[plans.length - 1], bodyH = 0;
+    for (var pi = 0; pi < plans.length; pi++) {
+      var p = plans[pi];
+      bodyH = bodyHeight(p);
+      var total = coverH + bodyH;
+      chosen = p;
+      if (total <= botLimit - topLimit) break;
+    }
+
+    // ---- 富余空间分配：① 封面横幅吃掉一部分（最多长到面板宽的 0.42，内容少时当主视觉）
+    //      ② 剩下的上下平分，让整块（钩子 + 面板）在页脚之上居中，底部不留大片空白 ----
+    var baseTotal = coverH + bodyH;
+    var slack = Math.max(0, (botLimit - topLimit) - baseTotal);
+    var maxCover = D.coverImg ? Math.round(panelW * 0.52) : 0;
+    var coverGrow = D.coverImg ? Math.max(0, Math.min(maxCover - coverH, Math.round(slack * 0.55))) : 0;
+    coverH += coverGrow;
+    // 内容偏少时，卡片上下内边距也撑开一点（内部留白比底部空一大块好看）
+    var airy = (slack - coverGrow) > 60 ? 8 : 0;
+    bodyH += airy * 2;
+    var rest = Math.max(0, slack - coverGrow - airy * 2);
+    var padTop = Math.round(rest * 0.5);
+
+    // ---- 绘制 ----
+    var panelH = coverH + bodyH;
+    var y = topLimit + padTop;
+
+    // 面板
+    cpPanel(ctx, panelX, y, panelW, panelH);
+    if (D.coverImg) cpCover(ctx, D.coverImg, panelX, y, panelW, coverH, offTxt, coverBadge);
+    var cy = y + coverH + PADT + 2 + airy;
+    cy += cpHead(ctx, panelX + PADX, cy, innerW, th, D, false) + 14;
     if (chips.length) {
-      ctx.font = "800 24px 'PingFang SC',sans-serif";
-      var cws = [], ctw = 0;
-      for (var ci = 0; ci < chips.length; ci++) { cws.push(ctx.measureText(chips[ci].text).width + 36); ctw += cws[ci] + 10; }
-      var cxx = 360 - (ctw - 10) / 2;
-      for (var cj = 0; cj < chips.length; cj++) {
-        ctx.fillStyle = "rgba(255,255,255,0.06)";
-        roundRectPath(ctx, cxx, chipY - 24, cws[cj], 42, 21); ctx.fill();
-        ctx.strokeStyle = "rgba(255,255,255,0.12)"; ctx.lineWidth = 1;
-        roundRectPath(ctx, cxx, chipY - 24, cws[cj], 42, 21); ctx.stroke();
-        ctx.fillStyle = chips[cj].color; ctx.fillText(chips[cj].text, cxx + cws[cj] / 2, chipY);
-        cxx += cws[cj] + 10;
-      }
+      cy += cpPills(ctx, panelX + PADX, cy, innerW, chips, chipStyle, chosen.chipRows, false, "left") + 12;
     }
-    // 平台价格：2 列网格面板（整齐不溢出）
-    var bandTop = Math.max(chipY + 34, mainPriceY + 74);
-    if (plats.length) {
-      var items = [];
-      for (var ik = 0; ik < plats.length; ik++) {
-        var it = plats[ik];
-        if (!it || !it.name) continue;
-        items.push({ name: String(it.name), originP: it.origin_price || 0, price: it.price || 0, offP: it.off_pct || 0, best: ik === 0 });
-      }
-      var maxShow = 8, shown = items.slice(0, maxShow);
-      var cols = 2, colGap = 40;
-      var panelW = 560, cellW = (panelW - colGap) / 2; // 260
-      var cellH = 40;
-      var rows = Math.ceil(shown.length / cols);
-      var panelH = rows * cellH;
-      var panelX = 360 - panelW / 2;
-      var panelY = bandTop;
-      // 面板底
-      ctx.fillStyle = "rgba(20,22,28,0.72)";
-      roundRectPath(ctx, panelX - 14, panelY - 12, panelW + 28, panelH + 24, 14); ctx.fill();
-      ctx.font = "22px 'PingFang SC',sans-serif";
-      for (var ri = 0; ri < shown.length; ri++) {
-        var itm = shown[ri];
-        var cx = panelX + (ri % cols) * (cellW + colGap) + cellW / 2;
-        var cy = panelY + Math.floor(ri / cols) * cellH + cellH / 2;
-        ctx.textAlign = "left"; ctx.textBaseline = "middle";
-        // 平台名（最多约 7 字，超长省略）
-        var nameW = cellW * 0.42;
-        var nm = itm.name;
-        while (ctx.measureText(nm + "…").width > nameW && Array.from(nm).length > 1) nm = Array.from(nm).slice(0, -1).join("");
-        if (nm !== itm.name) nm += "…";
-        ctx.fillStyle = itm.best ? "#ffd23f" : "#e3e7ee";
-        ctx.font = "800 " + (itm.best ? 23 : 21) + "px 'PingFang SC',sans-serif";
-        var nameLeft = cx - cellW / 2 + 4;
-        var nameWpx = ctx.measureText(nm).width; // 用名字当前字号量，避免切换字体后量错导致重叠
-        ctx.fillText(nm, nameLeft, cy);
-        if (itm.best && itm.offP > 0) {
-          // 史低：红字无背景，紧跟名字右侧
-          ctx.fillStyle = "#ff5252"; ctx.font = "800 14px 'PingFang SC',sans-serif";
-          ctx.fillText("史低", nameLeft + nameWpx + 6, cy);
-        }
-        ctx.font = "22px 'PingFang SC',sans-serif";
-        // 价格右对齐到 cell 右侧：now + old（不显示平台折扣百分比）
-        var priceX = cx + cellW / 2 - 6;
-        var px = priceX;
-        ctx.fillStyle = "#ffd23f"; ctx.font = "800 21px Arial,'PingFang SC',sans-serif";
-        var nowT = "¥" + itm.price;
-        ctx.fillText(nowT, px - ctx.measureText(nowT).width, cy);
-        px -= ctx.measureText(nowT).width + 10;
-        if (itm.originP > 0 && itm.originP > itm.price) {
-          ctx.font = "15px 'PingFang SC',sans-serif"; ctx.fillStyle = "#8a93a3";
-          var oldT = "¥" + itm.originP;
-          var ow = ctx.measureText(oldT).width;
-          ctx.fillText(oldT, px - ow, cy);
-          ctx.strokeStyle = "#8a93a3"; ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.moveTo(px - ow, cy + 1); ctx.lineTo(px, cy + 1); ctx.stroke();
-          px -= ow + 8;
-        }
-      }
-      ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
-      bandTop = panelY + panelH + 8;
-      if (items.length > maxShow) {
-        ctx.font = "18px 'PingFang SC',sans-serif"; ctx.fillStyle = "#7a828e";
-        ctx.fillText("…等 " + items.length + " 个平台在售", 360, bandTop + 14);
-        bandTop += 26;
-      }
+    if (feats.length && chosen.featRows > 0) {
+      cy += cpPills(ctx, panelX + PADX, cy, innerW, feats, featStyle, chosen.featRows, false, "left") + 12;
     }
-    // footer
-    var fy = Math.max(bandTop + 4, 848);
-    ctx.strokeStyle = "#3d2424"; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(140, fy); ctx.lineTo(580, fy); ctx.stroke();
-    ctx.fillStyle = "#6d6d6d"; ctx.font = "20px 'PingFang SC',sans-serif";
-    ctx.fillText("由 Stray 查价生成 · 数据实时查询", 360, fy + 34);
+    if (chosen.showLowest && lowestTxt) {
+      cy += cpLine(ctx, panelX + PADX, cy, innerW, lowestTxt, CP_F.lowest, 800, CP.PRICE, false, "left") + 10;
+    }
+    var ph = cpPlats(ctx, panelX + PADX, cy, innerW, D, false, chosen.platRows);
+    cy += ph + (ph ? 14 : 0);
+    if (chosen.showDims && dims.length) cy += cpDims(ctx, panelX + PADX, cy, innerW, dims, false) + 12;
+    if (chosen.showMeta && metaTxt) {
+      cy += cpLine(ctx, panelX + PADX, cy, innerW, metaTxt, CP_F.meta, 500, CP.META, false, "left") + 10;
+    }
+    // 截图一排（借用卡片观感：等宽三张、圆角）
+    if (shots.length && chosen.shotCount > 0) {
+      cy += cpShotRow(ctx, panelX + PADX, cy, innerW, shots, chosen.shotCount, false) + 6;
+    }
+    // 页脚
+    ctx.strokeStyle = "rgba(255,255,255,0.14)"; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(M, footerLine); ctx.lineTo(W - M, footerLine); ctx.stroke();
+    var d = new Date();
+    var ds = d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+    ctx.font = "500 17px 'PingFang SC',sans-serif";
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    ctx.fillStyle = "rgba(255,255,255,0.42)";
+    ctx.fillText("由 Stray 查价生成 · 数据实时查询 · " + ds, W / 2, footerLine + 30);
+  }
+
+  /* ---- 主题：优先从封面取主色调，取不到再回落到预设池 ---- */
+  function hslToRgb(h, s, l) {
+    h = ((h % 360) + 360) % 360;
+    var c = (1 - Math.abs(2 * l - 1)) * s;
+    var x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+    var m = l - c / 2, r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; }
+    else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; }
+    else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; }
+    else { r = c; b = x; }
+    return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+  }
+  function hslHex(h, s, l) {
+    var c = hslToRgb(h, s, l);
+    return "#" + c.map(function (v) {
+      var n = Math.max(0, Math.min(255, Math.round(v)));
+      return (n < 16 ? "0" : "") + n.toString(16);
+    }).join("");
+  }
+  function hslTriple(h, s, l) {
+    var c = hslToRgb(h, s, l);
+    return Math.round(c[0]) + "," + Math.round(c[1]) + "," + Math.round(c[2]);
+  }
+  function rgbToHsl(r, g, b) {
+    r /= 255; g /= 255; b /= 255;
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn, h = 0;
+    if (d) {
+      if (mx === r) h = 60 * (((g - b) / d) % 6);
+      else if (mx === g) h = 60 * ((b - r) / d + 2);
+      else h = 60 * ((r - g) / d + 4);
+    }
+    h = (h + 360) % 360;
+    var l = (mx + mn) / 2;
+    var s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+    return [h, s, l];
+  }
+  // 采样封面主色调 → 生成同色系暗调主题（跨域无 CORS 时 getImageData 会抛错，交给预设池）
+  function themeFromImage(img) {
+    try {
+      if (!img || !img.width || !img.height || !document || !document.createElement) return null;
+      var size = 24;
+      var c = document.createElement("canvas");
+      c.width = size; c.height = size;
+      var cx = c.getContext("2d");
+      cx.drawImage(img, 0, 0, size, size);
+      var d = cx.getImageData(0, 0, size, size).data;
+      var r = 0, g = 0, b = 0, n = 0;
+      var rowCount = Math.max(1, Math.round(size * 0.6)); // 只取上部主视觉，避开底部渐隐
+      for (var yy = 0; yy < rowCount; yy++) {
+        for (var xx = 0; xx < size; xx++) {
+          var o = (yy * size + xx) * 4;
+          r += d[o]; g += d[o + 1]; b += d[o + 2]; n++;
+        }
+      }
+      if (!n) return null;
+      var hsl = rgbToHsl(r / n, g / n, b / n);
+      if (hsl[1] < 0.14) return null; // 近灰/黑白封面 → 用预设主题
+      var h = hsl[0], s = Math.min(0.6, Math.max(0.34, hsl[1] * 1.15));
+      return {
+        bg: [hslHex(h, s, 0.16), hslHex(h, s, 0.10), hslHex(h, s * 0.9, 0.05)],
+        fade: hslTriple(h, s, 0.09),
+        title: "#ffffff", en: hslHex(h, 0.35, 0.74), origin: "#b8bdc7", price: "#ffd23f",
+        tagTop: "#ff6b4a", tagBot: "#d92626", chipRemaining: hslHex(h, 0.45, 0.78),
+        chipBg: "rgba(255,255,255,0.07)", chipBorder: "rgba(255,255,255,0.14)",
+        panelBg: "rgba(0,0,0,0.26)", platName: "#e6eaf2", platOld: "#9199a8",
+        platSd: "#ff5252", footer: hslHex(h, 0.18, 0.62), footerLine: hslHex(h, 0.28, 0.26)
+      };
+    } catch (e) { return null; }
+  }
+  function pickTheme(img) {
+    var t = themeFromImage(img);
+    if (t) return t;
+    return POSTER_THEMES[(Math.random() * POSTER_THEMES.length) | 0];
+  }
+  /* 一次海报渲染的全部随机决策（主题 + 版式）打包成 plan，
+     预览/下载/复制复用同一个 plan，配色与版式不会跳变 */
+  function makePosterPlan(coverImg) {
+    return { theme: pickTheme(coverImg), form: pickForm() };
+  }
+  /* 渲染海报：设计坐标恒为 720 宽，按版式尺寸整体缩放；scale=2 出高清图（逻辑坐标不变） */
+  function drawPoster(canvas, b, coverImg, plan, scale) {
+    var p = plan || {};
+    var fm = p.form || pickForm();
+    var th = p.theme || pickTheme(coverImg);
+    var ratio = scale > 1 ? scale : 1;
+    var s = ratio * (fm.w / POSTER_DESIGN_W);
+    var W = POSTER_DESIGN_W, H = fm.dh;
+    canvas.width = fm.w * ratio; canvas.height = fm.h * ratio;
+    var ctx = canvas.getContext("2d");
+    ctx.scale(s, s);                     // 之后所有绘制都用 720 宽的设计坐标
+    ctx.textAlign = "center"; ctx.textBaseline = "alphabetic";
+    var g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, th.bg[0]); g.addColorStop(0.55, th.bg[1]); g.addColorStop(1, th.bg[2]);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    // 主价格 = 全平台最低现价；原价/折扣随该平台
+    var plats = (Array.isArray(b.prices) && b.prices.length) ? b.prices : [];
+    var best = null;
+    for (var bp = 0; bp < plats.length; bp++) {
+      var cand = plats[bp];
+      if (!cand || !(cand.price > 0)) continue;
+      if (!best || cand.price < best.price) best = cand;
+    }
+    var D = {
+      w: W, h: H, th: th, align: fm.align, typo: !!fm.typo, form: fm.key,
+      coverImg: fm.typo ? null : coverImg,   // 纯排版版式不画封面
+      hook: b.hook ? String(b.hook) : "",
+      tags: Array.isArray(b.tags) ? b.tags : undefined,
+      awards: Array.isArray(b.awards) ? b.awards : undefined,
+      dlcCount: parseInt(b.dlc_count, 10) || 0,
+      releaseDate: b.release_date ? String(b.release_date) : "",
+      developer: b.developer ? String(b.developer) : "",
+      online: b.online ? String(b.online) : "",
+      goodRate: b.good_rate ? String(b.good_rate) : "",
+      commentCount: parseInt(b.comment_count, 10) || 0,
+      avgPlaytime: b.avg_playtime ? String(b.avg_playtime) : "",
+      ratingDims: Array.isArray(b.rating_dims) ? b.rating_dims : undefined,
+      name: String(b.name || ""), en: b.en_name ? String(b.en_name) : "",
+      rating: b.rating, remaining: b.remaining, plats: plats,
+      features: Array.isArray(b.features) ? b.features : undefined,
+      shots: (p.shots || []).filter(function (x) { return x && x.width; }),
+      lowestPrice: b.lowest_price > 0 ? b.lowest_price : undefined,
+      lowestDate: b.lowest_date ? String(b.lowest_date) : "",
+      // 海报主价必须与卡面同源（口径价 = Steam 国区 / PS 港区 / 其余国区里最低）：
+      // 以前取"全平台最低行"，会把外区价（Switch 巴西 ¥32.36）当成海报大字号领价 ——
+      // 用户买不到，等于骗人（CLAUDE.md 的口径铁律）。只有口径内全无报价时，
+      // 才退回"有价的最低行"，且那一行在rows里自带区名标注。
+      origin: b.origin_price > 0 ? b.origin_price : (best && best.origin_price ? best.origin_price : 0),
+      price: b.price > 0 ? b.price : (best && best.price ? best.price : 0)
+    };
+    D.off = "";
+    if (D.origin > 0 && D.price > 0 && D.price < D.origin) D.off = "-" + Math.round((1 - D.price / D.origin) * 100) + "%";
+    renderCardPoster(ctx, D);
+    return p;
   }
   function toast(msg) {
     var t = document.createElement("div");
@@ -549,6 +1495,26 @@
         } catch (e2) { resolve(null); }
       }, 900);
     });
+  }
+  /* 封面若走了非 CORS 降级（小黑盒 max-c.com 等 CDN 不返回 Access-Control-Allow-Origin），
+     画进 canvas 会把画布污染、导致 toDataURL/toBlob 抛错 —— 此时改用「无封面纯排版版式」，
+     宁可少一张封面图，也要保证用户拿到的是能下载/复制的真海报，而不是退回一张原封面。 */
+  function posterImageFor(img) {
+    return (img && img.__corsOk === false) ? null : img;
+  }
+  /* 海报渲染：预览用 scale=1，导出用 scale=2（1440x1920 高清）；
+     主题由 pickTheme 选一次后沿用，保证预览/下载/复制配色完全一致 */
+  function renderPoster(block, img, plan, scale) {
+    var canvas = document.createElement("canvas");
+    try { drawPoster(canvas, block, img, plan, scale || 1); } catch (e) { /* 保留空画布，按钮仍可用 */ }
+    return canvas;
+  }
+  function exportCanvas(preview, block, img, plan) {
+    if (!block) return preview;
+    try {
+      var hi = renderPoster(block, img, plan, 2);
+      return hi.width > preview.width ? hi : preview;
+    } catch (e) { return preview; }
   }
   function downloadCanvas(canvas) {
     canvasToBlob(canvas).then(function (blob) {
@@ -577,35 +1543,83 @@
   }
   /* 海报请求：先生成内联海报图，再发文字 */
   function showInlinePoster(block, onDone) {
-    loadImage(safeUrl(block.cover)).then(function (img) {
-      var canvas = document.createElement("canvas");
-      try { drawPoster(canvas, block, img); } catch (e) { /* 保留空白画布，按钮仍可用 */ }
+    preparePoster(block).then(function (pre) {
+      var usable = pre.img;                       // 不可导出时置 null → 走无封面纯排版版式
+      var plan = pre.plan;                        // plan.shots 已带截图（与弹窗海报一致）
+      var canvas = renderPoster(block, usable, plan, 1);
       var wrap = document.createElement("div");
       wrap.className = "gac-poster-inline-wrap";
       wrap.innerHTML =
-        '<img class="gac-poster-inline" alt="海报">' +
+        '<img class="gac-poster-inline" alt="海报" referrerpolicy="no-referrer">' +
         '<div class="gac-poster-inline-actions">' +
-          '<button type="button" data-act="save">💾 下载 PNG</button>' +
+          '<button type="button" data-act="save">💾 下载高清 PNG</button>' +
           '<button type="button" data-act="copy">📋 复制图片</button>' +
-        "</div>";
+        "</div>" +
+        (usable ? "" : '<div class="gac-poster-note">封面图源不支持跨域，已生成纯排版版海报（可正常下载）</div>');
       var pimg = wrap.querySelector("img");
-      try { pimg.src = canvas.toDataURL("image/png"); } catch (e) { /* 忽略 */ }
+      try { pimg.src = canvas.toDataURL("image/png"); } catch (e) { pimg.src = safeUrl(block.cover) || ""; }
       bodyEl.appendChild(wrap);
       scrollToBottom();
-      wrap.querySelector('[data-act="save"]').addEventListener("click", function () { downloadCanvas(canvas); });
-      wrap.querySelector('[data-act="copy"]').addEventListener("click", function () { copyCanvas(canvas); });
+      wrap.querySelector('[data-act="save"]').addEventListener("click", function () {
+        downloadCanvas(exportCanvas(canvas, block, usable, plan));
+      });
+      wrap.querySelector('[data-act="copy"]').addEventListener("click", function () {
+        copyCanvas(exportCanvas(canvas, block, usable, plan));
+      });
       if (onDone) setTimeout(onDone, 150);
     });
   }
+  /* 海报用截图：最多 3 张（借鉴卡片的一排三张），只要 CORS 安全的图
+     —— 小黑盒图床不发 CORS 头，直连会把画布污染导致导不出 PNG，所以必须过网关代理；
+     拿不到就少画这一排，绝不让整张海报导出失败。 */
+  function loadPosterShots(block, max) {
+    var shots = (block && Array.isArray(block.screenshots) ? block.screenshots : [])
+      .filter(function (x) { return x && safeUrl(x.thumb); })
+      .slice(0, max || 3);
+    if (!shots.length) return Promise.resolve([]);
+    var inline = (block && Array.isArray(block.shots_data)) ? block.shots_data : [];
+    return Promise.all(shots.map(function (sh, i) {
+      // 后端内联的 data URL 优先：同源内容，既不依赖图床 CORS 也不会污染画布
+      return loadImage(safeUrl(sh.thumb), null, inline[i]).then(function (img) {
+        if (img && img.__corsOk !== false) return img;
+        return null;
+      }).catch(function () { return null; });
+    })).then(function (imgs) {
+      var kept = imgs.filter(Boolean);
+      if (kept.length < shots.length) {
+        // 丢掉的原因只有一个：候选全部不是 CORS 干净的（画进去海报就导不出 PNG）
+        if (window.console && console.warn) {
+          console.warn("[gac] 海报截图丢弃 " + (shots.length - kept.length) + "/" + shots.length + " 张（无 CORS 干净来源）");
+        }
+      }
+      return kept;
+    });
+  }
+
+  /* 海报素材准备：封面 + 最多 3 张截图（弹窗海报与内联海报共用，两条路必须一致） */
+  function preparePoster(block) {
+    return Promise.all([
+      loadImage(safeUrl(block.cover), block.covers, block.cover_data),
+      loadPosterShots(block, 3),
+    ]).then(function (rs) {
+      var usable = posterImageFor(rs[0]);
+      var plan = makePosterPlan(usable);
+      plan.shots = rs[1] || [];   // 随 plan 走，导出高清图时复用（不重新下载）
+      return { img: usable, plan: plan };
+    });
+  }
+
   function openPoster(block) {
-    loadImage(safeUrl(block.cover)).then(function (img) {
+    preparePoster(block).then(function (pre) {
+      var usable = pre.img;
+      var plan = pre.plan;
       var overlay = document.createElement("div");
       overlay.className = "gac-poster-modal";
       overlay.innerHTML =
         '<div class="gac-poster-box">' +
           '<canvas class="gac-poster-canvas"></canvas>' +
           '<div class="gac-poster-actions">' +
-            '<button type="button" class="gac-poster-act" data-act="save">💾 下载 PNG</button>' +
+            '<button type="button" class="gac-poster-act" data-act="save">💾 下载高清 PNG</button>' +
             '<button type="button" class="gac-poster-act" data-act="copy">📋 复制图片</button>' +
             '<button type="button" class="gac-poster-act gac-poster-close">✕ 关闭</button>' +
           "</div>" +
@@ -615,38 +1629,303 @@
       // 先绑定事件（即使绘制失败按钮也可用），再绘制
       overlay.querySelector(".gac-poster-close").addEventListener("click", function () { overlay.remove(); });
       overlay.addEventListener("click", function (e) { if (e.target === overlay) overlay.remove(); });
-      overlay.querySelector('[data-act="save"]').addEventListener("click", function () { downloadCanvas(canvas); });
-      overlay.querySelector('[data-act="copy"]').addEventListener("click", function () { copyCanvas(canvas); });
-      try { drawPoster(canvas, block, img); } catch (e) { /* 保留空画布，操作仍可用 */ }
+      overlay.querySelector('[data-act="save"]').addEventListener("click", function () {
+        downloadCanvas(exportCanvas(canvas, block, usable, plan));
+      });
+      overlay.querySelector('[data-act="copy"]').addEventListener("click", function () {
+        copyCanvas(exportCanvas(canvas, block, usable, plan));
+      });
+      try { drawPoster(canvas, block, usable, plan, 1); } catch (e) { /* 保留空画布，操作仍可用 */ }
     });
   }
+  /* ---------- 截图大图查看（灯箱：左右切换 / Esc 关闭 / 点背景关闭） ---------- */
+  function openShots(shots, startIndex) {
+    var idx = Math.max(0, Math.min(startIndex || 0, shots.length - 1));
+    var overlay = document.createElement("div");
+    overlay.className = "gac-media-modal";
+    overlay.innerHTML =
+      '<div class="gac-media-box">' +
+        '<img class="gac-media-img" alt="游戏截图" referrerpolicy="no-referrer">' +
+        '<div class="gac-media-bar">' +
+          '<button type="button" class="gac-media-act" data-act="prev">‹</button>' +
+          '<span class="gac-media-idx"></span>' +
+          '<button type="button" class="gac-media-act" data-act="next">›</button>' +
+          '<button type="button" class="gac-media-act gac-media-close">✕</button>' +
+        "</div>" +
+      "</div>";
+    var img = overlay.querySelector(".gac-media-img");
+    var label = overlay.querySelector(".gac-media-idx");
+    function show(i) {
+      idx = (i + shots.length) % shots.length;
+      img.src = shots[idx].full || shots[idx].thumb;
+      label.textContent = (idx + 1) + " / " + shots.length;
+    }
+    function close() {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey);
+    }
+    function onKey(e) {
+      if (e.key === "Escape") close();
+      else if (e.key === "ArrowLeft") show(idx - 1);
+      else if (e.key === "ArrowRight") show(idx + 1);
+    }
+    overlay.querySelector('[data-act="prev"]').addEventListener("click", function (e) { e.stopPropagation(); show(idx - 1); });
+    overlay.querySelector('[data-act="next"]').addEventListener("click", function (e) { e.stopPropagation(); show(idx + 1); });
+    overlay.querySelector(".gac-media-close").addEventListener("click", close);
+    overlay.addEventListener("click", function (e) { if (e.target === overlay) close(); });
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(overlay);
+    show(idx);
+  }
+  /* 卡片内截图条的事件绑定（点击开灯箱；加载失败的缩略图直接移除） */
+  function bindShots(scope, block) {
+    var shots = Array.isArray(block.screenshots) ? block.screenshots.filter(function (x) { return x && safeUrl(x.thumb); }) : [];
+    if (!shots.length) return;
+    var nodes = scope.querySelectorAll(".gac-shot");
+    for (var i = 0; i < nodes.length; i++) {
+      (function (node, i) {
+        node.addEventListener("error", function () { node.style.display = "none"; });
+        node.addEventListener("click", function () { openShots(shots, i); });
+      })(nodes[i], i);
+    }
+    scrollToBottom();
+  }
+
+  /* ==================== 会话组合块：走势 / 变化 / 玩家原声 / 对比 ====================
+   * 数据全部由后端从**本地价格库与本轮工具结果**里确定性组装（零幻觉）：
+   *   · price_trend   近 60 天的降价/回价事件轴（已降噪，不是连续曲线）
+   *   · price_delta   「你上次问到现在变了没有」
+   *   · review_quotes 本轮 game.comments 的真实玩家评论（截断后上屏）
+   *   · compare_table 2~4 款的决策表（"最值得"由后端判定，前端只渲染）
+   * 前端只负责画，不含任何阈值判断（阈值在后端 deadline.ts / compare.ts，改口径只改一处）。
+   */
+
+  /** 走势图：阶梯线（价格是跳变的）+ 首末与史低三个标注 */
+  function trendSvg(series, fallbackMax) {
+    var list = (series || []).filter(function (s) { return s && isFinite(Number(s.p)); });
+    if (list.length < 2) return "";
+    var W = 320, H = 62, PADX = 8, PADY = 16;
+    var prices = list.map(function (s) { return Number(s.p); });
+    var max = Math.max.apply(null, prices.concat(fallbackMax > 0 ? [fallbackMax] : []));
+    var min = Math.min.apply(null, prices);
+    var span = Math.max(1, max - min);
+    function X(i) { return PADX + (W - 2 * PADX) * (i / (list.length - 1)); }
+    function Y(p) { return PADY + (H - 2 * PADY) * (1 - (p - min) / span); }
+    var d = "M" + X(0).toFixed(1) + " " + Y(prices[0]).toFixed(1);
+    for (var i = 1; i < list.length; i++) {
+      d += "L" + X(i).toFixed(1) + " " + Y(prices[i - 1]).toFixed(1);
+      d += "L" + X(i).toFixed(1) + " " + Y(prices[i]).toFixed(1);
+    }
+    var area = d + "L" + X(list.length - 1).toFixed(1) + " " + H + "L" + X(0).toFixed(1) + " " + H + "Z";
+    var lowIdx = prices.indexOf(min);
+    var out = '<svg class="gac-trend-chart" viewBox="0 0 ' + W + " " + H + '" preserveAspectRatio="none" role="img" aria-label="价格走势">';
+    out += '<defs><linearGradient id="gacTrendFill" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="#ffd23f" stop-opacity="0.32"/>' +
+      '<stop offset="100%" stop-color="#ffd23f" stop-opacity="0"/></linearGradient></defs>';
+    out += '<path class="gac-trend-area" d="' + area + '"/>';
+    out += '<path class="gac-trend-line" d="' + d + '"/>';
+    for (var k = 0; k < list.length; k++) {
+      var isLow = k === lowIdx;
+      out += '<circle class="gac-trend-dot' + (isLow ? " gac-trend-dot-low" : "") + '" cx="' + X(k).toFixed(1) +
+        '" cy="' + Y(prices[k]).toFixed(1) + '" r="' + (isLow ? 4 : 3) + '"/>';
+    }
+    // 只在首/末/史低三点打标签；史低那个标注放谷点**左侧**（下方会被"史低→回价"的底部横线穿过）。
+    // 史低正好落在末点时不另打标签 —— 否则会和右侧的现价标签并排重复一次。
+    out += '<text class="gac-trend-lbl" x="' + X(0).toFixed(1) + '" y="' + (Y(prices[0]) - 7).toFixed(1) +
+      '" text-anchor="start">¥' + escapeHtml(fmtPrice(prices[0])) + "</text>";
+    if (lowIdx > 0 && lowIdx < list.length - 1) {
+      out += '<text class="gac-trend-lbl-hot" x="' + (X(lowIdx) - 7).toFixed(1) + '" y="' + (Y(prices[lowIdx]) + 3.5).toFixed(1) +
+        '" text-anchor="end">史低 ¥' + escapeHtml(fmtPrice(prices[lowIdx])) + "</text>";
+    }
+    var last = list.length - 1;
+    out += '<text class="gac-trend-lbl" x="' + X(last).toFixed(1) + '" y="' + (Y(prices[last]) - 7).toFixed(1) +
+      '" text-anchor="end">¥' + escapeHtml(fmtPrice(prices[last])) + "</text>";
+    return out + "</svg>";
+  }
+
+  function trendBlockHtml(b) {
+    var series = Array.isArray(b.series) ? b.series : [];
+    var h = '<div class="gac-trend">';
+    h += '<div class="gac-trend-head"><span class="gac-trend-title">' + escapeHtml(b.title || "价格走势") + "</span>";
+    if (b.verdict) {
+      h += '<span class="gac-trend-verdict gac-v-' + escapeHtml(String(b.verdict_kind || "normal")) + '">' +
+        escapeHtml(String(b.verdict)) + "</span>";
+    }
+    h += "</div>";
+    h += trendSvg(series, b.origin_price);
+    if (series.length) {
+      h += '<div class="gac-trend-axis">';
+      h += "<span>" + escapeHtml(String(series[0].t || "")) + "</span>";
+      if (series.length > 2) h += "<span>" + escapeHtml(String(series[1].t || "")) + "</span>";
+      h += "<span>" + escapeHtml(String(series[series.length - 1].t || "")) + "</span></div>";
+    }
+    var foot = [];
+    if (b.lowest > 0) foot.push("史低 <b>¥" + escapeHtml(fmtPrice(b.lowest)) + "</b> <span>" + escapeHtml(String(b.lowest_date || "")) + "</span>");
+    if (b.current > 0) foot.push("现在 <b>¥" + escapeHtml(fmtPrice(b.current)) + "</b>");
+    if (b.lowest > 0 && b.current > 0 && b.current - b.lowest > 1) {
+      foot.push("距史低 <b>¥" + escapeHtml(fmtPrice(b.current - b.lowest)) + "</b>");
+    }
+    if (foot.length) h += '<div class="gac-trend-foot">' + foot.join("<span>·</span>") + "</div>";
+    if (b.promo_days > 0) {
+      h += '<div class="gac-trend-note">这波折扣已经持续 ' + escapeHtml(String(Math.round(b.promo_days))) + " 天。</div>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  function deltaBlockHtml(b) {
+    var kind = String(b.delta_kind || "flat");
+    var h = '<div class="gac-delta">';
+    h += '<span class="gac-delta-icon">' + escapeHtml(String(b.icon || "🔁")) + "</span>";
+    h += '<div class="gac-delta-main">';
+    h += '<div class="gac-delta-line">' + escapeHtml(String(b.text || "")) + "</div>";
+    if (b.sub) h += '<div class="gac-delta-sub">' + escapeHtml(String(b.sub)) + "</div>";
+    h += "</div>";
+    if (b.badge) h += '<span class="gac-delta-badge gac-delta-' + escapeHtml(kind) + '">' + escapeHtml(String(b.badge)) + "</span>";
+    h += "</div>";
+    return h;
+  }
+
+  function quotesBlockHtml(b) {
+    var list = (Array.isArray(b.quotes) ? b.quotes : []).filter(function (q) { return q && q.text; });
+    var h = '<div class="gac-quotes">';
+    h += '<div class="gac-quotes-head"><span>' + escapeHtml(b.title || "玩家怎么说") + "</span>";
+    if (b.summary) h += '<span class="gac-quotes-num">' + escapeHtml(String(b.summary)) + "</span>";
+    h += "</div>";
+    for (var i = 0; i < list.length; i++) {
+      var q = list[i];
+      var tone = q.score > 0 ? (q.score >= 4 ? "pos" : q.score <= 3 ? "neg" : "") : "";
+      h += '<div class="gac-quote ' + tone + '">';
+      h += '<div class="gac-quote-text">“' + escapeHtml(String(q.text)) + '”</div>';
+      h += '<div class="gac-quote-meta">' + escapeHtml(String(q.by || "玩家"));
+      if (q.up) h += ' · <span class="gac-quote-up">' + escapeHtml(String(q.up)) + " 赞</span>";
+      if (q.score) h += " · 评分 " + escapeHtml(String(q.score));
+      h += "</div></div>";
+    }
+    h += "</div>";
+    return h;
+  }
+
+  function compareBlockHtml(b) {
+    var rows = Array.isArray(b.rows) ? b.rows : [];
+    var h = '<div class="gac-cmp">';
+    if (b.title) h += '<div class="gac-cmp-head">' + escapeHtml(String(b.title)) + "</div>";
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i] || {};
+      h += '<div class="gac-cmp-row' + (r.best ? " gac-cmp-best" : "") + (r.tone === "wait" ? " gac-cmp-wait" : "") + '">';
+      h += '<div class="gac-cmp-name">' + escapeHtml(String(r.name || ""));
+      if (r.best && r.badge) h += '<span class="gac-cmp-badge">' + escapeHtml(String(r.badge)) + "</span>";
+      h += "</div>";
+      h += '<div class="gac-cmp-price">¥' + escapeHtml(fmtPrice(r.price));
+      if (r.off_pct > 0) h += '<span class="gac-cmp-off">-' + escapeHtml(String(r.off_pct)) + "%</span>";
+      h += "</div>";
+      var bits = [];
+      if (r.lowest > 0) bits.push("史低 ¥" + escapeHtml(fmtPrice(r.lowest)));
+      if (r.rating) bits.push("⭐" + escapeHtml(String(r.rating)));
+      if (r.remaining) bits.push("<em>⏳" + escapeHtml(shortDeadline(String(r.remaining))) + "</em>");
+      if (r.why) bits.push(escapeHtml(String(r.why)));
+      if (bits.length) h += '<div class="gac-cmp-meta">' + bits.join(" · ") + "</div>";
+      h += "</div>";
+    }
+    if (b.note) h += '<div class="gac-cmp-foot">' + escapeHtml(String(b.note)) + "</div>";
+    h += "</div>";
+    return h;
+  }
+
+  /* 单个富块 → DOM 节点（分段渲染与整批渲染共用同一套逻辑） */
+  function blockNode(b, withEnter) {
+    var div = document.createElement("div");
+    div.className = "gac-block gac-block-" + (b && b.type ? escapeHtml(String(b.type)) : "unknown") +
+      (withEnter ? " gac-part-in" : "");
+    if (b && b.type === "game_media") {
+      div.innerHTML = mediaBlockHtml(b);
+      bindMedia(div, b);
+    } else if (b && b.type === "game_card") {
+      div.innerHTML = gameCardHtml(b);
+      var btn = div.querySelector(".gac-card-poster-btn");
+      if (btn) {
+        btn.addEventListener("click", function () { openPoster(b); });
+      }
+      bindShots(div, b);
+    } else if (b && b.type === "poster" && /^data:image\/svg\+xml;base64,/.test(String(b.src || ""))) {
+      var img = document.createElement("img");
+      img.className = "gac-poster";
+      img.src = String(b.src);
+      img.alt = "海报";
+      img.loading = "lazy";
+      div.appendChild(img);
+    } else if (b && b.type === "price_trend") {
+      div.innerHTML = trendBlockHtml(b);
+    } else if (b && b.type === "price_delta") {
+      div.innerHTML = deltaBlockHtml(b);
+    } else if (b && b.type === "review_quotes") {
+      div.innerHTML = quotesBlockHtml(b);
+    } else if (b && b.type === "compare_table") {
+      div.innerHTML = compareBlockHtml(b);
+    } else {
+      // 未知块**绝不**把 JSON 丢进对话：那会让用户看到一堆 {"type":...}，比"少一块"糟糕得多。
+      // 后端可能比页面新（先上了新块类型），这时正确行为是安静跳过 + 留一条控制台线索。
+      div.className += " gac-block-skip";
+      console.warn("[game-agent-chat] 未知内容块被跳过 type=" + (b && b.type) +
+        "；若这是刚上线的新块，多半是页面还在用旧 JS（对比 window.__GAC_BUILD__ 与后端版本）", b);
+      return div;
+    }
+    return div;
+  }
+
   function renderBlocks(blocks) {
     if (!Array.isArray(blocks) || blocks.length === 0) return;
     var wrap = document.createElement("div");
     wrap.className = "gac-blocks";
-    blocks.forEach(function (b) {
-      var div = document.createElement("div");
-      div.className = "gac-block gac-block-" + (b && b.type ? escapeHtml(String(b.type)) : "unknown");
-      if (b && b.type === "game_card") {
-        div.innerHTML = gameCardHtml(b);
-        var btn = div.querySelector(".gac-card-poster-btn");
-        if (btn) {
-          btn.addEventListener("click", function () { openPoster(b); });
-        }
-      } else if (b && b.type === "poster" && /^data:image\/svg\+xml;base64,/.test(String(b.src || ""))) {
-        var img = document.createElement("img");
-        img.className = "gac-poster";
-        img.src = String(b.src);
-        img.alt = "海报";
-        img.loading = "lazy";
-        div.appendChild(img);
-      } else {
-        div.textContent = JSON.stringify(b); // 未知块降级为文本
-      }
-      wrap.appendChild(div);
-    });
+    blocks.forEach(function (b) { wrap.appendChild(blockNode(b, false)); });
     bodyEl.appendChild(wrap);
     scrollToBottom();
+  }
+
+  /* ---------- 分段渲染：同一个回复框里 文字打字 → 卡片/图片块淡入 → 继续打字 ----------
+   * parts 由后端按模型给的 [[card:游戏名]] / [[media:游戏名]] 标记切好顺序：
+   *   [{type:"text",md:"先说结论"},{type:"game_card",...},{type:"text",md:"补充说明"}]
+   */
+  function typewriterInto(host, text, onDone) {
+    var div = document.createElement("div");
+    div.className = "gac-part-text";
+    host.appendChild(div);
+    var chars = Array.from(String(text || ""));
+    if (!chars.length) { if (onDone) onDone(); return; }
+    var totalMs = Math.max(220, Math.min(1500, chars.length * 12)); // 分段更短，节奏更利落
+    var step = Math.max(1, Math.ceil(chars.length / (totalMs / 16)));
+    var i = 0;
+    var timer = setInterval(function () {
+      i = Math.min(chars.length, i + step);
+      div.innerHTML = renderMarkdown(chars.slice(0, i).join(""));
+      scrollToBottom();
+      if (i >= chars.length) {
+        clearInterval(timer);
+        if (onDone) onDone();
+      }
+    }, 16);
+  }
+
+  function renderParts(parts, onDone) {
+    if (!Array.isArray(parts) || !parts.length) { if (onDone) onDone(); return null; }
+    var host = document.createElement("div");
+    host.className = "gac-msg agent gac-reply";
+    bodyEl.appendChild(host);
+    scrollToBottom();
+    var i = 0;
+    function step() {
+      if (i >= parts.length) { if (onDone) onDone(); return; }
+      var part = parts[i++];
+      if (part && part.type === "text") {
+        typewriterInto(host, part.md, function () { setTimeout(step, 110); });
+      } else {
+        host.appendChild(blockNode(part, true)); // 淡入 + 轻微上移
+        scrollToBottom();
+        setTimeout(step, 320); // 让卡片的入场动画走完再继续写字
+      }
+    }
+    step();
+    return host;
   }
 
   /* ---------- 网络层 ---------- */
@@ -692,8 +1971,8 @@
     if (CONFIG.replyMode === "poll") {
       return await pollReply(data.id);
     }
-    if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [] };
-    if (data.reply) return { reply: JSON.stringify(data.reply), blocks: [] };
+    if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [], parts: data.parts };
+    if (data.reply) return { reply: JSON.stringify(data.reply), blocks: [], parts: data.parts };
     if (data.error) throw new Error(data.error);
     return { reply: JSON.stringify(data), blocks: [] };
   }
@@ -703,26 +1982,44 @@
     var url = CONFIG.baseUrl.replace(/\/+$/, "") + (CONFIG.replyEndpoint || CONFIG.chatEndpoint);
     var deadline = Date.now() + CONFIG.pollTimeoutMs;
     var lastErr = null;
+    var interval = CONFIG.pollIntervalMs;
+    var backedOff = false;
     while (Date.now() < deadline) {
-      await sleep(CONFIG.pollIntervalMs);
+      await sleep(interval);
       try {
-        // 轮询用 POST 携带 id：ngrok 对浏览器 GET 会弹访问警告页（无 CORS 头），POST 不受影响
+        // 轮询用 POST 携带 id：ngrok 对浏览器 GET 会弹访问警告页（无 CORS 头），POST 不受影响。
+        // wait = 长轮询，网关会挂住这条请求直到有结果或到点。
         var resp = await fetch(url, {
           method: "POST",
           headers: headers(),
-          body: JSON.stringify({ id: id })
+          body: JSON.stringify({ id: id, wait: CONFIG.pollWaitMs })
         });
+        if (resp.status === 429 || resp.status === 502 || resp.status === 503 || resp.status === 504) {
+          // 限流/上游抖动：退避重试（间隔翻倍、上限 pollBackoffMaxMs），
+          // 原来的"失败也按 2.5s 继续打"会让限流一直续着
+          lastErr = new Error("HTTP " + resp.status);
+          interval = Math.min(interval * 2, CONFIG.pollBackoffMaxMs);
+          backedOff = true;
+          continue;
+        }
         if (!resp.ok) { lastErr = new Error("HTTP " + resp.status); continue; }
         var data = await resp.json().catch(function () { return {}; });
-        if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [] };
-        if (data.status === "done" && data.result) return { reply: data.result, blocks: [] };
-        lastErr = null; // 一次成功的轮询清除之前的瞬时错误
+        if (typeof data.reply === "string") return { reply: data.reply, blocks: data.blocks || [], parts: data.parts };
+        if (data.status === "done" && data.result) return { reply: data.result, blocks: [], parts: data.parts };
+        lastErr = null;  // 一次成功的轮询清除之前的瞬时错误
+        interval = CONFIG.pollIntervalMs;  // 恢复正常节奏
       } catch (e) {
         // 瞬时网络/CORS 抖动（如网关边缘偶发错误页）：继续轮询，不中断整个对话
         lastErr = e;
       }
     }
-    if (lastErr) throw lastErr;
+    // 超时：不要只把最后一个瞬时错误（如代理 502）抛给用户，给出可理解的说明
+    if (lastErr) {
+      var hint = /HTTP (429|502|503|504)/.test(lastErr.message)
+        ? "网关繁忙（" + lastErr.message + "），已自动重试多次仍被限流"
+        : lastErr.message;
+      throw new Error("等待回复超时（" + hint + "），任务可能仍在处理，请稍后再试。");
+    }
     throw new Error("等待回复超时，请重试。");
   }
 
@@ -732,7 +2029,7 @@
   function mockReply(text) {
     var t = text.toLowerCase();
     if (/红色沙漠|多少钱|价格/.test(t)) {
-      return "🎮 红色沙漠 价格信息\n\n💰 当前各平台售价：\n🔸 Steam：¥268\n🔸 Epic：¥268\n🔸 XSX|S：¥331.7\n🔸 PS5：¥492.3\n\n📊 游戏信息：\n⭐ 玩家评分：6.09（161条评论）\n🎯 媒体评分：二柄/Steam 7.9 | IGN 6 | GameSpot 7 | IGN日本 8\n\n⚠️ 目前没有折扣，都是原价\n\n📌 说实话评分有点低，口碑比较两极分化。如果你喜欢开放世界动作游戏，可以等等看后续更新和打折。（演示内容）";
+      return "🎮 红色沙漠 价格信息\n\n💰 当前各平台售价：\n🔸 Steam：¥268\n🔸 Epic：¥268\n🔸 XSX|S：¥331.7\n🔸 PS5：¥492.3\n\n📊 游戏信息：\n⭐ 玩家评分：6.09（161条评论）\n🎯 媒体评分：综合 7.9 | IGN 6 | GameSpot 7 | IGN日本 8\n\n⚠️ 目前没有折扣，都是原价\n\n📌 说实话评分有点低，口碑比较两极分化。如果你喜欢开放世界动作游戏，可以等等看后续更新和打折。（演示内容）";
     }
     if (/二郎神|黑神话|杨戬|攻略|怎么打/.test(t)) {
       return "二郎神杨戬是黑神话悟空的隐藏BOSS，难度不低，给你整理一份打法攻略👇\n\n📌 前置条件（解锁杨戬）\n▪️ 解锁四张隐藏地图：旧观音禅院、斯哈里国、紫云山、碧水洞\n▪️ 分别击败金池长老、蝜蝂、晦月魔君、避水金睛兽\n▪️ 在瓜田与翠笠武师对战并获胜\n▪️ 全部完成后回浮屠塔触发小弥勒剧情\n\n⚔️ 核心思路：破盾优先，芭蕉扇是神器，多用翻滚躲投技，别贪刀\n🎮 打完杨戬：解锁隐藏结局“杨戬无金箍形态”，奖励石猿变身和杨戬武器💪\n\n（演示内容，接上真实网关后会有完整分阶段攻略）";
@@ -743,7 +2040,7 @@
     if (/推荐|好玩|适合/.test(t)) {
       return "🎮 给你推荐这几款：\n· 双人成行（双人合作天花板）\n· 艾尔登法环（魂系开放世界）\n· 黑神话：悟空（国产动作大作）\n\n（演示内容）";
     }
-    return "收到：「" + text + "」。\n（演示模式）真实网关尚未接入，接好后这里会返回 Game Agent 的实际回复。可以试试问我：红色沙漠现在多少钱 / 黑神话 二郎神怎么打。";
+    return "收到：「" + text + "」。\n（演示模式）真实网关尚未接入，接好后这里会返回 Stray 的实际回复。可以试试问我：红色沙漠现在多少钱 / 黑神话 二郎神怎么打。";
   }
 
   /* ---------- 交互 ---------- */
@@ -773,10 +2070,17 @@
     statusEl.textContent = "· 思考中";
 
     var typing = showTyping();
+    attachWaitHint(typing);
     sendMessage(text)
       .then(function (res) {
         typing.remove();
         var blocks = res.blocks || [];
+        var partsArr = Array.isArray(res.parts) ? res.parts : [];
+        // 新网关在给了 parts 之后不再重复下发 blocks（同一批对象发两份让响应大一倍，
+        // 而中间隧道代理读不完大响应就会 502）—— 这里把富块从 parts 里取回来
+        if (!blocks.length && partsArr.length) {
+          blocks = partsArr.filter(function (p) { return p && p.type !== "text"; });
+        }
         var firstCard = null;
         for (var bi = 0; bi < blocks.length; bi++) {
           if (blocks[bi] && blocks[bi].type === "game_card") { firstCard = blocks[bi]; break; }
@@ -789,8 +2093,19 @@
           statusEl.textContent = "· 在线";
           return;
         }
+        // 后端给了分段且含富块（卡片/图片块）→ 在同一个回复框里依次 打字 → 淡入 → 续写。
+        // 纯文字回复仍走下面原来的窄气泡，保持既有观感（Hug 内容而不是整宽）。
+        var hasRichPart = false;
+        for (var pi = 0; pi < partsArr.length; pi++) {
+          if (partsArr[pi] && partsArr[pi].type !== "text") { hasRichPart = true; break; }
+        }
+        if (hasRichPart) {
+          renderParts(partsArr);
+          statusEl.textContent = "· 在线";
+          return;
+        }
         var hasCard = firstCard !== null;
-        // 默认：有游戏卡片时【卡片先出、文字后打】（卡片承载结构化信息，文字做补充）
+        // 兼容旧网关：有游戏卡片时【卡片先出、文字后打】（卡片承载结构化信息，文字做补充）
         if (hasCard) {
           renderBlocks(blocks);
           setTimeout(function () { typewriterAppend(res.reply); }, 60);
